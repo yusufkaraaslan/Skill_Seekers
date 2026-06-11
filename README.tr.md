@@ -12,7 +12,7 @@
 >
 > Çeviriyi iyileştirmemize yardımcı olmak için [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) üzerinden geri bildirimlerinizi paylaşabilirsiniz!
 
-[![Sürüm](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Sürüm](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Lisans: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Entegrasyonu](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
@@ -27,7 +27,7 @@
 [![Twitter Takip](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Yıldızları](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 Yapay zeka sistemleri için veri katmanı.** Skill Seekers; dokümantasyon sitelerini, GitHub depolarını, PDF'leri, videoları, Jupyter not defterlerini, vikileri ve 17'den fazla kaynak türünü yapılandırılmış bilgi varlıklarına dönüştürür — AI Yetenekleri (Claude, Gemini, OpenAI), RAG hatları (LangChain, LlamaIndex, Pinecone) ve AI kodlama asistanları (Cursor, Windsurf, Cline) için saatler değil dakikalar içinde hazır hale getirir.
+**🧠 Yapay zeka sistemleri için veri katmanı.** Skill Seekers; dokümantasyon sitelerini, GitHub depolarını, PDF'leri, videoları, Jupyter not defterlerini, vikileri ve 10'dan fazla diğer kaynak türünü yapılandırılmış bilgi varlıklarına dönüştürür — AI Yetenekleri (Claude, Gemini, OpenAI), RAG hatları (LangChain, LlamaIndex, Pinecone) ve AI kodlama asistanları (Cursor, Windsurf, Cline) için saatler değil dakikalar içinde hazır hale getirir.
 
 > 🌐 **[SkillSeekersWeb.com'u Ziyaret Edin](https://skillseekersweb.com/)** - 24'ten fazla hazır yapılandırmayı inceleyin, kendi yapılandırmalarınızı paylaşın ve tam dokümantasyona erişin!
 
@@ -63,6 +63,7 @@ skill-seekers package output/react --target claude      # → Claude AI Yeteneğ
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
 skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → IBM Bob yetenek dizini
 ```
 
 ### Oluşturulan Çıktılar
@@ -76,8 +77,9 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **LlamaIndex TextNodes** | `--target llama-index` | Sorgu motorları, sohbet motorları |
 | **Haystack Documents** | `--target haystack` | Kurumsal RAG hatları |
 | **Pinecone-hazır** (Markdown) | `--target markdown` | Vektör yükleme |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | Yerel vektör veritabanları |
-| **Cursor** `.cursorrules` | `--target claude` → kopyala | Cursor IDE AI bağlamı |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | Yerel vektör veritabanları |
+| **IBM Bob Yeteneği** (dizin) | `--target ibm-bob` | IBM Bob proje/global yetenekleri |
+| **Cursor** `.cursorrules` | `--target markdown` → SKILL.md'yi kopyala | Cursor IDE `.cursorrules` |
 | **Windsurf / Cline / Continue** | `--target claude` → kopyala | VS Code, IntelliJ, Vim |
 
 ### Neden Önemli
@@ -87,7 +89,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 📊 **RAG-hazır parçalar** — Kod bloklarını koruyan ve bağlamı sürdüren akıllı parçalama
 - 🎬 **Videolar** — YouTube ve yerel videolardan kod, altyazı ve yapılandırılmış bilgi çıkarma
 - 🔄 **Çoklu kaynak** — 18 kaynak türünü (dokümantasyon, GitHub, PDF, video, not defterleri, vikiler ve daha fazlası) tek bir bilgi varlığında birleştirme
-- 🌐 **Bir hazırlık, her hedef** — Yeniden tarama yapmadan aynı varlığı 16 platforma dışa aktarma
+- 🌐 **Bir hazırlık, her hedef** — Yeniden tarama yapmadan aynı varlığı 21 platforma dışa aktarma
 - ✅ **Savaşta test edilmiş** — 3.700+ test, 24+ çerçeve ön ayarı, üretime hazır
 
 ## 🚀 Hızlı Başlangıç (3 Komut)
@@ -105,7 +107,33 @@ skill-seekers package output/django --target claude
 
 **İşte bu kadar!** Artık kullanıma hazır `output/django-claude.zip` dosyanız var.
 
-### Diğer Kaynaklar (17 Desteklenen)
+```bash
+# Zenginleştirme için farklı bir AI ajanı kullan (varsayılan: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
+
+### 🛰️ AI destekli proje taraması (yeni)
+
+`scan` komutunu herhangi bir projeye yöneltin; bir AI ajanı projenin manifest
+dosyalarını, README'sini, Dockerfile/CI dosyalarını ve örneklenmiş kaynak içe
+aktarımlarını okur — ardından algılanan her çerçeve için bir yapılandırma ve
+kendi kodunuz için bir `<project>-codebase.json` üretir. Algılanan sürümü
+sabitler, böylece yeniden çalıştırmalar sürüm artışlarını raporlar:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# Ardından istediğinizi oluşturun
+skill-seekers create ./configs/scanned/react.json
+```
+
+Bir algılamanın mevcut ön ayarı yoksa AI sıfırdan bir yapılandırma üretir;
+çıkışta bunu isteğe bağlı olarak [topluluk kayıt deposuna](https://github.com/yusufkaraaslan/skill-seekers-configs) geri yayınlayabilirsiniz.
+
+### Diğer Kaynaklar (18 Desteklenen)
 
 ```bash
 # GitHub deposu
@@ -135,8 +163,14 @@ skill-seekers create presentation.pptx
 # AsciiDoc belgesi
 skill-seekers create guide.adoc
 
-# Yerel HTML dosyası
+# Yerel HTML dosyası (uzantıdan otomatik algılanır)
 skill-seekers create page.html
+
+# HTML dosyalarından oluşan bütün bir dizin (HTML ağırlıklı dizinler için otomatik algılanır)
+skill-seekers create ./mirror_output/site/
+
+# Karışık/kod ağırlıklı bir dizinde HTML modunu zorla
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
 
 # RSS/Atom beslemesi
 skill-seekers create feed.rss
@@ -150,7 +184,7 @@ skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytu
 skill-seekers create --setup
 
 # Confluence vikisi
-skill-seekers create --space-key  TEAM --name wiki
+skill-seekers create --space-key TEAM --name wiki
 
 # Notion sayfaları
 skill-seekers create --database-id ... --name docs
@@ -181,7 +215,7 @@ Skill Seekers, **yapay zeka sistemleri için veri katmanıdır**. 18 kaynak tür
 
 Skill Seekers, günlerce süren manuel ön işleme çalışması yerine şunları yapar:
 
-1. **Toplama** — Dokümantasyon, GitHub depoları, yerel kod tabanları, PDF'ler, videolar, Jupyter not defterleri, vikiler ve 17'den fazla kaynak türü
+1. **Toplama** — Dokümantasyon, GitHub depoları, yerel kod tabanları, PDF'ler, videolar, Jupyter not defterleri, vikiler ve 10'dan fazla diğer kaynak türü
 2. **Analiz** — Derin AST ayrıştırma, desen tespiti, API çıkarma
 3. **Yapılandırma** — Meta verili kategorize edilmiş referans dosyaları
 4. **Zenginleştirme** — AI destekli SKILL.md oluşturma (Claude, Gemini veya yerel)
@@ -229,6 +263,7 @@ Skill Seekers, günlerce süren manuel ön işleme çalışması yerine şunlar�
 ## Temel Özellikler
 
 ### 🌐 Dokümantasyon Tarama
+- ✅ **Akıllı SPA Keşfi** - JavaScript SPA siteleri için üç katmanlı keşif (sitemap.xml → llms.txt → başsız tarayıcı ile işleme)
 - ✅ **llms.txt Desteği** - LLM-hazır dokümantasyon dosyalarını otomatik algılar ve kullanır (10 kat daha hızlı)
 - ✅ **Evrensel Tarayıcı** - HERHANGİ bir dokümantasyon sitesiyle çalışır
 - ✅ **Akıllı Kategorileme** - İçeriği konuya göre otomatik düzenler
@@ -271,7 +306,7 @@ Skill Seekers, günlerce süren manuel ön işleme çalışması yerine şunlar�
 - ✅ **Geriye Dönük Uyumluluk** - Eski tek kaynaklı yapılandırmalar çalışmaya devam eder
 
 ### 🤖 Çoklu LLM Platform Desteği
-- ✅ **12 LLM Platformu** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **12 LLM Platformu** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **Evrensel Tarama** - Aynı dokümantasyon tüm platformlar için çalışır
 - ✅ **Platforma Özel Paketleme** - Her LLM için optimize edilmiş formatlar
 - ✅ **Tek Komutla Dışa Aktarma** - `--target` bayrağı ile platform seçimi
@@ -283,6 +318,7 @@ Skill Seekers, günlerce süren manuel ön işleme çalışması yerine şunlar�
 | **Claude AI** | ZIP + YAML | ✅ Otomatik | ✅ Evet | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ Otomatik | ✅ Evet | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Otomatik | ✅ Evet | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ Otomatik | ✅ Evet | MINIMAX_API_KEY | - |
 | **Genel Markdown** | ZIP | ❌ Manuel | ❌ Hayır | - | - |
 
 ```bash
@@ -300,29 +336,62 @@ pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
 
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
+
 # Genel Markdown (evrensel dışa aktarma)
 skill-seekers package output/react/ --target markdown
+# Markdown dosyalarını doğrudan herhangi bir LLM'de kullanın
 ```
 
 <details>
-<summary>🔧 <strong>Claude Uyumlu API'ler İçin Ortam Değişkenleri (ör. GLM-4.7)</strong></summary>
+<summary>🔧 <strong>Kendi AI sağlayıcınızı kullanın (OpenAI uyumlu uç noktalar + abonelikler, Anthropic kredisi gerekmez)</strong></summary>
 
-Skill Seekers, herhangi bir Claude uyumlu API uç noktasını destekler:
+İsteğe bağlı AI **zenginleştirme** adımı (`create`, `scan` ve `enhance` tarafından kullanılır) bir Anthropic anahtarı **gerektirmez**. Bunu çalıştırmanın üç yolu vardır:
+
+**1. Zaten ödediğiniz bir aboneliği kullanın — hiç API kredisi gerekmez (LOCAL ajan modu)**
+
+Skill Seekers, halihazırda oturum açtığınız bir kodlama ajanı CLI'sini çağırabilir; böylece zenginleştirme, ölçülen API token'ları yerine mevcut planınız üzerinden çalışır:
 
 ```bash
-# Seçenek 1: Resmi Anthropic API (varsayılan)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Seçenek 2: GLM-4.7 Claude uyumlu API
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# Tüm AI zenginleştirme özellikleri yapılandırılmış uç noktayı kullanacaktır
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → ChatGPT Plus planınız
+skill-seekers create <source> --agent claude    # Claude Code      → Claude Pro/Max planınız
 ```
 
-**Not**: `ANTHROPIC_BASE_URL` ayarlamak, GLM-4.7 veya diğer uyumlu hizmetler gibi herhangi bir Claude uyumlu API uç noktasını kullanmanıza olanak tanır.
+Desteklenen ajanlar: `claude`, `codex`, `copilot`, `opencode`, `kimi` ve `custom`
+(başka herhangi bir aracı kullanmak için `--agent custom` ile `--agent-cmd "<your-cli> ..."` birleştirin).
+
+**2. Herhangi bir OpenAI uyumlu sağlayıcı (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM, …)**
+
+Bunların tümü OpenAI uyumlu bir `/v1` uç noktası sunar. Skill Seekers'ı üç ortam değişkeniyle birine yönlendirin — `OPENAI_API_KEY` algılanır ve OpenAI SDK'sı `OPENAI_BASE_URL` değişkenini otomatik olarak dikkate alır:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # sağlayıcı uç noktası (tabloya bakın)
+export OPENAI_MODEL="<a model that provider offers>"     # zorunlu — varsayılan gpt-4o başka yerde bulunmaz
+skill-seekers create <source>
+```
+
+| Sağlayıcı    | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> Sağlayıcı algılama, bulduğu **ilk** API anahtarı ortam değişkenini seçer (`ANTHROPIC_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`). Belirli bir sağlayıcıyı zorlamak için `SKILL_SEEKER_PROVIDER` ayarlayın veya daha yüksek öncelikli anahtarların tanımsız olduğundan emin olun.
+
+**3. Claude uyumlu uç noktalar (ör. GLM, proxy'ler)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+Google Gemini (`GOOGLE_API_KEY`) ve Kimi/Moonshot (`MOONSHOT_API_KEY`) da yerel olarak desteklenir. Sağlayıcı başına model geçersiz kılmaları dahil tam liste için **[Ortam Değişkenleri Referansı](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)** bölümüne bakın.
 
 </details>
 
@@ -333,6 +402,9 @@ pip install skill-seekers[gemini]
 
 # OpenAI desteği ile kur
 pip install skill-seekers[openai]
+
+# MiniMax desteği ile kur
+pip install skill-seekers[minimax]
 
 # Tüm LLM platformlarını kur
 pip install skill-seekers[all-llms]
@@ -514,7 +586,7 @@ skill-seekers resume github_react_20260117_143022
 
 ### 🎯 Bootstrap Yeteneği - Kendi Kendini Barındırma
 
-Skill-seekers'ı Claude Code içinde kullanmak üzere bir Claude Code yeteneği olarak oluşturma:
+Skill-seekers'ı AI ajanınız (Claude Code, Kimi, Codex vb.) içinde kullanmak üzere bir yetenek olarak oluşturma:
 
 ```bash
 # Yeteneği oluştur
@@ -631,6 +703,15 @@ stages:
 - ✅ **Kontrol Noktası/Devam Etme** - Uzun taramalarda hiçbir zaman ilerleme kaybetmeyin
 - ✅ **Önbellekleme Sistemi** - Bir kez tara, anında yeniden oluştur
 
+### 🤖 Ajan Bağımsız Yetenek Oluşturma
+- ✅ **Çoklu Ajan Desteği** - `--agent` bayrağı ile Claude, Kimi, Codex, Copilot, OpenCode veya herhangi bir özel ajan için yetenek oluşturma
+- ✅ **Özel Ajan Komutları** - Zenginleştirme için özel bir ajan CLI komutu belirtmek üzere `--agent-cmd` kullanma
+- ✅ **Evrensel Bayraklar** - `--agent` ve `--agent-cmd` tüm komutlarda kullanılabilir (create, scrape, github, pdf vb.)
+
+### 📦 Market Hattı
+- ✅ **Markette Yayınlama** - Yetenekleri Claude Code eklenti market depolarında yayınlama
+- ✅ **Uçtan Uca Hat** - Dokümantasyon kaynağından yayınlanmış market girdisine kadar
+
 ### ✅ Kalite Güvencesi
 - ✅ **Tam Test Kapsamı** - 3.700+ test ile kapsamlı kapsam
 
@@ -714,13 +795,13 @@ skill-seekers install --config react --dry-run
 
 **Gereksinimler:**
 - ANTHROPIC_API_KEY ortam değişkeni (otomatik yükleme için)
-- Claude Code Max planı (yerel AI zenginleştirme için)
+- Claude Code Max planı (yerel AI zenginleştirme için) veya farklı bir AI ajanı seçmek için `--agent` kullanın
 
 ---
 
 ## 📊 Özellik Matrisi
 
-Skill Seekers **12 LLM platformu**, **18 kaynak türü** ve tüm hedeflerde tam özellik eşitliğini destekler.
+Skill Seekers **12 LLM platformu**, **8 RAG/vektör hedefi**, **18 kaynak türü** ve tüm hedeflerde tam özellik eşitliğini destekler.
 
 **Platformlar:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, Genel Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **Kaynak Türleri:** Dokümantasyon siteleri, GitHub depoları, PDF'ler, Word (.docx), EPUB, Video, Yerel kod tabanları, Jupyter Not Defterleri, Yerel HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom beslemeleri, Man sayfaları, Confluence vikileri, Notion sayfaları, Slack/Discord sohbet dışa aktarımları
@@ -729,12 +810,12 @@ Ayrıntılı platform ve özellik desteği için [Tam Özellik Matrisi](docs/ref
 
 ### Hızlı Platform Karşılaştırması
 
-| Özellik | Claude | Gemini | OpenAI | Markdown |
-|---------|--------|--------|--------|----------|
-| Format | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| Yükleme | ✅ API | ✅ API | ✅ API | ❌ Manuel |
-| Zenginleştirme | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ Yok |
-| Tüm Yetenek Modları | ✅ | ✅ | ✅ | ✅ |
+| Özellik | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|---------|--------|--------|--------|---------|----------|
+| Format | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| Yükleme | ✅ API | ✅ API | ✅ API | ✅ API | ❌ Manuel |
+| Zenginleştirme | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M3 | ❌ Yok |
+| Tüm Yetenek Modları | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -751,6 +832,9 @@ skill-seekers create https://react.dev --name react
 
 # Asenkron mod ile (3 kat daha hızlı)
 skill-seekers create --config configs/godot.json --async --workers 8
+
+# Zenginleştirme için belirli bir AI ajanı kullan
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### PDF Çıkarma
@@ -897,15 +981,36 @@ graph LR
     C --> F[Düzenlenmiş Referanslar]
     D --> F
     F --> E
-    E --> G[Claude Yeteneği .zip]
-    G --> H[Claude AI'ya Yükle]
+    E --> G[AI Yeteneği .zip]
+    G --> H[AI Platformuna Yükle]
 ```
 
-0. **llms.txt Algılama** - Önce llms-full.txt, llms.txt, llms-small.txt kontrol eder
+0. **llms.txt Algılama** - Önce llms-full.txt, llms.txt, llms-small.txt kontrol eder (Akıllı SPA Keşfi'nin bir parçası)
 1. **Tarama**: Dokümantasyondaki tüm sayfaları çıkarır
 2. **Kategorileme**: İçeriği konulara göre düzenler (API, kılavuzlar, eğitimler vb.)
-3. **Zenginleştirme**: AI dokümantasyonu analiz eder ve örneklerle kapsamlı SKILL.md oluşturur
-4. **Paketleme**: Her şeyi Claude'a hazır `.zip` dosyasına paketler
+3. **Zenginleştirme**: AI dokümantasyonu analiz eder ve örneklerle kapsamlı SKILL.md oluşturur (`--agent` ile birden fazla ajanı destekler)
+4. **Paketleme**: Her şeyi platforma hazır `.zip` dosyasına paketler
+
+## Mimari
+
+Sistem, **8 çekirdek modül** ve **5 yardımcı modül** olarak düzenlenmiştir (toplam ~200 sınıf):
+
+![Paket Genel Bakışı](docs/UML/exports/00_package_overview.png)
+
+| Modül | Amaç | Anahtar Sınıflar |
+|-------|------|------------------|
+| **CLICore** | Git tarzı komut dağıtıcısı | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
+| **Scrapers** | 18 kaynak türü çıkarıcısı | `DocToSkillConverter`, `DocumentSkillBuilder` (paylaşılan derleme katmanı), `UnifiedScraper` |
+| **Adaptors** | 20+ çıktı platformu formatı | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
+| **Analysis** | C3.x kod tabanı analiz hattı | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 GoF dedektörü |
+| **Enhancement** | `AgentClient` üzerinden AI destekli yetenek iyileştirme | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Packaging** | Yetenekleri paketleme, yükleme, kurma | `PackageSkill`, `InstallAgent` |
+| **MCP** | FastMCP sunucusu (40 araç) | `SkillSeekerMCPServer`, 10 araç modülü |
+| **Sync** | Dokümantasyon değişikliği algılama | `ChangeDetector`, `SyncMonitor`, `Notifier` |
+
+Yardımcı modüller: **Parsers** (28 CLI ayrıştırıcısı), **Storage** (S3/GCS/Azure), **Embedding** (çoklu sağlayıcı vektörler), **Benchmark** (performans), **Utilities** (16 paylaşılan yardımcı).
+
+Tam UML diyagramları: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | StarUML projesi: `docs/UML/skill_seekers.mdj` | HTML API referansı: `docs/UML/html/`
 
 ## 📋 Ön Koşullar
 
@@ -960,11 +1065,14 @@ Claude Code'da şunu sorun:
 
 ## 🤖 AI Ajanlara Yükleme
 
-Skill Seekers, yetenekleri 18 AI kodlama ajanına otomatik olarak yükleyebilir.
+Skill Seekers, yetenekleri 19 AI kodlama ajanına otomatik olarak yükleyebilir.
 
 ```bash
 # Belirli bir ajana yükle
 skill-seekers install-agent output/react/ --agent cursor
+
+# IBM Bob'a yükle (proje yerelinde .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # Tüm ajanlara aynı anda yükle
 skill-seekers install-agent output/react/ --agent all
@@ -991,6 +1099,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | Proje |
 | **Continue** | `~/.continue/skills/` | Global |
 | **Kimi Code** | `~/.kimi/skills/` | Global |
+| **IBM Bob** | `.bob/skills/` | Proje |
 
 ---
 
@@ -1025,7 +1134,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # Tüm ön ayarları listele
-skill-seekers create --list-configs
+# skill-seekers list-configs  # v3.7.0'da mevcut değil
 ```
 
 | Kategori | Ön Ayarlar |
@@ -1166,6 +1275,55 @@ skill-seekers config --github
 
 ---
 
+## 🆕 v3.6.0'daki Yenilikler
+
+### İş Akışı Ön Ayarları
+Analiz derinliğini `--preset` ile kontrol edin:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick      # Hızlı, yüzeysel
+skill-seekers create https://docs.react.dev/ --preset standard   # Dengeli (varsayılan)
+skill-seekers create https://docs.react.dev/ --preset comprehensive # Derin, kapsamlı
+```
+
+### Yaşam Döngüsü Bayrakları
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # Tarama olmadan önizleme
+skill-seekers create https://docs.react.dev/ --fresh      # Önbelleği yoksay, tam yeniden tarama
+skill-seekers create https://docs.react.dev/ --resume     # Kesintiye uğrayan işi sürdür
+skill-seekers create https://docs.react.dev/ --skip-scrape # Mevcut çıktıyı yeniden paketle
+```
+
+### Sağlık Kontrolü ve Araçlar
+```bash
+skill-seekers doctor                    # Kurulum ve ortamı teşhis et
+skill-seekers sync-config               # Yapılandırma sapmasını algıla
+skill-seekers stream <source>           # Büyük dokümanlar için akış alımı
+skill-seekers update output/react/      # Artımlı güncelleme
+skill-seekers multilang <source>        # Çok dilli yetenek oluşturma
+skill-seekers quality output/react/     # Kalite raporu (kapı için --threshold 7 ekleyin: 7/10 altında sıfırdan farklı çıkış kodu)
+```
+
+### RAG Parçalama Seçenekleri (paketleme)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### Markette Yayınlama
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### Ek İsteğe Bağlı Bağımlılıklar
+| Ek Paket | Kurulum | Amaç |
+|----------|---------|------|
+| `browser` | `pip install "skill-seekers[browser]"` | SPA siteleri için başsız Playwright |
+| `embedding` | `pip install "skill-seekers[embedding]"` | Gömme (embedding) sunucu desteği |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` vb. | Bulut depolama yüklemesi |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | Birleşik vektör veritabanı yükleme bağımlılıkları |
+
+---
+
 ## 📚 Dokümantasyon
 
 ### Başlarken
@@ -1173,6 +1331,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - Deneyimli kullanıcılar için hızlı başlangıç
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Yaygın sorunlar ve çözümler
 - **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - Tek sayfalık hızlı referans
+
+### Mimari
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - 14 diyagramlı UML mimari genel bakışı
+- **[docs/UML/exports/](docs/UML/exports/)** - PNG diyagram dışa aktarımları (paket genel bakışı + 13 sınıf diyagramı)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - Tam HTML API referansı (tüm sınıflar, işlemler, öznitelikler)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML proje dosyası ([StarUML](https://staruml.io/) ile açın)
 
 ### Kılavuzlar
 - **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K-40K+ sayfalık dokümantasyonu işleme
@@ -1206,70 +1370,12 @@ Keyifli yetenek oluşturmalar! 🚀
 
 ---
 
-> **Not:** Aşağıdaki bölümler İngilizce README'den alınmıştır ve tam çeviri beklemektedir.
-> En güncel dokümantasyon için bkz. [README.md](../README.md).
+## 💛 Sponsorlar
 
-## Mimari
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-Skill Seekers, genişletilebilirliğe yönelik tasarlanmış modüler bir mimari kullanır:
-
-| Modül | Amaç | Anahtar Dosyalar |
-|-------|------|------------------|
-| **CLI** | Komut satırı arayüzü | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | Kaynak türü dönüştürücüleri | `src/skill_seekers/cli/*_scraper.py` (17 tür) |
-| **Adaptors** | Platforma özgü paketleme | `src/skill_seekers/cli/adaptors/` (21 platform) |
-| **Enhancement** | AI destekli zenginleştirme | `src/skill_seekers/cli/enhance_command.py` |
-| **MCP Server** | Model Bağlam Protokolü | `src/skill_seekers/mcp/server_fastmcp.py` (40 araç) |
-
-## AI destekli proje taraması
-
-Bir projenin teknoloji yığınını otomatik olarak algılayın ve her çerçeve için bir yapılandırma dosyası oluşturun:
-
-```bash
-skill-seekers scan ./my-react-app --out ./configs/scanned/
-# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
-```
-
-## Ajan Bağımsız Beceri Oluşturma
-
-Skill Seekers, hedef platformdan bağımsız olarak aynı yüksek kaliteli çıktıyı üretir. Bir kez tarayın, her yerde paketleyin.
-
-## Market Hattı
-
-Becerileri markette paketleyin ve yayınlayın:
-
-```bash
-skill-seekers package output/react/ --marketplace --marketplace-category frontend
-```
-
-## v3.6.0'daki Yenilikler
-
-### İş Akışı Ön Ayarları
-```bash
-skill-seekers create https://docs.react.dev/ --preset quick       # Hızlı
-skill-seekers create https://docs.react.dev/ --preset standard    # Dengeli
-skill-seekers create https://docs.react.dev/ --preset comprehensive  # Derin
-```
-
-### Yaşam Döngüsü Bayrakları
-```bash
-skill-seekers create <source> --dry-run      # Tarama olmadan önizleme
-skill-seekers create <source> --fresh        # Önbelleği yoksay, tam yeniden tarama
-skill-seekers create <source> --resume       # Kesintiye uğrayan işi sürdür
-skill-seekers create <source> --skip-scrape  # Mevcut çıktıyı yeniden paketle
-```
-
-### Sağlık Kontrolü ve Araçlar
-```bash
-skill-seekers doctor                 # Kurulum ve ortamı teşhis et
-skill-seekers sync-config            # Yapılandırma sapması algılama
-skill-seekers stream <source>        # Büyük dokümanlar için akış alımı
-skill-seekers update output/react/   # Artımlı güncelleme
-skill-seekers multilang <source>     # Çok dilli beceri oluşturma
-skill-seekers quality output/react/  # Kalite raporu (kapı için --threshold 7 ekleyin: 7/10 altında sıfırdan farklı çıkış kodu)
-```
-
-### RAG Parçalama (paketleme)
-```bash
-skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
-```
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — tam modlu, OpenAI uyumlu bir AI çıkarım platformu. Skill Seekers, `ATLAS_API_KEY` ile `--target atlas` üzerinden paketleme/zenginleştirme hedefi olarak destekler.

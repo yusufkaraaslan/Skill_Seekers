@@ -1,42 +1,42 @@
-# Code Quality Standards
+# 代码质量标准
 
-**Version:** 3.6.0
-**Last Updated:** 2026-02-18
-**Status:** ✅ Production Ready
-
----
-
-## Overview
-
-Skill Seekers maintains high code quality through automated linting, comprehensive testing, and continuous integration. This document outlines the quality standards, tools, and processes used to ensure reliability and maintainability.
-
-**Quality Pillars:**
-1. **Linting** - Automated code style and error detection with Ruff
-2. **Testing** - Comprehensive test coverage (1,880+ tests)
-3. **Type Safety** - Type hints and validation
-4. **Security** - Security scanning with Bandit
-5. **CI/CD** - Automated validation on every commit
+**版本：** 3.6.0
+**最后更新：** 2026-02-18
+**状态：** ✅ 生产就绪
 
 ---
 
-## Linting with Ruff
+## 概述
 
-### What is Ruff?
+Skill Seekers 通过自动化 lint 检查、全面的测试和持续集成来保持高代码质量。本文档概述了用于确保可靠性和可维护性的质量标准、工具和流程。
 
-**Ruff** is an extremely fast Python linter written in Rust that combines the functionality of multiple tools:
-- Flake8 (style checking)
-- isort (import sorting)
-- Black (code formatting)
-- pyupgrade (Python version upgrades)
-- And 100+ other linting rules
+**质量支柱：**
+1. **Lint 检查** - 使用 Ruff 进行自动化代码风格和错误检测
+2. **测试** - 全面的测试覆盖（1,880+ 测试）
+3. **类型安全** - 类型提示与验证
+4. **安全** - 使用 Bandit 进行安全扫描
+5. **CI/CD** - 每次提交的自动化验证
 
-**Why Ruff:**
-- ⚡ 10-100x faster than traditional linters
-- 🔧 Auto-fixes for most issues
-- 📦 Single tool replaces 10+ legacy tools
-- 🎯 Comprehensive rule coverage
+---
 
-### Installation
+## 使用 Ruff 进行 Lint 检查
+
+### 什么是 Ruff？
+
+**Ruff** 是一个用 Rust 编写的极速 Python linter，集成了多个工具的功能：
+- Flake8（风格检查）
+- isort（导入排序）
+- Black（代码格式化）
+- pyupgrade（Python 版本升级）
+- 以及 100+ 其他 lint 规则
+
+**为什么选择 Ruff：**
+- ⚡ 比传统 linter 快 10-100 倍
+- 🔧 大多数问题可自动修复
+- 📦 一个工具替代 10+ 个传统工具
+- 🎯 全面的规则覆盖
+
+### 安装
 
 ```bash
 # Using uv (recommended)
@@ -49,9 +49,9 @@ pip install ruff
 pip install -e ".[dev]"  # Includes ruff
 ```
 
-### Running Ruff
+### 运行 Ruff
 
-#### Check for Issues
+#### 检查问题
 
 ```bash
 # Check all Python files
@@ -67,7 +67,7 @@ ruff check src/skill_seekers/cli/doc_scraper.py
 ruff check --fix .
 ```
 
-#### Format Code
+#### 格式化代码
 
 ```bash
 # Check formatting (dry run)
@@ -80,9 +80,9 @@ ruff format .
 ruff format src/skill_seekers/cli/doc_scraper.py
 ```
 
-### Configuration
+### 配置
 
-Ruff configuration is in `pyproject.toml`:
+Ruff 配置位于 `pyproject.toml`：
 
 ```toml
 [tool.ruff]
@@ -112,45 +112,45 @@ ignore = [
 
 ---
 
-## Common Ruff Rules
+## 常见 Ruff 规则
 
-### SIM102: Simplify Nested If Statements
+### SIM102：简化嵌套 If 语句
 
-**Before:**
+**修改前：**
 ```python
 if condition1:
     if condition2:
         do_something()
 ```
 
-**After:**
+**修改后：**
 ```python
 if condition1 and condition2:
     do_something()
 ```
 
-**Why:** Improves readability, reduces nesting levels.
+**原因：** 提高可读性，减少嵌套层级。
 
-### SIM117: Combine Multiple With Statements
+### SIM117：合并多个 With 语句
 
-**Before:**
+**修改前：**
 ```python
 with open('file1.txt') as f1:
     with open('file2.txt') as f2:
         process(f1, f2)
 ```
 
-**After:**
+**修改后：**
 ```python
 with open('file1.txt') as f1, open('file2.txt') as f2:
     process(f1, f2)
 ```
 
-**Why:** Cleaner syntax, better resource management.
+**原因：** 语法更简洁，资源管理更好。
 
-### B904: Proper Exception Chaining
+### B904：正确的异常链
 
-**Before:**
+**修改前：**
 ```python
 try:
     risky_operation()
@@ -158,7 +158,7 @@ except Exception:
     raise CustomError("Failed")
 ```
 
-**After:**
+**修改后：**
 ```python
 try:
     risky_operation()
@@ -166,110 +166,110 @@ except Exception as e:
     raise CustomError("Failed") from e
 ```
 
-**Why:** Preserves error context, aids debugging.
+**原因：** 保留错误上下文，便于调试。
 
-### SIM113: Remove Unused Enumerate Counter
+### SIM113：移除未使用的 Enumerate 计数器
 
-**Before:**
+**修改前：**
 ```python
 for i, item in enumerate(items):
     process(item)  # i is never used
 ```
 
-**After:**
+**修改后：**
 ```python
 for item in items:
     process(item)
 ```
 
-**Why:** Clearer intent, removes unused variables.
+**原因：** 意图更清晰，移除未使用的变量。
 
-### B007: Unused Loop Variable
+### B007：未使用的循环变量
 
-**Before:**
+**修改前：**
 ```python
 for item in items:
     total += 1  # item is never used
 ```
 
-**After:**
+**修改后：**
 ```python
 for _ in items:
     total += 1
 ```
 
-**Why:** Explicit that loop variable is intentionally unused.
+**原因：** 明确表示循环变量是有意不使用的。
 
-### ARG002: Unused Method Argument
+### ARG002：未使用的方法参数
 
-**Before:**
+**修改前：**
 ```python
 def process(self, data, unused_arg):
     return data.transform()  # unused_arg never used
 ```
 
-**After:**
+**修改后：**
 ```python
 def process(self, data):
     return data.transform()
 ```
 
-**Why:** Removes dead code, clarifies function signature.
+**原因：** 移除死代码，使函数签名更清晰。
 
 ---
 
-## Recent Code Quality Improvements
+## 近期代码质量改进
 
-### v2.7.0 Fixes (January 18, 2026)
+### v3.6.0 修复（2026 年 1 月 18 日）
 
-Fixed **all 21 ruff linting errors** across the codebase:
+修复了代码库中**全部 21 个 ruff lint 错误**：
 
-| Rule | Count | Files Affected | Impact |
-|------|-------|----------------|--------|
-| SIM102 | 7 | config_extractor.py, pattern_recognizer.py (3) | Combined nested if statements |
-| SIM117 | 9 | test_example_extractor.py (3), unified_skill_builder.py | Combined with statements |
-| B904 | 1 | pdf_scraper.py | Added exception chaining |
-| SIM113 | 1 | config_validator.py | Removed unused enumerate counter |
-| B007 | 1 | doc_scraper.py | Changed unused loop variable to _ |
-| ARG002 | 1 | test fixture | Removed unused test argument |
-| **Total** | **21** | **12 files** | **Zero linting errors** |
+| 规则 | 数量 | 受影响文件 | 影响 |
+|------|------|-----------|------|
+| SIM102 | 7 | config_extractor.py、pattern_recognizer.py（3 处） | 合并嵌套 if 语句 |
+| SIM117 | 9 | test_example_extractor.py（3 处）、unified_skill_builder.py | 合并 with 语句 |
+| B904 | 1 | pdf_scraper.py | 添加异常链 |
+| SIM113 | 1 | config_validator.py | 移除未使用的 enumerate 计数器 |
+| B007 | 1 | doc_scraper.py | 将未使用的循环变量改为 _ |
+| ARG002 | 1 | 测试 fixture | 移除未使用的测试参数 |
+| **总计** | **21** | **12 个文件** | **零 lint 错误** |
 
-**Result:** Clean codebase with zero linting errors, improved maintainability.
+**结果：** 代码库干净无 lint 错误，可维护性提升。
 
-### Files Updated
+### 已更新的文件
 
-1. **src/skill_seekers/cli/config_extractor.py** (SIM102 fixes)
-2. **src/skill_seekers/cli/config_validator.py** (SIM113 fix)
-3. **src/skill_seekers/cli/doc_scraper.py** (B007 fix)
-4. **src/skill_seekers/cli/pattern_recognizer.py** (3 × SIM102 fixes)
-5. **src/skill_seekers/cli/test_example_extractor.py** (3 × SIM117 fixes)
-6. **src/skill_seekers/cli/unified_skill_builder.py** (SIM117 fix)
-7. **src/skill_seekers/cli/pdf_scraper.py** (B904 fix)
-8. **6 test files** (various fixes)
+1. **src/skill_seekers/cli/config_extractor.py**（SIM102 修复）
+2. **src/skill_seekers/cli/config_validator.py**（SIM113 修复）
+3. **src/skill_seekers/cli/doc_scraper.py**（B007 修复）
+4. **src/skill_seekers/cli/pattern_recognizer.py**（3 处 SIM102 修复）
+5. **src/skill_seekers/cli/test_example_extractor.py**（3 处 SIM117 修复）
+6. **src/skill_seekers/cli/unified_skill_builder.py**（SIM117 修复）
+7. **src/skill_seekers/cli/pdf_scraper.py**（B904 修复）
+8. **6 个测试文件**（各类修复）
 
 ---
 
-## Testing Requirements
+## 测试要求
 
-### Test Coverage Standards
+### 测试覆盖标准
 
-**Critical Paths:** 100% coverage required
-- Core scraping logic
-- Platform adaptors
-- MCP tool implementations
-- Configuration validation
+**关键路径：** 要求 100% 覆盖
+- 核心抓取逻辑
+- 平台适配器
+- MCP 工具实现
+- 配置验证
 
-**Overall Project:** >80% coverage target
+**整体项目：** 覆盖率目标 >80%
 
-**Current Status:**
-- ✅ 1,880+ tests passing
-- ✅ >85% code coverage
-- ✅ All critical paths covered
-- ✅ CI/CD integrated
+**当前状态：**
+- ✅ 1,880+ 测试通过
+- ✅ 代码覆盖率 >85%
+- ✅ 所有关键路径已覆盖
+- ✅ 已集成 CI/CD
 
-### Running Tests
+### 运行测试
 
-#### All Tests
+#### 全部测试
 
 ```bash
 # Run all tests
@@ -282,7 +282,7 @@ pytest tests/ --cov=src/skill_seekers --cov-report=term --cov-report=html
 open htmlcov/index.html
 ```
 
-#### Specific Test Categories
+#### 特定测试类别
 
 ```bash
 # Unit tests only
@@ -298,7 +298,7 @@ pytest tests/test_*_e2e.py -v
 pytest tests/test_mcp*.py -v
 ```
 
-#### Test Markers
+#### 测试标记
 
 ```bash
 # Slow tests (skip by default)
@@ -311,50 +311,50 @@ pytest tests/ -m slow
 pytest tests/ -m asyncio
 ```
 
-### Test Categories
+### 测试类别
 
-1. **Unit Tests** (800+ tests)
-   - Individual function testing
-   - Isolated component testing
-   - Mock external dependencies
+1. **单元测试**（800+ 测试）
+   - 单个函数测试
+   - 隔离的组件测试
+   - 模拟外部依赖
 
-2. **Integration Tests** (300+ tests)
-   - Multi-component workflows
-   - End-to-end feature testing
-   - Real file system operations
+2. **集成测试**（300+ 测试）
+   - 多组件工作流
+   - 端到端功能测试
+   - 真实文件系统操作
 
-3. **E2E Tests** (100+ tests)
-   - Complete user workflows
-   - CLI command testing
-   - Platform integration testing
+3. **E2E 测试**（100+ 测试）
+   - 完整用户工作流
+   - CLI 命令测试
+   - 平台集成测试
 
-4. **MCP Tests** (63 tests)
-   - All 26 MCP tools
-   - Transport mode testing (stdio, HTTP)
-   - Error handling validation
+4. **MCP 测试**（63 个测试）
+   - 全部 40 个 MCP 工具
+   - 传输模式测试（stdio、HTTP）
+   - 错误处理验证
 
-### Test Requirements Before Commits
+### 提交前的测试要求
 
-**Per user instructions in `~/.claude/CLAUDE.md`:**
+**根据 `~/.claude/CLAUDE.md` 中的用户指令：**
 
 > "never skip any test. always make sure all test pass"
 
-**This means:**
-- ✅ **ALL 1,880+ tests must pass** before commits
-- ✅ No skipping tests, even if they're slow
-- ✅ Add tests for new features
-- ✅ Fix failing tests immediately
-- ✅ Maintain or improve coverage
+**这意味着：**
+- ✅ 提交前**全部 1,880+ 测试必须通过**
+- ✅ 不跳过任何测试，即使它们很慢
+- ✅ 为新功能添加测试
+- ✅ 立即修复失败的测试
+- ✅ 保持或提升覆盖率
 
 ---
 
-## CI/CD Integration
+## CI/CD 集成
 
-### GitHub Actions Workflow
+### GitHub Actions 工作流
 
-Skill Seekers uses GitHub Actions for automated quality checks on every commit and PR.
+Skill Seekers 使用 GitHub Actions 对每次提交和 PR 进行自动化质量检查。
 
-#### Workflow Configuration
+#### 工作流配置
 
 ```yaml
 # .github/workflows/ci.yml (excerpt)
@@ -409,24 +409,24 @@ jobs:
           file: ./coverage.xml
 ```
 
-### CI Checks
+### CI 检查
 
-Every commit and PR must pass:
+每次提交和 PR 必须通过：
 
-1. **Ruff Linting** - Zero linting errors
-2. **Ruff Formatting** - Consistent code style
-3. **Pytest** - All 1,880+ tests passing
-4. **Coverage** - >80% code coverage
-5. **Multi-platform** - Ubuntu + macOS
-6. **Multi-version** - Python 3.10-3.13
+1. **Ruff Lint 检查** - 零 lint 错误
+2. **Ruff 格式检查** - 一致的代码风格
+3. **Pytest** - 全部 1,880+ 测试通过
+4. **覆盖率** - 代码覆盖率 >80%
+5. **多平台** - Ubuntu + macOS
+6. **多版本** - Python 3.10-3.13
 
-**Status:** ✅ All checks passing
+**状态：** ✅ 所有检查通过
 
 ---
 
-## Pre-commit Hooks
+## Pre-commit 钩子
 
-### Setup
+### 设置
 
 ```bash
 # Install pre-commit
@@ -436,9 +436,9 @@ pip install pre-commit
 pre-commit install
 ```
 
-### Configuration
+### 配置
 
-Create `.pre-commit-config.yaml`:
+创建 `.pre-commit-config.yaml`：
 
 ```yaml
 repos:
@@ -463,7 +463,7 @@ repos:
         args: [tests/, -v]
 ```
 
-### Usage
+### 使用
 
 ```bash
 # Pre-commit hooks run automatically on git commit
@@ -480,11 +480,11 @@ git commit -m "Emergency fix" --no-verify
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### Code Organization
+### 代码组织
 
-#### Import Ordering
+#### 导入顺序
 
 ```python
 # 1. Standard library imports
@@ -502,9 +502,9 @@ from skill_seekers.cli.doc_scraper import scrape_all
 from skill_seekers.cli.adaptors import get_adaptor
 ```
 
-**Tool:** Ruff automatically sorts imports with `I` rule.
+**工具：** Ruff 通过 `I` 规则自动排序导入。
 
-#### Naming Conventions
+#### 命名约定
 
 ```python
 # Constants: UPPER_SNAKE_CASE
@@ -525,9 +525,9 @@ def _internal_helper():
     pass
 ```
 
-### Documentation
+### 文档
 
-#### Docstrings
+#### 文档字符串
 
 ```python
 def scrape_all(base_url: str, config: dict) -> list[dict]:
@@ -552,7 +552,7 @@ def scrape_all(base_url: str, config: dict) -> list[dict]:
     pass
 ```
 
-#### Type Hints
+#### 类型提示
 
 ```python
 from typing import Optional, Union, Literal
@@ -566,9 +566,9 @@ def package_skill(
     pass
 ```
 
-### Error Handling
+### 错误处理
 
-#### Exception Patterns
+#### 异常模式
 
 ```python
 # Good: Specific exceptions with context
@@ -584,7 +584,7 @@ except:  # ❌ Too broad, loses error info
     pass
 ```
 
-#### Logging
+#### 日志记录
 
 ```python
 import logging
@@ -600,19 +600,19 @@ logger.error("Failed to parse: %s", url, exc_info=True)
 
 ---
 
-## Security Scanning
+## 安全扫描
 
 ### Bandit
 
-Bandit scans for security vulnerabilities in Python code.
+Bandit 扫描 Python 代码中的安全漏洞。
 
-#### Installation
+#### 安装
 
 ```bash
 pip install bandit
 ```
 
-#### Running Bandit
+#### 运行 Bandit
 
 ```bash
 # Scan all Python files
@@ -625,9 +625,9 @@ bandit -r src/ -c pyproject.toml
 bandit -r src/ -f json -o bandit-report.json
 ```
 
-#### Common Security Issues
+#### 常见安全问题
 
-**B404: Import of subprocess module**
+**B404：导入 subprocess 模块**
 ```python
 # Review: Ensure safe usage of subprocess
 import subprocess
@@ -640,7 +640,7 @@ subprocess.run(['ls', '-l'], shell=False)
 # subprocess.run(f'ls {user_input}', shell=True)
 ```
 
-**B605: Start process with a shell**
+**B605：通过 shell 启动进程**
 ```python
 # ❌ UNSAFE: Shell injection risk (NEVER DO THIS)
 # Example of security anti-pattern:
@@ -652,17 +652,17 @@ import subprocess
 subprocess.run(['rm', filename], shell=False)
 ```
 
-**Security Best Practices:**
-- Never use `shell=True` with user input
-- Always validate and sanitize user input
-- Use subprocess with list arguments instead of shell commands
-- Avoid dynamic command construction
+**安全最佳实践：**
+- 切勿对用户输入使用 `shell=True`
+- 始终验证和清理用户输入
+- 使用带列表参数的 subprocess 而不是 shell 命令
+- 避免动态构造命令
 
 ---
 
-## Development Workflow
+## 开发工作流
 
-### 1. Before Starting Work
+### 1. 开始工作前
 
 ```bash
 # Pull latest changes
@@ -676,7 +676,7 @@ git checkout -b feature/your-feature
 pip install -e ".[all-llms,dev]"
 ```
 
-### 2. During Development
+### 2. 开发过程中
 
 ```bash
 # Run linter frequently
@@ -689,7 +689,7 @@ pytest tests/test_your_feature.py -v
 ruff format src/skill_seekers/cli/your_file.py
 ```
 
-### 3. Before Committing
+### 3. 提交前
 
 ```bash
 # Run all linting checks
@@ -705,7 +705,7 @@ pytest tests/ --cov=src/skill_seekers --cov-report=term
 # Verify all tests pass ✅
 ```
 
-### 4. Committing Changes
+### 4. 提交更改
 
 ```bash
 # Stage changes
@@ -723,7 +723,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 git push origin feature/your-feature
 ```
 
-### 5. Creating Pull Request
+### 5. 创建 Pull Request
 
 ```bash
 # Create PR via GitHub CLI
@@ -740,37 +740,37 @@ gh pr create --title "Add your feature" --body "Description..."
 
 ---
 
-## Quality Metrics
+## 质量指标
 
-### Current Status (v2.7.0)
+### 当前状态（v3.6.0）
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Linting Errors | 0 | 0 | ✅ |
-| Test Count | 1200+ | 1000+ | ✅ |
-| Test Pass Rate | 100% | 100% | ✅ |
-| Code Coverage | >85% | >80% | ✅ |
-| CI Pass Rate | 100% | >95% | ✅ |
-| Python Versions | 3.10-3.13 | 3.10+ | ✅ |
-| Platforms | Ubuntu, macOS | 2+ | ✅ |
+| 指标 | 数值 | 目标 | 状态 |
+|------|------|------|------|
+| Lint 错误 | 0 | 0 | ✅ |
+| 测试数量 | 1200+ | 1000+ | ✅ |
+| 测试通过率 | 100% | 100% | ✅ |
+| 代码覆盖率 | >85% | >80% | ✅ |
+| CI 通过率 | 100% | >95% | ✅ |
+| Python 版本 | 3.10-3.13 | 3.10+ | ✅ |
+| 平台 | Ubuntu、macOS | 2+ | ✅ |
 
-### Historical Improvements
+### 历史改进
 
-| Version | Linting Errors | Tests | Coverage |
-|---------|----------------|-------|----------|
+| 版本 | Lint 错误 | 测试 | 覆盖率 |
+|------|----------|------|--------|
 | v2.5.0 | 38 | 602 | 75% |
 | v2.6.0 | 21 | 700+ | 80% |
 | v2.7.0 | 0 | 1200+ | 85%+ |
 
-**Progress:** Continuous improvement in all quality metrics.
+**进展：** 所有质量指标持续改进。
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Common Issues
+### 常见问题
 
-#### 1. Linting Errors After Update
+#### 1. 更新后出现 Lint 错误
 
 ```bash
 # Update ruff
@@ -780,7 +780,7 @@ pip install --upgrade ruff
 ruff check .
 ```
 
-#### 2. Tests Failing Locally
+#### 2. 本地测试失败
 
 ```bash
 # Ensure package is installed
@@ -794,7 +794,7 @@ rm -rf **/__pycache__/
 pytest tests/ -v
 ```
 
-#### 3. Coverage Too Low
+#### 3. 覆盖率过低
 
 ```bash
 # Generate detailed coverage report
@@ -809,15 +809,15 @@ open htmlcov/index.html
 
 ---
 
-## Related Documentation
+## 相关文档
 
-- **[Testing Guide](../guides/TESTING_GUIDE.md)** - Comprehensive testing documentation
-- **[Contributing Guide](../../CONTRIBUTING.md)** - Contribution guidelines
-- **[API Reference](API_REFERENCE.md)** - Programmatic usage
-- **[CHANGELOG](../../CHANGELOG.md)** - Version history and changes
+- **[测试指南](../guides/TESTING_GUIDE.md)** - 全面的测试文档
+- **[贡献指南](../../CONTRIBUTING.md)** - 贡献准则
+- **[API 参考](API_REFERENCE.md)** - 编程方式使用
+- **[CHANGELOG](../../CHANGELOG.md)** - 版本历史与变更
 
 ---
 
-**Version:** 3.6.0
-**Last Updated:** 2026-02-18
-**Status:** ✅ Production Ready
+**版本：** 3.6.0
+**最后更新：** 2026-02-18
+**状态：** ✅ 生产就绪

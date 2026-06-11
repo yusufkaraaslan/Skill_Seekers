@@ -1,37 +1,37 @@
-# llms.txt Support
+# llms.txt 支持
 
-## Overview
+## 概述
 
-Skill_Seekers now automatically detects and uses llms.txt files when available, providing 10x faster documentation ingestion.
+Skill_Seekers 现在会在可用时自动检测并使用 llms.txt 文件，使文档摄取速度提升 10 倍。
 
-## What is llms.txt?
+## 什么是 llms.txt？
 
-The llms.txt convention is a growing standard where documentation sites provide pre-formatted, LLM-ready markdown files:
+llms.txt 约定是一个日益普及的标准，文档站点据此提供预先格式化、可直接供 LLM 使用的 markdown 文件：
 
-- `llms-full.txt` - Complete documentation
-- `llms.txt` - Standard balanced version
-- `llms-small.txt` - Quick reference
+- `llms-full.txt` - 完整文档
+- `llms.txt` - 标准均衡版本
+- `llms-small.txt` - 快速参考
 
-## How It Works
+## 工作原理
 
-1. Before HTML scraping, Skill_Seekers checks for llms.txt files
-2. If found, downloads and parses the markdown
-3. If not found, falls back to HTML scraping
-4. Zero config changes needed
+1. 在进行 HTML 抓取之前，Skill_Seekers 会先检查 llms.txt 文件
+2. 如果找到，则下载并解析该 markdown
+3. 如果未找到，则回退到 HTML 抓取
+4. 无需任何配置更改
 
-## Configuration
+## 配置
 
-### Automatic Detection (Recommended)
+### 自动检测（推荐）
 
-No config changes needed. Just run normally:
+无需更改配置。正常运行即可：
 
 ```bash
 skill-seekers create --config configs/hono.json
 ```
 
-### Explicit URL
+### 显式 URL
 
-Optionally specify llms.txt URL:
+也可以选择显式指定 llms.txt URL：
 
 ```json
 {
@@ -41,20 +41,20 @@ Optionally specify llms.txt URL:
 }
 ```
 
-## Performance Comparison
+## 性能对比
 
-| Method | Time | Requests |
-|--------|------|----------|
-| HTML Scraping (20 pages) | 20-60s | 20+ |
-| llms.txt | < 5s | 1 |
+| 方法 | 耗时 | 请求数 |
+|------|------|--------|
+| HTML 抓取（20 页） | 20-60 秒 | 20+ |
+| llms.txt | < 5 秒 | 1 |
 
-## Supported Sites
+## 支持的站点
 
-Sites known to provide llms.txt:
+已知提供 llms.txt 的站点：
 
 - Hono: https://hono.dev/llms-full.txt
-- (More to be discovered)
+- （更多站点有待发现）
 
-## Fallback Behavior
+## 回退行为
 
-If llms.txt download or parsing fails, automatically falls back to HTML scraping with no user intervention required.
+如果 llms.txt 下载或解析失败，会自动回退到 HTML 抓取，无需用户干预。

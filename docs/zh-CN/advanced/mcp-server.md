@@ -183,7 +183,7 @@ skill-seekers-mcp --transport http --port 8765
 
 ### scrape_generic 工具
 
-`scrape_generic` 是 v3.6.0 新增的 10 种来源类型的通用入口。它将请求委托给相应的 CLI 抓取器模块。
+`scrape_generic` 是 v3.2.0 新增的 10 种来源类型的通用入口。它将请求委托给相应的 CLI 抓取器模块。
 
 **支持的来源类型：** `jupyter`（Jupyter 笔记本）、`html`（本地 HTML）、`openapi`（OpenAPI/Swagger 规范）、`asciidoc`（AsciiDoc 文档）、`pptx`（PowerPoint 演示文稿）、`rss`（RSS/Atom 订阅源）、`manpage`（Man 手册页）、`confluence`（Confluence 维基）、`notion`（Notion 页面）、`chat`（Slack/Discord 聊天记录）
 

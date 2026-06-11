@@ -505,4 +505,4 @@ skill-seekers package output/large-skill/ --streaming
 
 - [工作流指南](05-workflows.md) - 打包前应用工作流
 - [MCP Reference](../reference/MCP_REFERENCE.md) - 通过 MCP 打包
-- [Vector DB Integrations](../integrations/) - 平台特定指南
+- [Vector DB Integrations](../../integrations/) - 平台特定指南

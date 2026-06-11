@@ -12,7 +12,7 @@
 >
 > अनुवाद सुधारने में मदद करने के लिए [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) पर सम्पर्क करें! आपकी प्रतिक्रिया हमारे लिए बहुत मूल्यवान है।
 
-[![संस्करण](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![संस्करण](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![लाइसेंस: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP एकीकरण](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
@@ -27,7 +27,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 AI सिस्टम के लिए डेटा लेयर।** Skill Seekers डॉक्यूमेंटेशन वेबसाइटों, GitHub रिपॉज़िटरी, PDF, वीडियो, Jupyter नोटबुक, विकी और 17+ अन्य स्रोत प्रकारों को संरचित ज्ञान संपत्ति में बदलता है—जो मिनटों में AI कौशल (Claude, Gemini, OpenAI), RAG पाइपलाइन (LangChain, LlamaIndex, Pinecone) और AI कोडिंग सहायकों (Cursor, Windsurf, Cline) को शक्ति प्रदान कर सकती हैं।
+**🧠 AI सिस्टम के लिए डेटा लेयर।** Skill Seekers डॉक्यूमेंटेशन वेबसाइटों, GitHub रिपॉज़िटरी, PDF, वीडियो, Jupyter नोटबुक, विकी और 10+ अन्य स्रोत प्रकारों को संरचित ज्ञान संपत्ति में बदलता है—जो मिनटों में AI कौशल (Claude, Gemini, OpenAI), RAG पाइपलाइन (LangChain, LlamaIndex, Pinecone) और AI कोडिंग सहायकों (Cursor, Windsurf, Cline) को शक्ति प्रदान कर सकती हैं।
 
 > 🌐 **[SkillSeekersWeb.com पर जाएँ](https://skillseekersweb.com/)** - 24+ प्रीसेट कॉन्फ़िगरेशन ब्राउज़ करें, अपने कॉन्फ़िग साझा करें और पूर्ण दस्तावेज़ देखें!
 
@@ -63,6 +63,7 @@ skill-seekers package output/react --target claude      # → Claude AI कौ�
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
 skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → IBM Bob कौशल डायरेक्टरी
 ```
 
 ### निर्मित आउटपुट
@@ -76,8 +77,9 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **LlamaIndex TextNodes** | `--target llama-index` | क्वेरी इंजन, चैट इंजन |
 | **Haystack Documents** | `--target haystack` | एंटरप्राइज़ RAG पाइपलाइन |
 | **Pinecone-तैयार** (Markdown) | `--target markdown` | वेक्टर अपसर्ट |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | स्थानीय वेक्टर DB |
-| **Cursor** `.cursorrules` | `--target claude` → कॉपी | Cursor IDE AI संदर्भ |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | स्थानीय वेक्टर DB |
+| **IBM Bob कौशल** (डायरेक्टरी) | `--target ibm-bob` | IBM Bob प्रोजेक्ट/वैश्विक कौशल |
+| **Cursor** `.cursorrules` | `--target markdown` → SKILL.md कॉपी करें | Cursor IDE `.cursorrules` |
 | **Windsurf / Cline / Continue** | `--target claude` → कॉपी | VS Code, IntelliJ, Vim |
 
 ### यह क्यों महत्वपूर्ण है
@@ -86,8 +88,8 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **AI कौशल गुणवत्ता** — 500+ पंक्तियों की SKILL.md फ़ाइलें जिसमें उदाहरण, पैटर्न और मार्गदर्शिकाएँ हैं
 - 📊 **RAG-तैयार चंक** — स्मार्ट चंकिंग जो कोड ब्लॉक को सुरक्षित रखती है और संदर्भ बनाए रखती है
 - 🎬 **वीडियो** — YouTube और स्थानीय वीडियो से कोड, ट्रांसक्रिप्ट और संरचित ज्ञान निकालें
-- 🔄 **बहु-स्रोत** — 17 स्रोत प्रकारों (डॉक्स, GitHub, PDF, वीडियो, नोटबुक, विकी आदि) को एक ज्ञान संपत्ति में मिलाएँ
-- 🌐 **एक बार तैयारी, हर लक्ष्य** — बिना दोबारा स्क्रैप किए 16 प्लेटफ़ॉर्म पर निर्यात करें
+- 🔄 **बहु-स्रोत** — 18 स्रोत प्रकारों (डॉक्स, GitHub, PDF, वीडियो, नोटबुक, विकी आदि) को एक ज्ञान संपत्ति में मिलाएँ
+- 🌐 **एक बार तैयारी, हर लक्ष्य** — बिना दोबारा स्क्रैप किए 21 प्लेटफ़ॉर्म पर निर्यात करें
 - ✅ **युद्ध-परीक्षित** — 3,700+ परीक्षण, 24+ फ़्रेमवर्क प्रीसेट, प्रोडक्शन-तैयार
 
 ## 🚀 त्वरित शुरुआत (3 कमांड)
@@ -105,7 +107,33 @@ skill-seekers package output/django --target claude
 
 **बस इतना ही!** अब आपके पास `output/django-claude.zip` उपयोग के लिए तैयार है।
 
-### अन्य स्रोत (17 समर्थित)
+```bash
+# एन्हांसमेंट के लिए एक अलग AI एजेंट का उपयोग करें (डिफ़ॉल्ट: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
+
+### 🛰️ AI-संचालित प्रोजेक्ट स्कैन (नया)
+
+`scan` को किसी भी प्रोजेक्ट पर चलाएँ — एक AI एजेंट उसके मैनिफ़ेस्ट, README,
+Dockerfile/CI और सैंपल किए गए स्रोत इम्पोर्ट पढ़ता है — फिर प्रत्येक पहचाने गए
+फ़्रेमवर्क के लिए एक कॉन्फ़िग और आपके अपने कोड के लिए एक `<project>-codebase.json`
+जनरेट करता है। पहचाना गया संस्करण पिन किया जाता है ताकि दोबारा चलाने पर
+संस्करण परिवर्तन रिपोर्ट हों:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# फिर इनमें से कोई भी बनाएँ
+skill-seekers create ./configs/scanned/react.json
+```
+
+यदि किसी पहचान के लिए कोई मौजूदा प्रीसेट नहीं है, तो AI एक नया कॉन्फ़िग जनरेट
+करता है; समाप्ति पर आप इसे वैकल्पिक रूप से [सामुदायिक रजिस्ट्री](https://github.com/yusufkaraaslan/skill-seekers-configs) में प्रकाशित कर सकते हैं।
+
+### अन्य स्रोत (18 समर्थित)
 
 ```bash
 # GitHub रिपॉज़िटरी
@@ -135,8 +163,14 @@ skill-seekers create presentation.pptx
 # AsciiDoc दस्तावेज़
 skill-seekers create guide.adoc
 
-# स्थानीय HTML फ़ाइल
+# स्थानीय HTML फ़ाइल (एक्सटेंशन से स्वचालित पहचान)
 skill-seekers create page.html
+
+# HTML फ़ाइलों की पूरी डायरेक्टरी (HTML-प्रधान डायरेक्टरी के लिए स्वचालित पहचान)
+skill-seekers create ./mirror_output/site/
+
+# मिश्रित/कोड-प्रधान डायरेक्टरी पर HTML मोड बाध्य करें
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
 
 # RSS/Atom फ़ीड
 skill-seekers create feed.rss
@@ -150,7 +184,7 @@ skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytu
 skill-seekers create --setup
 
 # Confluence विकी
-skill-seekers create --space-key  TEAM --name wiki
+skill-seekers create --space-key TEAM --name wiki
 
 # Notion पेज
 skill-seekers create --database-id ... --name docs
@@ -170,7 +204,7 @@ done
 
 ## Skill Seekers क्या है?
 
-Skill Seekers **AI सिस्टम के लिए डेटा लेयर** है। यह 17 स्रोत प्रकारों—डॉक्यूमेंटेशन वेबसाइट, GitHub रिपॉज़िटरी, PDF, वीडियो, Jupyter Notebook, Word/EPUB/AsciiDoc दस्तावेज़, OpenAPI/Swagger स्पेक, PowerPoint प्रस्तुतियाँ, RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord एक्सपोर्ट आदि—को हर AI लक्ष्य के लिए संरचित ज्ञान संपत्ति में बदलता है:
+Skill Seekers **AI सिस्टम के लिए डेटा लेयर** है। यह 18 स्रोत प्रकारों—डॉक्यूमेंटेशन वेबसाइट, GitHub रिपॉज़िटरी, PDF, वीडियो, Jupyter Notebook, Word/EPUB/AsciiDoc दस्तावेज़, OpenAPI/Swagger स्पेक, PowerPoint प्रस्तुतियाँ, RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord एक्सपोर्ट आदि—को हर AI लक्ष्य के लिए संरचित ज्ञान संपत्ति में बदलता है:
 
 | उपयोग | आप क्या प्राप्त करते हैं | उदाहरण |
 |-------|------------------------|--------|
@@ -229,6 +263,7 @@ Skill Seekers **AI सिस्टम के लिए डेटा लेयर
 ## मुख्य विशेषताएँ
 
 ### 🌐 डॉक्यूमेंटेशन स्क्रैपिंग
+- ✅ **स्मार्ट SPA खोज** - JavaScript SPA साइटों के लिए तीन-परत खोज (sitemap.xml → llms.txt → हेडलेस ब्राउज़र रेंडरिंग)
 - ✅ **llms.txt समर्थन** - LLM-तैयार दस्तावेज़ फ़ाइलों को स्वचालित रूप से पहचानता और उपयोग करता है (10 गुना तेज़)
 - ✅ **सार्वभौमिक स्क्रैपर** - किसी भी डॉक्यूमेंटेशन वेबसाइट के साथ काम करता है
 - ✅ **स्मार्ट वर्गीकरण** - सामग्री को विषय के अनुसार स्वचालित रूप से व्यवस्थित करता है
@@ -271,7 +306,7 @@ Skill Seekers **AI सिस्टम के लिए डेटा लेयर
 - ✅ **पश्चगामी संगत** - पुराने एकल-स्रोत कॉन्फ़िग अभी भी काम करते हैं
 
 ### 🤖 बहु-LLM प्लेटफ़ॉर्म समर्थन
-- ✅ **12 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **12 LLM प्लेटफ़ॉर्म** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **सार्वभौमिक स्क्रैपिंग** - समान दस्तावेज़ सभी प्लेटफ़ॉर्म के लिए काम करते हैं
 - ✅ **प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग** - प्रत्येक LLM के लिए अनुकूलित प्रारूप
 - ✅ **एक-कमांड निर्यात** - `--target` फ़्लैग प्लेटफ़ॉर्म चुनता है
@@ -283,6 +318,7 @@ Skill Seekers **AI सिस्टम के लिए डेटा लेयर
 | **Claude AI** | ZIP + YAML | ✅ स्वचालित | ✅ हाँ | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ स्वचालित | ✅ हाँ | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ स्वचालित | ✅ हाँ | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ स्वचालित | ✅ हाँ | MINIMAX_API_KEY | - |
 | **जेनेरिक Markdown** | ZIP | ❌ मैन्युअल | ❌ नहीं | - | - |
 
 ```bash
@@ -300,29 +336,62 @@ pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
 
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
+
 # जेनेरिक Markdown (सार्वभौमिक निर्यात)
 skill-seekers package output/react/ --target markdown
+# Markdown फ़ाइलों का किसी भी LLM में सीधे उपयोग करें
 ```
 
 <details>
-<summary>🔧 <strong>Claude-संगत API के लिए पर्यावरण चर (जैसे GLM-4.7)</strong></summary>
+<summary>🔧 <strong>अपने स्वयं के AI प्रदाता का उपयोग करें (OpenAI-संगत एंडपॉइंट + सब्सक्रिप्शन, Anthropic क्रेडिट आवश्यक नहीं)</strong></summary>
 
-Skill Seekers किसी भी Claude-संगत API एंडपॉइंट का समर्थन करता है:
+वैकल्पिक AI **एन्हांसमेंट** चरण (`create`, `scan` और `enhance` द्वारा उपयोग किया जाता है) के लिए Anthropic key **आवश्यक नहीं** है। इसे चलाने के तीन तरीके हैं:
+
+**1. वह सब्सक्रिप्शन उपयोग करें जिसके लिए आप पहले से भुगतान करते हैं — कोई API क्रेडिट नहीं (LOCAL एजेंट मोड)**
+
+Skill Seekers उस कोडिंग-एजेंट CLI को कॉल कर सकता है जिसमें आप पहले से लॉग इन हैं, ताकि एन्हांसमेंट मीटर्ड API टोकन के बजाय आपके मौजूदा प्लान पर चले:
 
 ```bash
-# विकल्प 1: आधिकारिक Anthropic API (डिफ़ॉल्ट)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# विकल्प 2: GLM-4.7 Claude-संगत API
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# सभी AI एन्हांसमेंट सुविधाएँ कॉन्फ़िगर किए गए एंडपॉइंट का उपयोग करेंगी
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → आपका ChatGPT Plus
+skill-seekers create <source> --agent claude    # Claude Code      → आपका Claude Pro/Max
 ```
 
-**नोट**: `ANTHROPIC_BASE_URL` सेट करने से आप किसी भी Claude-संगत API एंडपॉइंट का उपयोग कर सकते हैं, जैसे GLM-4.7 (智谱 AI) या अन्य संगत सेवाएँ।
+समर्थित एजेंट: `claude`, `codex`, `copilot`, `opencode`, `kimi` और `custom`
+(किसी अन्य टूल को चलाने के लिए `--agent custom` को `--agent-cmd "<your-cli> ..."` के साथ जोड़ें)।
+
+**2. कोई भी OpenAI-संगत प्रदाता (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM, …)**
+
+ये सभी एक OpenAI-संगत `/v1` एंडपॉइंट प्रदान करते हैं। तीन पर्यावरण चर के साथ Skill Seekers को किसी एक पर पॉइंट करें — यह `OPENAI_API_KEY` का पता लगाता है, और OpenAI SDK स्वचालित रूप से `OPENAI_BASE_URL` का सम्मान करता है:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # प्रदाता एंडपॉइंट (तालिका देखें)
+export OPENAI_MODEL="<a model that provider offers>"     # आवश्यक — डिफ़ॉल्ट gpt-4o अन्य जगह मौजूद नहीं होगा
+skill-seekers create <source>
+```
+
+| प्रदाता      | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> प्रदाता पहचान **पहले** मिलने वाले API-key पर्यावरण चर को चुनती है (`ANTHROPIC_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`)। किसी विशिष्ट प्रदाता को बाध्य करने के लिए `SKILL_SEEKER_PROVIDER` सेट करें, या सुनिश्चित करें कि उच्च-प्राथमिकता वाली keys अनसेट हैं।
+
+**3. Claude-संगत एंडपॉइंट (जैसे GLM, प्रॉक्सी)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+Google Gemini (`GOOGLE_API_KEY`) और Kimi/Moonshot (`MOONSHOT_API_KEY`) भी नेटिव रूप से समर्थित हैं। प्रति-प्रदाता मॉडल ओवरराइड सहित पूरी सूची के लिए **[पर्यावरण चर संदर्भ](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)** देखें।
 
 </details>
 
@@ -333,6 +402,9 @@ pip install skill-seekers[gemini]
 
 # OpenAI समर्थन के साथ इंस्टॉल करें
 pip install skill-seekers[openai]
+
+# MiniMax समर्थन के साथ इंस्टॉल करें
+pip install skill-seekers[minimax]
 
 # सभी LLM प्लेटफ़ॉर्म के साथ इंस्टॉल करें
 pip install skill-seekers[all-llms]
@@ -510,7 +582,7 @@ skill-seekers resume github_react_20260117_143022
 
 ### 🎯 Bootstrap कौशल - स्व-होस्टिंग
 
-Skill Seekers को स्वयं Claude Code कौशल के रूप में जनरेट करें:
+Skill Seekers को अपने AI एजेंट (Claude Code, Kimi, Codex आदि) में उपयोग के लिए एक कौशल के रूप में जनरेट करें:
 
 ```bash
 # कौशल जनरेट करें
@@ -627,6 +699,15 @@ stages:
 - ✅ **चेकपॉइंट/पुनः शुरू** - लंबी स्क्रैप में कभी प्रगति न खोएँ
 - ✅ **कैशिंग सिस्टम** - एक बार स्क्रैप करें, तुरंत पुनर्निर्माण करें
 
+### 🤖 एजेंट-अज्ञेय कौशल जनरेशन
+- ✅ **बहु-एजेंट समर्थन** - `--agent` फ़्लैग के माध्यम से Claude, Kimi, Codex, Copilot, OpenCode या किसी भी कस्टम एजेंट के लिए कौशल जनरेट करें
+- ✅ **कस्टम एजेंट कमांड** - एन्हांसमेंट के लिए कस्टम एजेंट CLI कमांड निर्दिष्ट करने हेतु `--agent-cmd` का उपयोग करें
+- ✅ **सार्वभौमिक फ़्लैग** - `--agent` और `--agent-cmd` सभी कमांड पर उपलब्ध (create, scrape, github, pdf आदि)
+
+### 📦 मार्केटप्लेस पाइपलाइन
+- ✅ **मार्केटप्लेस में प्रकाशित करें** - Claude Code प्लगइन मार्केटप्लेस रिपो में कौशल प्रकाशित करें
+- ✅ **एंड-टू-एंड पाइपलाइन** - दस्तावेज़ स्रोत से प्रकाशित मार्केटप्लेस प्रविष्टि तक
+
 ### ✅ गुणवत्ता आश्वासन
 - ✅ **पूर्ण परीक्षित** - 3,700+ परीक्षण व्यापक कवरेज के साथ
 
@@ -710,13 +791,13 @@ skill-seekers install --config react --dry-run
 
 **आवश्यकताएँ:**
 - ANTHROPIC_API_KEY पर्यावरण चर (स्वचालित अपलोड के लिए)
-- Claude Code Max प्लान (स्थानीय AI एन्हांसमेंट के लिए)
+- Claude Code Max प्लान (स्थानीय AI एन्हांसमेंट के लिए), या अलग AI एजेंट चुनने के लिए `--agent` का उपयोग करें
 
 ---
 
 ## 📊 फ़ीचर मैट्रिक्स
 
-Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
+Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **8 RAG/वेक्टर लक्ष्य**, **18 स्रोत प्रकार** और सभी लक्ष्यों पर पूर्ण फ़ीचर समानता का समर्थन करता है।
 
 **प्लेटफ़ॉर्म:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, जेनेरिक Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
 **स्रोत प्रकार:** डॉक्यूमेंटेशन वेबसाइट, GitHub रिपो, PDF, Word (.docx), EPUB, वीडियो, स्थानीय कोडबेस, Jupyter Notebook, स्थानीय HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom फ़ीड, Man पेज, Confluence विकी, Notion पेज, Slack/Discord चैट एक्सपोर्ट
@@ -725,12 +806,12 @@ Skill Seekers **12 LLM प्लेटफ़ॉर्म**, **17 स्रोत
 
 ### त्वरित प्लेटफ़ॉर्म तुलना
 
-| विशेषता | Claude | Gemini | OpenAI | Markdown |
-|---------|--------|--------|--------|----------|
-| प्रारूप | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| अपलोड | ✅ API | ✅ API | ✅ API | ❌ मैन्युअल |
-| एन्हांसमेंट | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ कोई नहीं |
-| सभी कौशल मोड | ✅ | ✅ | ✅ | ✅ |
+| विशेषता | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|---------|--------|--------|--------|---------|----------|
+| प्रारूप | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| अपलोड | ✅ API | ✅ API | ✅ API | ✅ API | ❌ मैन्युअल |
+| एन्हांसमेंट | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M3 | ❌ कोई नहीं |
+| सभी कौशल मोड | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -747,6 +828,9 @@ skill-seekers create https://react.dev --name react
 
 # एसिंक मोड के साथ (3 गुना तेज़)
 skill-seekers create --config configs/godot.json --async --workers 8
+
+# एन्हांसमेंट के लिए एक विशिष्ट AI एजेंट का उपयोग करें
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### PDF निष्कर्षण
@@ -893,15 +977,36 @@ graph LR
     C --> F[व्यवस्थित संदर्भ]
     D --> F
     F --> E
-    E --> G[Claude कौशल .zip]
-    G --> H[Claude AI पर अपलोड]
+    E --> G[AI कौशल .zip]
+    G --> H[AI प्लेटफ़ॉर्म पर अपलोड]
 ```
 
-0. **llms.txt पहचान** - पहले llms-full.txt, llms.txt, llms-small.txt की जाँच करता है
+0. **llms.txt पहचान** - पहले llms-full.txt, llms.txt, llms-small.txt की जाँच करता है (स्मार्ट SPA खोज का हिस्सा)
 1. **स्क्रैप**: दस्तावेज़ीकरण से सभी पेज निकालता है
 2. **वर्गीकरण**: सामग्री को विषयों में व्यवस्थित करता है (API, गाइड, ट्यूटोरियल आदि)
-3. **एन्हांस**: AI दस्तावेज़ का विश्लेषण करता है और उदाहरणों के साथ व्यापक SKILL.md बनाता है
-4. **पैकेज**: सब कुछ Claude-तैयार `.zip` फ़ाइल में बंडल करता है
+3. **एन्हांस**: AI दस्तावेज़ का विश्लेषण करता है और उदाहरणों के साथ व्यापक SKILL.md बनाता है (`--agent` के माध्यम से कई एजेंट समर्थित)
+4. **पैकेज**: सब कुछ प्लेटफ़ॉर्म-तैयार `.zip` फ़ाइल में बंडल करता है
+
+## वास्तुकला
+
+सिस्टम **8 कोर मॉड्यूल** और **5 यूटिलिटी मॉड्यूल** में व्यवस्थित है (कुल ~200 क्लासेस):
+
+![पैकेज अवलोकन](docs/UML/exports/00_package_overview.png)
+
+| मॉड्यूल | उद्देश्य | मुख्य क्लासेस |
+|---------|---------|---------------|
+| **CLICore** | Git-शैली कमांड डिस्पैचर | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
+| **Scrapers** | 18 स्रोत-प्रकार एक्सट्रैक्टर | `DocToSkillConverter`, `DocumentSkillBuilder` (साझा बिल्ड लेयर), `UnifiedScraper` |
+| **Adaptors** | 20+ आउटपुट प्लेटफ़ॉर्म प्रारूप | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
+| **Analysis** | C3.x कोडबेस विश्लेषण पाइपलाइन | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 GoF डिटेक्टर |
+| **Enhancement** | `AgentClient` के माध्यम से AI-संचालित कौशल सुधार | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Packaging** | कौशल पैकेज, अपलोड, इंस्टॉल करें | `PackageSkill`, `InstallAgent` |
+| **MCP** | FastMCP सर्वर (40 टूल) | `SkillSeekerMCPServer`, 10 टूल मॉड्यूल |
+| **Sync** | दस्तावेज़ परिवर्तन पहचान | `ChangeDetector`, `SyncMonitor`, `Notifier` |
+
+यूटिलिटी मॉड्यूल: **Parsers** (28 CLI पार्सर), **Storage** (S3/GCS/Azure), **Embedding** (बहु-प्रदाता वेक्टर), **Benchmark** (प्रदर्शन), **Utilities** (16 साझा हेल्पर)।
+
+पूर्ण UML आरेख: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | StarUML प्रोजेक्ट: `docs/UML/skill_seekers.mdj` | HTML API संदर्भ: `docs/UML/html/`
 
 ## 📋 पूर्वापेक्षाएँ
 
@@ -956,11 +1061,14 @@ Claude Code में, बस पूछें:
 
 ## 🤖 AI एजेंट में इंस्टॉल करना
 
-Skill Seekers स्वचालित रूप से 18 AI कोडिंग एजेंट में कौशल इंस्टॉल कर सकता है।
+Skill Seekers स्वचालित रूप से 19 AI कोडिंग एजेंट में कौशल इंस्टॉल कर सकता है।
 
 ```bash
 # विशिष्ट एजेंट में इंस्टॉल करें
 skill-seekers install-agent output/react/ --agent cursor
+
+# IBM Bob में इंस्टॉल करें (प्रोजेक्ट-स्थानीय .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # सभी एजेंट में एक साथ इंस्टॉल करें
 skill-seekers install-agent output/react/ --agent all
@@ -987,6 +1095,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | प्रोजेक्ट |
 | **Continue** | `~/.continue/skills/` | वैश्विक |
 | **Kimi Code** | `~/.kimi/skills/` | वैश्विक |
+| **IBM Bob** | `.bob/skills/` | प्रोजेक्ट |
 
 ---
 
@@ -1021,7 +1130,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # सभी प्रीसेट सूचीबद्ध करें
-skill-seekers create --list-configs
+# skill-seekers list-configs  # v3.7.0 में उपलब्ध नहीं
 ```
 
 | श्रेणी | प्रीसेट |
@@ -1162,6 +1271,55 @@ skill-seekers config --github
 
 ---
 
+## 🆕 v3.6.0 में नया
+
+### वर्कफ़्लो प्रीसेट
+`--preset` के साथ विश्लेषण की गहराई नियंत्रित करें:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick      # तेज़, सतही स्तर
+skill-seekers create https://docs.react.dev/ --preset standard   # संतुलित (डिफ़ॉल्ट)
+skill-seekers create https://docs.react.dev/ --preset comprehensive # गहन, विस्तृत
+```
+
+### लाइफ़साइकिल फ्लैग्स
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # स्क्रैपिंग के बिना पूर्वावलोकन
+skill-seekers create https://docs.react.dev/ --fresh      # कैश को अनदेखा करें, पूर्ण पुनः स्क्रैप
+skill-seekers create https://docs.react.dev/ --resume     # रुके हुए कार्य को फिर से शुरू करें
+skill-seekers create https://docs.react.dev/ --skip-scrape # मौजूदा आउटपुट को पुनः पैकेज करें
+```
+
+### स्वास्थ्य जाँच और उपयोगिताएँ
+```bash
+skill-seekers doctor                    # इंस्टॉलेशन और परिवेश का निदान करें
+skill-seekers sync-config               # कॉन्फ़िगरेशन ड्रिफ्ट का पता लगाएँ
+skill-seekers stream <source>           # बड़े दस्तावेज़ों के लिए स्ट्रीमिंग इनजेस्टन
+skill-seekers update output/react/      # वृद्धिशील अपडेट
+skill-seekers multilang <source>        # बहुभाषी कौशल जनरेशन
+skill-seekers quality output/react/     # गुणवत्ता रिपोर्ट (गेट के लिए --threshold 7 जोड़ें: 7/10 से नीचे गैर-शून्य निकास कोड)
+```
+
+### RAG चंकिंग विकल्प (पैकेजिंग)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### मार्केटप्लेस प्रकाशन
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### अतिरिक्त वैकल्पिक डिपेंडेंसी
+| एक्स्ट्रा | इंस्टॉल | उद्देश्य |
+|----------|---------|---------|
+| `browser` | `pip install "skill-seekers[browser]"` | SPA साइटों के लिए हेडलेस Playwright |
+| `embedding` | `pip install "skill-seekers[embedding]"` | एम्बेडिंग सर्वर समर्थन |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` आदि | क्लाउड स्टोरेज अपलोड |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | संयुक्त वेक्टर DB अपलोड डिपेंडेंसी |
+
+---
+
 ## 📚 दस्तावेज़ीकरण
 
 ### शुरुआत करना
@@ -1169,6 +1327,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - अनुभवी उपयोगकर्ताओं के लिए त्वरित शुरुआत
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - सामान्य समस्याएँ और समाधान
 - **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - एक-पेज चीट शीट
+
+### वास्तुकला
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - 14 आरेखों के साथ UML वास्तुकला अवलोकन
+- **[docs/UML/exports/](docs/UML/exports/)** - PNG आरेख निर्यात (पैकेज अवलोकन + 13 क्लास आरेख)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - पूर्ण HTML API संदर्भ (सभी क्लासेस, ऑपरेशन, एट्रिब्यूट)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML प्रोजेक्ट फ़ाइल ([StarUML](https://staruml.io/) से खोलें)
 
 ### मार्गदर्शिकाएँ
 - **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K-40K+ पेज दस्तावेज़ संभालें
@@ -1202,70 +1366,12 @@ MIT लाइसेंस - विवरण के लिए [LICENSE](LICENSE) 
 
 ---
 
-> **नोट:** निम्नलिखित अनुभाग अंग्रेजी README से लिए गए हैं और पूर्ण अनुवाद की प्रतीक्षा में हैं।
-> सबसे अद्यतित दस्तावेज़ीकरण के लिए, [README.md](../README.md) देखें।
+## 💛 प्रायोजक
 
-## वास्तुकला
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-Skill Seekers एक मॉड्यूलर वास्तुकला का उपयोग करता है जो विस्तारशीलता के लिए डिज़ाइन की गई है:
-
-| मॉड्यूल | उद्देश्य | मुख्य फ़ाइलें |
-|---------|---------|--------------|
-| **CLI** | कमांड-लाइन इंटरफ़ेस | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | स्रोत-प्रकार कनवर्टर | `src/skill_seekers/cli/*_scraper.py` (18 प्रकार) |
-| **Adaptors** | प्लेटफ़ॉर्म-विशिष्ट पैकेजिंग | `src/skill_seekers/cli/adaptors/` (21 प्लेटफ़ॉर्म) |
-| **Enhancement** | AI-संचालित समृद्धि | `src/skill_seekers/cli/enhance_command.py` |
-| **MCP Server** | मॉडल संदर्भ प्रोटोकॉल | `src/skill_seekers/mcp/server_fastmcp.py` (40 उपकरण) |
-
-## AI-संचालित प्रोजेक्ट स्कैन
-
-एक प्रोजेक्ट की तकनीक स्टैक को स्वचालित रूप से पहचानें और प्रत्येक फ्रेमवर्क के लिए एक कॉन्फ़िगरेशन उत्पन्न करें:
-
-```bash
-skill-seekers scan ./my-react-app --out ./configs/scanned/
-# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
-```
-
-## एजेंट-अज्ञेय कौशल जनरेशन
-
-Skill Seekers लक्षित प्लेटफ़ॉर्म की परवाह किए बिना समान उच्च-गुणवत्ता वाला आउटपुट उत्पन्न करता है। एक बार स्क्रैप करें, हर जगह पैकेज करें।
-
-## मार्केटप्लेस पाइपलाइन
-
-मार्केटप्लेस में कौशल पैकेज और प्रकाशित करें:
-
-```bash
-skill-seekers package output/react/ --marketplace --marketplace-category frontend
-```
-
-## v3.6.0 में नया
-
-### वर्कफ़्लो प्रीसेट
-```bash
-skill-seekers create https://docs.react.dev/ --preset quick       # तेज़
-skill-seekers create https://docs.react.dev/ --preset standard    # संतुलित
-skill-seekers create https://docs.react.dev/ --preset comprehensive  # गहन
-```
-
-### लाइफ़साइकिल फ्लैग्स
-```bash
-skill-seekers create <source> --dry-run      # स्क्रैपिंग के बिना पूर्वावलोकन
-skill-seekers create <source> --fresh        # कैश को अनदेखा करें, पूर्ण पुनः स्क्रैप
-skill-seekers create <source> --resume       # रुके हुए कार्य को फिर से शुरू करें
-skill-seekers create <source> --skip-scrape  # मौजूदा आउटपुट को पुनः पैकेज करें
-```
-
-### स्वास्थ्य जाँच और उपयोगिताएँ
-```bash
-skill-seekers doctor                 # इंस्टॉलेशन और परिवेश का निदान करें
-skill-seekers sync-config            # कॉन्फ़िगरेशन ड्रिफ्ट का पता लगाएँ
-skill-seekers stream <source>        # बड़े दस्तावेज़ों के लिए स्ट्रीमिंग इनजेस्टन
-skill-seekers update output/react/   # वृद्धिशील अपडेट
-skill-seekers multilang <source>     # बहुभाषी कौशल जनरेशन
-skill-seekers quality output/react/  # गुणवत्ता रिपोर्ट (गेट के लिए --threshold 7 जोड़ें: 7/10 से नीचे गैर-शून्य निकास कोड)
-```
-
-### RAG चंकिंग (पैकेजिंग)
-```bash
-skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
-```
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — एक फुल-मोडल, OpenAI-संगत AI इन्फ़रेंस प्लेटफ़ॉर्म। Skill Seekers इसे `ATLAS_API_KEY` के साथ `--target atlas` के माध्यम से पैकेजिंग/एन्हांसमेंट लक्ष्य के रूप में समर्थन करता है।

@@ -1,72 +1,73 @@
-# Environment Variables Reference - Skill Seekers
+# 环境变量参考 - Skill Seekers
 
-> **Version:** 3.6.0  
-> **Last Updated:** 2026-02-16  
-> **Complete environment variable reference**
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [API Keys](#api-keys)
-- [Platform Configuration](#platform-configuration)
-- [Paths and Directories](#paths-and-directories)
-- [Scraping Behavior](#scraping-behavior)
-- [Enhancement Settings](#enhancement-settings)
-- [GitHub Configuration](#github-configuration)
-- [Vector Database Settings](#vector-database-settings)
-- [Debug and Development](#debug-and-development)
-- [MCP Server Settings](#mcp-server-settings)
-- [Examples](#examples)
+> **版本：** 3.7.0  
+> **最后更新：** 2026-02-16  
+> **完整的环境变量参考**
 
 ---
 
-## Overview
+## 目录
 
-Skill Seekers uses environment variables for:
-- API authentication (Claude, Gemini, OpenAI, GitHub)
-- Configuration paths
-- Output directories
-- Behavior customization
-- Debug settings
-
-Variables are read at runtime and override default settings.
+- [概述](#overview)
+- [API 密钥](#api-keys)
+- [平台配置](#platform-configuration)
+- [LLM 提供商选择](#llm-provider-selection)
+- [路径与目录](#paths-and-directories)
+- [抓取行为](#scraping-behavior)
+- [增强设置](#enhancement-settings)
+- [GitHub 配置](#github-configuration)
+- [向量数据库设置](#vector-database-settings)
+- [调试与开发](#debug-and-development)
+- [MCP 服务器设置](#mcp-server-settings)
+- [示例](#examples)
 
 ---
 
-## API Keys
+## 概述
+
+Skill Seekers 使用环境变量来实现：
+- API 身份验证（Claude、Gemini、OpenAI、GitHub）
+- 配置路径
+- 输出目录
+- 行为自定义
+- 调试设置
+
+变量在运行时读取，并覆盖默认设置。
+
+---
+
+## API 密钥
 
 ### ANTHROPIC_API_KEY
 
-**Purpose:** Claude AI API access for enhancement and upload.
+**用途：** Claude AI API 访问，用于增强和上传。
 
-**Format:** `sk-ant-api03-...`
+**格式：** `sk-ant-api03-...`
 
-**Used by:**
-- `skill-seekers enhance` (API mode)
-- `skill-seekers upload` (Claude target)
-- AI enhancement features
+**使用者：**
+- `skill-seekers enhance`（API 模式）
+- `skill-seekers upload`（Claude 目标）
+- AI 增强功能
 
-**Example:**
+**示例：**
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Alternative:** Use `--api-key` flag per command.
+**替代方式：** 在每个命令中使用 `--api-key` 标志。
 
 ---
 
 ### GOOGLE_API_KEY
 
-**Purpose:** Google Gemini API access for upload.
+**用途：** Google Gemini API 访问，用于上传。
 
-**Format:** `AIza...`
+**格式：** `AIza...`
 
-**Used by:**
-- `skill-seekers upload` (Gemini target)
+**使用者：**
+- `skill-seekers upload`（Gemini 目标）
 
-**Example:**
+**示例：**
 ```bash
 export GOOGLE_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
@@ -75,80 +76,168 @@ export GOOGLE_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### OPENAI_API_KEY
 
-**Purpose:** OpenAI API access for upload and embeddings.
+**用途：** OpenAI（以及 OpenAI 兼容）API 访问，用于增强、上传和 embeddings。
 
-**Format:** `sk-...`
+**格式：** `sk-...`
 
-**Used by:**
-- `skill-seekers upload` (OpenAI target)
-- Embedding generation for vector DBs
+**使用者：**
+- `skill-seekers create` / `scan` / `enhance`（AI 增强，API 模式）
+- `skill-seekers upload`（OpenAI 目标）
+- 向量数据库的 embedding 生成
 
-**Example:**
+**示例：**
 ```bash
 export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+> 与 `OPENAI_BASE_URL` + `OPENAI_MODEL` 配合使用，可将增强请求路由到任意
+> OpenAI 兼容提供商（OpenRouter、Groq、Cerebras、Mistral、NVIDIA NIM）。
+> 参见 [LLM 提供商选择](#llm-provider-selection)。
+
+---
+
+### MOONSHOT_API_KEY
+
+**用途：** Moonshot AI（Kimi）API 访问，用于增强（API 模式）。
+
+**格式：** `sk-...`
+
+**使用者：**
+- `skill-seekers create` / `scan` / `enhance`（增强，Kimi/Moonshot）
+
+**示例：**
+```bash
+export MOONSHOT_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ---
 
 ### GITHUB_TOKEN
 
-**Purpose:** GitHub API authentication for higher rate limits.
+**用途：** GitHub API 身份验证，用于获得更高的速率限制，以及提交社区注册表配置。
 
-**Format:** `ghp_...` (personal access token) or `github_pat_...` (fine-grained)
+**格式：** `ghp_...`（个人访问令牌）或 `github_pat_...`（细粒度令牌）
 
-**Used by:**
-- `skill-seekers create`
-- `skill-seekers create` (GitHub sources)
-- `skill-seekers scan` (GitHub repos)
+**使用者：**
+- `skill-seekers create`（GitHub 仓库）
+- `skill-seekers create --config`（统一多源）
+- `skill-seekers scan`（本地代码库）
+- `skill-seekers scan` —— 向社区注册表提交 AI 生成的配置时*必需*（扫描本身无需该令牌即可运行；只是发布提示会被跳过并给出提示信息）
 
-**Benefits:**
-- 5000 requests/hour vs 60 for unauthenticated
-- Access to private repositories
-- Higher GraphQL API limits
+**好处：**
+- 每小时 5000 次请求（未认证为 60 次）
+- 访问私有仓库
+- 更高的 GraphQL API 限额
+- 允许从 `scan` 打开社区配置 GitHub issue
 
-**Example:**
+**示例：**
 ```bash
 export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Create token:** https://github.com/settings/tokens
+**创建令牌：** https://github.com/settings/tokens
 
 ---
 
-## Platform Configuration
+## 平台配置
 
 ### ANTHROPIC_BASE_URL
 
-**Purpose:** Custom Claude API endpoint.
+**用途：** 自定义 Claude API 端点。
 
-**Default:** `https://api.anthropic.com`
+**默认值：** `https://api.anthropic.com`
 
-**Use case:** Proxy servers, enterprise deployments, regional endpoints.
+**使用场景：** 代理服务器、企业部署、区域端点。
 
-**Example:**
+**示例：**
 ```bash
 export ANTHROPIC_BASE_URL=https://custom-api.example.com
 ```
 
 ---
 
-## Paths and Directories
+### OPENAI_BASE_URL
+
+**用途：** 用于增强的自定义 OpenAI 兼容 API 端点。
+
+**默认值：** `https://api.openai.com/v1`
+
+**使用场景：** 任意 OpenAI 兼容提供商 —— OpenRouter、Groq、Cerebras、Mistral、
+NVIDIA NIM、本地服务器（Ollama、vLLM、LM Studio）、代理。
+
+**示例：**
+```bash
+export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+```
+
+> 由 OpenAI SDK 自动读取。请与 `OPENAI_API_KEY` 和 `OPENAI_MODEL` 配对使用。
+
+---
+
+## LLM 提供商选择
+
+AI **增强**步骤（`create`、`scan`、`enhance`）通过一个抽象层
+（`AgentClient` —— 每次 API 增强调用都经由它路由）支持多个提供商。
+提供商由找到的**第一个** API 密钥决定，顺序按照
+`cli/agent_client.py` 中 `API_PROVIDERS` 注册表的定义：`ANTHROPIC_API_KEY` →
+`ANTHROPIC_AUTH_TOKEN` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`。
+如果均未设置，则回退到 **LOCAL 代理模式**（`--agent`，无需 API 密钥
+—— 使用你的 Claude Pro / ChatGPT Plus 订阅）。
+
+当密钥前缀有歧义时（Moonshot 密钥同样以 `sk-` 开头），可通过将
+`SKILL_SEEKER_PROVIDER` 设置为 `anthropic`、`google`、`openai`、
+`moonshot`（别名：`kimi`）来强制指定提供商：
+
+```bash
+export SKILL_SEEKER_PROVIDER=moonshot
+```
+
+### 任意 OpenAI 兼容提供商（OpenRouter、Groq、Cerebras、Mistral、NVIDIA NIM）
+
+```bash
+export OPENAI_API_KEY="<provider key>"
+export OPENAI_BASE_URL="https://api.groq.com/openai/v1"   # provider endpoint
+export OPENAI_MODEL="llama-3.3-70b-versatile"             # a model that provider offers
+skill-seekers create <source>
+```
+
+| 提供商       | `OPENAI_BASE_URL`                     |
+|--------------|---------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`        |
+| Groq         | `https://api.groq.com/openai/v1`      |
+| Cerebras     | `https://api.cerebras.ai/v1`          |
+| Mistral      | `https://api.mistral.ai/v1`           |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1` |
+
+> 请务必设置 `OPENAI_MODEL` —— OpenAI 的默认模型（`gpt-4o`）在其他提供商上不存在。
+> 确保没有设置更高优先级的密钥（如 `ANTHROPIC_API_KEY`），否则它会胜出。
+
+### 使用订阅而非 API 额度（LOCAL 模式）
+
+```bash
+skill-seekers create <source> --agent codex    # ChatGPT Plus via Codex CLI
+skill-seekers create <source> --agent claude   # Claude Pro/Max via Claude Code
+```
+
+---
+
+## 路径与目录
 
 ### SKILL_SEEKERS_HOME
 
-**Purpose:** Base directory for Skill Seekers data.
+**用途：** Skill Seekers 数据的基础目录。
 
-**Default:**
-- Linux/macOS: `~/.config/skill-seekers/`
-- Windows: `%APPDATA%\skill-seekers\`
+**默认值：**
+- Linux/macOS：`~/.config/skill-seekers/`
+- Windows：`%APPDATA%\skill-seekers\`
 
-**Used for:**
-- Configuration files
-- Workflow presets
-- Cache data
-- Checkpoints
+**用于：**
+- 配置文件
+- 工作流预设
+- 缓存数据
+- 检查点
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_HOME=/opt/skill-seekers
 ```
@@ -157,16 +246,16 @@ export SKILL_SEEKERS_HOME=/opt/skill-seekers
 
 ### SKILL_SEEKERS_OUTPUT
 
-**Purpose:** Default output directory for skills.
+**用途：** 技能的默认输出目录。
 
-**Default:** `./output/`
+**默认值：** `./output/`
 
-**Used by:**
-- All scraping commands
-- Package output
-- Skill generation
+**使用者：**
+- 所有抓取命令
+- 打包输出
+- 技能生成
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_OUTPUT=/var/skills/output
 ```
@@ -175,28 +264,28 @@ export SKILL_SEEKERS_OUTPUT=/var/skills/output
 
 ### SKILL_SEEKERS_CONFIG_DIR
 
-**Purpose:** Directory containing preset configs.
+**用途：** 包含预设配置的目录。
 
-**Default:** `configs/` (relative to working directory)
+**默认值：** `configs/`（相对于工作目录）
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_CONFIG_DIR=/etc/skill-seekers/configs
 ```
 
 ---
 
-## Scraping Behavior
+## 抓取行为
 
 ### SKILL_SEEKERS_RATE_LIMIT
 
-**Purpose:** Default rate limit for HTTP requests.
+**用途：** HTTP 请求的默认速率限制。
 
-**Default:** `0.5` (seconds)
+**默认值：** `0.5`（秒）
 
-**Unit:** Seconds between requests
+**单位：** 请求之间的间隔秒数
 
-**Example:**
+**示例：**
 ```bash
 # More aggressive (faster)
 export SKILL_SEEKERS_RATE_LIMIT=0.2
@@ -205,49 +294,49 @@ export SKILL_SEEKERS_RATE_LIMIT=0.2
 export SKILL_SEEKERS_RATE_LIMIT=1.0
 ```
 
-**Override:** Use `--rate-limit` flag per command.
+**覆盖方式：** 在每个命令中使用 `--rate-limit` 标志。
 
 ---
 
 ### SKILL_SEEKERS_MAX_PAGES
 
-**Purpose:** Default maximum pages to scrape.
+**用途：** 默认的最大抓取页数。
 
-**Default:** `500`
+**默认值：** `500`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_MAX_PAGES=1000
 ```
 
-**Override:** Use `--max-pages` flag or config file.
+**覆盖方式：** 使用 `--max-pages` 标志或配置文件。
 
 ---
 
 ### SKILL_SEEKERS_WORKERS
 
-**Purpose:** Default number of parallel workers.
+**用途：** 默认并行工作者数量。
 
-**Default:** `1`
+**默认值：** `1`
 
-**Maximum:** `10`
+**最大值：** `10`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_WORKERS=4
 ```
 
-**Override:** Use `--workers` flag.
+**覆盖方式：** 使用 `--workers` 标志。
 
 ---
 
 ### SKILL_SEEKERS_TIMEOUT
 
-**Purpose:** HTTP request timeout.
+**用途：** HTTP 请求超时。
 
-**Default:** `30` (seconds)
+**默认值：** `30`（秒）
 
-**Example:**
+**示例：**
 ```bash
 # For slow servers
 export SKILL_SEEKERS_TIMEOUT=60
@@ -257,82 +346,139 @@ export SKILL_SEEKERS_TIMEOUT=60
 
 ### SKILL_SEEKERS_USER_AGENT
 
-**Purpose:** Custom User-Agent header.
+**用途：** 自定义 User-Agent 请求头。
 
-**Default:** `Skill-Seekers/3.6.0`
+**默认值：** `Skill-Seekers/3.7.0`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_USER_AGENT="MyBot/1.0 (contact@example.com)"
 ```
 
 ---
 
-## Enhancement Settings
+## 增强设置
 
 ### SKILL_SEEKER_AGENT
 
-**Purpose:** Default local coding agent for enhancement.
+**用途：** 用于增强以及 scan 检测/生成的默认本地编码代理。
 
-**Default:** `claude`
+**默认值：** `claude`
 
-**Options:** `claude`, `cursor`, `windsurf`, `cline`, `continue`
+**可选值：** `claude`、`codex`、`copilot`、`opencode`、`kimi`、`custom`，以及 IDE 模式别名（`cursor`、`windsurf`、`cline`、`continue`）
 
-**Used by:**
+**使用者：**
 - `skill-seekers enhance`
+- `skill-seekers scan`（可在单次调用中通过 `--agent` 覆盖）
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKER_AGENT=cursor
 ```
 
 ---
 
-### SKILL_SEEKERS_ENHANCE_TIMEOUT
+### SKILL_SEEKER_AGENT_CMD
 
-**Purpose:** Timeout for AI enhancement operations.
+**用途：** `--agent custom`（LOCAL 模式）的自定义 CLI 命令模板。
 
-**Default:** `600` (seconds = 10 minutes)
+**使用者：** 当 `SKILL_SEEKER_AGENT=custom` 时的 `skill-seekers create` / `scan` / `enhance`。
 
-**Example:**
+**示例：**
+```bash
+export SKILL_SEEKER_AGENT=custom
+export SKILL_SEEKER_AGENT_CMD="my-llm-cli --prompt-file {prompt_file}"
+```
+
+---
+
+### SKILL_SEEKER_PROVIDER
+
+**用途：** 当密钥前缀检测有歧义时强制指定 API 提供商
+（Moonshot 密钥同样以 `sk-` 开头，否则会被识别为 OpenAI）。
+
+**可选值：** `anthropic`、`google`、`openai`、`moonshot`（别名：`kimi`）
+
+**示例：**
+```bash
+export SKILL_SEEKER_PROVIDER=moonshot
+```
+
+---
+
+### SKILL_SEEKER_MODEL
+
+**用途：** API 模式增强的全局模型覆盖（优先于下方所有
+按提供商的模型变量）。
+
+**示例：**
+```bash
+export SKILL_SEEKER_MODEL=llama-3.3-70b-versatile
+```
+
+---
+
+### 按提供商的模型覆盖
+
+仅在未设置 `SKILL_SEEKER_MODEL` 时使用。每个变量都会回退到对应提供商的默认值。
+
+| 变量              | 提供商             | 默认值（未设置时）          |
+|-------------------|--------------------|-----------------------------|
+| `ANTHROPIC_MODEL` | Anthropic          | `claude-sonnet-4-20250514`  |
+| `OPENAI_MODEL`    | OpenAI/兼容        | `gpt-4o`                    |
+| `GOOGLE_MODEL`    | Gemini             | `gemini-2.0-flash`          |
+| `MOONSHOT_MODEL`  | Moonshot/Kimi      | `moonshot-v1-auto`          |
+
+```bash
+export OPENAI_MODEL=llama-3.3-70b-versatile
+```
+
+---
+
+### SKILL_SEEKER_ENHANCE_TIMEOUT
+
+**用途：** AI 增强操作的超时时间（秒）。
+
+**默认值：** `2700`（45 分钟）
+
+**特殊值：** `unlimited`、`none` 或 `0` 会映射为 24 小时上限。
+
+**示例：**
 ```bash
 # For large skills
-export SKILL_SEEKERS_ENHANCE_TIMEOUT=1200
-```
+export SKILL_SEEKER_ENHANCE_TIMEOUT=3600
 
-**Override:** Use `--timeout` flag.
+# No practical limit
+export SKILL_SEEKER_ENHANCE_TIMEOUT=unlimited
+```
 
 ---
 
-### ANTHROPIC_MODEL
+### SKILL_SEEKER_ENHANCE_ACTIVE
 
-**Purpose:** Claude model for API enhancement.
+**用途：** LOCAL 代理增强的递归保护。Skill Seekers 会在它生成的每个
+本地代理的环境中将此变量设置为 `1`（所有生成路径都如此）；当该变量
+已被设置时，LOCAL 增强会拒绝再生成嵌套代理。通常你不需要自己设置它
+—— 仅当你将 Skill Seekers 包装在另一个代理内、且希望抑制增强时才需要。
 
-**Default:** `claude-3-5-sonnet-20241022`
-
-**Options:**
-- `claude-3-5-sonnet-20241022` (recommended)
-- `claude-3-opus-20240229` (highest quality, more expensive)
-- `claude-3-haiku-20240307` (fastest, cheapest)
-
-**Example:**
+**示例：**
 ```bash
-export ANTHROPIC_MODEL=claude-3-opus-20240229
+export SKILL_SEEKER_ENHANCE_ACTIVE=1   # suppress nested local-agent spawns
 ```
 
 ---
 
-## GitHub Configuration
+## GitHub 配置
 
 ### GITHUB_API_URL
 
-**Purpose:** Custom GitHub API endpoint.
+**用途：** 自定义 GitHub API 端点。
 
-**Default:** `https://api.github.com`
+**默认值：** `https://api.github.com`
 
-**Use case:** GitHub Enterprise Server.
+**使用场景：** GitHub Enterprise Server。
 
-**Example:**
+**示例：**
 ```bash
 export GITHUB_API_URL=https://github.company.com/api/v3
 ```
@@ -341,11 +487,11 @@ export GITHUB_API_URL=https://github.company.com/api/v3
 
 ### GITHUB_ENTERPRISE_TOKEN
 
-**Purpose:** Separate token for GitHub Enterprise.
+**用途：** GitHub Enterprise 的独立令牌。
 
-**Use case:** Different tokens for github.com vs enterprise.
+**使用场景：** 为 github.com 和企业实例使用不同的令牌。
 
-**Example:**
+**示例：**
 ```bash
 export GITHUB_TOKEN=ghp_...           # github.com
 export GITHUB_ENTERPRISE_TOKEN=...   # enterprise
@@ -353,19 +499,19 @@ export GITHUB_ENTERPRISE_TOKEN=...   # enterprise
 
 ---
 
-## Vector Database Settings
+## 向量数据库设置
 
 ### CHROMA_URL
 
-**Purpose:** ChromaDB server URL.
+**用途：** ChromaDB 服务器 URL。
 
-**Default:** `http://localhost:8000`
+**默认值：** `http://localhost:8000`
 
-**Used by:**
+**使用者：**
 - `skill-seekers upload --target chroma`
-- `export_to_chroma` MCP tool
+- `export_to_chroma` MCP 工具
 
-**Example:**
+**示例：**
 ```bash
 export CHROMA_URL=http://chroma.example.com:8000
 ```
@@ -374,11 +520,11 @@ export CHROMA_URL=http://chroma.example.com:8000
 
 ### CHROMA_PERSIST_DIRECTORY
 
-**Purpose:** Local directory for ChromaDB persistence.
+**用途：** ChromaDB 持久化的本地目录。
 
-**Default:** `./chroma_db/`
+**默认值：** `./chroma_db/`
 
-**Example:**
+**示例：**
 ```bash
 export CHROMA_PERSIST_DIRECTORY=/var/lib/chroma
 ```
@@ -387,15 +533,15 @@ export CHROMA_PERSIST_DIRECTORY=/var/lib/chroma
 
 ### WEAVIATE_URL
 
-**Purpose:** Weaviate server URL.
+**用途：** Weaviate 服务器 URL。
 
-**Default:** `http://localhost:8080`
+**默认值：** `http://localhost:8080`
 
-**Used by:**
+**使用者：**
 - `skill-seekers upload --target weaviate`
-- `export_to_weaviate` MCP tool
+- `export_to_weaviate` MCP 工具
 
-**Example:**
+**示例：**
 ```bash
 export WEAVIATE_URL=https://weaviate.example.com
 ```
@@ -404,13 +550,13 @@ export WEAVIATE_URL=https://weaviate.example.com
 
 ### WEAVIATE_API_KEY
 
-**Purpose:** Weaviate API key for authentication.
+**用途：** 用于身份验证的 Weaviate API 密钥。
 
-**Used by:**
+**使用者：**
 - Weaviate Cloud
-- Authenticated Weaviate instances
+- 启用认证的 Weaviate 实例
 
-**Example:**
+**示例：**
 ```bash
 export WEAVIATE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -419,11 +565,11 @@ export WEAVIATE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ### QDRANT_URL
 
-**Purpose:** Qdrant server URL.
+**用途：** Qdrant 服务器 URL。
 
-**Default:** `http://localhost:6333`
+**默认值：** `http://localhost:6333`
 
-**Example:**
+**示例：**
 ```bash
 export QDRANT_URL=http://qdrant.example.com:6333
 ```
@@ -432,26 +578,26 @@ export QDRANT_URL=http://qdrant.example.com:6333
 
 ### QDRANT_API_KEY
 
-**Purpose:** Qdrant API key for authentication.
+**用途：** 用于身份验证的 Qdrant API 密钥。
 
-**Example:**
+**示例：**
 ```bash
 export QDRANT_API_KEY=xxxxxxxxxxxxxxxx
 ```
 
 ---
 
-## Debug and Development
+## 调试与开发
 
 ### SKILL_SEEKERS_DEBUG
 
-**Purpose:** Enable debug logging.
+**用途：** 启用调试日志。
 
-**Values:** `1`, `true`, `yes`
+**可选值：** `1`、`true`、`yes`
 
-**Equivalent to:** `--verbose` flag
+**等效于：** `--verbose` 标志
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_DEBUG=1
 ```
@@ -460,13 +606,13 @@ export SKILL_SEEKERS_DEBUG=1
 
 ### SKILL_SEEKERS_LOG_LEVEL
 
-**Purpose:** Set logging level.
+**用途：** 设置日志级别。
 
-**Default:** `INFO`
+**默认值：** `INFO`
 
-**Options:** `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
+**可选值：** `DEBUG`、`INFO`、`WARNING`、`ERROR`、`CRITICAL`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_LOG_LEVEL=DEBUG
 ```
@@ -475,9 +621,9 @@ export SKILL_SEEKERS_LOG_LEVEL=DEBUG
 
 ### SKILL_SEEKERS_LOG_FILE
 
-**Purpose:** Log to file instead of stdout.
+**用途：** 将日志写入文件而非 stdout。
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_LOG_FILE=/var/log/skill-seekers.log
 ```
@@ -486,11 +632,11 @@ export SKILL_SEEKERS_LOG_FILE=/var/log/skill-seekers.log
 
 ### SKILL_SEEKERS_CACHE_DIR
 
-**Purpose:** Custom cache directory.
+**用途：** 自定义缓存目录。
 
-**Default:** `~/.cache/skill-seekers/`
+**默认值：** `~/.cache/skill-seekers/`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_CACHE_DIR=/tmp/skill-seekers-cache
 ```
@@ -499,69 +645,69 @@ export SKILL_SEEKERS_CACHE_DIR=/tmp/skill-seekers-cache
 
 ### SKILL_SEEKERS_NO_CACHE
 
-**Purpose:** Disable caching.
+**用途：** 禁用缓存。
 
-**Values:** `1`, `true`, `yes`
+**可选值：** `1`、`true`、`yes`
 
-**Example:**
+**示例：**
 ```bash
 export SKILL_SEEKERS_NO_CACHE=1
 ```
 
 ---
 
-## MCP Server Settings
+## MCP 服务器设置
 
 ### MCP_TRANSPORT
 
-**Purpose:** Default MCP transport mode.
+**用途：** 默认的 MCP 传输模式。
 
-**Default:** `stdio`
+**默认值：** `stdio`
 
-**Options:** `stdio`, `http`
+**可选值：** `stdio`、`http`
 
-**Example:**
+**示例：**
 ```bash
 export MCP_TRANSPORT=http
 ```
 
-**Override:** Use `--transport` flag.
+**覆盖方式：** 使用 `--transport` 标志。
 
 ---
 
 ### MCP_PORT
 
-**Purpose:** Default MCP HTTP port.
+**用途：** 默认的 MCP HTTP 端口。
 
-**Default:** `8765`
+**默认值：** `8765`
 
-**Example:**
+**示例：**
 ```bash
 export MCP_PORT=8080
 ```
 
-**Override:** Use `--port` flag.
+**覆盖方式：** 使用 `--port` 标志。
 
 ---
 
 ### MCP_HOST
 
-**Purpose:** Default MCP HTTP host.
+**用途：** 默认的 MCP HTTP 主机。
 
-**Default:** `127.0.0.1`
+**默认值：** `127.0.0.1`
 
-**Example:**
+**示例：**
 ```bash
 export MCP_HOST=0.0.0.0
 ```
 
-**Override:** Use `--host` flag.
+**覆盖方式：** 使用 `--host` 标志。
 
 ---
 
-## Examples
+## 示例
 
-### Development Environment
+### 开发环境
 
 ```bash
 # Debug mode
@@ -577,7 +723,7 @@ export SKILL_SEEKERS_RATE_LIMIT=0.1
 export SKILL_SEEKERS_MAX_PAGES=50
 ```
 
-### Production Environment
+### 生产环境
 
 ```bash
 # API keys
@@ -596,7 +742,7 @@ export SKILL_SEEKERS_LOG_FILE=/var/log/skill-seekers.log
 export SKILL_SEEKERS_LOG_LEVEL=WARNING
 ```
 
-### CI/CD Environment
+### CI/CD 环境
 
 ```bash
 # Non-interactive
@@ -610,7 +756,7 @@ export GITHUB_TOKEN=${GITHUB_TOKEN_SECRET}
 export SKILL_SEEKERS_NO_CACHE=1
 ```
 
-### Multi-Platform Setup
+### 多平台设置
 
 ```bash
 # All API keys
@@ -627,9 +773,9 @@ export WEAVIATE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ---
 
-## Configuration File
+## 配置文件
 
-Environment variables can also be set in a `.env` file:
+环境变量也可以在 `.env` 文件中设置：
 
 ```bash
 # .env file
@@ -639,7 +785,7 @@ SKILL_SEEKERS_OUTPUT=./output
 SKILL_SEEKERS_RATE_LIMIT=0.5
 ```
 
-Load with:
+加载方式：
 ```bash
 # Automatically loaded if python-dotenv is installed
 # Or manually:
@@ -648,16 +794,16 @@ export $(cat .env | xargs)
 
 ---
 
-## Priority Order
+## 优先级顺序
 
-Settings are applied in this order (later overrides earlier):
+设置按以下顺序应用（后者覆盖前者）：
 
-1. Default values
-2. Environment variables
-3. Configuration file
-4. Command-line flags
+1. 默认值
+2. 环境变量
+3. 配置文件
+4. 命令行标志
 
-Example:
+示例：
 ```bash
 # Default: rate_limit = 0.5
 export SKILL_SEEKERS_RATE_LIMIT=1.0  # Env var overrides default
@@ -667,9 +813,9 @@ skill-seekers create --rate-limit 2.0  # Flag overrides all
 
 ---
 
-## Security Best Practices
+## 安全最佳实践
 
-### Never commit API keys
+### 切勿提交 API 密钥
 
 ```bash
 # Add to .gitignore
@@ -677,7 +823,7 @@ echo ".env" >> .gitignore
 echo "*.key" >> .gitignore
 ```
 
-### Use secret management
+### 使用密钥管理
 
 ```bash
 # macOS Keychain
@@ -690,7 +836,7 @@ export ANTHROPIC_API_KEY=$(secret-tool lookup service anthropic)
 export ANTHROPIC_API_KEY=$(op read "op://vault/anthropic/credential")
 ```
 
-### File permissions
+### 文件权限
 
 ```bash
 # Restrict .env file
@@ -699,9 +845,9 @@ chmod 600 .env
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Variable not recognized
+### 变量未被识别
 
 ```bash
 # Check if set
@@ -711,14 +857,14 @@ echo $ANTHROPIC_API_KEY
 python -c "import os; print(os.getenv('ANTHROPIC_API_KEY'))"
 ```
 
-### Priority issues
+### 优先级问题
 
 ```bash
 # See effective configuration
 skill-seekers config --show
 ```
 
-### Path expansion
+### 路径展开
 
 ```bash
 # Use full path or expand tilde
@@ -728,11 +874,11 @@ export SKILL_SEEKERS_HOME=$HOME/.skill-seekers
 
 ---
 
-## See Also
+## 另请参阅
 
-- [CLI Reference](CLI_REFERENCE.md) - Command reference
-- [Config Format](CONFIG_FORMAT.md) - JSON configuration
+- [CLI 参考](CLI_REFERENCE.md) - 命令参考
+- [配置格式](CONFIG_FORMAT.md) - JSON 配置
 
 ---
 
-*For platform-specific setup, see [Installation Guide](../getting-started/01-installation.md)*
+*平台相关的设置请参阅[安装指南](../getting-started/01-installation.md)*

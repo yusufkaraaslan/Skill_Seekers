@@ -10,7 +10,7 @@
 >
 > Этот документ был автоматически переведён с помощью ИИ. Несмотря на наши усилия по обеспечению качества, возможны неточные выражения.
 
-[![Версия](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![Версия](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP-интеграция](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
@@ -25,7 +25,7 @@
 [![Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 Слой данных для ИИ-систем.** Skill Seekers преобразует документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, вики и более 18 типов источников в структурированные базы знаний — готовые к использованию в ИИ-навыках (Claude, Gemini, OpenAI), RAG-конвейерах (LangChain, LlamaIndex, Pinecone) и ИИ-помощниках для программирования (Cursor, Windsurf, Cline) за считанные минуты.
+**🧠 Слой данных для ИИ-систем.** Skill Seekers преобразует документацию сайтов, репозитории GitHub, PDF, видео, Jupyter-ноутбуки, вики и более 10 других типов источников в структурированные базы знаний — готовые к использованию в ИИ-навыках (Claude, Gemini, OpenAI), RAG-конвейерах (LangChain, LlamaIndex, Pinecone) и ИИ-помощниках для программирования (Cursor, Windsurf, Cline) за считанные минуты.
 
 > 🌐 **[Посетите SkillSeekersWeb.com](https://skillseekersweb.com/)** — просматривайте 24+ готовых конфигураций, делитесь своими настройками и получайте доступ к полной документации!
 
@@ -61,6 +61,7 @@ skill-seekers package output/react --target claude      # → Claude AI навы
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
 skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → Директория навыка IBM Bob
 ```
 
 ### Что создаётся
@@ -74,8 +75,9 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **LlamaIndex TextNodes** | `--target llama-index` | Движки запросов, движки диалогов |
 | **Haystack Documents** | `--target haystack` | Корпоративные RAG-конвейеры |
 | **Pinecone-ready** (Markdown) | `--target markdown` | Загрузка в векторное хранилище |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | Локальные векторные базы данных |
-| **Cursor** `.cursorrules` | `--target claude` → скопировать | Cursor IDE ИИ-контекст |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | Локальные векторные базы данных |
+| **IBM Bob навык** (директория) | `--target ibm-bob` | Проектные/глобальные навыки IBM Bob |
+| **Cursor** `.cursorrules` | `--target markdown` → скопировать SKILL.md | Cursor IDE `.cursorrules` |
 | **Windsurf / Cline / Continue** | `--target claude` → скопировать | VS Code, IntelliJ, Vim |
 
 ### Почему это важно
@@ -85,42 +87,118 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 📊 **Готовые к RAG блоки** — умная разбивка сохраняет блоки кода и контекст
 - 🎬 **Видео** — извлечение кода, субтитров и структурированных знаний из YouTube и локальных видео
 - 🔄 **Множество источников** — объединение 18 типов источников (документация, GitHub, PDF, видео, ноутбуки, вики и другие) в единую базу знаний
-- 🌐 **Одна подготовка — все платформы** — экспорт одного актива на 16 платформ без повторного сканирования
+- 🌐 **Одна подготовка — все платформы** — экспорт одного актива на 21 платформу без повторного сканирования
 - ✅ **Проверено в бою** — 3 700+ тестов, 24+ пресетов для фреймворков, готово к продакшену
 
-## Быстрый старт
+## 🚀 Быстрый старт (3 команды)
 
 ```bash
+# 1. Установка
 pip install skill-seekers
 
-# Создание ИИ-навыка из любого источника
-skill-seekers create https://docs.django.com/    # Документация сайта
-skill-seekers create django/django               # Репозиторий GitHub
-skill-seekers create ./my-codebase               # Локальный проект
-skill-seekers create manual.pdf                  # PDF-файл
-skill-seekers create manual.docx                 # Документ Word
-skill-seekers create book.epub                   # Электронная книга EPUB
-skill-seekers create notebook.ipynb              # Jupyter-ноутбук
-skill-seekers create page.html                   # Локальный HTML
-skill-seekers create api-spec.yaml               # Спецификация OpenAPI/Swagger
-skill-seekers create guide.adoc                  # Документ AsciiDoc
-skill-seekers create slides.pptx                 # Презентация PowerPoint
+# 2. Создание навыка из любого источника
+skill-seekers create https://docs.django.com/
+
+# 3. Упаковка для вашей ИИ-платформы
+skill-seekers package output/django --target claude
+```
+
+**Вот и всё!** Теперь у вас есть готовый к использованию `output/django-claude.zip`.
+
+```bash
+# Использование другого ИИ-агента для улучшения (по умолчанию: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
+
+### 🛰️ Сканирование проекта с помощью ИИ (новое)
+
+Направьте `scan` на любой проект — ИИ-агент прочитает его манифесты, README,
+Dockerfile/CI и выборку импортов исходного кода, а затем создаст по одной
+конфигурации на каждый обнаруженный фреймворк плюс `<project>-codebase.json`
+для вашего собственного кода. Обнаруженная версия фиксируется, поэтому
+повторные запуски сообщают об обновлениях:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# Затем соберите любую из них
+skill-seekers create ./configs/scanned/react.json
+```
+
+Если для обнаружения нет готового пресета, ИИ генерирует новую конфигурацию;
+при выходе её можно опционально опубликовать в [реестре сообщества](https://github.com/yusufkaraaslan/skill-seekers-configs).
+
+### Другие источники (поддерживается 18)
+
+```bash
+# Репозиторий GitHub
+skill-seekers create facebook/react
+
+# Локальный проект
+skill-seekers create ./my-project
+
+# PDF-документ
+skill-seekers create manual.pdf
+
+# Документ Word
+skill-seekers create report.docx
+
+# Электронная книга EPUB
+skill-seekers create book.epub
+
+# Jupyter-ноутбук
+skill-seekers create notebook.ipynb
+
+# Спецификация OpenAPI
+skill-seekers create openapi.yaml
+
+# Презентация PowerPoint
+skill-seekers create presentation.pptx
+
+# Документ AsciiDoc
+skill-seekers create guide.adoc
+
+# Локальный HTML-файл (автоопределение по расширению)
+skill-seekers create page.html
+
+# Целая директория HTML-файлов (автоопределение для директорий с преобладанием HTML)
+skill-seekers create ./mirror_output/site/
+
+# Принудительный HTML-режим для смешанной директории с большим количеством кода
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
+
+# RSS/Atom-лента
+skill-seekers create feed.rss
+
+# Man-страница
+skill-seekers create curl.1
 
 # Видео (YouTube, Vimeo или локальный файл — требуется skill-seekers[video])
 skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # Первый запуск? Автоматическая установка зависимостей с поддержкой GPU:
 skill-seekers create --setup
 
-# Экспорт по назначению
-skill-seekers package output/django --target claude     # Claude AI навык
-skill-seekers package output/django --target langchain  # LangChain RAG
-skill-seekers package output/django --target cursor     # Cursor IDE контекст
+# Вики Confluence
+skill-seekers create --space-key TEAM --name wiki
+
+# Страницы Notion
+skill-seekers create --database-id ... --name docs
+
+# Экспорт чатов Slack/Discord
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
-**Полные примеры:**
-- [Claude AI навык](examples/claude-skill/) — навык для Claude Code
-- [LangChain RAG-конвейер](examples/langchain-rag-pipeline/) — QA-цепочка на основе Chroma
-- [Cursor IDE контекст](examples/cursor-react-skill/) — ИИ-программирование с учётом фреймворка
+### Экспорт куда угодно
+
+```bash
+# Упаковка для нескольких платформ
+for platform in claude gemini openai langchain; do
+  skill-seekers package output/django --target $platform
+done
+```
 
 ## Что такое Skill Seekers?
 
@@ -133,9 +211,24 @@ Skill Seekers — это **слой данных для ИИ-систем**, к�
 | **Векторные базы данных** | Предварительно отформатированные данные для загрузки | Pinecone, Chroma, Weaviate, FAISS |
 | **ИИ-помощники для кода** | Файлы контекста, которые IDE-ИИ читает автоматически | Cursor, Windsurf, Cline, Continue.dev |
 
+## 📚 Документация
+
+| Я хочу... | Читайте это |
+|-----------|-------------|
+| **Быстро начать** | [Быстрый старт](docs/getting-started/02-quick-start.md) — 3 команды до первого навыка |
+| **Понять концепции** | [Основные концепции](docs/user-guide/01-core-concepts.md) — как это работает |
+| **Сканировать источники** | [Руководство по сканированию](docs/user-guide/02-scraping.md) — все типы источников |
+| **Улучшать навыки** | [Руководство по улучшению](docs/user-guide/03-enhancement.md) — ИИ-улучшение |
+| **Экспортировать навыки** | [Руководство по упаковке](docs/user-guide/04-packaging.md) — экспорт на платформы |
+| **Найти команды** | [Справка по CLI](docs/reference/CLI_REFERENCE.md) — все 20 команд |
+| **Настроить** | [Формат конфигурации](docs/reference/CONFIG_FORMAT.md) — спецификация JSON |
+| **Решить проблемы** | [Устранение неполадок](docs/user-guide/06-troubleshooting.md) — типичные проблемы |
+
+**Полная документация:** [docs/README.md](docs/README.md)
+
 Skill Seekers заменяет дни ручной предобработки следующими шагами:
 
-1. **Сбор** — документация, репозитории GitHub, локальные кодовые базы, PDF, видео, Jupyter-ноутбуки, вики и более 18 типов источников
+1. **Сбор** — документация, репозитории GitHub, локальные кодовые базы, PDF, видео, Jupyter-ноутбуки, вики и более 10 других типов источников
 2. **Анализ** — глубокий AST-разбор, обнаружение паттернов, извлечение API
 3. **Структурирование** — категоризированные справочные файлы с метаданными
 4. **Улучшение** — генерация SKILL.md с помощью ИИ (Claude, Gemini или локально)
@@ -168,6 +261,7 @@ Skill Seekers заменяет дни ручной предобработки с
 ## Ключевые возможности
 
 ### 🌐 Сканирование документации
+- ✅ **Умное обнаружение SPA** — трёхуровневое обнаружение для JavaScript SPA-сайтов (sitemap.xml → llms.txt → рендеринг в безголовом браузере)
 - ✅ **Поддержка llms.txt** — автоматическое обнаружение и использование LLM-ready файлов документации (в 10 раз быстрее)
 - ✅ **Универсальный сканер** — работает с ЛЮБЫМ сайтом документации
 - ✅ **Умная категоризация** — автоматическая организация контента по темам
@@ -189,6 +283,7 @@ Skill Seekers заменяет дни ручной предобработки с
 - ✅ **ИИ-улучшение** — двухэтапное: очистка артефактов OCR + генерация отполированного SKILL.md
 - ✅ **Обрезка по времени** — извлечение определённых фрагментов с `--start-time` и `--end-time`
 - ✅ **Поддержка плейлистов** — пакетная обработка всех видео в плейлисте YouTube
+- ✅ **Резервный Vision API** — использование Claude Vision для OCR-кадров с низкой достоверностью
 
 ### 🐙 Анализ репозиториев GitHub
 - ✅ **Глубокий анализ кода** — AST-разбор для Python, JavaScript, TypeScript, Java, C++, Go
@@ -209,7 +304,7 @@ Skill Seekers заменяет дни ручной предобработки с
 - ✅ **Обратная совместимость** — устаревшие одноисточниковые конфигурации продолжают работать
 
 ### 🤖 Поддержка нескольких LLM-платформ
-- ✅ **12 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **12 LLM-платформ** — Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **Универсальное сканирование** — одна и та же документация для всех платформ
 - ✅ **Платформоспецифичная упаковка** — оптимизированные форматы для каждой LLM
 - ✅ **Экспорт одной командой** — флаг `--target` для выбора платформы
@@ -221,6 +316,7 @@ Skill Seekers заменяет дни ручной предобработки с
 | **Claude AI** | ZIP + YAML | ✅ Авто | ✅ Да | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ Авто | ✅ Да | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ Авто | ✅ Да | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ Авто | ✅ Да | MINIMAX_API_KEY | - |
 | **Универсальный Markdown** | ZIP | ❌ Вручную | ❌ Нет | - | - |
 
 ```bash
@@ -238,29 +334,62 @@ pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
 
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
+
 # Универсальный Markdown (универсальный экспорт)
 skill-seekers package output/react/ --target markdown
+# Используйте markdown-файлы напрямую в любой LLM
 ```
 
 <details>
-<summary>🔧 <strong>Переменные окружения для Claude-совместимых API (например, GLM-4.7)</strong></summary>
+<summary>🔧 <strong>Используйте собственного ИИ-провайдера (OpenAI-совместимые эндпоинты + подписки, кредиты Anthropic не нужны)</strong></summary>
 
-Skill Seekers поддерживает любой Claude-совместимый API-эндпоинт:
+Опциональный этап ИИ-**улучшения** (используется командами `create`, `scan` и `enhance`) **не** требует ключа Anthropic. Есть три способа его запустить:
+
+**1. Используйте подписку, за которую вы уже платите — вообще без API-кредитов (LOCAL-режим агента)**
+
+Skill Seekers может вызывать CLI кодинг-агента, в который вы уже вошли, поэтому улучшение работает на вашем существующем тарифе вместо оплачиваемых API-токенов:
 
 ```bash
-# Вариант 1: Официальный Anthropic API (по умолчанию)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Вариант 2: GLM-4.7 Claude-совместимый API
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# Все функции ИИ-улучшения будут использовать настроенный эндпоинт
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → ваш ChatGPT Plus
+skill-seekers create <source> --agent claude    # Claude Code      → ваш Claude Pro/Max
 ```
 
-**Примечание**: Установка `ANTHROPIC_BASE_URL` позволяет использовать любой Claude-совместимый API-эндпоинт, например GLM-4.7 или другие совместимые сервисы.
+Поддерживаемые агенты: `claude`, `codex`, `copilot`, `opencode`, `kimi` и `custom`
+(сочетайте `--agent custom` с `--agent-cmd "<your-cli> ..."`, чтобы использовать любой другой инструмент).
+
+**2. Любой OpenAI-совместимый провайдер (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM, …)**
+
+Все они предоставляют OpenAI-совместимый эндпоинт `/v1`. Направьте Skill Seekers на один из них с помощью трёх переменных окружения — он обнаруживает `OPENAI_API_KEY`, а OpenAI SDK автоматически учитывает `OPENAI_BASE_URL`:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # эндпоинт провайдера (см. таблицу)
+export OPENAI_MODEL="<a model that provider offers>"     # обязательно — модель по умолчанию gpt-4o в других местах не существует
+skill-seekers create <source>
+```
+
+| Провайдер    | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> Определение провайдера выбирает **первую** найденную переменную окружения с API-ключом (`ANTHROPIC_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`). Установите `SKILL_SEEKER_PROVIDER`, чтобы принудительно выбрать конкретного провайдера, или убедитесь, что ключи с более высоким приоритетом не заданы.
+
+**3. Claude-совместимые эндпоинты (например, GLM, прокси)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+Google Gemini (`GOOGLE_API_KEY`) и Kimi/Moonshot (`MOONSHOT_API_KEY`) также поддерживаются нативно. Полный список, включая переопределение моделей для каждого провайдера, см. в **[Справке по переменным окружения](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)**.
 
 </details>
 
@@ -271,6 +400,9 @@ pip install skill-seekers[gemini]
 
 # Установка с поддержкой OpenAI
 pip install skill-seekers[openai]
+
+# Установка с поддержкой MiniMax
+pip install skill-seekers[minimax]
 
 # Установка всех LLM-платформ
 pip install skill-seekers[all-llms]
@@ -340,7 +472,7 @@ skill-seekers package output/django --target markdown
 ```bash
 # Для любого ИИ-помощника (Cursor, Windsurf, Cline, Continue.dev)
 skill-seekers create --config configs/django.json
-skill-seekers package output/django --target claude
+skill-seekers package output/django --target claude  # или --target markdown
 
 # Скопируйте в свой проект (пример для Cursor)
 cp output/django-claude/SKILL.md my-project/.cursorrules
@@ -350,6 +482,10 @@ cp output/django-claude/SKILL.md my-project/.windsurf/rules/django.md
 
 # Или для Cline
 cp output/django-claude/SKILL.md my-project/.clinerules
+
+# Или для Continue.dev (HTTP-сервер)
+python examples/continue-dev-universal/context_server.py
+# Настройте в ~/.continue/config.json
 ```
 
 **Центр интеграций:** [Все интеграции с ИИ-системами](docs/integrations/INTEGRATIONS.md)
@@ -380,8 +516,16 @@ result = analyzer.analyze(
     fetch_github_metadata=True
 )
 
+# Доступ к потоку кода (C3.x-анализ)
 print(f"Паттерны проектирования: {len(result.code_analysis['c3_1_patterns'])}")
+print(f"Примеры из тестов: {result.code_analysis['c3_2_examples_count']}")
+
+# Доступ к потоку документации (документация репозитория)
+print(f"README: {result.github_docs['readme'][:100]}")
+
+# Доступ к потоку аналитики (метаданные GitHub)
 print(f"Звёзды: {result.github_insights['metadata']['stars']}")
+print(f"Типичные проблемы: {len(result.github_insights['common_problems'])}")
 ```
 
 **Полная документация**: [Сводка по реализации трёхпоточной архитектуры](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
@@ -408,16 +552,35 @@ skill-seekers create mycompany/private-repo --profile work
 
 # Режим CI/CD (быстрый отказ, без запросов)
 skill-seekers create owner/repo --non-interactive
+
+# Возобновление прерванной задачи
+skill-seekers resume --list
+skill-seekers resume github_react_20260117_143022
 ```
+
+**Описание стратегий лимита запросов:**
+- **prompt** (по умолчанию) — спросить, что делать при достижении лимита (подождать, переключиться, настроить токен, отменить)
+- **wait** — автоматически ждать с обратным отсчётом (учитывает тайм-аут)
+- **switch** — автоматически пробовать следующий доступный профиль (для настроек с несколькими аккаунтами)
+- **fail** — немедленно завершиться с понятной ошибкой (идеально для CI/CD)
 
 ### 🎯 Bootstrap-навык — самохостинг
 
-Генерация skill-seekers как навыка для Claude Code:
+Генерация skill-seekers как навыка для использования в вашем ИИ-агенте (Claude Code, Kimi, Codex и т. д.):
 
 ```bash
+# Генерация навыка
 ./scripts/bootstrap_skill.sh
+
+# Установка в Claude Code
 cp -r output/skill-seekers ~/.claude/skills/
 ```
+
+**Что вы получаете:**
+- ✅ **Полная документация навыка** — все CLI-команды и шаблоны использования
+- ✅ **Справка по CLI-командам** — каждый инструмент и его опции задокументированы
+- ✅ **Примеры быстрого старта** — типичные рабочие процессы и лучшие практики
+- ✅ **Автогенерируемая API-документация** — анализ кода, паттерны и примеры
 
 ### 🔐 Приватные репозитории конфигураций
 - ✅ **Git-источники конфигураций** — получение конфигураций из приватных/командных Git-репозиториев
@@ -425,6 +588,8 @@ cp -r output/skill-seekers ~/.claude/skills/
 - ✅ **Командная работа** — обмен пользовательскими конфигурациями в командах из 3–5 человек
 - ✅ **Корпоративная поддержка** — масштабирование до 500+ разработчиков
 - ✅ **Безопасная аутентификация** — токены через переменные окружения (GITHUB_TOKEN, GITLAB_TOKEN)
+- ✅ **Умное кэширование** — клонируйте один раз, обновления подтягиваются автоматически
+- ✅ **Офлайн-режим** — работа с кэшированными конфигурациями без подключения к сети
 
 ### 🤖 Анализ кодовой базы (C3.x)
 
@@ -433,12 +598,15 @@ cp -r output/skill-seekers ~/.claude/skills/
 - ✅ **7 типов паттернов** — база данных, API, логирование, кэш, почта, аутентификация, сервер
 - ✅ **ИИ-улучшение** — опциональный двухрежимный ИИ-анализ (API + LOCAL)
 - ✅ **Анализ безопасности** — обнаружение жёстко закодированных секретов и открытых учётных данных
+- ✅ **Автодокументирование** — генерация JSON + Markdown документации всех конфигураций
+- ✅ **MCP-интеграция** — инструмент `extract_config_patterns` с поддержкой улучшения
 
 **C3.3: ИИ-улучшенные пошаговые руководства**
 - ✅ **Полное ИИ-улучшение** — преобразование базовых руководств в профессиональные учебники
 - ✅ **5 автоматических улучшений** — описание шагов, устранение неполадок, предварительные требования, следующие шаги, сценарии использования
 - ✅ **Двухрежимная поддержка** — API-режим (Claude API) или LOCAL-режим (Claude Code CLI)
 - ✅ **Нулевые затраты в LOCAL-режиме** — БЕСПЛАТНОЕ улучшение с вашим планом Claude Code Max
+- ✅ **Качественное преобразование** — шаблоны на 75 строк → подробные руководства на 500+ строк
 
 **Использование:**
 ```bash
@@ -513,6 +681,15 @@ stages:
 - ✅ **Контрольные точки/Возобновление** — прогресс никогда не теряется при длительном сканировании
 - ✅ **Система кэширования** — сканируйте один раз, пересобирайте мгновенно
 
+### 🤖 Генерация навыков, независимая от агента
+- ✅ **Поддержка нескольких агентов** — генерация навыков для Claude, Kimi, Codex, Copilot, OpenCode или любого пользовательского агента через флаг `--agent`
+- ✅ **Пользовательские команды агентов** — используйте `--agent-cmd`, чтобы задать собственную CLI-команду агента для улучшения
+- ✅ **Универсальные флаги** — `--agent` и `--agent-cmd` доступны во всех командах (create, scrape, github, pdf и т. д.)
+
+### 📦 Конвейер маркетплейса
+- ✅ **Публикация в маркетплейсе** — публикация навыков в репозитории маркетплейса плагинов Claude Code
+- ✅ **Сквозной конвейер** — от источника документации до опубликованной записи в маркетплейсе
+
 ### ✅ Контроль качества
 - ✅ **Полное покрытие тестами** — 3 700+ тестов с обширным покрытием
 
@@ -583,34 +760,40 @@ skill-seekers install --config django --no-upload
 skill-seekers install --config react --dry-run
 ```
 
+**Время:** 20–45 минут всего | **Качество:** Готово к продакшену (9/10) | **Стоимость:** Бесплатно
+
 **Выполняемые фазы:**
 ```
 📥 ФАЗА 1: Получение конфигурации (если указано имя конфигурации)
 📖 ФАЗА 2: Сканирование документации
-✨ ФАЗА 3: ИИ-улучшение
+✨ ФАЗА 3: ИИ-улучшение (ОБЯЗАТЕЛЬНО — без возможности пропуска)
 📦 ФАЗА 4: Упаковка навыка
 ☁️  ФАЗА 5: Загрузка в Claude (опционально, требуется API Key)
 ```
+
+**Требования:**
+- Переменная окружения ANTHROPIC_API_KEY (для автозагрузки)
+- План Claude Code Max (для локального ИИ-улучшения) или используйте `--agent` для выбора другого ИИ-агента
 
 ---
 
 ## 📊 Матрица функций
 
-Skill Seekers поддерживает **12 LLM-платформ**, **18 типов источников** и полный паритет функций по всем целевым платформам.
+Skill Seekers поддерживает **12 LLM-платформ**, **8 RAG/векторных целей**, **18 типов источников** и полный паритет функций по всем целевым платформам.
 
-**Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+**Платформы:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, универсальный Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 **Типы источников:** Документация сайтов, репозитории GitHub, PDF, Word (.docx), EPUB, видео, локальные кодовые базы, Jupyter-ноутбуки, локальный HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom-ленты, man-страницы, вики Confluence, страницы Notion, экспорты чатов Slack/Discord
 
 Подробности см. в [Полной матрице функций](docs/reference/FEATURE_MATRIX.md).
 
 ### Быстрое сравнение платформ
 
-| Функция | Claude | Gemini | OpenAI | Markdown |
-|---------|--------|--------|--------|----------|
-| Формат | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| Загрузка | ✅ API | ✅ API | ✅ API | ❌ Вручную |
-| Улучшение | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ Нет |
-| Все режимы навыков | ✅ | ✅ | ✅ | ✅ |
+| Функция | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|---------|--------|--------|--------|---------|----------|
+| Формат | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| Загрузка | ✅ API | ✅ API | ✅ API | ✅ API | ❌ Вручную |
+| Улучшение | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M3 | ❌ Нет |
+| Все режимы навыков | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -627,6 +810,9 @@ skill-seekers create https://react.dev --name react
 
 # Асинхронный режим (в 3 раза быстрее)
 skill-seekers create --config configs/godot.json --async --workers 8
+
+# Использование конкретного ИИ-агента для улучшения
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### Извлечение из PDF
@@ -707,6 +893,7 @@ skill-seekers create django/django \
 ```bash
 # Использование готовых унифицированных конфигураций
 skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # Или создание унифицированной конфигурации
 cat > configs/myframework_unified.json << 'EOF'
@@ -771,15 +958,36 @@ graph LR
     C --> F[Организованные справочные файлы]
     D --> F
     F --> E
-    E --> G[Claude навык .zip]
-    G --> H[Загрузка в Claude AI]
+    E --> G[ИИ-навык .zip]
+    G --> H[Загрузка на ИИ-платформу]
 ```
 
-0. **Обнаружение llms.txt** — проверка наличия llms-full.txt, llms.txt, llms-small.txt
+0. **Обнаружение llms.txt** — проверка наличия llms-full.txt, llms.txt, llms-small.txt (часть умного обнаружения SPA)
 1. **Сканирование**: извлечение всех страниц из документации
 2. **Категоризация**: организация контента по темам (API, руководства, учебники и т.д.)
-3. **Улучшение**: ИИ анализирует документацию и создаёт всеобъемлющий SKILL.md с примерами
-4. **Упаковка**: объединение всего в готовый для Claude `.zip`-файл
+3. **Улучшение**: ИИ анализирует документацию и создаёт всеобъемлющий SKILL.md с примерами (поддерживает несколько агентов через `--agent`)
+4. **Упаковка**: объединение всего в готовый для платформы `.zip`-файл
+
+## Архитектура
+
+Система организована в **8 основных модулей** и **5 вспомогательных модулей** (всего ~200 классов):
+
+![Обзор пакетов](docs/UML/exports/00_package_overview.png)
+
+| Модуль | Назначение | Ключевые классы |
+|--------|------------|-----------------|
+| **CLICore** | Диспетчер команд в стиле Git | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
+| **Scrapers** | Извлечение из 18 типов источников | `DocToSkillConverter`, `DocumentSkillBuilder` (общий слой сборки), `UnifiedScraper` |
+| **Adaptors** | 20+ форматов выходных платформ | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
+| **Analysis** | Конвейер анализа кодовой базы C3.x | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 детекторов GoF |
+| **Enhancement** | ИИ-улучшение навыков через `AgentClient` | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Packaging** | Упаковка, загрузка, установка навыков | `PackageSkill`, `InstallAgent` |
+| **MCP** | FastMCP-сервер (40 инструментов) | `SkillSeekerMCPServer`, 10 модулей инструментов |
+| **Sync** | Обнаружение изменений документации | `ChangeDetector`, `SyncMonitor`, `Notifier` |
+
+Вспомогательные модули: **Parsers** (28 CLI-парсеров), **Storage** (S3/GCS/Azure), **Embedding** (векторы от нескольких провайдеров), **Benchmark** (производительность), **Utilities** (16 общих помощников).
+
+Полные UML-диаграммы: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | Проект StarUML: `docs/UML/skill_seekers.mdj` | HTML-справка по API: `docs/UML/html/`
 
 ## 📋 Предварительные требования
 
@@ -834,11 +1042,14 @@ skill-seekers package output/react/
 
 ## 🤖 Установка в ИИ-агенты
 
-Skill Seekers может автоматически устанавливать навыки в 18 ИИ-агентов для программирования.
+Skill Seekers может автоматически устанавливать навыки в 19 ИИ-агентов для программирования.
 
 ```bash
 # Установка в конкретный агент
 skill-seekers install-agent output/react/ --agent cursor
+
+# Установка в IBM Bob (проектная директория .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # Установка во все агенты сразу
 skill-seekers install-agent output/react/ --agent all
@@ -865,6 +1076,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | Проектный |
 | **Continue** | `~/.continue/skills/` | Глобальный |
 | **Kimi Code** | `~/.kimi/skills/` | Глобальный |
+| **IBM Bob** | `.bob/skills/` | Проектный |
 
 ---
 
@@ -899,7 +1111,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # Список всех пресетов
-skill-seekers create --list-configs
+# skill-seekers list-configs  # Недоступно в v3.7.0
 ```
 
 | Категория | Пресеты |
@@ -1040,6 +1252,55 @@ skill-seekers config --github
 
 ---
 
+## 🆕 Новое в v3.6.0
+
+### Предустановки рабочих процессов
+Управляйте глубиной анализа с помощью `--preset`:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick      # Быстрый, поверхностный
+skill-seekers create https://docs.react.dev/ --preset standard   # Сбалансированный (по умолчанию)
+skill-seekers create https://docs.react.dev/ --preset comprehensive # Глубокий, исчерпывающий
+```
+
+### Флаги жизненного цикла
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # Предпросмотр без сканирования
+skill-seekers create https://docs.react.dev/ --fresh      # Игнорировать кэш, полное пересканирование
+skill-seekers create https://docs.react.dev/ --resume     # Возобновить прерванную задачу
+skill-seekers create https://docs.react.dev/ --skip-scrape # Переупаковать существующий результат
+```
+
+### Проверка здоровья и утилиты
+```bash
+skill-seekers doctor                    # Диагностика установки и окружения
+skill-seekers sync-config               # Обнаружение отклонений конфигурации
+skill-seekers stream <source>           # Потоковое поглощение для больших документов
+skill-seekers update output/react/      # Инкрементальное обновление
+skill-seekers multilang <source>        # Генерация навыков на нескольких языках
+skill-seekers quality output/react/     # Отчёт о качестве (добавьте --threshold 7 для контроля: ненулевой код выхода ниже 7/10)
+```
+
+### Опции RAG-фрагментации (упаковка)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### Публикация в маркетплейсе
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### Дополнительные опциональные зависимости
+| Дополнение | Установка | Назначение |
+|------------|-----------|------------|
+| `browser` | `pip install "skill-seekers[browser]"` | Безголовый Playwright для SPA-сайтов |
+| `embedding` | `pip install "skill-seekers[embedding]"` | Поддержка сервера эмбеддингов |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` и т. д. | Загрузка в облачное хранилище |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | Комбинированные зависимости загрузки в векторные БД |
+
+---
+
 ## 📚 Документация
 
 ### Начало работы
@@ -1047,6 +1308,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** — Быстрый старт для опытных пользователей
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — Распространённые проблемы и решения
 - **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** — Краткая справка на одну страницу
+
+### Архитектура
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** — Обзор UML-архитектуры с 14 диаграммами
+- **[docs/UML/exports/](docs/UML/exports/)** — Экспорт диаграмм в PNG (обзор пакетов + 13 диаграмм классов)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** — Полная HTML-справка по API (все классы, операции, атрибуты)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** — Файл проекта StarUML (откройте в [StarUML](https://staruml.io/))
 
 ### Руководства
 - **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** — Работа с документами на 10K–40K+ страниц
@@ -1080,70 +1347,12 @@ skill-seekers config --github
 
 ---
 
-> **Примечание:** Следующие разделы взяты из английского README и ожидают полного перевода.
-> Для получения наиболее актуальной документации см. [README.md](../README.md).
+## 💛 Спонсоры
 
-## Архитектура
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-Skill Seekers использует модульную архитектуру, ориентированную на расширяемость:
-
-| Модуль | Назначение | Ключевые файлы |
-|--------|------------|----------------|
-| **CLI** | Интерфейс командной строки | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | Конвертеры типов источников | `src/skill_seekers/cli/*_scraper.py` (17 типов) |
-| **Adaptors** | Платформенно-специфичная упаковка | `src/skill_seekers/cli/adaptors/` (21 платформа) |
-| **Enhancement** | Обогащение на базе ИИ | `src/skill_seekers/cli/enhance_command.py` |
-| **MCP Server** | Протокол контекста модели | `src/skill_seekers/mcp/server_fastmcp.py` (40 инструментов) |
-
-## Сканирование проекта с помощью ИИ
-
-Автоматическое определение технологического стека проекта и создание одного конфигурационного файла на каждый фреймворк:
-
-```bash
-skill-seekers scan ./my-react-app --out ./configs/scanned/
-# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
-```
-
-## Генерация навыков, независимая от агента
-
-Skill Seekers генерирует одинаково высококачественный результат независимо от целевой платформы. Сканируйте один раз, упаковывайте везде.
-
-## Конвейер маркетплейса
-
-Упаковка и публикация навыков в маркетплейсе:
-
-```bash
-skill-seekers package output/react/ --marketplace --marketplace-category frontend
-```
-
-## Новое в v3.6.0
-
-### Предустановки рабочих процессов
-```bash
-skill-seekers create https://docs.react.dev/ --preset quick       # Быстрый
-skill-seekers create https://docs.react.dev/ --preset standard    # Сбалансированный
-skill-seekers create https://docs.react.dev/ --preset comprehensive  # Глубокий
-```
-
-### Флаги жизненного цикла
-```bash
-skill-seekers create <source> --dry-run      # Предпросмотр без сканирования
-skill-seekers create <source> --fresh        # Игнорировать кэш, полное пересканирование
-skill-seekers create <source> --resume       # Возобновить прерванную задачу
-skill-seekers create <source> --skip-scrape  # Переупаковать существующий результат
-```
-
-### Проверка здоровья и утилиты
-```bash
-skill-seekers doctor                 # Диагностика установки и окружения
-skill-seekers sync-config            # Обнаружение отклонений конфигурации
-skill-seekers stream <source>        # Потоковое поглощение для больших документов
-skill-seekers update output/react/   # Инкрементальное обновление
-skill-seekers multilang <source>     # Генерация навыков на нескольких языках
-skill-seekers quality output/react/  # Отчёт о качестве (добавьте --threshold 7 для контроля: ненулевой код выхода ниже 7/10)
-```
-
-### RAG-фрагментация (упаковка)
-```bash
-skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
-```
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — полномодальная, OpenAI-совместимая платформа ИИ-инференса. Skill Seekers поддерживает её как цель упаковки/улучшения через `--target atlas` с `ATLAS_API_KEY`.

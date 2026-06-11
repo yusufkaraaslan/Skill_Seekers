@@ -98,6 +98,7 @@ pip install skill-seekers[all-llms]
 # 仅安装特定平台
 pip install skill-seekers[gemini]      # Google Gemini
 pip install skill-seekers[openai]      # OpenAI
+pip install skill-seekers[minimax]     # MiniMax AI
 pip install skill-seekers[chroma]      # ChromaDB
 
 # 安装多个扩展

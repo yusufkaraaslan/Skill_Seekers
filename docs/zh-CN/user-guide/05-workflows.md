@@ -21,7 +21,7 @@
 
 ## 内置预设
 
-Skill Seekers 包含 5 个内置工作流预设：
+Skill Seekers 包含 6 个内置工作流预设：
 
 | 预设 | 阶段 | 适用于 |
 |--------|--------|----------|
@@ -30,6 +30,7 @@ Skill Seekers 包含 5 个内置工作流预设：
 | `security-focus` | 4 | 安全分析 |
 | `architecture-comprehensive` | 7 | 深度架构审查 |
 | `api-documentation` | 3 | API 文档重点 |
+| `complex-merge` | 3 | 将多种来源类型合并为统一技能 |
 
 ---
 
@@ -229,6 +230,36 @@ stages:
 ```bash
 skill-seekers create https://api.example.com/docs \
   --enhance-workflow api-documentation
+```
+
+---
+
+### Complex-Merge 工作流
+
+**阶段：** 3
+**用途：** 将多个异构来源合并为统一、连贯的技能
+
+```yaml
+stages:
+  - name: source-alignment
+    prompt: Align and deduplicate content from different source types...
+    
+  - name: cross-reference
+    prompt: Build cross-references between sources...
+    
+  - name: unified-synthesis
+    prompt: Synthesize a unified narrative from all sources...
+```
+
+**适用于：**
+- 多来源统一配置（文档 + GitHub + PDF + 视频）
+- 将文档与聊天记录或 wiki 页面合并
+- 任何由 3 种以上来源类型构建的技能
+
+**示例：**
+```bash
+skill-seekers create --config configs/multi-source.json \
+  --enhance-workflow complex-merge
 ```
 
 ---
@@ -530,6 +561,90 @@ skill-seekers create <source> \
 
 ---
 
+## 所有抓取器的工作流支持
+
+Skill Seekers 中**全部 18 种来源类型**均支持工作流：
+
+| 抓取器 | 命令 | 工作流支持 |
+|---------|---------|------------------|
+| 文档 | `scrape` | ✅ 完整支持 |
+| GitHub | `github` | ✅ 完整支持 |
+| 本地代码库 | `analyze` | ✅ 完整支持 |
+| PDF | `pdf` | ✅ 完整支持 |
+| Word | `word` | ✅ 完整支持 |
+| EPUB | `epub` | ✅ 完整支持 |
+| 视频 | `video` | ✅ 完整支持 |
+| Jupyter Notebook | `jupyter` | ✅ 完整支持 |
+| 本地 HTML | `html` | ✅ 完整支持 |
+| OpenAPI/Swagger | `openapi` | ✅ 完整支持 |
+| AsciiDoc | `asciidoc` | ✅ 完整支持 |
+| PowerPoint | `pptx` | ✅ 完整支持 |
+| RSS/Atom | `rss` | ✅ 完整支持 |
+| Man 手册页 | `manpage` | ✅ 完整支持 |
+| Confluence | `confluence` | ✅ 完整支持 |
+| Notion | `notion` | ✅ 完整支持 |
+| Slack/Discord | `chat` | ✅ 完整支持 |
+| 统一/多来源 | `unified` | ✅ 完整支持 |
+| Create（自动检测） | `create` | ✅ 完整支持 |
+
+### 在不同来源上使用工作流
+
+```bash
+# 文档网站
+skill-seekers create https://docs.example.com --enhance-workflow security-focus
+
+# GitHub 仓库
+skill-seekers create  owner/repo --enhance-workflow api-documentation
+
+# 本地代码库
+skill-seekers create ./my-project --enhance-workflow architecture-comprehensive
+
+# PDF 文档
+skill-seekers create --pdf manual.pdf --enhance-workflow minimal
+
+# 统一配置（多来源）
+skill-seekers create --config configs/multi-source.json --enhance-workflow security-focus
+
+# 自动检测来源类型
+skill-seekers create ./my-project --enhance-workflow security-focus
+```
+
+---
+
+## 配置文件中的工作流
+
+统一配置支持在顶层定义工作流：
+
+```json
+{
+  "name": "my-skill",
+  "description": "Complete skill with security enhancement",
+  "workflows": ["security-focus", "api-documentation"],
+  "workflow_stages": [
+    {
+      "name": "cleanup",
+      "prompt": "Remove boilerplate and standardize formatting"
+    }
+  ],
+  "workflow_vars": {
+    "focus_area": "performance",
+    "detail_level": "comprehensive"
+  },
+  "sources": [
+    {"type": "docs", "base_url": "https://docs.example.com/"}
+  ]
+}
+```
+
+**优先级：** CLI 标志会覆盖配置中的值
+
+```bash
+# 配置中是 security-focus，CLI 覆盖为 api-documentation
+skill-seekers create --config config.json --enhance-workflow api-documentation
+```
+
+---
+
 ## 总结
 
 | 方法 | 何时使用 |
@@ -538,6 +653,7 @@ skill-seekers create <source> \
 | **Security-Focus** | 安全敏感项目 |
 | **Architecture** | 大型框架、系统 |
 | **API-Docs** | API 框架、库 |
+| **Complex-Merge** | 多来源技能（3 种以上来源类型） |
 | **Custom** | 专门领域 |
 | **Chaining** | 需要多重视角 |
 

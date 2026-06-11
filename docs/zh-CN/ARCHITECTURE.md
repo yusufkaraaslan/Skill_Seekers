@@ -1,6 +1,6 @@
 # 文档架构
 
-> **Skill Seekers 文档的组织方式**
+> **Skill Seekers 文档的组织方式（v3.6.0 - 18 种来源类型）**
 
 ---
 
@@ -259,5 +259,5 @@ See [Contributing](../../CONTRIBUTING.md)
 ## 参见
 
 - [文档 README](README.md) - 导航中心
-- [贡献指南](../CONTRIBUTING.md) - 如何贡献
+- [贡献指南](../../CONTRIBUTING.md) - 如何贡献
 - [仓库 README](../README.md) - 项目概览

@@ -7,13 +7,14 @@
 
 ## 概述
 
-Skill Seekers 将文档、代码和内容转换为 AI 系统可以有效使用的**结构化知识资产**。
+Skill Seekers 将文档、代码和内容转换为 AI 系统可以有效使用的**结构化知识资产**。它支持 **18 种来源类型**，包括文档站点、GitHub 仓库、PDF、视频、笔记本、维基等等。
 
 ```
 原始内容 → Skill Seekers → AI 就绪的 Skill
      ↓                              ↓
-  (文档、代码、               (SKILL.md +
-   PDF、仓库)                  参考文件)
+  (文档、代码、PDF、          (SKILL.md +
+   视频、笔记本、              参考文件)
+   维基、订阅源等)
 ```
 
 ---
@@ -76,7 +77,7 @@ npm install my-framework
 
 ## 源类型
 
-Skill Seekers 支持四种类型的来源：
+Skill Seekers 支持 **17 种类型的来源**：
 
 ### 1. 文档网站
 
@@ -165,6 +166,157 @@ skill-seekers scan  ./my-project
 - 你自己的项目
 - 内部工具
 - 代码审查准备
+
+---
+
+### 5. Word 文档
+
+**类型：** Microsoft Word（.docx）文件
+
+**命令：**
+```bash
+skill-seekers create report.docx
+```
+
+---
+
+### 6. EPUB 电子书
+
+**类型：** EPUB 电子书文件
+
+**命令：**
+```bash
+skill-seekers create book.epub
+```
+
+---
+
+### 7. 视频
+
+**类型：** YouTube、Vimeo 或本地视频文件（转录 + 视觉分析）
+
+**命令：**
+```bash
+skill-seekers create https://www.youtube.com/watch?v=...
+skill-seekers create --video-url  https://www.youtube.com/watch?v=...
+```
+
+---
+
+### 8. Jupyter Notebook
+
+**类型：** 包含代码、markdown 和输出的 `.ipynb` 笔记本文件
+
+**命令：**
+```bash
+skill-seekers create analysis.ipynb
+skill-seekers create analysis.ipynb
+```
+
+---
+
+### 9. 本地 HTML 文件
+
+**类型：** 磁盘上的 HTML/HTM 文件
+
+**命令：**
+```bash
+skill-seekers create page.html
+skill-seekers create page.html
+```
+
+---
+
+### 10. OpenAPI/Swagger 规范
+
+**类型：** OpenAPI YAML/JSON 规范
+
+**命令：**
+```bash
+skill-seekers create api-spec.yaml
+skill-seekers create api-spec.yaml
+```
+
+---
+
+### 11. AsciiDoc
+
+**类型：** AsciiDoc（.adoc、.asciidoc）文件
+
+**命令：**
+```bash
+skill-seekers create guide.adoc
+skill-seekers create guide.adoc
+```
+
+---
+
+### 12. PowerPoint 演示文稿
+
+**类型：** Microsoft PowerPoint（.pptx）文件
+
+**命令：**
+```bash
+skill-seekers create slides.pptx
+skill-seekers create slides.pptx
+```
+
+---
+
+### 13. RSS/Atom 订阅
+
+**类型：** RSS 或 Atom 订阅源文件
+
+**命令：**
+```bash
+skill-seekers create feed.rss
+skill-seekers create feed.rss
+```
+
+---
+
+### 14. Man 手册页
+
+**类型：** Unix 手册页（.1 至 .8、.man）
+
+**命令：**
+```bash
+skill-seekers create grep.1
+skill-seekers create grep.1
+```
+
+---
+
+### 15. Confluence 维基
+
+**类型：** Atlassian Confluence 空间（通过 API 或导出）
+
+**命令：**
+```bash
+skill-seekers create --conf-base-url https://wiki.example.com --space-key DEV
+```
+
+---
+
+### 16. Notion 工作区
+
+**类型：** Notion 页面和数据库（通过 API 或导出）
+
+**命令：**
+```bash
+skill-seekers create --database-id  abc123
+```
+
+---
+
+### 17. Slack/Discord 聊天
+
+**类型：** 聊天平台导出或 API 访问
+
+**命令：**
+```bash
+skill-seekers create --chat-export-path  slack-export/
+```
 
 ---
 

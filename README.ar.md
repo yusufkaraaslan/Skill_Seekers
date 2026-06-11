@@ -10,7 +10,7 @@
 >
 > تمت ترجمة هذا المستند تلقائيًا بواسطة الذكاء الاصطناعي. على الرغم من حرصنا على جودة الترجمة، قد تتضمن تعبيرات غير دقيقة.
 
-[![الإصدار](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![الإصدار](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![الرخصة: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![تكامل MCP](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
@@ -25,7 +25,7 @@
 [![متابعة على Twitter](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![نجوم GitHub](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 طبقة البيانات لأنظمة الذكاء الاصطناعي.** يحوّل Skill Seekers مواقع التوثيق ومستودعات GitHub وملفات PDF والفيديوهات ودفاتر Jupyter والويكي وأكثر من 17 نوعًا من المصادر إلى أصول معرفية منظمة — جاهزة لتشغيل مهارات الذكاء الاصطناعي (Claude وGemini وOpenAI) وخطوط أنابيب RAG (مثل LangChain وLlamaIndex وPinecone) ومساعدات البرمجة بالذكاء الاصطناعي (مثل Cursor وWindsurf وCline) في دقائق بدلاً من ساعات.
+**🧠 طبقة البيانات لأنظمة الذكاء الاصطناعي.** يحوّل Skill Seekers مواقع التوثيق ومستودعات GitHub وملفات PDF والفيديوهات ودفاتر Jupyter والويكي و18 نوعًا من المصادر إلى أصول معرفية منظمة — جاهزة لتشغيل مهارات الذكاء الاصطناعي (Claude وGemini وOpenAI) وخطوط أنابيب RAG (مثل LangChain وLlamaIndex وPinecone) ومساعدات البرمجة بالذكاء الاصطناعي (مثل Cursor وWindsurf وCline) في دقائق بدلاً من ساعات.
 
 > 🌐 **[زيارة SkillSeekersWeb.com](https://skillseekersweb.com/)** - تصفح أكثر من 24 إعدادًا مسبقًا، وشارك إعداداتك، واطّلع على التوثيق الكامل!
 
@@ -61,6 +61,7 @@ skill-seekers package output/react --target claude      # → مهارة Claude 
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
 skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → مجلد مهارة IBM Bob
 ```
 
 ### المخرجات التي يتم بناؤها
@@ -74,8 +75,9 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **LlamaIndex TextNodes** | `--target llama-index` | محركات الاستعلام ومحركات المحادثة |
 | **Haystack Documents** | `--target haystack` | خطوط أنابيب RAG للمؤسسات |
 | **Pinecone جاهز** (Markdown) | `--target markdown` | رفع المتجهات |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | قواعد بيانات المتجهات المحلية |
-| **Cursor** `.cursorrules` | `--target claude` → نسخ | سياق الذكاء الاصطناعي في Cursor IDE |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | قواعد بيانات المتجهات المحلية |
+| **مهارة IBM Bob** (مجلد) | `--target ibm-bob` | مهارات IBM Bob على مستوى المشروع/العام |
+| **Cursor** `.cursorrules` | `--target markdown` → نسخ SKILL.md | ملف `.cursorrules` في Cursor IDE |
 | **Windsurf / Cline / Continue** | `--target claude` → نسخ | VS Code وIntelliJ وVim |
 
 ### لماذا هذا مهم
@@ -84,47 +86,118 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **جودة مهارات الذكاء الاصطناعي** — ملفات SKILL.md بأكثر من 500 سطر تتضمن أمثلة وأنماط وأدلة
 - 📊 **تقسيم جاهز لـ RAG** — تقسيم ذكي يحافظ على كتل الكود ويصون السياق
 - 🎬 **الفيديو** — استخراج الكود والنصوص والمعرفة المنظمة من يوتيوب والفيديوهات المحلية
-- 🔄 **متعدد المصادر** — دمج 17 نوعًا من المصادر (توثيق وGitHub وPDF وفيديو ودفاتر Jupyter وويكي والمزيد) في أصل معرفي واحد
-- 🌐 **تحضير واحد لكل الأهداف** — تصدير نفس الأصل إلى 16 منصة دون إعادة الاستخراج
+- 🔄 **متعدد المصادر** — دمج 18 نوعًا من المصادر (توثيق وGitHub وPDF وفيديو ودفاتر Jupyter وويكي والمزيد) في أصل معرفي واحد
+- 🌐 **تحضير واحد لكل الأهداف** — تصدير نفس الأصل إلى 21 منصة دون إعادة الاستخراج
 - ✅ **مُختبر بإحكام** — أكثر من 3,700 اختبارًا و24 إعدادًا مسبقًا للأطر البرمجية، جاهز للإنتاج
 
-## البدء السريع
+## 🚀 البدء السريع (3 أوامر)
 
 ```bash
+# 1. التثبيت
 pip install skill-seekers
 
-# بناء مهارة ذكاء اصطناعي من أي مصدر
-skill-seekers create https://docs.django.com/    # موقع توثيق
-skill-seekers create django/django               # مستودع GitHub
-skill-seekers create ./my-codebase               # مشروع محلي
-skill-seekers create manual.pdf                  # ملف PDF
-skill-seekers create manual.docx                 # مستند Word
-skill-seekers create book.epub                   # كتاب إلكتروني EPUB
-skill-seekers create notebook.ipynb              # دفتر Jupyter
-skill-seekers create page.html                   # ملف HTML محلي
-skill-seekers create api-spec.yaml               # مواصفات OpenAPI/Swagger
-skill-seekers create guide.adoc                  # مستند AsciiDoc
-skill-seekers create slides.pptx                 # عرض PowerPoint
+# 2. إنشاء مهارة من أي مصدر
+skill-seekers create https://docs.django.com/
+
+# 3. التعبئة لمنصة الذكاء الاصطناعي الخاصة بك
+skill-seekers package output/django --target claude
+```
+
+**هذا كل شيء!** أصبح لديك الآن `output/django-claude.zip` جاهزًا للاستخدام.
+
+```bash
+# استخدام وكيل ذكاء اصطناعي مختلف للتعزيز (الافتراضي: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
+
+### 🛰️ مسح المشروع المدعوم بالذكاء الاصطناعي (جديد)
+
+وجّه أمر `scan` إلى أي مشروع وسيقرأ وكيل الذكاء الاصطناعي ملفات التعريف وREADME وDockerfile/CI وعينات من استيرادات الكود المصدري — ثم يُصدر إعدادًا واحدًا لكل إطار برمجي مكتشف بالإضافة إلى `<project>-codebase.json` لكودك الخاص. يثبّت الإصدار المكتشف بحيث يبلّغ إعادة التشغيل عن ترقيات الإصدار:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# ثم ابنِ أيًا منها
+skill-seekers create ./configs/scanned/react.json
+```
+
+إذا لم يكن للاكتشاف إعداد مسبق موجود، يولّد الذكاء الاصطناعي إعدادًا جديدًا؛ وعند الخروج يمكنك اختياريًا نشره في [سجل المجتمع](https://github.com/yusufkaraaslan/skill-seekers-configs).
+
+### مصادر أخرى (18 نوعًا مدعومًا)
+
+```bash
+# مستودع GitHub
+skill-seekers create facebook/react
+
+# مشروع محلي
+skill-seekers create ./my-project
+
+# مستند PDF
+skill-seekers create manual.pdf
+
+# مستند Word
+skill-seekers create report.docx
+
+# كتاب إلكتروني EPUB
+skill-seekers create book.epub
+
+# دفتر Jupyter
+skill-seekers create notebook.ipynb
+
+# مواصفات OpenAPI
+skill-seekers create openapi.yaml
+
+# عرض PowerPoint
+skill-seekers create presentation.pptx
+
+# مستند AsciiDoc
+skill-seekers create guide.adoc
+
+# ملف HTML محلي (يُكتشف تلقائيًا حسب الامتداد)
+skill-seekers create page.html
+
+# مجلد كامل من ملفات HTML (يُكتشف تلقائيًا للمجلدات التي يغلب عليها HTML)
+skill-seekers create ./mirror_output/site/
+
+# فرض وضع HTML على مجلد مختلط/مليء بالكود
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
+
+# خلاصة RSS/Atom
+skill-seekers create feed.rss
+
+# صفحة Man
+skill-seekers create curl.1
 
 # الفيديو (YouTube أو Vimeo أو ملف محلي — يتطلب skill-seekers[video])
 skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # أول مرة؟ تثبيت تلقائي للمكونات المرئية المتوافقة مع GPU:
 skill-seekers create --setup
 
-# التصدير حسب الاستخدام
-skill-seekers package output/django --target claude     # مهارة Claude AI
-skill-seekers package output/django --target langchain  # LangChain RAG
-skill-seekers package output/django --target cursor     # سياق Cursor IDE
+# ويكي Confluence
+skill-seekers create --space-key TEAM --name wiki
+
+# صفحات Notion
+skill-seekers create --database-id ... --name docs
+
+# تصدير محادثات Slack/Discord
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
-**أمثلة كاملة:**
-- [مهارة Claude AI](examples/claude-skill/) - مهارة لـ Claude Code
-- [خط أنابيب LangChain RAG](examples/langchain-rag-pipeline/) - سلسلة أسئلة وأجوبة مبنية على Chroma
-- [سياق Cursor IDE](examples/cursor-react-skill/) - برمجة ذكية مدركة للإطار البرمجي
+### التصدير إلى كل مكان
+
+```bash
+# التعبئة لعدة منصات
+for platform in claude gemini openai langchain; do
+  skill-seekers package output/django --target $platform
+done
+```
 
 ## ما هو Skill Seekers؟
 
-Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الاصطناعي** التي تحوّل 17 نوعًا من المصادر — مواقع التوثيق ومستودعات GitHub وملفات PDF والفيديوهات ودفاتر Jupyter ومستندات Word/EPUB/AsciiDoc ومواصفات OpenAPI/Swagger وعروض PowerPoint وخلاصات RSS/Atom وصفحات Man وويكي Confluence وصفحات Notion ومحادثات Slack/Discord والمزيد — إلى أصول معرفية منظمة لكل منصة ذكاء اصطناعي:
+Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الاصطناعي** التي تحوّل 18 نوعًا من المصادر — مواقع التوثيق ومستودعات GitHub وملفات PDF والفيديوهات ودفاتر Jupyter ومستندات Word/EPUB/AsciiDoc ومواصفات OpenAPI وعروض PowerPoint وخلاصات RSS وصفحات Man وويكي Confluence وصفحات Notion ومحادثات Slack/Discord والمزيد — إلى أصول معرفية منظمة لكل منصة ذكاء اصطناعي:
 
 | حالة الاستخدام | ما تحصل عليه | أمثلة |
 |---------------|-------------|-------|
@@ -133,9 +206,24 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 | **قواعد بيانات المتجهات** | بيانات مُنسقة مسبقًا جاهزة للرفع | Pinecone وChroma وWeaviate وFAISS |
 | **مساعدات البرمجة بالذكاء الاصطناعي** | ملفات سياق يقرأها الذكاء الاصطناعي في بيئة التطوير تلقائيًا | Cursor وWindsurf وCline وContinue.dev |
 
-يحل Skill Seekers محل أيام التحضير اليدوي من خلال:
+## 📚 التوثيق
 
-1. **الاستيعاب** — التوثيق ومستودعات GitHub وقواعد الكود المحلية وملفات PDF والفيديوهات ودفاتر Jupyter والويكي وأكثر من 17 نوعًا من المصادر
+| أريد أن... | اقرأ هذا |
+|--------------|-----------|
+| **أبدأ بسرعة** | [البدء السريع](docs/getting-started/02-quick-start.md) - 3 أوامر لأول مهارة |
+| **أفهم المفاهيم** | [المفاهيم الأساسية](docs/user-guide/01-core-concepts.md) - كيف يعمل |
+| **أستخرج المصادر** | [دليل الاستخراج](docs/user-guide/02-scraping.md) - جميع أنواع المصادر |
+| **أعزز المهارات** | [دليل التعزيز](docs/user-guide/03-enhancement.md) - التعزيز بالذكاء الاصطناعي |
+| **أصدّر المهارات** | [دليل التعبئة](docs/user-guide/04-packaging.md) - التصدير للمنصات |
+| **أبحث عن الأوامر** | [مرجع CLI](docs/reference/CLI_REFERENCE.md) - جميع الأوامر العشرين |
+| **أقوم بالإعداد** | [تنسيق الإعداد](docs/reference/CONFIG_FORMAT.md) - مواصفات JSON |
+| **أحل المشاكل** | [استكشاف الأخطاء](docs/user-guide/06-troubleshooting.md) - المشاكل الشائعة |
+
+**التوثيق الكامل:** [docs/README.md](docs/README.md)
+
+بدلاً من قضاء أيام في المعالجة اليدوية المسبقة، يقوم Skill Seekers بـ:
+
+1. **الاستيعاب** — التوثيق ومستودعات GitHub وقواعد الكود المحلية وملفات PDF والفيديوهات ودفاتر Jupyter والويكي وأكثر من 10 أنواع أخرى من المصادر
 2. **التحليل** — تحليل AST العميق واكتشاف الأنماط واستخراج واجهات API
 3. **الهيكلة** — ملفات مرجعية مُصنفة مع بيانات وصفية
 4. **التعزيز** — توليد SKILL.md مدعوم بالذكاء الاصطناعي (Claude أو Gemini أو محلي)
@@ -156,7 +244,7 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 - 🤖 **بيانات جاهزة لـ RAG** — مستندات LangChain `Documents` مُقسمة مسبقًا وLlamaIndex `TextNodes` وHaystack `Documents`
 - 🚀 **أسرع بنسبة 99%** — أيام من المعالجة المسبقة → 15–45 دقيقة
 - 📊 **بيانات وصفية ذكية** — فئات ومصادر وأنواع → دقة استرجاع أعلى
-- 🔄 **متعدد المصادر** — دمج التوثيق + GitHub + PDF في خط أنابيب واحد
+- 🔄 **متعدد المصادر** — دمج التوثيق + GitHub + PDF + الفيديو في خط أنابيب واحد
 - 🌐 **مستقل عن المنصة** — التصدير إلى أي قاعدة بيانات متجهات أو إطار عمل دون إعادة الاستخراج
 
 ### لمستخدمي مساعدات البرمجة بالذكاء الاصطناعي
@@ -168,6 +256,7 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 ## الميزات الرئيسية
 
 ### 🌐 استخراج التوثيق
+- ✅ **اكتشاف ذكي لمواقع SPA** - اكتشاف ثلاثي الطبقات لمواقع JavaScript SPA (sitemap.xml → llms.txt → عرض المتصفح بدون واجهة)
 - ✅ **دعم llms.txt** - اكتشاف واستخدام ملفات التوثيق الجاهزة لنماذج اللغة تلقائيًا (أسرع 10 مرات)
 - ✅ **مُستخرج عام** - يعمل مع أي موقع توثيق
 - ✅ **تصنيف ذكي** - تنظيم المحتوى حسب الموضوع تلقائيًا
@@ -189,6 +278,7 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 - ✅ **تعزيز بالذكاء الاصطناعي** - مرحلتان: تنظيف مخرجات OCR + توليد SKILL.md مصقول
 - ✅ **قص زمني** - استخراج أقسام محددة باستخدام `--start-time` و`--end-time`
 - ✅ **دعم قوائم التشغيل** - معالجة جميع فيديوهات قائمة تشغيل YouTube دفعة واحدة
+- ✅ **احتياطي Vision API** - استخدام Claude Vision لإطارات OCR منخفضة الثقة
 
 ### 🐙 تحليل مستودعات GitHub
 - ✅ **تحليل كود عميق** - تحليل AST لـ Python وJavaScript وTypeScript وJava وC++ وGo
@@ -209,7 +299,7 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 - ✅ **التوافق مع الإصدارات السابقة** - إعدادات المصدر الواحد القديمة تعمل بشكل طبيعي
 
 ### 🤖 دعم منصات LLM المتعددة
-- ✅ **12 منصة LLM** - Claude AI وGoogle Gemini وOpenAI ChatGPT وMiniMax AI وMarkdown العام وOpenCode وKimi وDeepSeek وQwen وOpenRouter وTogether AI وFireworks AI
+- ✅ **12 منصة LLM** - Claude AI وGoogle Gemini وOpenAI ChatGPT وMiniMax AI وMarkdown العام وOpenCode وKimi (Moonshot AI) وDeepSeek AI وQwen (Alibaba) وOpenRouter وTogether AI وFireworks AI
 - ✅ **استخراج عام** - نفس التوثيق يعمل لجميع المنصات
 - ✅ **تعبئة خاصة بكل منصة** - تنسيقات محسّنة لكل نموذج لغوي
 - ✅ **تصدير بأمر واحد** - علامة `--target` لاختيار المنصة
@@ -221,6 +311,7 @@ Skill Seekers هو **طبقة البيانات لأنظمة الذكاء الا�
 | **Claude AI** | ZIP + YAML | ✅ تلقائي | ✅ نعم | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ تلقائي | ✅ نعم | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ تلقائي | ✅ نعم | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ تلقائي | ✅ نعم | MINIMAX_API_KEY | - |
 | **Markdown العام** | ZIP | ❌ يدوي | ❌ لا | - | - |
 
 ```bash
@@ -238,29 +329,62 @@ pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
 
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
+
 # Markdown العام (تصدير عام)
 skill-seekers package output/react/ --target markdown
+# استخدم ملفات Markdown مباشرة في أي نموذج لغوي
 ```
 
 <details>
-<summary>🔧 <strong>متغيرات البيئة لواجهات API المتوافقة مع Claude (مثل GLM-4.7)</strong></summary>
+<summary>🔧 <strong>استخدم مزوّد الذكاء الاصطناعي الخاص بك (نقاط نهاية متوافقة مع OpenAI + اشتراكات، بدون رصيد Anthropic)</strong></summary>
 
-يدعم Skill Seekers أي نقطة نهاية API متوافقة مع Claude:
+خطوة **التعزيز** الاختيارية بالذكاء الاصطناعي (المستخدمة في `create` و`scan` و`enhance`) **لا** تتطلب مفتاح Anthropic. لديك ثلاث طرق لتشغيلها:
+
+**1. استخدم اشتراكًا تدفع ثمنه بالفعل — بدون رصيد API على الإطلاق (وضع الوكيل المحلي LOCAL)**
+
+يمكن لـ Skill Seekers استدعاء واجهة سطر أوامر لوكيل برمجة سجّلت الدخول إليه بالفعل، بحيث يعمل التعزيز على خطتك الحالية بدلاً من رموز API المدفوعة حسب الاستخدام:
 
 ```bash
-# الخيار 1: واجهة Anthropic الرسمية (الافتراضي)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# الخيار 2: GLM-4.7 واجهة API متوافقة مع Claude
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# جميع ميزات التعزيز بالذكاء الاصطناعي ستستخدم نقطة النهاية المُعدّة
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → اشتراكك في ChatGPT Plus
+skill-seekers create <source> --agent claude    # Claude Code      → اشتراكك في Claude Pro/Max
 ```
 
-**ملاحظة**: تعيين `ANTHROPIC_BASE_URL` يتيح لك استخدام أي نقطة نهاية API متوافقة مع Claude، مثل GLM-4.7 أو خدمات أخرى متوافقة.
+الوكلاء المدعومون: `claude` و`codex` و`copilot` و`opencode` و`kimi` و`custom`
+(اجمع بين `--agent custom` و`--agent-cmd "<your-cli> ..."` لتشغيل أي أداة أخرى).
+
+**2. أي مزوّد متوافق مع OpenAI (OpenRouter وGroq وCerebras وMistral وNVIDIA NIM وغيرها)**
+
+كل هؤلاء يوفرون نقطة نهاية `/v1` متوافقة مع OpenAI. وجّه Skill Seekers إلى أحدها بثلاثة متغيرات بيئة — فهو يكتشف `OPENAI_API_KEY`، وتحترم مكتبة OpenAI SDK متغير `OPENAI_BASE_URL` تلقائيًا:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # نقطة نهاية المزوّد (انظر الجدول)
+export OPENAI_MODEL="<a model that provider offers>"     # مطلوب — النموذج الافتراضي gpt-4o غير موجود لدى المزوّدين الآخرين
+skill-seekers create <source>
+```
+
+| المزوّد      | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> يختار اكتشاف المزوّد **أول** متغير بيئة لمفتاح API يجده (`ANTHROPIC_API_KEY` ← `GOOGLE_API_KEY` ← `OPENAI_API_KEY` ← `MOONSHOT_API_KEY`). عيّن `SKILL_SEEKER_PROVIDER` لفرض مزوّد محدد، أو تأكد من أن المفاتيح ذات الأولوية الأعلى غير معيّنة.
+
+**3. نقاط النهاية المتوافقة مع Claude (مثل GLM والوسطاء)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+كما يتوفر دعم أصلي لـ Google Gemini (`GOOGLE_API_KEY`) وKimi/Moonshot (`MOONSHOT_API_KEY`). انظر **[مرجع متغيرات البيئة](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)** للقائمة الكاملة، بما في ذلك تجاوزات النماذج لكل مزوّد.
 
 </details>
 
@@ -271,6 +395,9 @@ pip install skill-seekers[gemini]
 
 # تثبيت دعم OpenAI
 pip install skill-seekers[openai]
+
+# تثبيت دعم MiniMax
+pip install skill-seekers[minimax]
 
 # تثبيت جميع منصات LLM
 pip install skill-seekers[all-llms]
@@ -318,21 +445,25 @@ skill-seekers package output/django --target markdown
 
 - ✅ **Cursor IDE** - توليد `.cursorrules` لاقتراحات الكود المدعومة بالذكاء الاصطناعي
   - مناسب لـ: توليد كود خاص بالإطار البرمجي وأنماط متسقة
+  - يعمل مع: Cursor IDE (نسخة معدلة من VS Code)
   - دليل: [تكامل Cursor](docs/integrations/CURSOR.md)
   - مثال: [مهارة Cursor React](examples/cursor-react-skill/)
 
 - ✅ **Windsurf** - تخصيص سياق مساعد Windsurf AI باستخدام `.windsurfrules`
   - مناسب لـ: مساعدة الذكاء الاصطناعي المدمجة في بيئة التطوير والبرمجة التدفقية
+  - يعمل مع: Windsurf IDE من Codeium
   - دليل: [تكامل Windsurf](docs/integrations/WINDSURF.md)
   - مثال: [سياق Windsurf FastAPI](examples/windsurf-fastapi-context/)
 
 - ✅ **Cline (VS Code)** - موجهات النظام + MCP لوكيل VS Code
-  - مناسب لـ: توليد الكود الذكي في VS Code
+  - مناسب لـ: توليد الكود الوكيلي في VS Code
+  - يعمل مع: إضافة Cline لـ VS Code
   - دليل: [تكامل Cline](docs/integrations/CLINE.md)
   - مثال: [مساعد Cline Django](examples/cline-django-assistant/)
 
 - ✅ **Continue.dev** - خوادم سياق مستقلة عن بيئة التطوير
   - مناسب لـ: بيئات تطوير متعددة (VS Code وJetBrains وVim) ومزودي LLM مخصصين
+  - يعمل مع: أي بيئة تطوير تحتوي على إضافة Continue.dev
   - دليل: [تكامل Continue](docs/integrations/CONTINUE_DEV.md)
   - مثال: [سياق Continue العام](examples/continue-dev-universal/)
 
@@ -340,7 +471,7 @@ skill-seekers package output/django --target markdown
 ```bash
 # لأي مساعد برمجة بالذكاء الاصطناعي (Cursor وWindsurf وCline وContinue.dev)
 skill-seekers create --config configs/django.json
-skill-seekers package output/django --target claude
+skill-seekers package output/django --target claude  # أو --target markdown
 
 # نسخ إلى مشروعك (مثال لـ Cursor)
 cp output/django-claude/SKILL.md my-project/.cursorrules
@@ -350,6 +481,10 @@ cp output/django-claude/SKILL.md my-project/.windsurf/rules/django.md
 
 # أو لـ Cline
 cp output/django-claude/SKILL.md my-project/.clinerules
+
+# أو لـ Continue.dev (خادم HTTP)
+python examples/continue-dev-universal/context_server.py
+# قم بالإعداد في ~/.continue/config.json
 ```
 
 **مركز التكامل:** [جميع تكاملات أنظمة الذكاء الاصطناعي](docs/integrations/INTEGRATIONS.md)
@@ -380,8 +515,16 @@ result = analyzer.analyze(
     fetch_github_metadata=True
 )
 
+# الوصول إلى تدفق الكود (تحليل C3.x)
 print(f"أنماط التصميم: {len(result.code_analysis['c3_1_patterns'])}")
+print(f"أمثلة الاختبارات: {result.code_analysis['c3_2_examples_count']}")
+
+# الوصول إلى تدفق التوثيق (توثيق المستودع)
+print(f"README: {result.github_docs['readme'][:100]}")
+
+# الوصول إلى تدفق الرؤى (بيانات GitHub الوصفية)
 print(f"النجوم: {result.github_insights['metadata']['stars']}")
+print(f"المشاكل الشائعة: {len(result.github_insights['common_problems'])}")
 ```
 
 **التوثيق الكامل**: [ملخص تنفيذ التدفقات الثلاثة](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
@@ -390,13 +533,27 @@ print(f"النجوم: {result.github_insights['metadata']['stars']}")
 - ✅ **نظام إعداد متعدد الرموز** - إدارة حسابات GitHub متعددة (شخصي وعمل ومفتوح المصدر)
   - تخزين آمن للإعدادات في `~/.config/skill-seekers/config.json` (صلاحيات 600)
   - استراتيجيات حد المعدل لكل ملف تعريف: `prompt` و`wait` و`switch` و`fail`
+  - مهلة قابلة للتخصيص لكل ملف تعريف (الافتراضي: 30 دقيقة، تمنع الانتظار غير المحدود)
   - سلسلة احتياطية ذكية: معامل CLI → متغير بيئة → ملف إعداد → موجه
+  - إدارة مفاتيح API لـ Claude وGemini وOpenAI
 - ✅ **معالج إعداد تفاعلي** - واجهة طرفية جميلة للإعداد السهل
+  - تكامل المتصفح لإنشاء الرموز (يفتح GitHub وغيره تلقائيًا)
+  - التحقق من صحة الرموز واختبار الاتصال
+  - عرض مرئي للحالة مع ترميز لوني
 - ✅ **معالج حدود المعدل الذكي** - لا مزيد من الانتظار غير المحدود!
-  - عد تنازلي في الوقت الفعلي مع تبديل تلقائي للملفات التعريفية
+  - تحذير مسبق بشأن حدود المعدل (60/ساعة مقابل 5000/ساعة)
+  - اكتشاف فوري من استجابات GitHub API
+  - مؤقتات عد تنازلي مباشرة مع التقدم
+  - تبديل تلقائي للملفات التعريفية عند بلوغ حد المعدل
   - أربع استراتيجيات: prompt (استفسار) وwait (عد تنازلي) وswitch (تبديل) وfail (إيقاف)
 - ✅ **الاستئناف** - متابعة المهام المتوقفة
-- ✅ **دعم CI/CD** - علامة `--non-interactive` للأتمتة
+  - حفظ تلقائي للتقدم بفواصل قابلة للتخصيص (الافتراضي: 60 ثانية)
+  - عرض جميع المهام القابلة للاستئناف مع تفاصيل التقدم
+  - تنظيف تلقائي للمهام القديمة (الافتراضي: 7 أيام)
+- ✅ **دعم CI/CD** - وضع غير تفاعلي للأتمتة
+  - علامة `--non-interactive` للفشل السريع بدون موجهات
+  - علامة `--profile` لاختيار حساب GitHub محدد
+  - رسائل خطأ واضحة لسجلات خطوط الأنابيب
 
 **إعداد سريع:**
 ```bash
@@ -408,23 +565,44 @@ skill-seekers create mycompany/private-repo --profile work
 
 # وضع CI/CD (فشل سريع، بدون موجهات)
 skill-seekers create owner/repo --non-interactive
+
+# استئناف مهمة متوقفة
+skill-seekers resume --list
+skill-seekers resume github_react_20260117_143022
 ```
+
+**شرح استراتيجيات حد المعدل:**
+- **prompt** (الافتراضي) - السؤال عما يجب فعله عند بلوغ حد المعدل (انتظار أو تبديل أو إعداد رمز أو إلغاء)
+- **wait** - انتظار تلقائي مع عد تنازلي (يحترم المهلة)
+- **switch** - تجربة الملف التعريفي المتاح التالي تلقائيًا (لإعدادات الحسابات المتعددة)
+- **fail** - فشل فوري مع خطأ واضح (مثالي لـ CI/CD)
 
 ### 🎯 مهارة Bootstrap - الاستضافة الذاتية
 
-توليد skill-seekers نفسه كمهارة Claude Code لاستخدامه داخل Claude:
+توليد skill-seekers نفسه كمهارة لاستخدامها داخل وكيل الذكاء الاصطناعي الخاص بك (Claude Code وKimi وCodex وغيرها):
 
 ```bash
+# توليد المهارة
 ./scripts/bootstrap_skill.sh
+
+# التثبيت في Claude Code
 cp -r output/skill-seekers ~/.claude/skills/
 ```
+
+**ما تحصل عليه:**
+- ✅ **توثيق كامل للمهارة** - جميع أوامر CLI وأنماط الاستخدام
+- ✅ **مرجع أوامر CLI** - كل أداة وخياراتها موثقة
+- ✅ **أمثلة البدء السريع** - سير العمل الشائعة وأفضل الممارسات
+- ✅ **توثيق API مولّد تلقائيًا** - تحليل الكود والأنماط والأمثلة
 
 ### 🔐 مستودعات الإعدادات الخاصة
 - ✅ **مصادر إعداد مبنية على Git** - جلب الإعدادات من مستودعات Git خاصة/فرقية
 - ✅ **إدارة متعددة المصادر** - تسجيل عدد غير محدود من مستودعات GitHub وGitLab وBitbucket
 - ✅ **تعاون الفرق** - مشاركة الإعدادات المخصصة بين فرق من 3–5 أشخاص
-- ✅ **دعم المؤسسات** - التوسع إلى أكثر من 500 مطور
+- ✅ **دعم المؤسسات** - التوسع إلى أكثر من 500 مطور مع حل قائم على الأولوية
 - ✅ **مصادقة آمنة** - رموز متغيرات البيئة (GITHUB_TOKEN وGITLAB_TOKEN)
+- ✅ **تخزين مؤقت ذكي** - استنساخ مرة واحدة وسحب التحديثات تلقائيًا
+- ✅ **وضع عدم الاتصال** - العمل بالإعدادات المخزنة مؤقتًا دون اتصال
 
 ### 🤖 تحليل قاعدة الكود (C3.x)
 
@@ -432,13 +610,18 @@ cp -r output/skill-seekers ~/.claude/skills/
 - ✅ **9 تنسيقات إعداد** - JSON وYAML وTOML وENV وINI وPython وJavaScript وDockerfile وDocker Compose
 - ✅ **7 أنواع أنماط** - قاعدة بيانات وAPI وتسجيل وذاكرة مؤقتة وبريد إلكتروني ومصادقة وإعدادات الخادم
 - ✅ **تعزيز بالذكاء الاصطناعي** - تحليل ذكاء اصطناعي اختياري بوضعين (API + LOCAL)
-- ✅ **تحليل أمني** - اكتشاف المفاتيح المضمنة في الكود وبيانات الاعتماد المكشوفة
+  - يشرح ما يفعله كل إعداد
+  - يقترح أفضل الممارسات والتحسينات
+  - **تحليل أمني** - اكتشاف المفاتيح المضمنة في الكود وبيانات الاعتماد المكشوفة
+- ✅ **توثيق تلقائي** - توليد توثيق JSON + Markdown لجميع الإعدادات
+- ✅ **تكامل MCP** - أداة `extract_config_patterns` مع دعم التعزيز
 
 **C3.3: أدلة إرشادية معززة بالذكاء الاصطناعي**
 - ✅ **تعزيز شامل بالذكاء الاصطناعي** - تحويل الأدلة الأساسية إلى دروس احترافية
 - ✅ **5 تحسينات تلقائية** - وصف الخطوات واستكشاف الأخطاء والمتطلبات المسبقة والخطوات التالية وحالات الاستخدام
 - ✅ **دعم الوضعين** - وضع API (واجهة Claude) أو وضع LOCAL (Claude Code CLI)
 - ✅ **بدون تكلفة في الوضع المحلي** - تعزيز مجاني باستخدام خطة Claude Code Max
+- ✅ **تحول في الجودة** - قوالب من 75 سطرًا → أدلة شاملة بأكثر من 500 سطر
 
 **الاستخدام:**
 ```bash
@@ -513,6 +696,15 @@ stages:
 - ✅ **نقاط التفتيش/الاستئناف** - لا فقدان للتقدم في عمليات الاستخراج الطويلة
 - ✅ **نظام التخزين المؤقت** - استخراج مرة واحدة وإعادة البناء فورًا
 
+### 🤖 إنشاء المهارات المستقلة عن الوكيل
+- ✅ **دعم وكلاء متعددين** - توليد مهارات لـ Claude وKimi وCodex وCopilot وOpenCode أو أي وكيل مخصص عبر علامة `--agent`
+- ✅ **أوامر وكيل مخصصة** - استخدم `--agent-cmd` لتحديد أمر CLI لوكيل مخصص للتعزيز
+- ✅ **علامات عامة** - `--agent` و`--agent-cmd` متاحتان في جميع الأوامر (create وscrape وgithub وpdf وغيرها)
+
+### 📦 خط أنابيب السوق
+- ✅ **النشر في السوق** - نشر المهارات في مستودعات سوق إضافات Claude Code
+- ✅ **خط أنابيب شامل** - من مصدر التوثيق إلى إدخال منشور في السوق
+
 ### ✅ ضمان الجودة
 - ✅ **اختبار كامل** - أكثر من 3,700 اختبارًا بتغطية شاملة
 
@@ -547,7 +739,7 @@ skill-seekers-setup
 | `pip install skill-seekers[gemini]` | + دعم Google Gemini |
 | `pip install skill-seekers[openai]` | + دعم OpenAI ChatGPT |
 | `pip install skill-seekers[all-llms]` | + جميع منصات LLM |
-| `pip install skill-seekers[mcp]` | + خادم MCP |
+| `pip install skill-seekers[mcp]` | + خادم MCP لـ Claude Code وCursor وغيرهما |
 | `pip install skill-seekers[video]` | + استخراج نصوص وبيانات YouTube/Vimeo |
 | `pip install skill-seekers[video-full]` | + نسخ Whisper + استخراج الإطارات المرئية |
 | `pip install skill-seekers[jupyter]` | + دعم دفاتر Jupyter |
@@ -583,34 +775,40 @@ skill-seekers install --config django --no-upload
 skill-seekers install --config react --dry-run
 ```
 
+**الوقت:** 20–45 دقيقة إجمالاً | **الجودة:** جاهز للإنتاج (9/10) | **التكلفة:** مجاني
+
 **المراحل المنفذة:**
 ```
 📥 المرحلة 1: جلب الإعداد (إذا تم توفير اسم إعداد)
 📖 المرحلة 2: استخراج التوثيق
-✨ المرحلة 3: تعزيز بالذكاء الاصطناعي
+✨ المرحلة 3: تعزيز بالذكاء الاصطناعي (إلزامي - لا يمكن تخطيه)
 📦 المرحلة 4: تعبئة المهارة
 ☁️  المرحلة 5: الرفع إلى Claude (اختياري، يتطلب API Key)
 ```
+
+**المتطلبات:**
+- متغير البيئة ANTHROPIC_API_KEY (للرفع التلقائي)
+- خطة Claude Code Max (للتعزيز المحلي بالذكاء الاصطناعي)، أو استخدم `--agent` لاختيار وكيل ذكاء اصطناعي مختلف
 
 ---
 
 ## 📊 مصفوفة الميزات
 
-يدعم Skill Seekers **12 منصة LLM** و**17 نوعًا من المصادر** مع تكافؤ كامل في الميزات عبر جميع الأهداف.
+يدعم Skill Seekers **12 منصة LLM** و**8 أهداف RAG/متجهات** و**18 نوعًا من المصادر** مع تكافؤ كامل في الميزات عبر جميع الأهداف.
 
-**المنصات:** Claude AI وGoogle Gemini وOpenAI ChatGPT وMiniMax AI وMarkdown العام وOpenCode وKimi وDeepSeek وQwen وOpenRouter وTogether AI وFireworks AI
+**المنصات:** Claude AI وGoogle Gemini وOpenAI ChatGPT وMiniMax AI وMarkdown العام وOpenCode وKimi (Moonshot AI) وDeepSeek AI وQwen (Alibaba) وOpenRouter وTogether AI وFireworks AI
 **أنواع المصادر:** مواقع التوثيق ومستودعات GitHub وPDF وWord (.docx) وEPUB والفيديو وقواعد الكود المحلية ودفاتر Jupyter وHTML المحلي وOpenAPI/Swagger وAsciiDoc وPowerPoint (.pptx) وخلاصات RSS/Atom وصفحات Man وويكي Confluence وصفحات Notion ومحادثات Slack/Discord
 
 انظر [مصفوفة الميزات الكاملة](docs/reference/FEATURE_MATRIX.md) لدعم المنصات والميزات بالتفصيل.
 
 ### مقارنة سريعة بين المنصات
 
-| الميزة | Claude | Gemini | OpenAI | Markdown |
-|--------|--------|--------|--------|----------|
-| التنسيق | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| الرفع | ✅ API | ✅ API | ✅ API | ❌ يدوي |
-| التعزيز | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ لا يوجد |
-| جميع أوضاع المهارات | ✅ | ✅ | ✅ | ✅ |
+| الميزة | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|--------|--------|--------|--------|---------|----------|
+| التنسيق | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| الرفع | ✅ API | ✅ API | ✅ API | ✅ API | ❌ يدوي |
+| التعزيز | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M3 | ❌ لا يوجد |
+| جميع أوضاع المهارات | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -627,6 +825,9 @@ skill-seekers create https://react.dev --name react
 
 # الوضع غير المتزامن (أسرع 3 مرات)
 skill-seekers create --config configs/godot.json --async --workers 8
+
+# استخدام وكيل ذكاء اصطناعي محدد للتعزيز
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### استخراج PDF
@@ -707,6 +908,7 @@ skill-seekers create django/django \
 ```bash
 # استخدام الإعدادات الموحدة الموجودة
 skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # أو إنشاء إعداد موحد
 cat > configs/myframework_unified.json << 'EOF'
@@ -744,7 +946,8 @@ skill-seekers create --config configs/myframework_unified.json
 **مشاركة الإعدادات المخصصة عبر الفرق باستخدام مستودعات Git خاصة:**
 
 ```bash
-# استخدام أدوات MCP لتسجيل مستودع الفريق الخاص
+# الخيار 1: استخدام أدوات MCP (موصى به)
+# تسجيل مستودع الفريق الخاص
 add_config_source(
     name="team",
     git_url="https://github.com/mycompany/skill-configs.git",
@@ -771,15 +974,36 @@ graph LR
     C --> F[مراجع منظمة]
     D --> F
     F --> E
-    E --> G[مهارة Claude .zip]
-    G --> H[الرفع إلى Claude AI]
+    E --> G[مهارة ذكاء اصطناعي .zip]
+    G --> H[الرفع إلى منصة الذكاء الاصطناعي]
 ```
 
-0. **اكتشاف llms.txt** - التحقق أولاً من llms-full.txt وllms.txt وllms-small.txt
+0. **اكتشاف llms.txt** - التحقق أولاً من llms-full.txt وllms.txt وllms-small.txt (جزء من الاكتشاف الذكي لمواقع SPA)
 1. **الاستخراج**: سحب جميع الصفحات من التوثيق
 2. **التصنيف**: تنظيم المحتوى حسب المواضيع (API وأدلة ودروس وغيرها)
-3. **التعزيز**: يحلل الذكاء الاصطناعي التوثيق وينشئ SKILL.md شاملاً مع أمثلة
-4. **التعبئة**: تجميع كل شيء في ملف `.zip` جاهز لـ Claude
+3. **التعزيز**: يحلل الذكاء الاصطناعي التوثيق وينشئ SKILL.md شاملاً مع أمثلة (يدعم وكلاء متعددين عبر `--agent`)
+4. **التعبئة**: تجميع كل شيء في ملف `.zip` جاهز للمنصة
+
+## البنية المعمارية
+
+يتكون النظام من **8 وحدات أساسية** و**5 وحدات مساعدة** (حوالي 200 صنف إجمالاً):
+
+![نظرة عامة على الحزم](docs/UML/exports/00_package_overview.png)
+
+| الوحدة | الغرض | الأصناف الرئيسية |
+|--------|-------|-----------------|
+| **CLICore** | مُوزّع أوامر بأسلوب Git | `CLIDispatcher` و`SourceDetector` و`CreateCommand` |
+| **Scrapers** | مستخرجات 18 نوعًا من المصادر | `DocToSkillConverter` و`DocumentSkillBuilder` (طبقة بناء مشتركة) و`UnifiedScraper` |
+| **Adaptors** | أكثر من 20 تنسيق منصة إخراج | `SkillAdaptor` (ABC) و`ClaudeAdaptor` و`LangChainAdaptor` |
+| **Analysis** | خط أنابيب تحليل قاعدة الكود C3.x | `UnifiedCodebaseAnalyzer` و`PatternRecognizer` و10 كاشفات GoF |
+| **Enhancement** | تحسين المهارات بالذكاء الاصطناعي عبر `AgentClient` | `AgentClient` و`AIEnhancer` و`UnifiedEnhancer` و`WorkflowEngine` |
+| **Packaging** | تعبئة المهارات ورفعها وتثبيتها | `PackageSkill` و`InstallAgent` |
+| **MCP** | خادم FastMCP (40 أداة) | `SkillSeekerMCPServer` و10 وحدات أدوات |
+| **Sync** | اكتشاف تغييرات التوثيق | `ChangeDetector` و`SyncMonitor` و`Notifier` |
+
+الوحدات المساعدة: **Parsers** (28 مُحلل CLI) و**Storage** (S3/GCS/Azure) و**Embedding** (متجهات متعددة المزودين) و**Benchmark** (الأداء) و**Utilities** (16 مساعدًا مشتركًا).
+
+مخططات UML الكاملة: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | مشروع StarUML: `docs/UML/skill_seekers.mdj` | مرجع HTML API: `docs/UML/html/`
 
 ## 📋 المتطلبات المسبقة
 
@@ -834,11 +1058,14 @@ skill-seekers package output/react/
 
 ## 🤖 التثبيت في وكلاء الذكاء الاصطناعي
 
-يمكن لـ Skill Seekers تثبيت المهارات تلقائيًا في 18 وكيل برمجة بالذكاء الاصطناعي.
+يمكن لـ Skill Seekers تثبيت المهارات تلقائيًا في 19 وكيل برمجة بالذكاء الاصطناعي.
 
 ```bash
 # التثبيت في وكيل محدد
 skill-seekers install-agent output/react/ --agent cursor
+
+# التثبيت في IBM Bob (محلي على مستوى المشروع .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # التثبيت في جميع الوكلاء دفعة واحدة
 skill-seekers install-agent output/react/ --agent all
@@ -865,6 +1092,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | مشروع |
 | **Continue** | `~/.continue/skills/` | عام |
 | **Kimi Code** | `~/.kimi/skills/` | عام |
+| **IBM Bob** | `.bob/skills/` | مشروع |
 
 ---
 
@@ -883,7 +1111,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**جميع الأدوات الـ 26:**
+**جميع الأدوات الأربعين المتاحة:**
 - **أساسية (9):** `list_configs` و`generate_config` و`validate_config` و`estimate_pages` و`scrape_docs` و`package_skill` و`upload_skill` و`enhance_skill` و`install_skill`
 - **موسعة (10):** `scrape_github` و`scrape_pdf` و`unified_scrape` و`merge_sources` و`detect_conflicts` و`add_config_source` و`fetch_config` و`list_config_sources` و`remove_config_source` و`split_config`
 - **قواعد بيانات المتجهات (4):** `export_to_chroma` و`export_to_weaviate` و`export_to_faiss` و`export_to_qdrant`
@@ -899,7 +1127,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # عرض جميع الإعدادات المسبقة
-skill-seekers create --list-configs
+# skill-seekers list-configs  # غير متاح في v3.7.0
 ```
 
 | الفئة | الإعدادات المسبقة |
@@ -1040,6 +1268,55 @@ skill-seekers config --github
 
 ---
 
+## 🆕 الجديد في v3.6.0
+
+### الإعدادات المسبقة لسير العمل
+تحكم في عمق التحليل باستخدام `--preset`:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick       # سريع، سطحي
+skill-seekers create https://docs.react.dev/ --preset standard    # متوازن (الافتراضي)
+skill-seekers create https://docs.react.dev/ --preset comprehensive  # عميق وشامل
+```
+
+### أعلام دورة الحياة
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # معاينة بدون استخراج
+skill-seekers create https://docs.react.dev/ --fresh      # تجاهل ذاكرة التخزين المؤقت، إعادة استخراج كاملة
+skill-seekers create https://docs.react.dev/ --resume     # استئناف المهمة المقاطعة
+skill-seekers create https://docs.react.dev/ --skip-scrape # إعادة تعبئة الناتج الموجود
+```
+
+### فحص الصحة والأدوات المساعدة
+```bash
+skill-seekers doctor                    # تشخيص التثبيت والبيئة
+skill-seekers sync-config               # كشف انحراف التكوين
+skill-seekers stream <source>           # الاستهلاك المتدفق للمستندات الكبيرة
+skill-seekers update output/react/      # التحديث التزايدي
+skill-seekers multilang <source>        # إنشاء مهارات متعددة اللغات
+skill-seekers quality output/react/     # تقرير الجودة (أضف --threshold 7 لفرض حد أدنى: رمز خروج غير صفري عند أقل من 7/10)
+```
+
+### خيارات تقسيم RAG (التعبئة)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### النشر في السوق
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### تبعيات اختيارية إضافية
+| الإضافة | التثبيت | الغرض |
+|---------|---------|-------|
+| `browser` | `pip install "skill-seekers[browser]"` | Playwright بدون واجهة لمواقع SPA |
+| `embedding` | `pip install "skill-seekers[embedding]"` | دعم خادم التضمينات |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` وغيرها | الرفع إلى التخزين السحابي |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | تبعيات الرفع المجمعة لقواعد بيانات المتجهات |
+
+---
+
 ## 📚 التوثيق
 
 ### أدلة البدء
@@ -1047,6 +1324,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - بدء سريع للمستخدمين ذوي الخبرة
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - المشاكل الشائعة وحلولها
 - **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - ورقة مرجعية سريعة
+
+### البنية المعمارية
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - نظرة عامة على بنية UML مع 14 مخططًا
+- **[docs/UML/exports/](docs/UML/exports/)** - تصديرات مخططات PNG (نظرة عامة على الحزم + 13 مخطط أصناف)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - مرجع HTML API كامل (جميع الأصناف والعمليات والسمات)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - ملف مشروع StarUML (افتحه باستخدام [StarUML](https://staruml.io/))
 
 ### الأدلة
 - **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - معالجة أكثر من 10 آلاف–40 ألف صفحة
@@ -1080,70 +1363,12 @@ skill-seekers config --github
 
 ---
 
-> **ملاحظة:** الأقسام التالية مأخوذة من README الإنجليزي وفي انتظار الترجمة الكاملة.
-> للحصول على أحدث الوثائق، راجع [README.md](../README.md).
+## 💛 الرعاة
 
-## البنية المعمارية
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-يستخدم Skill Seekers بنية معمارية معيارية مصممة للتوسع:
-
-| الوحدة | الغرض | الملفات الرئيسية |
-|--------|-------|-----------------|
-| **CLI** | واجهة سطر الأوامر | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | محولات أنواع المصادر | `src/skill_seekers/cli/*_scraper.py` (17 نوعًا) |
-| **Adaptors** | التعبئة الخاصة بالمنصة | `src/skill_seekers/cli/adaptors/` (21 منصة) |
-| **Enhancement** | الإثراء المدعوم بالذكاء الاصطناعي | `src/skill_seekers/cli/enhance_command.py` |
-| **MCP Server** | بروتوكول سياق النموذج | `src/skill_seekers/mcp/server_fastmcp.py` (40 أداة) |
-
-## مسح المشروع المدعوم بالذكاء الاصطناعي
-
-اكتشاف مكدس التقنيات لمشروع تلقائيًا وإصدار ملف تهيئة واحد لكل إطار عمل:
-
-```bash
-skill-seekers scan ./my-react-app --out ./configs/scanned/
-# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
-```
-
-## إنشاء المهارات المستقلة عن الوكيل
-
-يُنشئ Skill Seekers نفس الناتج عالي الجودة بغض النظر عن المنصة المستهدفة. امسح مرة واحدة، وقم بالتعبئة في كل مكان.
-
-## خط أنابيب السوق
-
-قم بتعبئة المهارات ونشرها في السوق:
-
-```bash
-skill-seekers package output/react/ --marketplace --marketplace-category frontend
-```
-
-## الجديد في v3.6.0
-
-### الإعدادات المسبقة لسير العمل
-```bash
-skill-seekers create https://docs.react.dev/ --preset quick       # سريع
-skill-seekers create https://docs.react.dev/ --preset standard    # متوازن
-skill-seekers create https://docs.react.dev/ --preset comprehensive  # عميق
-```
-
-### أعلام دورة الحياة
-```bash
-skill-seekers create <source> --dry-run      # معاينة بدون استخراج
-skill-seekers create <source> --fresh        # تجاهل ذاكرة التخزين المؤقت، إعادة استخراج كاملة
-skill-seekers create <source> --resume       # استئناف المهمة المقاطعة
-skill-seekers create <source> --skip-scrape  # إعادة تعبئة الناتج الموجود
-```
-
-### فحص الصحة والأدوات المساعدة
-```bash
-skill-seekers doctor                 # تشخيص التثبيت والبيئة
-skill-seekers sync-config            # كشف انحراف التكوين
-skill-seekers stream <source>        # الاستهلاك المتدفق للمستندات الكبيرة
-skill-seekers update output/react/   # التحديث التزايدي
-skill-seekers multilang <source>     # إنشاء مهارات متعددة اللغات
-skill-seekers quality output/react/  # تقرير الجودة (أضف --threshold 7 لفرض حد أدنى: رمز خروج غير صفري عند أقل من 7/10)
-```
-
-### تقسيم RAG (التعبئة)
-```bash
-skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
-```
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — منصة استدلال ذكاء اصطناعي كاملة الوسائط ومتوافقة مع OpenAI. يدعمها Skill Seekers كهدف للتعبئة/التعزيز عبر `--target atlas` مع `ATLAS_API_KEY`.
