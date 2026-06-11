@@ -373,7 +373,7 @@ class TestScrapePdf:
         init_config = mock_cls.call_args[0][0]
         assert init_config["pdf_path"] == pdf_path
 
-    def test_extract_pdf_called(self, tmp_path, monkeypatch):
+    def test_extract_called(self, tmp_path, monkeypatch):
         scraper = _make_scraper(tmp_path=tmp_path)
         source = {"type": "pdf", "path": str(tmp_path / "doc.pdf")}
 
@@ -382,7 +382,7 @@ class TestScrapePdf:
         with patch("skill_seekers.cli.unified_scraper.shutil.copy"):
             scraper._scrape_pdf(source)
 
-        mock_inst.extract_pdf.assert_called_once()
+        mock_inst.extract.assert_called_once()
 
     def test_scraped_data_appended_with_pages(self, tmp_path, monkeypatch):
         scraper = _make_scraper(tmp_path=tmp_path)
@@ -411,6 +411,107 @@ class TestScrapePdf:
             scraper._scrape_pdf(source)
 
         assert scraper._source_counters["pdf"] == 1
+
+
+# ===========================================================================
+# 4b. _scrape_with_converter() shared engine (Phase 4 dispatch refactor)
+# ===========================================================================
+
+
+class TestScrapeWithConverterEngine:
+    """The shared engine routes mechanical types through get_converter()."""
+
+    def _mock_pptx_converter(self, monkeypatch, tmp_path, slides=None):
+        """Patch PptxToSkillConverter (and its dep check) with a fake data_file."""
+        if slides is None:
+            slides = [{"slide": 1, "content": "Intro"}]
+
+        data_file = tmp_path / "pptx_data.json"
+        data_file.write_text(json.dumps({"slides": slides}))
+
+        mock_cls = MagicMock()
+        mock_instance = MagicMock()
+        mock_instance.data_file = str(data_file)
+        mock_cls.return_value = mock_instance
+
+        monkeypatch.setattr("skill_seekers.cli.pptx_scraper.PptxToSkillConverter", mock_cls)
+        # Keep the test hermetic: get_converter() runs the optional-dep check
+        # for pptx, which would fail when python-pptx isn't installed.
+        monkeypatch.setattr("skill_seekers.cli.pptx_scraper._check_pptx_deps", lambda: None)
+        return mock_cls, mock_instance
+
+    def _make_pptx_scraper(self, tmp_path):
+        scraper = _make_scraper(tmp_path=tmp_path)
+        scraper.scraped_data["pptx"] = []
+        scraper._source_counters["pptx"] = 0
+        return scraper
+
+    def test_unknown_source_type_warns_and_continues(self, monkeypatch, caplog):
+        """An unknown type logs a warning and later sources still run."""
+        import logging
+
+        scraper = _make_scraper()
+        scraper.config["sources"] = [
+            {"type": "unsupported_xyz"},
+            {"type": "pdf", "path": "/tmp/a.pdf"},
+        ]
+        calls = {"pdf": 0}
+        monkeypatch.setattr(
+            scraper, "_scrape_pdf", lambda _s: calls.__setitem__("pdf", calls["pdf"] + 1)
+        )
+
+        with caplog.at_level(logging.WARNING, logger="skill_seekers.cli.unified_scraper"):
+            count = scraper.scrape_all_sources()
+
+        assert "Unknown source type: unsupported_xyz" in caplog.text
+        assert calls["pdf"] == 1
+        assert count == 0  # warning path appends nothing
+
+    def test_pptx_routes_through_get_converter_and_extract(self, tmp_path, monkeypatch):
+        """A mechanical type is built via get_converter() and uses public extract()."""
+        scraper = self._make_pptx_scraper(tmp_path)
+        pptx_path = str(tmp_path / "deck.pptx")
+        source = {"type": "pptx", "path": pptx_path}
+
+        slides = [{"slide": 1, "content": "A"}, {"slide": 2, "content": "B"}]
+        mock_cls, mock_inst = self._mock_pptx_converter(monkeypatch, tmp_path, slides=slides)
+
+        with patch("skill_seekers.cli.unified_scraper.shutil.copy"):
+            scraper._scrape_pptx(source)
+
+        # get_converter() instantiated the registered class with the built config
+        mock_cls.assert_called_once()
+        init_config = mock_cls.call_args[0][0]
+        assert init_config["name"] == "test_unified_pptx_0_deck"
+        assert init_config["pptx_path"] == pptx_path
+
+        # Public extract() is used (not the legacy extract_pptx())
+        mock_inst.extract.assert_called_once()
+        mock_inst.extract_pptx.assert_not_called()
+
+        # Exact record keys are preserved
+        assert len(scraper.scraped_data["pptx"]) == 1
+        entry = scraper.scraped_data["pptx"][0]
+        assert set(entry.keys()) == {"pptx_path", "pptx_id", "idx", "data", "data_file"}
+        assert entry["pptx_path"] == pptx_path
+        assert entry["pptx_id"] == "deck"
+        assert entry["idx"] == 0
+        assert entry["data"]["slides"] == slides
+        assert entry["data_file"].endswith("pptx_data_0_deck.json")
+        assert scraper._source_counters["pptx"] == 1
+
+    def test_engine_still_calls_build_skill(self, tmp_path, monkeypatch):
+        """The standalone sub-skill build must survive the refactor (the unified
+        build consumes sub-skill references from the cache)."""
+        scraper = self._make_pptx_scraper(tmp_path)
+        source = {"type": "pptx", "path": str(tmp_path / "deck.pptx")}
+
+        _, mock_inst = self._mock_pptx_converter(monkeypatch, tmp_path)
+
+        with patch("skill_seekers.cli.unified_scraper.shutil.copy"):
+            scraper._scrape_pptx(source)
+
+        mock_inst.build_skill.assert_called_once()
 
 
 # ===========================================================================

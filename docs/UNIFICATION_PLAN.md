@@ -12,7 +12,7 @@
 | 1 — CLI drift & preset bugs | **done** (2026-06-11) | `refactor/phase-1-quick-fixes` |
 | 2 — DocumentSkillBuilder | **done** (2026-06-11) | `refactor/phase-2-document-skill-builder` |
 | 3 — Enhancement consolidation | **done** (2026-06-11; 3.1 deferred) | `refactor/phase-3-enhancement-consolidation` |
-| 4 — UnifiedScraper conformance | pending | |
+| 4 — UnifiedScraper conformance | **done** (2026-06-11; 4.1 deferred) | `refactor/phase-3-enhancement-consolidation` (same branch) |
 | 5 — Config / dispatch / MCP platform | pending | |
 
 Phase 1 notes: all 5 parser drifts fixed + a programmatic drift-guard test
@@ -137,6 +137,32 @@ Vision: AgentClient is the ONLY AI transport.
 4. Collapse hierarchies: unified_enhancer.py is canonical; delete
    ai_enhancer.py duplicates; merge guide_enhancer.py.
 5. All 6 SKILL.md-enhancement entry points call SkillMarkdownEnhancer.
+
+### Phase 4 results (2026-06-11)
+
+- `scrape_all_sources()` dispatches via a class-level SOURCE_DISPATCH table
+  (was a 17-branch if/elif).
+- `_scrape_with_converter()` is the shared engine for the 13 mechanical
+  source types (pdf, word, epub, jupyter, html, openapi, asciidoc, pptx,
+  confluence, notion, rss, manpage, chat): get_converter() + PUBLIC
+  converter.extract() + data-file load + cache copy + record append +
+  standalone sub-skill build (kept — the unified build consumes sub-skill
+  references from the cache). Thin per-type wrappers own only id
+  resolution, config keys, and record keys. unified_scraper.py −280 lines.
+- `_scrape_video` uses the public extract() (which now returns the result).
+- documentation / github / local stay bespoke WITH comments explaining why
+  (function-based scrape_documentation + ExecutionContext override;
+  clone/C3.x/dual-write; function-based analyze_codebase).
+
+Deferred to **Phase 4.1**:
+- run() template-method conformance (move phases into extract()/build_skill()
+  and use base run()) — run()'s orchestration, error strings, and arg
+  handling are pinned by tests; needs its own careful pass.
+- Config-dict constructor so get_converter() can build UnifiedScraper
+  (removes the create_command/scraping_tools special-cases).
+- Bring GitHubToSkillConverter / UnifiedSkillBuilder into the hierarchy.
+- Wrap documentation/local in converter-shaped adapters so they join the
+  engine.
 
 ## Phase 4 — UnifiedScraper conformance (medium)
 

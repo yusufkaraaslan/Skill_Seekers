@@ -357,8 +357,12 @@ class VideoToSkillConverter(SkillConverter):
         self.result: VideoScraperResult | None = None
 
     def extract(self):
-        """Extract content from video source (SkillConverter interface)."""
-        self.process()
+        """Extract content from video source (SkillConverter interface).
+
+        Returns the VideoScraperResult (also stored on ``self.result``) so
+        callers using the public interface don't need to reach for process().
+        """
+        return self.process()
 
     def process(self) -> VideoScraperResult:
         """Run the full video processing pipeline.

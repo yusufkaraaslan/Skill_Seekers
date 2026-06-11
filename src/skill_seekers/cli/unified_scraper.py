@@ -52,6 +52,28 @@ class UnifiedScraper(SkillConverter):
 
     SOURCE_TYPE = "config"
 
+    # Source type → handler method name. Resolved via getattr at dispatch time
+    # so instance-level monkeypatching (used by tests) still works.
+    SOURCE_DISPATCH: dict[str, str] = {
+        "documentation": "_scrape_documentation",
+        "github": "_scrape_github",
+        "pdf": "_scrape_pdf",
+        "word": "_scrape_word",
+        "video": "_scrape_video",
+        "local": "_scrape_local",
+        "epub": "_scrape_epub",
+        "jupyter": "_scrape_jupyter",
+        "html": "_scrape_html",
+        "openapi": "_scrape_openapi",
+        "asciidoc": "_scrape_asciidoc",
+        "pptx": "_scrape_pptx",
+        "confluence": "_scrape_confluence",
+        "notion": "_scrape_notion",
+        "rss": "_scrape_rss",
+        "manpage": "_scrape_manpage",
+        "chat": "_scrape_chat",
+    }
+
     def __init__(
         self,
         config_path: str,
@@ -229,40 +251,9 @@ class UnifiedScraper(SkillConverter):
             logger.info(f"\n[{i + 1}/{len(sources)}] Scraping {source_type} source...")
 
             try:
-                if source_type == "documentation":
-                    self._scrape_documentation(source)
-                elif source_type == "github":
-                    self._scrape_github(source)
-                elif source_type == "pdf":
-                    self._scrape_pdf(source)
-                elif source_type == "word":
-                    self._scrape_word(source)
-                elif source_type == "video":
-                    self._scrape_video(source)
-                elif source_type == "local":
-                    self._scrape_local(source)
-                elif source_type == "epub":
-                    self._scrape_epub(source)
-                elif source_type == "jupyter":
-                    self._scrape_jupyter(source)
-                elif source_type == "html":
-                    self._scrape_html(source)
-                elif source_type == "openapi":
-                    self._scrape_openapi(source)
-                elif source_type == "asciidoc":
-                    self._scrape_asciidoc(source)
-                elif source_type == "pptx":
-                    self._scrape_pptx(source)
-                elif source_type == "confluence":
-                    self._scrape_confluence(source)
-                elif source_type == "notion":
-                    self._scrape_notion(source)
-                elif source_type == "rss":
-                    self._scrape_rss(source)
-                elif source_type == "manpage":
-                    self._scrape_manpage(source)
-                elif source_type == "chat":
-                    self._scrape_chat(source)
+                handler_name = self.SOURCE_DISPATCH.get(source_type)
+                if handler_name is not None:
+                    getattr(self, handler_name)(source)
                 else:
                     logger.warning(f"Unknown source type: {source_type}")
             except Exception as e:
@@ -275,6 +266,10 @@ class UnifiedScraper(SkillConverter):
         logger.info(f"\n✅ Scraped {scraped_count} source item(s) successfully")
         return scraped_count
 
+    # Bespoke (not routed through _scrape_with_converter): documentation uses the
+    # function-based scrape_documentation() entry point with an ExecutionContext
+    # override and a return-code contract (non-zero → log + abort this source),
+    # not the converter-instance extract()/build_skill() flow.
     def _scrape_documentation(self, source: dict[str, Any]):
         """Scrape documentation website."""
         # Create temporary config for doc scraper in unified format
@@ -472,6 +467,10 @@ class UnifiedScraper(SkillConverter):
                 shutil.rmtree(clone_path)
             return None
 
+    # Bespoke (not routed through _scrape_with_converter): github needs repo
+    # cloning, optional C3.x codebase analysis, and a dual-write of the scraped
+    # data (unified cache file + the converter's own *_github_data.json) before
+    # a separate GitHubToSkillConverter builds the standalone skill.
     def _scrape_github(self, source: dict[str, Any]):
         """Scrape GitHub repository."""
         try:
@@ -597,14 +596,77 @@ class UnifiedScraper(SkillConverter):
 
         logger.info("✅ GitHub: Repository scraped successfully")
 
+    def _scrape_with_converter(
+        self,
+        *,
+        bucket: str,
+        converter_type: str,
+        config: dict[str, Any],
+        record: dict[str, Any],
+        cache_stem: str,
+        label: str,
+        fail_label: str | None = None,
+        summary_key: str,
+        summary_noun: str,
+    ) -> None:
+        """Shared engine for single-file/source converter types.
+
+        Runs the mechanically identical scrape flow used by the 13 simple
+        source types (pdf, word, epub, jupyter, html, openapi, asciidoc,
+        pptx, confluence, notion, rss, manpage, chat):
+
+        1. Build the converter via get_converter() and extract content
+        2. Load the extracted data from converter.data_file
+        3. Copy the data file into the unified cache (data_dir)
+        4. Append the per-type record (+ data/data_file) to scraped_data[bucket]
+        5. Build the standalone sub-skill — the unified build consumes the
+           sub-skill references from the cache, so build_skill() must stay
+
+        The thin per-type wrappers own everything type-specific: counter
+        increment, id resolution, config dict, record keys, and log wording.
+
+        Args:
+            bucket: scraped_data / _source_counters key (e.g. "pdf")
+            converter_type: CONVERTER_REGISTRY key for get_converter()
+            config: fully-built converter config (name already includes idx/id)
+            record: per-type scraped_data keys (ids + idx); data/data_file added
+            cache_stem: cache filename without .json (e.g. "pdf_data_0_manual")
+            label: display label for log lines (e.g. "PDF")
+            fail_label: label used in the build-failure warning (defaults to label)
+            summary_key: data key counted in the final summary line
+            summary_noun: noun used in the final summary line
+        """
+        from skill_seekers.cli.skill_converter import get_converter
+
+        converter = get_converter(converter_type, config)
+
+        # Extract content (each converter's extract() delegates to its
+        # type-specific extract_*() implementation)
+        converter.extract()
+
+        # Load extracted data from file
+        data_file = converter.data_file
+        with open(data_file, encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Copy data file to cache
+        cache_data_file = os.path.join(self.data_dir, f"{cache_stem}.json")
+        shutil.copy(data_file, cache_data_file)
+
+        # Append to list instead of overwriting (multi-source support)
+        self.scraped_data[bucket].append({**record, "data": data, "data_file": cache_data_file})
+
+        # Build standalone SKILL.md for synthesis
+        try:
+            converter.build_skill()
+            logger.info(f"✅ {label}: Standalone SKILL.md created")
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to build standalone {fail_label or label} SKILL.md: {e}")
+
+        logger.info(f"✅ {label}: {len(data.get(summary_key, []))} {summary_noun} extracted")
+
     def _scrape_pdf(self, source: dict[str, Any]):
         """Scrape PDF document."""
-        try:
-            from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
-        except ImportError:
-            logger.error("pdf_scraper.py not found")
-            return
-
         # Multi-source support: Get unique index for this PDF source
         idx = self._source_counters["pdf"]
         self._source_counters["pdf"] += 1
@@ -613,60 +675,27 @@ class UnifiedScraper(SkillConverter):
         pdf_path = source["path"]
         pdf_id = os.path.splitext(os.path.basename(pdf_path))[0]
 
-        # Create config for PDF scraper
-        pdf_config = {
-            "name": f"{self.name}_pdf_{idx}_{pdf_id}",
-            "pdf_path": source["path"],  # Fixed: use pdf_path instead of pdf
-            "description": f"{source.get('name', pdf_id)} documentation",
-            "extract_tables": source.get("extract_tables", True),
-            "ocr": source.get("ocr", False),
-            "password": source.get("password"),
-        }
-
-        # Scrape
         logger.info(f"Scraping PDF: {source['path']}")
-        converter = PDFToSkillConverter(pdf_config)
-
-        # Extract PDF content
-        converter.extract_pdf()
-
-        # Load extracted data from file
-        pdf_data_file = converter.data_file
-        with open(pdf_data_file, encoding="utf-8") as f:
-            pdf_data = json.load(f)
-
-        # Copy data file to cache
-        cache_pdf_data = os.path.join(self.data_dir, f"pdf_data_{idx}_{pdf_id}.json")
-        shutil.copy(pdf_data_file, cache_pdf_data)
-
-        # Append to list instead of overwriting
-        self.scraped_data["pdf"].append(
-            {
-                "pdf_path": pdf_path,
-                "pdf_id": pdf_id,
-                "idx": idx,
-                "data": pdf_data,
-                "data_file": cache_pdf_data,
-            }
+        self._scrape_with_converter(
+            bucket="pdf",
+            converter_type="pdf",
+            config={
+                "name": f"{self.name}_pdf_{idx}_{pdf_id}",
+                "pdf_path": source["path"],  # Fixed: use pdf_path instead of pdf
+                "description": f"{source.get('name', pdf_id)} documentation",
+                "extract_tables": source.get("extract_tables", True),
+                "ocr": source.get("ocr", False),
+                "password": source.get("password"),
+            },
+            record={"pdf_path": pdf_path, "pdf_id": pdf_id, "idx": idx},
+            cache_stem=f"pdf_data_{idx}_{pdf_id}",
+            label="PDF",
+            summary_key="pages",
+            summary_noun="pages",
         )
-
-        # Build standalone SKILL.md for synthesis
-        try:
-            converter.build_skill()
-            logger.info("✅ PDF: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone PDF SKILL.md: {e}")
-
-        logger.info(f"✅ PDF: {len(pdf_data.get('pages', []))} pages extracted")
 
     def _scrape_word(self, source: dict[str, Any]):
         """Scrape Word document (.docx)."""
-        try:
-            from skill_seekers.cli.word_scraper import WordToSkillConverter
-        except ImportError:
-            logger.error("word_scraper.py not found")
-            return
-
         # Multi-source support: Get unique index for this Word source
         idx = self._source_counters["word"]
         self._source_counters["word"] += 1
@@ -675,49 +704,26 @@ class UnifiedScraper(SkillConverter):
         docx_path = source["path"]
         docx_id = os.path.splitext(os.path.basename(docx_path))[0]
 
-        # Create config for Word scraper
-        word_config = {
-            "name": f"{self.name}_word_{idx}_{docx_id}",
-            "docx_path": source["path"],
-            "description": f"{source.get('name', docx_id)} documentation",
-        }
-
-        # Scrape
         logger.info(f"Scraping Word document: {source['path']}")
-        converter = WordToSkillConverter(word_config)
-
-        # Extract Word content
-        converter.extract_docx()
-
-        # Load extracted data from file
-        word_data_file = converter.data_file
-        with open(word_data_file, encoding="utf-8") as f:
-            word_data = json.load(f)
-
-        # Copy data file to cache
-        cache_word_data = os.path.join(self.data_dir, f"word_data_{idx}_{docx_id}.json")
-        shutil.copy(word_data_file, cache_word_data)
-
-        # Append to list
-        self.scraped_data["word"].append(
-            {
+        self._scrape_with_converter(
+            bucket="word",
+            converter_type="word",
+            config={
+                "name": f"{self.name}_word_{idx}_{docx_id}",
+                "docx_path": source["path"],
+                "description": f"{source.get('name', docx_id)} documentation",
+            },
+            record={
                 "docx_path": docx_path,
                 "docx_id": docx_id,
                 "word_id": docx_id,  # Alias for generic reference generation
                 "idx": idx,
-                "data": word_data,
-                "data_file": cache_word_data,
-            }
+            },
+            cache_stem=f"word_data_{idx}_{docx_id}",
+            label="Word",
+            summary_key="pages",
+            summary_noun="sections",
         )
-
-        # Build standalone SKILL.md for synthesis
-        try:
-            converter.build_skill()
-            logger.info("✅ Word: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone Word SKILL.md: {e}")
-
-        logger.info(f"✅ Word: {len(word_data.get('pages', []))} sections extracted")
 
     def _scrape_video(self, source: dict[str, Any]):
         """Scrape video source (YouTube, local file, etc.)."""
@@ -756,7 +762,10 @@ class UnifiedScraper(SkillConverter):
         converter = VideoToSkillConverter(video_config)
 
         try:
-            result = converter.process()
+            # Use the public SkillConverter interface; extract() runs process(),
+            # which stores its VideoScraperResult on converter.result.
+            converter.extract()
+            result = converter.result
             converter.save_extracted_data()
 
             # Append to list
@@ -779,6 +788,9 @@ class UnifiedScraper(SkillConverter):
         except Exception as e:
             logger.error(f"Failed to process video source: {e}")
 
+    # Bespoke (not routed through _scrape_with_converter): local uses the
+    # function-based analyze_codebase() (no converter instance, no data_file),
+    # then assembles its scraped_data record from the many analysis output files.
     def _scrape_local(self, source: dict[str, Any]):
         """
         Scrape local directory (documentation files or source code).
@@ -940,322 +952,151 @@ class UnifiedScraper(SkillConverter):
 
     def _scrape_epub(self, source: dict[str, Any]):
         """Scrape EPUB e-book (.epub)."""
-        try:
-            from skill_seekers.cli.epub_scraper import EpubToSkillConverter
-        except ImportError:
-            logger.error(
-                "EPUB scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[epub]"
-            )
-            return
-
         idx = self._source_counters["epub"]
         self._source_counters["epub"] += 1
 
         epub_path = source["path"]
         epub_id = os.path.splitext(os.path.basename(epub_path))[0]
 
-        epub_config = {
-            "name": f"{self.name}_epub_{idx}_{epub_id}",
-            "epub_path": source["path"],
-            "description": source.get("description", f"{epub_id} e-book"),
-        }
-
         logger.info(f"Scraping EPUB: {source['path']}")
-        converter = EpubToSkillConverter(epub_config)
-        converter.extract_epub()
-
-        epub_data_file = converter.data_file
-        with open(epub_data_file, encoding="utf-8") as f:
-            epub_data = json.load(f)
-
-        cache_epub_data = os.path.join(self.data_dir, f"epub_data_{idx}_{epub_id}.json")
-        shutil.copy(epub_data_file, cache_epub_data)
-
-        self.scraped_data["epub"].append(
-            {
-                "epub_path": epub_path,
-                "epub_id": epub_id,
-                "idx": idx,
-                "data": epub_data,
-                "data_file": cache_epub_data,
-            }
+        self._scrape_with_converter(
+            bucket="epub",
+            converter_type="epub",
+            config={
+                "name": f"{self.name}_epub_{idx}_{epub_id}",
+                "epub_path": source["path"],
+                "description": source.get("description", f"{epub_id} e-book"),
+            },
+            record={"epub_path": epub_path, "epub_id": epub_id, "idx": idx},
+            cache_stem=f"epub_data_{idx}_{epub_id}",
+            label="EPUB",
+            summary_key="chapters",
+            summary_noun="chapters",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ EPUB: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone EPUB SKILL.md: {e}")
-
-        logger.info(f"✅ EPUB: {len(epub_data.get('chapters', []))} chapters extracted")
 
     def _scrape_jupyter(self, source: dict[str, Any]):
         """Scrape Jupyter Notebook (.ipynb)."""
-        try:
-            from skill_seekers.cli.jupyter_scraper import JupyterToSkillConverter
-        except ImportError:
-            logger.error(
-                "Jupyter scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[jupyter]"
-            )
-            return
-
         idx = self._source_counters["jupyter"]
         self._source_counters["jupyter"] += 1
 
         nb_path = source["path"]
         nb_id = os.path.splitext(os.path.basename(nb_path))[0]
 
-        nb_config = {
-            "name": f"{self.name}_jupyter_{idx}_{nb_id}",
-            "notebook_path": source["path"],
-            "description": source.get("description", f"{nb_id} notebook"),
-        }
-
         logger.info(f"Scraping Jupyter Notebook: {source['path']}")
-        converter = JupyterToSkillConverter(nb_config)
-        converter.extract_notebook()
-
-        nb_data_file = converter.data_file
-        with open(nb_data_file, encoding="utf-8") as f:
-            nb_data = json.load(f)
-
-        cache_nb_data = os.path.join(self.data_dir, f"jupyter_data_{idx}_{nb_id}.json")
-        shutil.copy(nb_data_file, cache_nb_data)
-
-        self.scraped_data["jupyter"].append(
-            {
-                "notebook_path": nb_path,
-                "notebook_id": nb_id,
-                "idx": idx,
-                "data": nb_data,
-                "data_file": cache_nb_data,
-            }
+        self._scrape_with_converter(
+            bucket="jupyter",
+            converter_type="jupyter",
+            config={
+                "name": f"{self.name}_jupyter_{idx}_{nb_id}",
+                "notebook_path": source["path"],
+                "description": source.get("description", f"{nb_id} notebook"),
+            },
+            record={"notebook_path": nb_path, "notebook_id": nb_id, "idx": idx},
+            cache_stem=f"jupyter_data_{idx}_{nb_id}",
+            label="Jupyter",
+            summary_key="cells",
+            summary_noun="cells",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ Jupyter: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone Jupyter SKILL.md: {e}")
-
-        logger.info(f"✅ Jupyter: {len(nb_data.get('cells', []))} cells extracted")
 
     def _scrape_html(self, source: dict[str, Any]):
         """Scrape local HTML file(s)."""
-        try:
-            from skill_seekers.cli.html_scraper import HtmlToSkillConverter
-        except ImportError:
-            logger.error("html_scraper.py not found")
-            return
-
         idx = self._source_counters["html"]
         self._source_counters["html"] += 1
 
         html_path = source["path"]
         html_id = os.path.splitext(os.path.basename(html_path.rstrip("/")))[0]
 
-        html_config = {
-            "name": f"{self.name}_html_{idx}_{html_id}",
-            "html_path": source["path"],
-            "description": source.get("description", f"{html_id} HTML content"),
-        }
-
         logger.info(f"Scraping local HTML: {source['path']}")
-        converter = HtmlToSkillConverter(html_config)
-        converter.extract_html()
-
-        html_data_file = converter.data_file
-        with open(html_data_file, encoding="utf-8") as f:
-            html_data = json.load(f)
-
-        cache_html_data = os.path.join(self.data_dir, f"html_data_{idx}_{html_id}.json")
-        shutil.copy(html_data_file, cache_html_data)
-
-        self.scraped_data["html"].append(
-            {
-                "html_path": html_path,
-                "html_id": html_id,
-                "idx": idx,
-                "data": html_data,
-                "data_file": cache_html_data,
-            }
+        self._scrape_with_converter(
+            bucket="html",
+            converter_type="html",
+            config={
+                "name": f"{self.name}_html_{idx}_{html_id}",
+                "html_path": source["path"],
+                "description": source.get("description", f"{html_id} HTML content"),
+            },
+            record={"html_path": html_path, "html_id": html_id, "idx": idx},
+            cache_stem=f"html_data_{idx}_{html_id}",
+            label="HTML",
+            summary_key="pages",
+            summary_noun="pages",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ HTML: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone HTML SKILL.md: {e}")
-
-        logger.info(f"✅ HTML: {len(html_data.get('pages', []))} pages extracted")
 
     def _scrape_openapi(self, source: dict[str, Any]):
         """Scrape OpenAPI/Swagger specification."""
-        try:
-            from skill_seekers.cli.openapi_scraper import OpenAPIToSkillConverter
-        except ImportError:
-            logger.error("openapi_scraper.py not found")
-            return
-
         idx = self._source_counters["openapi"]
         self._source_counters["openapi"] += 1
 
         spec_path = source.get("path", source.get("url", ""))
         spec_id = os.path.splitext(os.path.basename(spec_path))[0] if spec_path else f"spec_{idx}"
 
-        openapi_config = {
-            "name": f"{self.name}_openapi_{idx}_{spec_id}",
-            "spec_path": source.get("path"),
-            "spec_url": source.get("url"),
-            "description": source.get("description", f"{spec_id} API spec"),
-        }
-
         logger.info(f"Scraping OpenAPI spec: {spec_path}")
-        converter = OpenAPIToSkillConverter(openapi_config)
-        converter.extract_spec()
-
-        api_data_file = converter.data_file
-        with open(api_data_file, encoding="utf-8") as f:
-            api_data = json.load(f)
-
-        cache_api_data = os.path.join(self.data_dir, f"openapi_data_{idx}_{spec_id}.json")
-        shutil.copy(api_data_file, cache_api_data)
-
-        self.scraped_data["openapi"].append(
-            {
-                "spec_path": spec_path,
-                "spec_id": spec_id,
-                "idx": idx,
-                "data": api_data,
-                "data_file": cache_api_data,
-            }
+        self._scrape_with_converter(
+            bucket="openapi",
+            converter_type="openapi",
+            config={
+                "name": f"{self.name}_openapi_{idx}_{spec_id}",
+                "spec_path": source.get("path"),
+                "spec_url": source.get("url"),
+                "description": source.get("description", f"{spec_id} API spec"),
+            },
+            record={"spec_path": spec_path, "spec_id": spec_id, "idx": idx},
+            cache_stem=f"openapi_data_{idx}_{spec_id}",
+            label="OpenAPI",
+            summary_key="endpoints",
+            summary_noun="endpoints",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ OpenAPI: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone OpenAPI SKILL.md: {e}")
-
-        logger.info(f"✅ OpenAPI: {len(api_data.get('endpoints', []))} endpoints extracted")
 
     def _scrape_asciidoc(self, source: dict[str, Any]):
         """Scrape AsciiDoc document(s)."""
-        try:
-            from skill_seekers.cli.asciidoc_scraper import AsciiDocToSkillConverter
-        except ImportError:
-            logger.error(
-                "AsciiDoc scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[asciidoc]"
-            )
-            return
-
         idx = self._source_counters["asciidoc"]
         self._source_counters["asciidoc"] += 1
 
         adoc_path = source["path"]
         adoc_id = os.path.splitext(os.path.basename(adoc_path.rstrip("/")))[0]
 
-        adoc_config = {
-            "name": f"{self.name}_asciidoc_{idx}_{adoc_id}",
-            "asciidoc_path": source["path"],
-            "description": source.get("description", f"{adoc_id} AsciiDoc content"),
-        }
-
         logger.info(f"Scraping AsciiDoc: {source['path']}")
-        converter = AsciiDocToSkillConverter(adoc_config)
-        converter.extract_asciidoc()
-
-        adoc_data_file = converter.data_file
-        with open(adoc_data_file, encoding="utf-8") as f:
-            adoc_data = json.load(f)
-
-        cache_adoc_data = os.path.join(self.data_dir, f"asciidoc_data_{idx}_{adoc_id}.json")
-        shutil.copy(adoc_data_file, cache_adoc_data)
-
-        self.scraped_data["asciidoc"].append(
-            {
-                "asciidoc_path": adoc_path,
-                "asciidoc_id": adoc_id,
-                "idx": idx,
-                "data": adoc_data,
-                "data_file": cache_adoc_data,
-            }
+        self._scrape_with_converter(
+            bucket="asciidoc",
+            converter_type="asciidoc",
+            config={
+                "name": f"{self.name}_asciidoc_{idx}_{adoc_id}",
+                "asciidoc_path": source["path"],
+                "description": source.get("description", f"{adoc_id} AsciiDoc content"),
+            },
+            record={"asciidoc_path": adoc_path, "asciidoc_id": adoc_id, "idx": idx},
+            cache_stem=f"asciidoc_data_{idx}_{adoc_id}",
+            label="AsciiDoc",
+            summary_key="sections",
+            summary_noun="sections",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ AsciiDoc: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone AsciiDoc SKILL.md: {e}")
-
-        logger.info(f"✅ AsciiDoc: {len(adoc_data.get('sections', []))} sections extracted")
 
     def _scrape_pptx(self, source: dict[str, Any]):
         """Scrape PowerPoint presentation (.pptx)."""
-        try:
-            from skill_seekers.cli.pptx_scraper import PptxToSkillConverter
-        except ImportError:
-            logger.error(
-                "PowerPoint scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[pptx]"
-            )
-            return
-
         idx = self._source_counters["pptx"]
         self._source_counters["pptx"] += 1
 
         pptx_path = source["path"]
         pptx_id = os.path.splitext(os.path.basename(pptx_path))[0]
 
-        pptx_config = {
-            "name": f"{self.name}_pptx_{idx}_{pptx_id}",
-            "pptx_path": source["path"],
-            "description": source.get("description", f"{pptx_id} presentation"),
-        }
-
         logger.info(f"Scraping PowerPoint: {source['path']}")
-        converter = PptxToSkillConverter(pptx_config)
-        converter.extract_pptx()
-
-        pptx_data_file = converter.data_file
-        with open(pptx_data_file, encoding="utf-8") as f:
-            pptx_data = json.load(f)
-
-        cache_pptx_data = os.path.join(self.data_dir, f"pptx_data_{idx}_{pptx_id}.json")
-        shutil.copy(pptx_data_file, cache_pptx_data)
-
-        self.scraped_data["pptx"].append(
-            {
-                "pptx_path": pptx_path,
-                "pptx_id": pptx_id,
-                "idx": idx,
-                "data": pptx_data,
-                "data_file": cache_pptx_data,
-            }
+        self._scrape_with_converter(
+            bucket="pptx",
+            converter_type="pptx",
+            config={
+                "name": f"{self.name}_pptx_{idx}_{pptx_id}",
+                "pptx_path": source["path"],
+                "description": source.get("description", f"{pptx_id} presentation"),
+            },
+            record={"pptx_path": pptx_path, "pptx_id": pptx_id, "idx": idx},
+            cache_stem=f"pptx_data_{idx}_{pptx_id}",
+            label="PowerPoint",
+            summary_key="slides",
+            summary_noun="slides",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ PowerPoint: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone PowerPoint SKILL.md: {e}")
-
-        logger.info(f"✅ PowerPoint: {len(pptx_data.get('slides', []))} slides extracted")
 
     def _scrape_confluence(self, source: dict[str, Any]):
         """Scrape Confluence wiki (API or exported HTML/XML)."""
-        try:
-            from skill_seekers.cli.confluence_scraper import ConfluenceToSkillConverter
-        except ImportError:
-            logger.error(
-                "Confluence scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[confluence]"
-            )
-            return
-
         idx = self._source_counters["confluence"]
         self._source_counters["confluence"] += 1
 
@@ -1263,56 +1104,29 @@ class UnifiedScraper(SkillConverter):
         if isinstance(source_id, str) and "/" in source_id:
             source_id = os.path.basename(source_id.rstrip("/"))
 
-        conf_config = {
-            "name": f"{self.name}_confluence_{idx}_{source_id}",
-            "base_url": source.get("base_url", source.get("url")),
-            "space_key": source.get("space_key"),
-            "export_path": source.get("path"),
-            "username": source.get("username"),
-            "token": source.get("token"),
-            "description": source.get("description", f"{source_id} Confluence content"),
-            "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
-        }
-
         logger.info(f"Scraping Confluence: {source_id}")
-        converter = ConfluenceToSkillConverter(conf_config)
-        converter.extract_confluence()
-
-        conf_data_file = converter.data_file
-        with open(conf_data_file, encoding="utf-8") as f:
-            conf_data = json.load(f)
-
-        cache_conf_data = os.path.join(self.data_dir, f"confluence_data_{idx}_{source_id}.json")
-        shutil.copy(conf_data_file, cache_conf_data)
-
-        self.scraped_data["confluence"].append(
-            {
-                "source_id": source_id,
-                "idx": idx,
-                "data": conf_data,
-                "data_file": cache_conf_data,
-            }
+        self._scrape_with_converter(
+            bucket="confluence",
+            converter_type="confluence",
+            config={
+                "name": f"{self.name}_confluence_{idx}_{source_id}",
+                "base_url": source.get("base_url", source.get("url")),
+                "space_key": source.get("space_key"),
+                "export_path": source.get("path"),
+                "username": source.get("username"),
+                "token": source.get("token"),
+                "description": source.get("description", f"{source_id} Confluence content"),
+                "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
+            },
+            record={"source_id": source_id, "idx": idx},
+            cache_stem=f"confluence_data_{idx}_{source_id}",
+            label="Confluence",
+            summary_key="pages",
+            summary_noun="pages",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ Confluence: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone Confluence SKILL.md: {e}")
-
-        logger.info(f"✅ Confluence: {len(conf_data.get('pages', []))} pages extracted")
 
     def _scrape_notion(self, source: dict[str, Any]):
         """Scrape Notion pages (API or exported Markdown)."""
-        try:
-            from skill_seekers.cli.notion_scraper import NotionToSkillConverter
-        except ImportError:
-            logger.error(
-                "Notion scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[notion]"
-            )
-            return
-
         idx = self._source_counters["notion"]
         self._source_counters["notion"] += 1
 
@@ -1322,107 +1136,55 @@ class UnifiedScraper(SkillConverter):
         if isinstance(source_id, str) and "/" in source_id:
             source_id = os.path.basename(source_id.rstrip("/"))
 
-        notion_config = {
-            "name": f"{self.name}_notion_{idx}_{source_id}",
-            "database_id": source.get("database_id"),
-            "page_id": source.get("page_id"),
-            "export_path": source.get("path"),
-            "token": source.get("token"),
-            "description": source.get("description", f"{source_id} Notion content"),
-            "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
-        }
-
         logger.info(f"Scraping Notion: {source_id}")
-        converter = NotionToSkillConverter(notion_config)
-        converter.extract_notion()
-
-        notion_data_file = converter.data_file
-        with open(notion_data_file, encoding="utf-8") as f:
-            notion_data = json.load(f)
-
-        cache_notion_data = os.path.join(self.data_dir, f"notion_data_{idx}_{source_id}.json")
-        shutil.copy(notion_data_file, cache_notion_data)
-
-        self.scraped_data["notion"].append(
-            {
-                "source_id": source_id,
-                "idx": idx,
-                "data": notion_data,
-                "data_file": cache_notion_data,
-            }
+        self._scrape_with_converter(
+            bucket="notion",
+            converter_type="notion",
+            config={
+                "name": f"{self.name}_notion_{idx}_{source_id}",
+                "database_id": source.get("database_id"),
+                "page_id": source.get("page_id"),
+                "export_path": source.get("path"),
+                "token": source.get("token"),
+                "description": source.get("description", f"{source_id} Notion content"),
+                "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
+            },
+            record={"source_id": source_id, "idx": idx},
+            cache_stem=f"notion_data_{idx}_{source_id}",
+            label="Notion",
+            summary_key="pages",
+            summary_noun="pages",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ Notion: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone Notion SKILL.md: {e}")
-
-        logger.info(f"✅ Notion: {len(notion_data.get('pages', []))} pages extracted")
 
     def _scrape_rss(self, source: dict[str, Any]):
         """Scrape RSS/Atom feed (with optional full article scraping)."""
-        try:
-            from skill_seekers.cli.rss_scraper import RssToSkillConverter
-        except ImportError:
-            logger.error(
-                "RSS scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[rss]"
-            )
-            return
-
         idx = self._source_counters["rss"]
         self._source_counters["rss"] += 1
 
         feed_url = source.get("url", source.get("path", ""))
         feed_id = feed_url.split("/")[-1].split(".")[0] if feed_url else f"feed_{idx}"
 
-        rss_config = {
-            "name": f"{self.name}_rss_{idx}_{feed_id}",
-            "feed_url": source.get("url"),
-            "feed_path": source.get("path"),
-            "follow_links": source.get("follow_links", True),
-            "max_articles": source.get("max_articles", 50),
-            "description": source.get("description", f"{feed_id} RSS/Atom feed"),
-        }
-
         logger.info(f"Scraping RSS/Atom feed: {feed_url}")
-        converter = RssToSkillConverter(rss_config)
-        converter.extract_feed()
-
-        rss_data_file = converter.data_file
-        with open(rss_data_file, encoding="utf-8") as f:
-            rss_data = json.load(f)
-
-        cache_rss_data = os.path.join(self.data_dir, f"rss_data_{idx}_{feed_id}.json")
-        shutil.copy(rss_data_file, cache_rss_data)
-
-        self.scraped_data["rss"].append(
-            {
-                "feed_url": feed_url,
-                "feed_id": feed_id,
-                "idx": idx,
-                "data": rss_data,
-                "data_file": cache_rss_data,
-            }
+        self._scrape_with_converter(
+            bucket="rss",
+            converter_type="rss",
+            config={
+                "name": f"{self.name}_rss_{idx}_{feed_id}",
+                "feed_url": source.get("url"),
+                "feed_path": source.get("path"),
+                "follow_links": source.get("follow_links", True),
+                "max_articles": source.get("max_articles", 50),
+                "description": source.get("description", f"{feed_id} RSS/Atom feed"),
+            },
+            record={"feed_url": feed_url, "feed_id": feed_id, "idx": idx},
+            cache_stem=f"rss_data_{idx}_{feed_id}",
+            label="RSS",
+            summary_key="articles",
+            summary_noun="articles",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ RSS: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone RSS SKILL.md: {e}")
-
-        logger.info(f"✅ RSS: {len(rss_data.get('articles', []))} articles extracted")
 
     def _scrape_manpage(self, source: dict[str, Any]):
         """Scrape man page(s)."""
-        try:
-            from skill_seekers.cli.man_scraper import ManPageToSkillConverter
-        except ImportError:
-            logger.error("man_scraper.py not found")
-            return
-
         idx = self._source_counters["manpage"]
         self._source_counters["manpage"] += 1
 
@@ -1430,53 +1192,27 @@ class UnifiedScraper(SkillConverter):
         man_path = source.get("path", "")
         man_id = man_names[0] if man_names else os.path.basename(man_path.rstrip("/"))
 
-        man_config = {
-            "name": f"{self.name}_manpage_{idx}_{man_id}",
-            "man_names": man_names,
-            "man_path": man_path,
-            "sections": source.get("sections", []),
-            "description": source.get("description", f"{man_id} man pages"),
-        }
-
         logger.info(f"Scraping man pages: {man_id}")
-        converter = ManPageToSkillConverter(man_config)
-        converter.extract_manpages()
-
-        man_data_file = converter.data_file
-        with open(man_data_file, encoding="utf-8") as f:
-            man_data = json.load(f)
-
-        cache_man_data = os.path.join(self.data_dir, f"manpage_data_{idx}_{man_id}.json")
-        shutil.copy(man_data_file, cache_man_data)
-
-        self.scraped_data["manpage"].append(
-            {
-                "man_id": man_id,
-                "idx": idx,
-                "data": man_data,
-                "data_file": cache_man_data,
-            }
+        self._scrape_with_converter(
+            bucket="manpage",
+            converter_type="manpage",
+            config={
+                "name": f"{self.name}_manpage_{idx}_{man_id}",
+                "man_names": man_names,
+                "man_path": man_path,
+                "sections": source.get("sections", []),
+                "description": source.get("description", f"{man_id} man pages"),
+            },
+            record={"man_id": man_id, "idx": idx},
+            cache_stem=f"manpage_data_{idx}_{man_id}",
+            label="Man pages",
+            fail_label="man page",
+            summary_key="pages",
+            summary_noun="man pages",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ Man pages: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone man page SKILL.md: {e}")
-
-        logger.info(f"✅ Man pages: {len(man_data.get('pages', []))} man pages extracted")
 
     def _scrape_chat(self, source: dict[str, Any]):
         """Scrape Slack/Discord chat export or API."""
-        try:
-            from skill_seekers.cli.chat_scraper import ChatToSkillConverter
-        except ImportError:
-            logger.error(
-                "Chat scraper dependencies not installed.\n"
-                "  Install with: pip install skill-seekers[chat]"
-            )
-            return
-
         idx = self._source_counters["chat"]
         self._source_counters["chat"] += 1
 
@@ -1484,44 +1220,26 @@ class UnifiedScraper(SkillConverter):
         channel = source.get("channel", source.get("channel_id", ""))
         chat_id = channel or os.path.basename(export_path.rstrip("/")) or f"chat_{idx}"
 
-        chat_config = {
-            "name": f"{self.name}_chat_{idx}_{chat_id}",
-            "export_path": source.get("path"),
-            "platform": source.get("platform", "slack"),
-            "token": source.get("token"),
-            "channel": channel,
-            "max_messages": source.get("max_messages", 10000),
-            "description": source.get("description", f"{chat_id} chat export"),
-        }
-
         logger.info(f"Scraping chat: {chat_id}")
-        converter = ChatToSkillConverter(chat_config)
-        converter.extract_chat()
-
-        chat_data_file = converter.data_file
-        with open(chat_data_file, encoding="utf-8") as f:
-            chat_data = json.load(f)
-
-        cache_chat_data = os.path.join(self.data_dir, f"chat_data_{idx}_{chat_id}.json")
-        shutil.copy(chat_data_file, cache_chat_data)
-
-        self.scraped_data["chat"].append(
-            {
-                "chat_id": chat_id,
+        self._scrape_with_converter(
+            bucket="chat",
+            converter_type="chat",
+            config={
+                "name": f"{self.name}_chat_{idx}_{chat_id}",
+                "export_path": source.get("path"),
                 "platform": source.get("platform", "slack"),
-                "idx": idx,
-                "data": chat_data,
-                "data_file": cache_chat_data,
-            }
+                "token": source.get("token"),
+                "channel": channel,
+                "max_messages": source.get("max_messages", 10000),
+                "description": source.get("description", f"{chat_id} chat export"),
+            },
+            record={"chat_id": chat_id, "platform": source.get("platform", "slack"), "idx": idx},
+            cache_stem=f"chat_data_{idx}_{chat_id}",
+            label="Chat",
+            fail_label="chat",
+            summary_key="messages",
+            summary_noun="messages",
         )
-
-        try:
-            converter.build_skill()
-            logger.info("✅ Chat: Standalone SKILL.md created")
-        except Exception as e:
-            logger.warning(f"⚠️  Failed to build standalone chat SKILL.md: {e}")
-
-        logger.info(f"✅ Chat: {len(chat_data.get('messages', []))} messages extracted")
 
     def _load_json_fallback(self, primary: Path, fallback: Path) -> dict:
         """Load JSON from primary path, falling back to secondary if not found."""
