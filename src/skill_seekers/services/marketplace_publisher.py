@@ -168,8 +168,15 @@ class MarketplacePublisher:
                 repo.index.commit(commit_msg)
                 commit_sha = repo.head.commit.hexsha[:7]
 
-                # Push through the token URL (origin is stored tokenless).
-                repo.git.push(token_url, target_branch)
+                # Push through the token URL (origin is stored tokenless). A
+                # skill/<name> branch is rebuilt from the base branch on every
+                # publish (checkout -B above), so a re-publish legitimately
+                # diverges from the remote branch — force-push it. The base
+                # branch push stays non-forced.
+                if create_branch:
+                    repo.git.push("--force", token_url, target_branch)
+                else:
+                    repo.git.push(token_url, target_branch)
             finally:
                 # Always return the cached repo to the base branch so the next
                 # run starts from a clean, expected state — even if the push failed.

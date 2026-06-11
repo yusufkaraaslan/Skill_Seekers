@@ -499,8 +499,14 @@ class TestPublishSuccess:
                 category="custom",
                 create_branch=True,
             )
+            # Change the content so the second commit's tree (and SHA) differs
+            # from the first — otherwise both publishes can produce the SAME
+            # commit within one second and the push is a no-op "up-to-date",
+            # hiding the non-fast-forward path this test must exercise.
+            config_file.write_text(json.dumps({"name": "branchy-config", "description": "v2"}))
             # The cached repo is back on main but config/branchy-config still
-            # exists locally — the retry/force-update path must survive it.
+            # exists locally (and on the remote, pointing at the now-orphaned
+            # first commit) — the retry/force-update path must survive both.
             second = publisher.publish(
                 config_path=config_file,
                 source_name="local-test",
@@ -514,3 +520,10 @@ class TestPublishSuccess:
         assert first["branch"] == "config/branchy-config"
         cached_repo = gitmodule.Repo(cache_dir / "source_local-test")
         assert cached_repo.active_branch.name == "main"
+        # The remote branch must point at the SECOND publish's commit.
+        remote = gitmodule.Repo(bare_repo_path)
+        pushed = remote.commit("config/branchy-config")
+        assert (
+            pushed.tree["configs/custom/branchy-config.json"].data_stream.read().decode()
+            == config_file.read_text()
+        )

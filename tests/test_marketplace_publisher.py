@@ -625,3 +625,44 @@ class TestPublishCachedRepo:
 
         assert result["success"] is True
         assert result["branch"] == "skill/test-skill"
+
+    def test_create_branch_republish_with_remote_branch_still_present(self, skill_dir, tmp_path):
+        """Regression: republishing with create_branch=True while the remote
+        skill/<name> branch still exists (force update before merge, or retry)
+        rebuilds the branch from base, so the push legitimately diverges from
+        the remote branch and must be forced — a plain push is rejected
+        non-fast-forward."""
+        import git as gitmodule
+
+        bare_repo_path = _make_bare_remote(tmp_path)
+        manager = _make_manager(tmp_path, f"file://{bare_repo_path}")
+        publisher, _cache_dir = self._make_publisher(tmp_path)
+
+        with (
+            patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
+            patch(
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
+                return_value=manager,
+            ),
+        ):
+            publisher.publish(
+                skill_dir=skill_dir, marketplace_name="local-test", create_branch=True
+            )
+            # Change the skill so the second commit's tree (and SHA) differs —
+            # identical same-second commits would push as a no-op
+            # "up-to-date" and hide the non-fast-forward path.
+            (skill_dir / "SKILL.md").write_text(
+                "---\nname: test-skill\ndescription: A test skill, v2.\n---\n\n# Test Skill v2\n"
+            )
+            result = publisher.publish(
+                skill_dir=skill_dir, marketplace_name="local-test", create_branch=True, force=True
+            )
+
+        assert result["success"] is True
+        assert result["branch"] == "skill/test-skill"
+        # The remote branch must point at the SECOND publish's commit.
+        remote = gitmodule.Repo(bare_repo_path)
+        blob = remote.commit("skill/test-skill").tree[
+            "plugins/test-skill/skills/test-skill/SKILL.md"
+        ]
+        assert "v2" in blob.data_stream.read().decode()

@@ -226,8 +226,15 @@ class ConfigPublisher:
             commit_msg = f"feat: {action} {config_name} config in {category}"
             commit = repo.index.commit(commit_msg)
 
-            # Push through the token URL (origin is stored tokenless).
-            repo.git.push(token_url, target_branch)
+            # Push through the token URL (origin is stored tokenless). A
+            # config/<name> branch is rebuilt from the base branch on every
+            # publish (checkout -B above), so a re-publish legitimately
+            # diverges from the remote branch — force-push it. The base
+            # branch push stays non-forced.
+            if create_branch:
+                repo.git.push("--force", token_url, target_branch)
+            else:
+                repo.git.push(token_url, target_branch)
             logger.info(f"🚀 Pushed to {source_name}/{target_branch}")
         except git.GitCommandError as e:
             raise RuntimeError(
