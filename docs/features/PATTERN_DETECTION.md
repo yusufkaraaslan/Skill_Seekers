@@ -115,18 +115,18 @@ skill-seekers-patterns --file src/db.py --file src/api.py
 
 ### Codebase Scraper Integration
 
-The `--detect-patterns` flag integrates with codebase analysis:
+Pattern detection runs by default during codebase analysis (skip it with
+`--skip-patterns`):
 
 ```bash
-# Analyze codebase + detect patterns
-skill-seekers scan --directory src/ --detect-patterns
+# Analyze codebase + detect patterns (default)
+skill-seekers create --directory src/
 
-# With other features
-skill-seekers scan \
+# Patterns only — skip the other heavy stages
+skill-seekers create \
   --directory src/ \
-  --detect-patterns \
-  --build-api-reference \
-  --build-dependency-graph
+  --skip-api-reference \
+  --skip-dependency-graph
 ```
 
 **Output**: `output/codebase/patterns/detected_patterns.json`

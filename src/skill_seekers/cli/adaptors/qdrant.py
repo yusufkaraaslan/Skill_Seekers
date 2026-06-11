@@ -196,6 +196,60 @@ class QdrantAdaptor(StreamingAdaptorMixin, SkillAdaptor):
             ensure_ascii=False,
         )
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to the Qdrant package format.
+
+        Produces the same collection_name/points/config structure as
+        format_skill_md() so the documented import path in upload()
+        works on streaming packages.
+        """
+        points = []
+
+        for chunk_text, chunk_meta in chunks:
+            meta = self._streaming_chunk_meta(chunk_meta, skill_name)
+            point_id = self._generate_point_id(
+                chunk_text,
+                {
+                    "source": meta.get("source", skill_name),
+                    "file": meta.get("file", ""),
+                },
+            )
+            points.append(
+                {
+                    "id": point_id,
+                    "vector": None,  # User will generate embeddings
+                    "payload": {
+                        "content": chunk_text,
+                        "source": meta.get("source", skill_name),
+                        "category": meta.get("category", ""),
+                        "file": meta.get("file", ""),
+                        "type": meta["type"],
+                        "version": meta.get("version", "1.0.0"),
+                        "doc_version": meta.get("doc_version", ""),
+                    },
+                }
+            )
+
+        config = {
+            "vector_size": 1536,  # OpenAI ada-002 default
+            "distance": "Cosine",  # Recommended for semantic search
+            "description": (
+                "Qdrant requires embeddings. Use OpenAI, Cohere, or local models "
+                "to generate embeddings before uploading points."
+            ),
+        }
+
+        return {
+            "collection_name": skill_name.replace("_", "-").lower(),
+            "points": points,
+            "config": config,
+            "total_chunks": len(points),
+            "streaming": True,
+        }
+
     def package(
         self,
         skill_dir: Path,

@@ -153,6 +153,69 @@ async def test_mcp_scrape_docs_detection():
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
+async def test_mcp_scrape_docs_unified_skip_scrape_warns():
+    """Regression: skip_scrape is a no-op on the unified path
+    (UnifiedScraper.run() never reads the attribute and re-scrapes every
+    source) — the tool result must say so explicitly instead of silently
+    misleading the caller."""
+    from unittest.mock import patch
+
+    unified_config = {
+        "name": "test_skip_scrape_warn",
+        "merge_mode": "rule-based",
+        "sources": [{"type": "documentation", "base_url": "https://example.com"}],
+    }
+    legacy_config = {
+        "name": "test_skip_scrape_legacy",
+        "base_url": "https://example.com",
+        "max_pages": 5,
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(unified_config, f)
+        unified_config_path = f.name
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(legacy_config, f)
+        legacy_config_path = f.name
+
+    warning = "skip_scrape is not yet supported for unified multi-source configs"
+
+    try:
+        with (
+            patch("skill_seekers.cli.skill_converter.get_converter") as mock_get_converter,
+            patch("skill_seekers.mcp.tools.scraping_tools._run_converter") as mock_run_converter,
+        ):
+            # Echo the progress message back so the warning is observable in
+            # the tool result, like the real _run_converter does.
+            mock_run_converter.side_effect = lambda _converter, progress_msg: [
+                TextContent(type="text", text=progress_msg)
+            ]
+
+            # Unified + skip_scrape → explicit warning in the tool result.
+            result = await scrape_docs_tool(
+                {"config_path": unified_config_path, "skip_scrape": True}
+            )
+            text = result[0].text
+            assert warning in text, f"Expected skip_scrape warning, got: {text}"
+            assert "all sources will be re-scraped" in text
+            # The attribute is still set for forward-compat.
+            assert mock_get_converter.return_value.skip_scrape is True
+
+            # Unified without skip_scrape → no warning.
+            result = await scrape_docs_tool({"config_path": unified_config_path})
+            assert warning not in result[0].text
+
+            # Legacy + skip_scrape → honored (SkillConverter.run), no warning.
+            result = await scrape_docs_tool(
+                {"config_path": legacy_config_path, "skip_scrape": True}
+            )
+            assert warning not in result[0].text
+    finally:
+        Path(unified_config_path).unlink(missing_ok=True)
+        Path(legacy_config_path).unlink(missing_ok=True)
+
+
+@pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
 async def test_mcp_merge_mode_override():
     """Test that MCP can override merge mode"""
     print("\n✓ Testing MCP merge_mode override...")
@@ -194,6 +257,7 @@ async def run_all_tests():
         await test_mcp_validate_unified_config()
         await test_mcp_validate_legacy_config()
         await test_mcp_scrape_docs_detection()
+        await test_mcp_scrape_docs_unified_skip_scrape_warns()
         await test_mcp_merge_mode_override()
 
         print("\n" + "=" * 60)

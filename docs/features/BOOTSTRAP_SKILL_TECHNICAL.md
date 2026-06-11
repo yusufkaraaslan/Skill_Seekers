@@ -506,8 +506,8 @@ Detected 200+ patterns (90% are false positives)
 **Solution:**
 ```bash
 # Use surface or deep, not full
-skill-seekers codebase --depth deep  # ✅
-skill-seekers codebase --depth full  # ❌ Too many
+skill-seekers create . --depth deep  # ✅
+skill-seekers create . --depth full  # ❌ Too many
 ```
 
 **Why Bootstrap Uses Deep:**

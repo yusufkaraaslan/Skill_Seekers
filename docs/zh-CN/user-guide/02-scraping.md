@@ -7,7 +7,7 @@
 
 ## 概述
 
-Skill Seekers 可以从四种类型的来源中提取知识：
+Skill Seekers 可以从 **17 种类型的来源**中提取知识：
 
 | 来源 | 命令 | 适用于 |
 |--------|---------|----------|
@@ -15,6 +15,19 @@ Skill Seekers 可以从四种类型的来源中提取知识：
 | **GitHub** | `create <repo>` | 源代码、issues、releases |
 | **PDF** | `create <file.pdf>` | 手册、论文、报告 |
 | **本地** | `create <./path>` | 你的项目、内部代码 |
+| **Word** | `create <file.docx>` | 报告、规格说明 |
+| **EPUB** | `create <file.epub>` | 电子书、长篇文档 |
+| **视频** | `create <url/file>` | 教程、演示 |
+| **Jupyter** | `create <file.ipynb>` | 数据科学、实验 |
+| **本地 HTML** | `create <file.html>` | 离线文档、保存的页面 |
+| **OpenAPI** | `create <spec.yaml>` | API 规范、Swagger 文档 |
+| **AsciiDoc** | `create <file.adoc>` | 技术文档 |
+| **PowerPoint** | `create <file.pptx>` | 幻灯片、演示文稿 |
+| **RSS/Atom** | `create <feed.rss>` | 博客订阅、新闻来源 |
+| **Man 手册页** | `create <cmd.1>` | Unix 命令文档 |
+| **Confluence** | `confluence` | 团队维基、知识库 |
+| **Notion** | `notion` | 工作区文档、数据库 |
+| **Slack/Discord** | `chat` | 聊天记录、讨论 |
 
 ---
 
@@ -50,29 +63,39 @@ skill-seekers create --config fastapi
 
 ### 自定义配置
 
+所有配置必须使用带 `sources` 数组的统一格式（自 v2.11.0 起）：
+
 ```bash
 # 创建配置文件
 cat > configs/my-docs.json << 'EOF'
 {
   "name": "my-framework",
-  "base_url": "https://docs.example.com/",
   "description": "My framework documentation",
-  "max_pages": 200,
-  "rate_limit": 0.5,
-  "selectors": {
-    "main_content": "article",
-    "title": "h1"
-  },
-  "url_patterns": {
-    "include": ["/docs/", "/api/"],
-    "exclude": ["/blog/", "/search"]
-  }
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.example.com/",
+      "max_pages": 200,
+      "rate_limit": 0.5,
+      "selectors": {
+        "main_content": "article",
+        "title": "h1"
+      },
+      "url_patterns": {
+        "include": ["/docs/", "/api/"],
+        "exclude": ["/blog/", "/search"]
+      }
+    }
+  ]
 }
 EOF
 
 # 使用配置
 skill-seekers create --config configs/my-docs.json
 ```
+
+> **注意：** 在 `selectors` 中省略 `main_content` 可让 Skill Seekers 自动检测
+> 最佳内容元素（`main`、`article`、`div[role="main"]` 等）。
 
 查看 [Config Format](../reference/CONFIG_FORMAT.md) 获取所有选项。
 
@@ -174,7 +197,7 @@ skill-seekers create --pdf manual.pdf --name docs
 
 ```bash
 # 启用 OCR
-skill-seekers create --pdf scanned.pdf --enable-ocr
+skill-seekers create --pdf scanned.pdf --ocr
 ```
 
 **要求：**
@@ -218,20 +241,20 @@ skill-seekers create .
 skill-seekers create ./my-project
 
 # 使用显式命令
-skill-seekers scan  ./my-project
+skill-seekers create ./my-project
 ```
 
 ### 分析预设
 
 ```bash
 # 快速分析（1-2 分钟）
-skill-seekers scan  ./my-project --preset quick
+skill-seekers create ./my-project --preset quick
 
 # 标准分析（5-10 分钟）- 默认
-skill-seekers scan  ./my-project --preset standard
+skill-seekers create ./my-project --preset standard
 
 # 全面分析（20-60 分钟）
-skill-seekers scan  ./my-project --preset comprehensive
+skill-seekers create ./my-project --preset comprehensive
 ```
 
 ### 分析内容
@@ -250,11 +273,11 @@ skill-seekers scan  ./my-project --preset comprehensive
 
 ```bash
 # 特定语言
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --languages Python,JavaScript
 
 # 文件模式
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --file-patterns "*.py,*.js"
 ```
 
@@ -262,11 +285,279 @@ skill-seekers scan  ./my-project \
 
 ```bash
 # 跳过重型功能
-skill-seekers scan  ./my-project \
+skill-seekers create ./my-project \
   --skip-dependency-graph \
   --skip-patterns \
   --skip-test-examples
 ```
+
+---
+
+## 视频提取
+
+### 基本用法
+
+```bash
+# YouTube 视频
+skill-seekers create https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# 本地视频文件
+skill-seekers create presentation.mp4
+
+# 使用显式命令
+skill-seekers create --video-url  https://www.youtube.com/watch?v=...
+```
+
+### 视觉分析
+
+```bash
+# 安装完整视频支持（包含 Whisper + 场景检测）
+pip install skill-seekers[video-full]
+skill-seekers create --setup  # 自动检测 GPU 并安装 PyTorch
+
+# 带视觉分析提取
+skill-seekers create --video-url <url> --visual
+```
+
+**要求：**
+```bash
+pip install skill-seekers[video]        # 仅转录
+pip install skill-seekers[video-full]   # + Whisper、场景检测
+```
+
+---
+
+## Word 文档提取
+
+### 基本用法
+
+```bash
+# 从 .docx 提取
+skill-seekers create report.docx --name project-report
+
+# 使用显式命令
+skill-seekers create report.docx
+```
+
+**处理内容：** 文本、表格、标题、图片、嵌入式元数据。
+
+---
+
+## EPUB 提取
+
+### 基本用法
+
+```bash
+# 从 .epub 提取
+skill-seekers create programming-guide.epub --name guide
+
+# 使用显式命令
+skill-seekers create programming-guide.epub
+```
+
+**处理内容：** 章节、元数据、目录、嵌入式图片。
+
+---
+
+## Jupyter Notebook 提取
+
+### 基本用法
+
+```bash
+# 从 .ipynb 提取
+skill-seekers create analysis.ipynb --name data-analysis
+
+# 使用显式命令
+skill-seekers create analysis.ipynb
+```
+
+**要求：**
+```bash
+pip install skill-seekers[jupyter]
+```
+
+**提取内容：** Markdown 单元格、代码单元格、单元格输出、执行顺序。
+
+---
+
+## 本地 HTML 提取
+
+### 基本用法
+
+```bash
+# 从 .html 提取
+skill-seekers create docs.html --name offline-docs
+
+# 使用显式命令
+skill-seekers create docs.html
+```
+
+**处理内容：** 完整 HTML 解析、文本提取、链接解析。
+
+---
+
+## OpenAPI/Swagger 提取
+
+### 基本用法
+
+```bash
+# 从 OpenAPI 规范提取
+skill-seekers create api-spec.yaml --name my-api
+
+# 使用显式命令
+skill-seekers create api-spec.yaml
+```
+
+**提取内容：** 端点、请求/响应模式、认证信息、示例。
+
+---
+
+## AsciiDoc 提取
+
+### 基本用法
+
+```bash
+# 从 .adoc 提取
+skill-seekers create guide.adoc --name dev-guide
+
+# 使用显式命令
+skill-seekers create guide.adoc
+```
+
+**要求：**
+```bash
+pip install skill-seekers[asciidoc]
+```
+
+**处理内容：** 章节、代码块、表格、交叉引用、包含文件。
+
+---
+
+## PowerPoint 提取
+
+### 基本用法
+
+```bash
+# 从 .pptx 提取
+skill-seekers create slides.pptx --name presentation
+
+# 使用显式命令
+skill-seekers create slides.pptx
+```
+
+**要求：**
+```bash
+pip install skill-seekers[pptx]
+```
+
+**提取内容：** 幻灯片文本、演讲者备注、图片、表格、幻灯片顺序。
+
+---
+
+## RSS/Atom 订阅提取
+
+### 基本用法
+
+```bash
+# 从 RSS 订阅源提取
+skill-seekers create blog.rss --name blog-archive
+
+# Atom 订阅源
+skill-seekers create updates.atom --name updates
+
+# 使用显式命令
+skill-seekers create blog.rss
+```
+
+**要求：**
+```bash
+pip install skill-seekers[rss]
+```
+
+**提取内容：** 文章、标题、日期、作者、分类。
+
+---
+
+## Man 手册页提取
+
+### 基本用法
+
+```bash
+# 从 man 手册页提取
+skill-seekers create curl.1 --name curl-manual
+
+# 使用显式命令
+skill-seekers create curl.1
+```
+
+**处理内容：** 各节（NAME、SYNOPSIS、DESCRIPTION、OPTIONS 等）、格式。
+
+---
+
+## Confluence 维基提取
+
+### 基本用法
+
+```bash
+# 从 Confluence API
+skill-seekers create \
+  --conf-base-url https://wiki.example.com \
+  --space-key DEV \
+  --name team-docs
+
+# 从 Confluence 导出目录
+skill-seekers create --conf-export-path ./confluence-export/
+```
+
+**要求：**
+```bash
+pip install skill-seekers[confluence]
+```
+
+**提取内容：** 页面、页面树、附件、标签、空间。
+
+---
+
+## Notion 提取
+
+### 基本用法
+
+```bash
+# 从 Notion API
+export NOTION_API_KEY=secret_...
+skill-seekers create --database-id abc123 --name product-wiki
+
+# 从 Notion 导出目录
+skill-seekers create --notion-export-path ./notion-export/
+```
+
+**要求：**
+```bash
+pip install skill-seekers[notion]
+```
+
+**提取内容：** 页面、数据库、块、属性、关联。
+
+---
+
+## Slack/Discord 聊天提取
+
+### 基本用法
+
+```bash
+# 从 Slack 导出
+skill-seekers create --chat-export-path  slack-export/ --name team-discussions
+
+# 从 Discord 导出
+skill-seekers create --chat-export-path  discord-export/ --name server-archive
+```
+
+**要求：**
+```bash
+pip install skill-seekers[chat]
+```
+
+**提取内容：** 消息、线程、频道、表情回应、附件。
 
 ---
 
@@ -331,14 +622,22 @@ skill-seekers resume <job-id>
 
 **解决方案：**
 ```bash
-# 查找正确的选择器
+# 首先，尝试不指定 main_content 选择器（自动检测）
+# 抓取器会依次尝试：main、div[role="main"]、article、.content 等
+skill-seekers create <url> --dry-run
+
+# 如果自动检测失败，查找正确的选择器：
 curl -s <url> | grep -i 'article\|main\|content'
 
-# 更新配置
+# 然后在配置的 source 中指定它：
 {
-  "selectors": {
-    "main_content": "div.content"
-  }
+  "sources": [{
+    "type": "documentation",
+    "base_url": "https://...",
+    "selectors": {
+      "main_content": "div.content"
+    }
+  }]
 }
 ```
 

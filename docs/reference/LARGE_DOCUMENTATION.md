@@ -63,7 +63,7 @@ skill-seekers create --config configs/react.json
 
 ```bash
 # Auto-split by categories
-skill-seekers create configs/godot.json --strategy category
+python -m skill_seekers.cli.split_config configs/godot.json --strategy category
 
 # Creates:
 # - godot-scripting.json
@@ -83,7 +83,7 @@ skill-seekers create configs/godot.json --strategy category
 
 ```bash
 # Create router + sub-skills
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 
 # Creates:
 # - godot.json (router/hub)
@@ -102,7 +102,7 @@ skill-seekers create configs/godot.json --strategy router
 
 ```bash
 # Split every 5000 pages
-skill-seekers create configs/bigdocs.json --strategy size --target-pages 5000
+python -m skill_seekers.cli.split_config configs/bigdocs.json --strategy size --target-pages 5000
 
 # Creates:
 # - bigdocs-part1.json
@@ -132,7 +132,7 @@ skill-seekers estimate configs/godot.json
 # Output: ⚠️  40,000 pages detected - splitting recommended
 
 # 3. Auto-split with router
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 
 # 4. Scrape all sub-skills
 for config in configs/godot-*.json; do
@@ -192,7 +192,7 @@ skill-seekers estimate configs/godot.json
 
 **Step 2: Split Configuration**
 ```bash
-skill-seekers create configs/godot.json --strategy router --target-pages 5000
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router --target-pages 5000
 
 # Creates:
 # configs/godot.json (router)
@@ -252,7 +252,7 @@ Upload all 6 .zip files to Claude. The router will intelligently direct queries 
 
 ```bash
 # 1. Split
-skill-seekers create configs/vue.json --strategy category
+python -m skill_seekers.cli.split_config configs/vue.json --strategy category
 
 # 2. Scrape each
 for config in configs/vue-*.json; do
@@ -275,13 +275,13 @@ skill-seekers package output/vue*/
 
 ```bash
 # Small focused skills (3K-5K pages) - more skills, very focused
-skill-seekers create config.json --target-pages 3000
+python -m skill_seekers.cli.split_config config.json --target-pages 3000
 
 # Medium skills (5K-8K pages) - balanced (RECOMMENDED)
-skill-seekers create config.json --target-pages 5000
+python -m skill_seekers.cli.split_config config.json --target-pages 5000
 
 # Larger skills (8K-10K pages) - fewer skills, broader
-skill-seekers create config.json --target-pages 8000
+python -m skill_seekers.cli.split_config config.json --target-pages 8000
 ```
 
 ### 2. **Use Parallel Scraping**
@@ -334,7 +334,7 @@ skill-seekers create --config config.json --resume
 
 ```bash
 # 1. Split by AWS services
-skill-seekers create configs/aws.json --strategy router --target-pages 5000
+python -m skill_seekers.cli.split_config configs/aws.json --strategy router --target-pages 5000
 
 # Creates ~10 skills:
 # - aws (router)
@@ -356,7 +356,7 @@ skill-seekers create configs/aws.json --strategy router --target-pages 5000
 # Too large even with splitting - use selective categories
 
 # Only scrape key topics
-skill-seekers create configs/microsoft.json --strategy category
+python -m skill_seekers.cli.split_config configs/microsoft.json --strategy category
 
 # Edit configs to include only:
 # - microsoft-azure (Azure docs only)
@@ -376,7 +376,7 @@ skill-seekers create configs/microsoft.json --strategy category
 
 ```bash
 # Instead of 5K per skill, use 8K
-skill-seekers create config.json --target-pages 8000
+python -m skill_seekers.cli.split_config config.json --target-pages 8000
 
 # Or manually combine categories in config
 ```
@@ -415,7 +415,7 @@ wait
 **For 40K+ Page Documentation:**
 
 1. ✅ **Estimate first**: `skill-seekers estimate config.json`
-2. ✅ **Split with router**: `skill-seekers create config.json --strategy router`
+2. ✅ **Split with router**: `python -m skill_seekers.cli.split_config config.json --strategy router`
 3. ✅ **Scrape in parallel**: Multiple terminals or background jobs
 4. ✅ **Generate router**: `skill-seekers create configs/*-*.json`
 5. ✅ **Package all**: `skill-seekers package output/*/`

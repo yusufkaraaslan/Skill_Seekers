@@ -1,38 +1,38 @@
-# Git-Based Config Sources - Complete Guide
+# 基于 Git 的配置源 - 完整指南
 
-**Version:** v2.2.0
-**Feature:** A1.9 - Multi-Source Git Repository Support
-**Last Updated:** December 21, 2025
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [MCP Tools Reference](#mcp-tools-reference)
-- [Authentication](#authentication)
-- [Use Cases](#use-cases)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-- [Advanced Topics](#advanced-topics)
+**版本：** v3.6.0
+**功能：** A1.9 - 多源 Git 仓库支持
+**最后更新：** 2025 年 12 月 21 日
 
 ---
 
-## Overview
+## 目录
 
-### What is this feature?
+- [概述](#概述)
+- [快速开始](#快速开始)
+- [架构](#架构)
+- [MCP 工具参考](#mcp-工具参考)
+- [身份验证](#身份验证)
+- [使用场景](#使用场景)
+- [最佳实践](#最佳实践)
+- [故障排除](#故障排除)
+- [高级主题](#高级主题)
 
-Git-based config sources allow you to fetch config files from **private/team git repositories** in addition to the public API. This unlocks:
+---
 
-- 🔐 **Private configs** - Company/internal documentation
-- 👥 **Team collaboration** - Share configs across 3-5 person teams
-- 🏢 **Enterprise scale** - Support 500+ developers
-- 📦 **Custom collections** - Curated config repositories
-- 🌐 **Decentralized** - Like npm (public + private registries)
+## 概述
 
-### How it works
+### 这个功能是什么？
+
+基于 Git 的配置源允许你除了公共 API 之外，还能从**私有/团队 git 仓库**获取配置文件。这解锁了：
+
+- 🔐 **私有配置** - 公司/内部文档
+- 👥 **团队协作** - 在 3-5 人团队中共享配置
+- 🏢 **企业规模** - 支持 500+ 开发者
+- 📦 **自定义集合** - 精选的配置仓库
+- 🌐 **去中心化** - 类似 npm（公共 + 私有注册表）
+
+### 工作原理
 
 ```
 User → fetch_config(source="team", config_name="react-custom")
@@ -46,25 +46,25 @@ Local cache (~/.skill-seekers/cache/team/)
 Config JSON returned
 ```
 
-### Three modes
+### 三种模式
 
-1. **API Mode** (existing, unchanged)
+1. **API 模式**（现有，未变化）
    - `fetch_config(config_name="react")`
-   - Fetches from api.skillseekersweb.com
+   - 从 api.skillseekersweb.com 获取
 
-2. **Source Mode** (NEW - recommended)
+2. **源模式**（新增 - 推荐）
    - `fetch_config(source="team", config_name="react-custom")`
-   - Uses registered git source
+   - 使用已注册的 git 源
 
-3. **Git URL Mode** (NEW - one-time)
+3. **Git URL 模式**（新增 - 一次性）
    - `fetch_config(git_url="https://...", config_name="react-custom")`
-   - Direct clone without registration
+   - 直接克隆，无需注册
 
 ---
 
-## Quick Start
+## 快速开始
 
-### 1. Set up authentication
+### 1. 设置身份验证
 
 ```bash
 # GitHub
@@ -77,9 +77,9 @@ export GITLAB_TOKEN=glpat_your_token_here
 export BITBUCKET_TOKEN=your_token_here
 ```
 
-### 2. Register a source
+### 2. 注册一个源
 
-Using MCP tools (recommended):
+使用 MCP 工具（推荐）：
 
 ```python
 add_config_source(
@@ -92,7 +92,7 @@ add_config_source(
 )
 ```
 
-### 3. Fetch configs
+### 3. 获取配置
 
 ```python
 # From registered source
@@ -105,7 +105,7 @@ list_config_sources()
 remove_config_source(name="team")
 ```
 
-### 4. Quick test with example repository
+### 4. 使用示例仓库快速测试
 
 ```bash
 cd /path/to/Skill_Seekers
@@ -125,16 +125,16 @@ fetch_config(source="example", config_name="react-custom")
 
 ---
 
-## Architecture
+## 架构
 
-### Storage Locations
+### 存储位置
 
-**Sources Registry:**
+**源注册表：**
 ```
 ~/.skill-seekers/sources.json
 ```
 
-Example content:
+示例内容：
 ```json
 {
   "version": "1.0",
@@ -154,12 +154,12 @@ Example content:
 }
 ```
 
-**Cache Directory:**
+**缓存目录：**
 ```
 $SKILL_SEEKERS_CACHE_DIR  (default: ~/.skill-seekers/cache/)
 ```
 
-Structure:
+结构：
 ```
 ~/.skill-seekers/
 ├── sources.json       # Source registry
@@ -173,43 +173,43 @@ Structure:
         └── internal-api.json
 ```
 
-### Git Strategy
+### Git 策略
 
-- **Shallow clone**: `git clone --depth 1 --single-branch`
-  - 10-50x faster
-  - Minimal disk space
-  - No history, just latest commit
+- **浅克隆**：`git clone --depth 1 --single-branch`
+  - 快 10-50 倍
+  - 占用磁盘空间极小
+  - 没有历史记录，只有最新提交
 
-- **Auto-pull**: Updates cache automatically
-  - Checks for changes on each fetch
-  - Use `refresh=true` to force re-clone
+- **自动 pull**：自动更新缓存
+  - 每次获取时检查变更
+  - 使用 `refresh=true` 强制重新克隆
 
-- **Config discovery**: Recursively scans for `*.json` files
-  - No hardcoded paths
-  - Flexible repository structure
-  - Excludes `.git` directory
+- **配置发现**：递归扫描 `*.json` 文件
+  - 没有硬编码路径
+  - 仓库结构灵活
+  - 排除 `.git` 目录
 
 ---
 
-## MCP Tools Reference
+## MCP 工具参考
 
 ### add_config_source
 
-Register a git repository as a config source.
+将一个 git 仓库注册为配置源。
 
-**Parameters:**
-- `name` (required): Source identifier (lowercase, alphanumeric, hyphens/underscores)
-- `git_url` (required): Git repository URL (HTTPS or SSH)
-- `source_type` (optional): "github", "gitlab", "gitea", "bitbucket", "custom" (auto-detected from URL)
-- `token_env` (optional): Environment variable name for token (auto-detected from type)
-- `branch` (optional): Git branch (default: "main")
-- `priority` (optional): Priority number (default: 100, lower = higher priority)
-- `enabled` (optional): Whether source is active (default: true)
+**参数：**
+- `name`（必填）：源标识符（小写、字母数字、连字符/下划线）
+- `git_url`（必填）：Git 仓库 URL（HTTPS 或 SSH）
+- `source_type`（可选）："github"、"gitlab"、"gitea"、"bitbucket"、"custom"（从 URL 自动检测）
+- `token_env`（可选）：token 的环境变量名（根据类型自动检测）
+- `branch`（可选）：Git 分支（默认："main"）
+- `priority`（可选）：优先级数字（默认：100，越小优先级越高）
+- `enabled`（可选）：源是否启用（默认：true）
 
-**Returns:**
-- Source details including registration timestamp
+**返回：**
+- 包含注册时间戳的源详细信息
 
-**Examples:**
+**示例：**
 
 ```python
 # Minimal (auto-detects everything)
@@ -239,15 +239,15 @@ add_config_source(
 
 ### list_config_sources
 
-List all registered config sources.
+列出所有已注册的配置源。
 
-**Parameters:**
-- `enabled_only` (optional): Only show enabled sources (default: false)
+**参数：**
+- `enabled_only`（可选）：仅显示已启用的源（默认：false）
 
-**Returns:**
-- List of sources sorted by priority
+**返回：**
+- 按优先级排序的源列表
 
-**Example:**
+**示例：**
 
 ```python
 # List all sources
@@ -257,7 +257,7 @@ list_config_sources()
 list_config_sources(enabled_only=true)
 ```
 
-**Output:**
+**输出：**
 ```
 📋 Config Sources (2 total)
 
@@ -276,17 +276,17 @@ list_config_sources(enabled_only=true)
 
 ### remove_config_source
 
-Remove a registered config source.
+移除一个已注册的配置源。
 
-**Parameters:**
-- `name` (required): Source identifier
+**参数：**
+- `name`（必填）：源标识符
 
-**Returns:**
-- Success/failure message
+**返回：**
+- 成功/失败消息
 
-**Note:** Does NOT delete cached git repository data. To free disk space, manually delete `~/.skill-seekers/cache/{source_name}/`
+**注意：** 不会删除已缓存的 git 仓库数据。要释放磁盘空间，请手动删除 `~/.skill-seekers/cache/{source_name}/`
 
-**Example:**
+**示例：**
 
 ```python
 remove_config_source(name="team")
@@ -294,9 +294,9 @@ remove_config_source(name="team")
 
 ### fetch_config
 
-Fetch config from API, git URL, or named source.
+从 API、git URL 或命名源获取配置。
 
-**Mode 1: Named Source (highest priority)**
+**模式 1：命名源（最高优先级）**
 
 ```python
 fetch_config(
@@ -308,7 +308,7 @@ fetch_config(
 )
 ```
 
-**Mode 2: Direct Git URL**
+**模式 2：直接 Git URL**
 
 ```python
 fetch_config(
@@ -321,7 +321,7 @@ fetch_config(
 )
 ```
 
-**Mode 3: API (existing, unchanged)**
+**模式 3：API（现有，未变化）**
 
 ```python
 fetch_config(
@@ -335,40 +335,40 @@ fetch_config(list_available=true)
 
 ---
 
-## Authentication
+## 身份验证
 
-### Environment Variables Only
+### 仅使用环境变量
 
-Tokens are **ONLY** stored in environment variables. This is:
-- ✅ **Secure** - Not in files, not in git
-- ✅ **Standard** - Same as GitHub CLI, Docker, etc.
-- ✅ **Temporary** - Cleared on logout
-- ✅ **Flexible** - Different tokens for different services
+Token **只**存储在环境变量中。这是：
+- ✅ **安全** - 不在文件中，不在 git 中
+- ✅ **标准** - 与 GitHub CLI、Docker 等一致
+- ✅ **临时** - 注销时清除
+- ✅ **灵活** - 不同服务使用不同 token
 
-### Creating Tokens
+### 创建 Token
 
-**GitHub:**
-1. Go to https://github.com/settings/tokens
-2. Generate new token (classic)
-3. Select scopes: `repo` (for private repos)
-4. Copy token: `ghp_xxxxxxxxxxxxx`
-5. Export: `export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx`
+**GitHub：**
+1. 访问 https://github.com/settings/tokens
+2. 生成新 token（classic）
+3. 选择 scope：`repo`（用于私有仓库）
+4. 复制 token：`ghp_xxxxxxxxxxxxx`
+5. 导出：`export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx`
 
-**GitLab:**
-1. Go to https://gitlab.com/-/profile/personal_access_tokens
-2. Create token with `read_repository` scope
-3. Copy token: `glpat-xxxxxxxxxxxxx`
-4. Export: `export GITLAB_TOKEN=glpat-xxxxxxxxxxxxx`
+**GitLab：**
+1. 访问 https://gitlab.com/-/profile/personal_access_tokens
+2. 创建具有 `read_repository` scope 的 token
+3. 复制 token：`glpat-xxxxxxxxxxxxx`
+4. 导出：`export GITLAB_TOKEN=glpat-xxxxxxxxxxxxx`
 
-**Bitbucket:**
-1. Go to https://bitbucket.org/account/settings/app-passwords/
-2. Create app password with `Repositories: Read` permission
-3. Copy password
-4. Export: `export BITBUCKET_TOKEN=your_password`
+**Bitbucket：**
+1. 访问 https://bitbucket.org/account/settings/app-passwords/
+2. 创建具有 `Repositories: Read` 权限的应用密码
+3. 复制密码
+4. 导出：`export BITBUCKET_TOKEN=your_password`
 
-### Persistent Tokens
+### 持久化 Token
 
-Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+添加到你的 shell 配置文件（`~/.bashrc`、`~/.zshrc` 等）：
 
 ```bash
 # GitHub token
@@ -381,28 +381,28 @@ export GITLAB_TOKEN=glpat-xxxxxxxxxxxxx
 export GITLAB_COMPANY_TOKEN=glpat-yyyyyyyyyyyyy
 ```
 
-Then: `source ~/.bashrc`
+然后：`source ~/.bashrc`
 
-### Token Injection
+### Token 注入
 
-GitConfigRepo automatically:
-1. Converts SSH URLs to HTTPS
-2. Injects token into URL
-3. Uses token for authentication
+GitConfigRepo 会自动：
+1. 将 SSH URL 转换为 HTTPS
+2. 将 token 注入 URL
+3. 使用 token 进行身份验证
 
-**Example:**
-- Input: `git@github.com:myorg/repo.git` + token `ghp_xxx`
-- Output: `https://ghp_xxx@github.com/myorg/repo.git`
+**示例：**
+- 输入：`git@github.com:myorg/repo.git` + token `ghp_xxx`
+- 输出：`https://ghp_xxx@github.com/myorg/repo.git`
 
 ---
 
-## Use Cases
+## 使用场景
 
-### Small Team (3-5 people)
+### 小型团队（3-5 人）
 
-**Scenario:** Frontend team needs custom React configs for internal docs.
+**场景：** 前端团队需要用于内部文档的自定义 React 配置。
 
-**Setup:**
+**设置：**
 
 ```bash
 # 1. Team lead creates repo
@@ -430,17 +430,17 @@ add_config_source(
 fetch_config(source="team", config_name="react-internal")
 ```
 
-**Benefits:**
-- ✅ Shared configs across team
-- ✅ Version controlled
-- ✅ Private to company
-- ✅ Easy updates (git push)
+**优势：**
+- ✅ 团队共享配置
+- ✅ 版本控制
+- ✅ 公司私有
+- ✅ 更新方便（git push）
 
-### Enterprise (500+ developers)
+### 企业（500+ 开发者）
 
-**Scenario:** Large company with multiple teams, internal docs, and priority-based config resolution.
+**场景：** 拥有多个团队、内部文档的大公司，需要基于优先级的配置解析。
 
-**Setup:**
+**设置：**
 
 ```bash
 # IT pre-configures sources for all developers
@@ -468,7 +468,7 @@ add_config_source(
 # (API mode, no registration needed, lowest priority)
 ```
 
-**Developer usage:**
+**开发者使用：**
 
 ```python
 # Automatically finds config with highest priority
@@ -477,18 +477,18 @@ fetch_config(config_name="react-native")  # Found in mobile source
 fetch_config(config_name="react")  # Falls back to public API
 ```
 
-**Benefits:**
-- ✅ Centralized config management
-- ✅ Team-specific overrides
-- ✅ Fallback to public configs
-- ✅ Priority-based resolution
-- ✅ Scales to hundreds of developers
+**优势：**
+- ✅ 集中式配置管理
+- ✅ 团队特定的覆盖
+- ✅ 回退到公共配置
+- ✅ 基于优先级的解析
+- ✅ 可扩展到数百名开发者
 
-### Open Source Project
+### 开源项目
 
-**Scenario:** Open source project wants curated configs for contributors.
+**场景：** 开源项目想为贡献者提供精选配置。
 
-**Setup:**
+**设置：**
 
 ```bash
 # 1. Create public repo
@@ -509,31 +509,31 @@ add_config_source(
 fetch_config(source="myproject", config_name="react")
 ```
 
-**Benefits:**
-- ✅ Curated configs for project
-- ✅ No API dependency
-- ✅ Community contributions via PR
-- ✅ Version controlled
+**优势：**
+- ✅ 为项目精选的配置
+- ✅ 不依赖 API
+- ✅ 社区可通过 PR 贡献
+- ✅ 版本控制
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### Config Naming
+### 配置命名
 
-**Good:**
-- `react-internal.json` - Clear purpose
-- `api-v2.json` - Version included
-- `platform-auth.json` - Specific topic
+**好的命名：**
+- `react-internal.json` - 用途清晰
+- `api-v2.json` - 包含版本
+- `platform-auth.json` - 主题明确
 
-**Bad:**
-- `config1.json` - Generic
-- `react.json` - Conflicts with official
-- `test.json` - Not descriptive
+**不好的命名：**
+- `config1.json` - 太泛泛
+- `react.json` - 与官方配置冲突
+- `test.json` - 缺乏描述性
 
-### Repository Structure
+### 仓库结构
 
-**Flat (recommended for small repos):**
+**扁平结构（小型仓库推荐）：**
 ```
 skill-configs/
 ├── README.md
@@ -542,7 +542,7 @@ skill-configs/
 └── api-v2.json
 ```
 
-**Organized (recommended for large repos):**
+**分类组织（大型仓库推荐）：**
 ```
 skill-configs/
 ├── README.md
@@ -557,40 +557,40 @@ skill-configs/
     └── flutter.json
 ```
 
-**Note:** Config discovery works recursively, so both structures work!
+**注意：** 配置发现是递归的，所以两种结构都可以！
 
-### Source Priorities
+### 源优先级
 
-Lower number = higher priority. Use sensible defaults:
+数字越小优先级越高。使用合理的默认值：
 
-- `1-10`: Critical/override configs
-- `50-100`: Team configs (default: 100)
-- `1000+`: Fallback/experimental
+- `1-10`：关键/覆盖配置
+- `50-100`：团队配置（默认：100）
+- `1000+`：回退/实验性配置
 
-**Example:**
+**示例：**
 ```python
 # Override official React config with internal version
 add_config_source(name="team", ..., priority=1)  # Checked first
 # Official API is checked last (priority: infinity)
 ```
 
-### Security
+### 安全
 
-✅ **DO:**
-- Use environment variables for tokens
-- Use private repos for sensitive configs
-- Rotate tokens regularly
-- Use fine-grained tokens (read-only if possible)
+✅ **应该：**
+- 使用环境变量存储 token
+- 敏感配置使用私有仓库
+- 定期轮换 token
+- 使用细粒度 token（尽可能只读）
 
-❌ **DON'T:**
-- Commit tokens to git
-- Share tokens between people
-- Use personal tokens for teams (use service accounts)
-- Store tokens in config files
+❌ **不应该：**
+- 把 token 提交到 git
+- 在人员之间共享 token
+- 团队使用个人 token（应使用服务账号）
+- 把 token 存储在配置文件中
 
-### Maintenance
+### 维护
 
-**Regular tasks:**
+**日常任务：**
 ```bash
 # Update configs in repo
 cd myteam-skill-configs
@@ -602,13 +602,13 @@ fetch_config(source="team", config_name="react-internal")
 # ^--- Auto-pulls latest changes
 ```
 
-**Force refresh:**
+**强制刷新：**
 ```python
 # Delete cache and re-clone
 fetch_config(source="team", config_name="react-internal", refresh=true)
 ```
 
-**Clean up old sources:**
+**清理旧源：**
 ```bash
 # Remove unused sources
 remove_config_source(name="old-team")
@@ -619,85 +619,85 @@ rm -rf ~/.skill-seekers/cache/old-team/
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Authentication Failures
+### 身份验证失败
 
-**Error:** "Authentication failed for https://github.com/org/repo.git"
+**错误：** "Authentication failed for https://github.com/org/repo.git"
 
-**Solutions:**
-1. Check token is set:
+**解决方案：**
+1. 检查 token 已设置：
    ```bash
    echo $GITHUB_TOKEN  # Should show token
    ```
 
-2. Verify token has correct permissions:
-   - GitHub: `repo` scope for private repos
-   - GitLab: `read_repository` scope
+2. 验证 token 具有正确的权限：
+   - GitHub：私有仓库需要 `repo` scope
+   - GitLab：`read_repository` scope
 
-3. Check token isn't expired:
-   - Regenerate if needed
+3. 检查 token 是否过期：
+   - 必要时重新生成
 
-4. Try direct access:
+4. 尝试直接访问：
    ```bash
    git clone https://$GITHUB_TOKEN@github.com/org/repo.git test-clone
    ```
 
-### Config Not Found
+### 找不到配置
 
-**Error:** "Config 'react' not found in repository. Available configs: django, vue"
+**错误：** "Config 'react' not found in repository. Available configs: django, vue"
 
-**Solutions:**
-1. List available configs:
+**解决方案：**
+1. 列出可用的配置：
    ```python
    # Shows what's actually in the repo
    list_config_sources()
    ```
 
-2. Check config file exists in repo:
+2. 检查配置文件确实存在于仓库中：
    ```bash
    # Clone locally and inspect
    git clone <git_url> temp-inspect
    find temp-inspect -name "*.json"
    ```
 
-3. Verify config name (case-insensitive):
-   - `react` matches `React.json` or `react.json`
+3. 验证配置名称（不区分大小写）：
+   - `react` 可匹配 `React.json` 或 `react.json`
 
-### Slow Cloning
+### 克隆缓慢
 
-**Issue:** Repository takes minutes to clone.
+**问题：** 仓库克隆需要数分钟。
 
-**Solutions:**
-1. Shallow clone is already enabled (depth=1)
+**解决方案：**
+1. 浅克隆已默认启用（depth=1）
 
-2. Check repository size:
+2. 检查仓库大小：
    ```bash
    # See repo size
    gh repo view owner/repo --json diskUsage
    ```
 
-3. If very large (>100MB), consider:
-   - Splitting configs into separate repos
-   - Using sparse checkout
-   - Contacting IT to optimize repo
+3. 如果非常大（>100MB），考虑：
+   - 将配置拆分到不同仓库
+   - 使用稀疏检出（sparse checkout）
+   - 联系 IT 优化仓库
 
-### Cache Issues
+### 缓存问题
 
-**Issue:** Getting old configs even after updating repo.
+**问题：** 仓库已更新但仍获取到旧配置。
 
-**Solutions:**
-1. Force refresh:
+**解决方案：**
+1. 强制刷新：
    ```python
    fetch_config(source="team", config_name="react", refresh=true)
    ```
 
-2. Manual cache clear:
+2. 手动清除缓存：
    ```bash
    rm -rf ~/.skill-seekers/cache/team/
    ```
 
-3. Check auto-pull worked:
+3. 检查自动 pull 是否生效：
    ```bash
    cd ~/.skill-seekers/cache/team
    git log -1  # Shows latest commit
@@ -705,11 +705,11 @@ rm -rf ~/.skill-seekers/cache/old-team/
 
 ---
 
-## Advanced Topics
+## 高级主题
 
-### Multiple Git Accounts
+### 多个 Git 账号
 
-Use different tokens for different repos:
+为不同的仓库使用不同的 token：
 
 ```bash
 # Personal GitHub
@@ -722,7 +722,7 @@ export GITHUB_WORK_TOKEN=ghp_work_yyy
 export GITLAB_COMPANY_TOKEN=glpat-zzz
 ```
 
-Register with specific tokens:
+使用特定 token 注册：
 ```python
 add_config_source(
     name="personal",
@@ -737,24 +737,24 @@ add_config_source(
 )
 ```
 
-### Custom Cache Location
+### 自定义缓存位置
 
-Set custom cache directory:
+设置自定义缓存目录：
 
 ```bash
 export SKILL_SEEKERS_CACHE_DIR=/mnt/large-disk/skill-seekers-cache
 ```
 
-Or pass to GitConfigRepo:
+或传递给 GitConfigRepo：
 ```python
 from skill_seekers.mcp.git_repo import GitConfigRepo
 
 gr = GitConfigRepo(cache_dir="/custom/path/cache")
 ```
 
-### SSH URLs
+### SSH URL
 
-SSH URLs are automatically converted to HTTPS + token:
+SSH URL 会自动转换为 HTTPS + token：
 
 ```python
 # Input
@@ -768,9 +768,9 @@ add_config_source(
 # https://ghp_xxx@github.com/myorg/configs.git
 ```
 
-### Priority Resolution
+### 优先级解析
 
-When same config exists in multiple sources:
+当同一配置存在于多个源中时：
 
 ```python
 add_config_source(name="team", ..., priority=1)     # Checked first
@@ -783,9 +783,9 @@ fetch_config(config_name="react")
 # 3. If not found, falls back to API
 ```
 
-### CI/CD Integration
+### CI/CD 集成
 
-Use in GitHub Actions:
+在 GitHub Actions 中使用：
 
 ```yaml
 name: Generate Skills
@@ -824,13 +824,13 @@ jobs:
 
 ---
 
-## API Reference
+## API 参考
 
-### GitConfigRepo Class
+### GitConfigRepo 类
 
-**Location:** `src/skill_seekers/mcp/git_repo.py`
+**位置：** `src/skill_seekers/mcp/git_repo.py`
 
-**Methods:**
+**方法：**
 
 ```python
 def __init__(cache_dir: Optional[str] = None)
@@ -860,11 +860,11 @@ def validate_git_url(git_url: str) -> bool:
     """Validate git URL format."""
 ```
 
-### SourceManager Class
+### SourceManager 类
 
-**Location:** `src/skill_seekers/mcp/source_manager.py`
+**位置：** `src/skill_seekers/mcp/source_manager.py`
 
-**Methods:**
+**方法：**
 
 ```python
 def __init__(config_dir: Optional[str] = None)
@@ -896,26 +896,26 @@ def update_source(name: str, **kwargs) -> dict:
 
 ---
 
-## See Also
+## 另请参阅
 
-- [README.md](../README.md) - Main documentation
-- [MCP_SETUP.md](MCP_SETUP.md) - MCP server setup
-- [UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md) - Multi-source scraping
-- [configs/example-team/](../configs/example-team/) - Example repository
-
----
-
-## Changelog
-
-### v2.2.0 (2025-12-21)
-- Initial release of git-based config sources
-- 3 fetch modes: API, Git URL, Named Source
-- 4 MCP tools: add/list/remove/fetch
-- Support for GitHub, GitLab, Bitbucket, Gitea
-- Shallow clone optimization
-- Priority-based resolution
-- 83 tests (100% passing)
+- [README.md](../README.md) - 主文档
+- [MCP_SETUP.md](MCP_SETUP.md) - MCP 服务器设置
+- [UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md) - 多源抓取
+- [configs/example-team/](../configs/example-team/) - 示例仓库
 
 ---
 
-**Questions?** Open an issue at https://github.com/yusufkaraaslan/Skill_Seekers/issues
+## 变更日志
+
+### v2.2.0（2025-12-21）
+- 基于 git 的配置源首次发布
+- 3 种获取模式：API、Git URL、命名源
+- 4 个 MCP 工具：add/list/remove/fetch
+- 支持 GitHub、GitLab、Bitbucket、Gitea
+- 浅克隆优化
+- 基于优先级的解析
+- 83 个测试（100% 通过）
+
+---
+
+**有问题？** 请在 https://github.com/yusufkaraaslan/Skill_Seekers/issues 提交 issue

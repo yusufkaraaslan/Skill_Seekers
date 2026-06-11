@@ -189,22 +189,24 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         except ImportError:
             self.skipTest("anthropic package not installed")
 
-        # Set custom base URL
+        # Set custom base URL. SkillEnhancer now routes through AgentClient,
+        # whose anthropic branch honors ANTHROPIC_BASE_URL — mock the SDK there.
         custom_url = "http://localhost:3000"
 
+        mock_anthropic_mod = Mock()
         with (
             patch.dict(
                 os.environ,
                 {"ANTHROPIC_API_KEY": "test-key-123", "ANTHROPIC_BASE_URL": custom_url},
             ),
-            patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
+            patch.dict(sys.modules, {"anthropic": mock_anthropic_mod}),
         ):
             # Create enhancer
             _enhancer = SkillEnhancer(self.skill_dir)
 
             # VERIFY: Anthropic client called with custom base_url
-            mock_anthropic.assert_called_once()
-            call_kwargs = mock_anthropic.call_args[1]
+            mock_anthropic_mod.Anthropic.assert_called_once()
+            call_kwargs = mock_anthropic_mod.Anthropic.call_args[1]
             self.assertIn("base_url", call_kwargs, "base_url should be passed")
             self.assertEqual(
                 call_kwargs["base_url"],
@@ -222,9 +224,10 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         custom_token = "custom-auth-token-456"
 
         # Use ANTHROPIC_AUTH_TOKEN instead of ANTHROPIC_API_KEY
+        mock_anthropic_mod = Mock()
         with (
             patch.dict(os.environ, {"ANTHROPIC_AUTH_TOKEN": custom_token}, clear=True),
-            patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
+            patch.dict(sys.modules, {"anthropic": mock_anthropic_mod}),
         ):
             # Create enhancer (should accept ANTHROPIC_AUTH_TOKEN)
             enhancer = SkillEnhancer(self.skill_dir)
@@ -236,9 +239,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
                 "Should use ANTHROPIC_AUTH_TOKEN when ANTHROPIC_API_KEY not set",
             )
 
-            # VERIFY: Anthropic client initialized with correct key
-            mock_anthropic.assert_called_once()
-            call_kwargs = mock_anthropic.call_args[1]
+            # VERIFY: Anthropic client initialized with correct key (via AgentClient)
+            mock_anthropic_mod.Anthropic.assert_called_once()
+            call_kwargs = mock_anthropic_mod.Anthropic.call_args[1]
             self.assertEqual(
                 call_kwargs["api_key"],
                 custom_token,
@@ -252,9 +255,10 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
         except ImportError:
             self.skipTest("anthropic package not installed")
 
+        mock_anthropic_mod = Mock()
         with (
             patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
-            patch("skill_seekers.cli.enhance_skill.anthropic.Anthropic") as mock_anthropic,
+            patch.dict(sys.modules, {"anthropic": mock_anthropic_mod}),
         ):
             enhancer = SkillEnhancer(self.skill_dir)
 
@@ -267,8 +271,9 @@ class TestIssue219Problem3CustomAPIEndpoints(unittest.TestCase):
 
             mock_message = Mock()
             mock_message.content = [mock_thinking_block, mock_text_block]
+            mock_message.stop_reason = "end_turn"
 
-            mock_client = mock_anthropic.return_value
+            mock_client = mock_anthropic_mod.Anthropic.return_value
             mock_client.messages.create.return_value = mock_message
 
             # Read references (with proper metadata structure)

@@ -564,6 +564,10 @@ def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str
         return "", 0.0
 
     try:
+        # DOCUMENTED EXCEPTION to the "all AI calls go through AgentClient"
+        # rule (docs/UNIFICATION_PLAN.md Phase 3): this is a multimodal
+        # (image) request and AgentClient only supports text prompts today.
+        # If AgentClient grows multimodal support, route this through it.
         import anthropic
 
         # Read image as base64
@@ -2183,12 +2187,18 @@ def extract_visual_data(
             full_area = frame_h * frame_w
 
             if len(code_panels) > 1:
-                # Parallel OCR — each panel is independent
+                import contextvars
+
+                # Parallel OCR — each panel is independent. Propagate
+                # contextvars into worker threads (threads don't inherit them),
+                # so per-call state like the MCP log-capture token survives.
+                _caller_ctx = contextvars.copy_context()
                 with concurrent.futures.ThreadPoolExecutor(
                     max_workers=min(2, len(code_panels))
                 ) as pool:
                     futures = {
                         pool.submit(
+                            _caller_ctx.copy().run,
                             _ocr_single_panel,
                             frame_path,
                             pb,

@@ -422,13 +422,14 @@ mcp/
 ├── server_fastmcp.py       # Main MCP server (FastMCP, 40 tools)
 ├── server.py               # Server entry point
 ├── server_legacy.py        # Legacy server
-├── source_manager.py       # Config source CRUD
 ├── agent_detector.py       # Environment/agent detection
-├── git_repo.py             # Community config git repos
-├── marketplace_publisher.py # Publish skills to marketplace repos
-├── marketplace_manager.py  # Marketplace registry management
-├── config_publisher.py     # Push configs to source repos
+├── source_manager.py       # Back-compat shim → skill_seekers.services.source_manager
+├── git_repo.py             # Back-compat shim → skill_seekers.services.git_repo
+├── marketplace_publisher.py # Back-compat shim → skill_seekers.services.marketplace_publisher
+├── marketplace_manager.py  # Back-compat shim → skill_seekers.services.marketplace_manager
+├── config_publisher.py     # Back-compat shim → skill_seekers.services.config_publisher
 ├── tools/                  # Tool implementations by category
+│   ├── _common.py          # Shared helpers: run_cli_main() (in-process CLI dispatch), log capture
 │   ├── config_tools.py
 │   ├── marketplace_tools.py
 │   ├── packaging_tools.py
@@ -446,9 +447,13 @@ mcp/
 
 1. **AI coding agent** (Claude Code, Cursor, Windsurf, etc.) sends MCP requests to the server
 2. **Server** routes requests to appropriate tool functions
-3. **Tools** call the CLI (`skill-seekers create`, `skill-seekers estimate`, etc.)
-4. **CLI scripts** perform actual work (scraping, packaging, etc.)
-5. **Results** returned to the agent via MCP protocol
+3. **Tools** run the CLI logic **in-process** — either through the converter factory (`get_converter(...)` for scraping tools) or through the real CLI command's `main()` via the shared `run_cli_main()` helper
+4. **Results** (captured stdout/stderr + return code) returned to the agent via MCP protocol
+
+Shared domain logic (marketplace publishing, config publishing, git config sources)
+lives in the `skill_seekers.services` package — importable by the CLI without the
+`[mcp]` extra; the `mcp/` modules listed above are thin back-compat shims. There
+are no `sys.path` hacks; everything uses absolute `skill_seekers.*` imports.
 
 ### Tool Implementation
 
@@ -462,15 +467,20 @@ async def generate_config_tool(args: dict) -> list[TextContent]:
     # Return success message
 ```
 
-Tools use `subprocess.run()` to call CLI scripts:
+CLI-backed tools call the command's real `main()` in-process via `run_cli_main()`
+(`mcp/tools/_common.py`), which parses the same argv with the command's real
+parser, captures stdout/stderr (including worker-thread logs via contextvars),
+and returns the same `(stdout, stderr, returncode)` contract the old subprocess
+path had:
 
 ```python
-result = subprocess.run([
-    sys.executable,
-    str(SRC_DIR / "skill_seekers" / "cli" / "doc_scraper.py"),
-    "--config", config_path
-], capture_output=True, text=True)
+stdout, stderr, returncode = run_cli_main(estimate_pages.main, argv)
 ```
+
+**Deliberate exceptions:** `enhance_skill` (LOCAL agent mode) and `install_skill`'s
+enhancement step still spawn a subprocess — the AI agent must run as a real child
+process so the fork-bomb recursion guard (`SKILL_SEEKER_ENHANCE_ACTIVE` env
+semantics) works.
 
 ## Testing
 

@@ -103,6 +103,12 @@ class CreateCommand:
 
         # 6. Centralized enhancement (runs after converter, not inside each scraper)
         ctx = ExecutionContext.get()
+        # --dry-run must gate steps 6/7 too: enhancement makes real AI calls
+        # (and rewrites any leftover SKILL.md from a prior run) and workflows
+        # execute LLM stages — neither belongs in a preview.
+        if ctx.output.dry_run:
+            logger.info("Dry run — skipping enhancement and workflows.")
+            return 0
         if ctx.enhancement.enabled and ctx.enhancement.level > 0:
             self._run_enhancement(ctx)
 
@@ -202,17 +208,29 @@ class CreateCommand:
         source_type = self.source_info.type
         ctx = ExecutionContext.get()
 
-        # UnifiedScraper is special — it takes config_path, not a config dict
+        # UnifiedScraper consumes the factory-shaped dict (config_path +
+        # merge_mode/output_dir/dry_run overrides) rather than a built config.
         if source_type == "config":
-            from skill_seekers.cli.unified_scraper import UnifiedScraper
-
-            config_path = self.source_info.parsed["config_path"]
-            merge_mode = getattr(self.args, "merge_mode", None)
-            converter = UnifiedScraper(config_path, merge_mode=merge_mode)
+            converter = get_converter(
+                "config",
+                {
+                    "config_path": self.source_info.parsed["config_path"],
+                    "merge_mode": getattr(self.args, "merge_mode", None),
+                    # Same contract as every other source type: --output and
+                    # --dry-run must reach the converter.
+                    "output_dir": ctx.output.output_dir,
+                    "dry_run": bool(ctx.output.dry_run),
+                },
+            )
             return converter.run()
 
         config = self._build_config(source_type, ctx)
         converter = get_converter(source_type, config)
+        # Promote --skip-scrape onto the instance: SkillConverter.run() reads
+        # the attribute (the same contract the MCP scraping tools use), not the
+        # config dict, so leaving it only in config made the flag a silent no-op.
+        if config.get("skip_scrape"):
+            converter.skip_scrape = True
         return converter.run()
 
     def _build_config(self, source_type: str, ctx: ExecutionContext) -> dict[str, Any]:
@@ -527,7 +545,13 @@ class CreateCommand:
         try:
             from skill_seekers.cli.workflow_runner import run_workflows
 
-            run_workflows(self.args)
+            # Unified configs already executed their config-file "workflows"
+            # list inside UnifiedScraper.run() (Phase 5); the ExecutionContext
+            # fallback here would run the same workflows a second time. Keep
+            # the fallback for every other source type, where this call is the
+            # only executor of config-declared workflows.
+            is_unified = bool(self.source_info and self.source_info.type == "config")
+            run_workflows(self.args, use_context_fallback=not is_unified)
         except ImportError:
             pass
         except Exception as e:

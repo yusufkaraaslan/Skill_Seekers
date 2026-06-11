@@ -31,6 +31,7 @@ except ImportError:
 
 from skill_seekers.cli.skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
+from skill_seekers.cli.scraper_utils import reference_filename
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +109,8 @@ class AsciiDocToSkillConverter(SkillConverter):
         self.description: str = (
             config.get("description") or f"Use when referencing {self.name} documentation"
         )
-        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
-        self.data_file: str = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file: str = self.data_file_for()
         self.categories: dict = config.get("categories", {})
         self.extracted_data: dict | None = None
 
@@ -630,19 +631,12 @@ class AsciiDocToSkillConverter(SkillConverter):
 
     def _ref_filename(self, cat_data: dict, section_num: int, total: int) -> str:
         """Compute reference file path for a category."""
-        sections = cat_data["pages"]
         adoc_base = ""
         if self.asciidoc_path:
             p = Path(self.asciidoc_path)
             adoc_base = p.stem if p.is_file() else ""
-
-        if sections:
-            nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-            if total == 1:
-                return f"{self.skill_dir}/references/{adoc_base or 'main'}.md"
-            base = adoc_base or "section"
-            return f"{self.skill_dir}/references/{base}_s{min(nums)}-s{max(nums)}.md"
-        return f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        basename = reference_filename(cat_data["pages"], section_num, total, adoc_base)
+        return f"{self.skill_dir}/references/{basename}"
 
     def _generate_reference_file(
         self, _cat_key: str, cat_data: dict, section_num: int, total: int

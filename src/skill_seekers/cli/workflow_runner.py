@@ -83,6 +83,7 @@ def _build_inline_engine(inline_stages: list, agent=None):
 def run_workflows(
     args: argparse.Namespace,
     context: dict | None = None,
+    use_context_fallback: bool = True,
 ) -> tuple[bool, list[str]]:
     """Execute all enhancement workflows requested via CLI arguments.
 
@@ -98,6 +99,12 @@ def run_workflows(
               var, and workflow_dry_run attributes).
         context: Optional extra key/value pairs merged into workflow variables
                  (e.g. GitHub metadata). User --var flags take precedence.
+        use_context_fallback: When True (default), fall back to the
+                 ExecutionContext's enhancement workflows/stages if no CLI
+                 flags were given. Callers whose converter already executed
+                 the config-file workflows (unified configs run them in
+                 UnifiedScraper.run Phase 5) pass False so the same workflows
+                 don't run twice.
 
     Returns:
         (any_executed, names) where any_executed is True when at least one
@@ -111,7 +118,7 @@ def run_workflows(
     # Fall back to the ExecutionContext (single source of truth) so workflows
     # declared in a config file — which only reach ctx.enhancement, not argv —
     # still run, not just CLI --enhance-workflow/--enhance-stage.
-    if not named_workflows and not inline_stages:
+    if use_context_fallback and not named_workflows and not inline_stages:
         try:
             from skill_seekers.cli.execution_context import ExecutionContext
 

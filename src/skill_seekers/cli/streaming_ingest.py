@@ -376,27 +376,15 @@ class StreamingIngester:
 
 def main(args=None):
     """CLI entry point for streaming ingestion."""
-    import argparse
 
-    parser = argparse.ArgumentParser(description="Stream and chunk skill documents")
-    parser.add_argument("input", help="Input file or directory path")
-    parser.add_argument(
-        "--streaming-chunk-chars", type=int, default=4000, help="Chunk size in characters"
-    )
-    parser.add_argument(
-        "--streaming-overlap-chars", type=int, default=200, help="Chunk overlap in characters"
-    )
-    parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
-    parser.add_argument("--checkpoint", help="Checkpoint file path")
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
+
     if args is None:
+        # Single source of flags: the central StreamParser.
+        from skill_seekers.cli.parsers.stream_parser import StreamParser
+
+        parser = StreamParser().build_standalone()
         args = parser.parse_args()
-    else:
-        # Central dispatch passes the unified namespace; backfill any args
-        # this module's parser defines but the central one doesn't, so the
-        # reads below never hit a missing attribute.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
 
     # Initialize ingester
     ingester = StreamingIngester(
@@ -417,7 +405,7 @@ def main(args=None):
     input_path = Path(args.input)
     if not input_path.exists():
         print(f"❌ Error: Path not found: {input_path}")
-        return 1
+        return EXIT_ERROR
 
     if input_path.is_dir():
         chunks = ingester.stream_skill_directory(input_path, callback=on_progress)
@@ -457,10 +445,21 @@ def main(args=None):
                 Path(args.checkpoint), {"processed_batches": len(all_chunks) // args.batch_size}
             )
 
+    # Write collected chunks when requested. Previously --output existed only
+    # in the unified CLI's parser and was silently ignored — the chunks were
+    # processed and dropped.
+    if getattr(args, "output", None):
+        out = Path(args.output)
+        out_file = out if out.suffix == ".json" else out / "chunks.json"
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = [{"text": text, "metadata": meta} for text, meta in all_chunks]
+        out_file.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\n💾 Wrote {len(payload)} chunks to {out_file}")
+
     # Final progress
     print("\n" + ingester.format_progress())
     print(f"\n✅ Processed {len(all_chunks)} total chunks")
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

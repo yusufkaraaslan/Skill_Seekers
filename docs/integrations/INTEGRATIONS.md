@@ -288,12 +288,10 @@ cat output/vue-markdown/SKILL.md >> .cursorrules
 skill-seekers create --config configs/custom-framework.json
 
 # 2. Analyze internal codebase
-skill-seekers scan  /path/to/internal/repo --comprehensive
+skill-seekers create /path/to/internal/repo --preset comprehensive
 
-# 3. Merge both:
-skill-seekers merge-sources \
-  --docs output/custom-framework \
-  --codebase output/internal-repo \
+# 3. Merge both via a unified config (sources array with docs + local entries):
+skill-seekers create --config configs/complete-knowledge.json \
   --output output/complete-knowledge
 
 # 4. Package for any platform
@@ -378,7 +376,7 @@ skill-seekers package output/react --target [your-platform]
 **Quarterly:** Codebase analysis
 ```bash
 # Re-analyze internal codebase for new patterns
-skill-seekers scan  . --comprehensive
+skill-seekers create . --preset comprehensive
 ```
 
 **Yearly:** Architecture review

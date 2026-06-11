@@ -31,7 +31,7 @@ try:
 except ImportError:
     PPTX_AVAILABLE = False
 
-from skill_seekers.cli.skill_converter import SkillConverter
+from .document_skill_builder import DocumentSkillBuilder
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 logger = logging.getLogger(__name__)
@@ -148,11 +148,13 @@ def infer_description_from_pptx(
 # ---------------------------------------------------------------------------
 
 
-class PptxToSkillConverter(SkillConverter):
+class PptxToSkillConverter(DocumentSkillBuilder):
     """Convert PowerPoint presentation (.pptx) to an AI-ready skill.
 
-    Follows the same pipeline pattern as the Word, EPUB, and PDF scrapers:
-    extract -> categorize -> build_skill (reference files + index + SKILL.md).
+    Build side (categorize/reference/index/SKILL.md) comes from
+    DocumentSkillBuilder; this class owns PPTX extraction plus the
+    presentation-flavored output overrides (slide ranges, image-count
+    summaries, slide/presentation labels and statistics).
 
     The extraction phase uses python-pptx to read slides, extracting:
     - Slide titles, body text, and speaker notes
@@ -167,6 +169,34 @@ class PptxToSkillConverter(SkillConverter):
     """
 
     SOURCE_TYPE = "pptx"
+    SOURCE_PATH_ATTR = "pptx_path"
+    SOURCE_LABEL = "PowerPoint"
+    FOOTER_LABEL = "PowerPoint Presentation Scraper"
+    DOC_NOUN = "presentation"
+    INDEX_METADATA_FIELDS = (("author", "Author"), ("created", "Created"))
+    # Presentation-specific keyword list (replaces the documentation one).
+    PATTERN_KEYWORDS = (
+        "introduction",
+        "overview",
+        "agenda",
+        "objectives",
+        "getting started",
+        "demo",
+        "demonstration",
+        "examples",
+        "architecture",
+        "design",
+        "implementation",
+        "best practices",
+        "summary",
+        "conclusion",
+        "q&a",
+        "questions",
+        "next steps",
+        "resources",
+        "references",
+        "appendix",
+    )
 
     def __init__(self, config: dict) -> None:
         """Initialize the converter with a configuration dictionary.
@@ -187,8 +217,8 @@ class PptxToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
-        self.data_file: str = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file: str = self.data_file_for()
 
         # Categories config
         self.categories: dict = config.get("categories", {})
@@ -1009,309 +1039,97 @@ class PptxToSkillConverter(SkillConverter):
         return languages_detected, total_code_blocks
 
     # ------------------------------------------------------------------
-    # Load / Categorize / Build
+    # Build-side overrides (DocumentSkillBuilder owns the orchestration)
     # ------------------------------------------------------------------
 
-    def load_extracted_data(self, json_path: str) -> bool:
-        """Load previously extracted data from JSON file.
+    def _write_reference_section(self, f, section) -> None:
+        """Write one section's body into a reference file.
 
-        Args:
-            json_path: Path to the extracted JSON file
-
-        Returns:
-            True on success.
+        Overrides the base: appends the slide range to the source line,
+        strips body text before writing, and renders an image-count summary
+        instead of exporting image bytes (the PPTX extractor records counts,
+        not binary data).
         """
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} sections")
-        return True
+        sec_num = section.get(self.NUMBER_KEY, "?")
+        heading = section.get("heading", "")
+        heading_level = section.get("heading_level", "h1")
+        slide_range = section.get("slide_range", "")
 
-    def categorize_content(self) -> dict[str, dict]:
-        """Categorize sections based on headings, keywords, or config.
+        f.write(f"---\n\n**📄 Source: Section {sec_num}**")
+        if slide_range:
+            f.write(f" (Slides {slide_range})")
+        f.write("\n\n")
 
-        For a single PowerPoint source, creates one category containing all
-        sections. For keyword-based categorization (multi-source), scores
-        each section against category keywords.
+        # Section heading
+        if heading:
+            md_level = "#" * (int(heading_level[1]) + 1) if heading_level else "##"
+            f.write(f"{md_level} {heading}\n\n")
 
-        Returns:
-            Dict mapping category keys to category dicts with 'title' and
-            'pages' (list of sections).
+        # Sub-headings (individual slide titles)
+        for sub_heading in section.get("headings", []):
+            sub_level = sub_heading.get("level", "h3")
+            sub_text = sub_heading.get("text", "")
+            if sub_text:
+                sub_md = "#" * (int(sub_level[1]) + 1) if sub_level else "###"
+                f.write(f"{sub_md} {sub_text}\n\n")
+
+        # Body text
+        text = section.get("text", "").strip()
+        if text:
+            f.write(f"{text}\n\n")
+
+        # Code samples
+        code_list = section.get("code_samples", [])
+        if code_list:
+            f.write("### Code Examples\n\n")
+            for code in code_list:
+                lang = code.get("language", "")
+                f.write(f"```{lang}\n{code['code']}\n```\n\n")
+
+        # Tables as markdown
+        tables = section.get("tables", [])
+        if tables:
+            f.write("### Tables\n\n")
+            for table in tables:
+                self._write_markdown_table(f, table)
+
+        # Image count summary
+        img_count = section.get("image_count", 0)
+        if img_count > 0:
+            f.write(f"### Images\n\n*{img_count} image(s) in this section*\n\n")
+
+        f.write("---\n\n")
+
+    # _generate_index is inherited from DocumentSkillBuilder — DOC_NOUN
+    # produces the "Presentation Reference" title; the statistics block
+    # comes from _write_index_statistics below.
+
+    def _write_index_statistics(self, f) -> None:
+        """Statistics block of index.md.
+
+        Overrides the base to lead with the slide total and add a tables
+        line (both presentation-specific) before the metadata fields.
         """
-        print("\n📋 Categorizing content...")
+        f.write(f"- Total slides: {self.extracted_data.get('total_slides', 0)}\n")
+        f.write(f"- Total sections: {self.extracted_data.get('total_sections', 0)}\n")
+        f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
+        f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
+        f.write(f"- Tables: {self.extracted_data.get('total_tables', 0)}\n")
 
-        categorized: dict[str, dict] = {}
-        sections = self.extracted_data.get("pages", [])
-
-        # For single PPTX source, use single category with all sections
-        if self.pptx_path:
-            pptx_basename = Path(self.pptx_path).stem
-            category_key = self._sanitize_filename(pptx_basename)
-            categorized[category_key] = {
-                "title": pptx_basename,
-                "pages": sections,
-            }
-            print("✅ Created 1 category (single PowerPoint source)")
-            print(f"   - {pptx_basename}: {len(sections)} sections")
-            return categorized
-
-        # Keyword-based categorization (multi-source scenario)
-        if self.categories:
-            first_value = next(iter(self.categories.values()), None)
-            if isinstance(first_value, list) and first_value and isinstance(first_value[0], dict):
-                # Already categorized format
-                for cat_key, pages in self.categories.items():
-                    categorized[cat_key] = {
-                        "title": cat_key.replace("_", " ").title(),
-                        "pages": pages,
-                    }
-            else:
-                # Keyword-based categorization
-                for cat_key in self.categories:
-                    categorized[cat_key] = {
-                        "title": cat_key.replace("_", " ").title(),
-                        "pages": [],
-                    }
-
-                for section in sections:
-                    text = section.get("text", "").lower()
-                    heading_text = section.get("heading", "").lower()
-
-                    scores: dict[str, int] = {}
-                    for cat_key, keywords in self.categories.items():
-                        if isinstance(keywords, list):
-                            score = sum(
-                                1
-                                for kw in keywords
-                                if isinstance(kw, str)
-                                and (kw.lower() in text or kw.lower() in heading_text)
-                            )
-                        else:
-                            score = 0
-                        if score > 0:
-                            scores[cat_key] = score
-
-                    if scores:
-                        best_cat = max(scores, key=scores.get)
-                        categorized[best_cat]["pages"].append(section)
-                    else:
-                        if "other" not in categorized:
-                            categorized["other"] = {"title": "Other", "pages": []}
-                        categorized["other"]["pages"].append(section)
-        else:
-            # No categorization - single category
-            categorized["content"] = {"title": "Content", "pages": sections}
-
-        print(f"✅ Created {len(categorized)} categories")
-        for _cat_key, cat_data in categorized.items():
-            print(f"   - {cat_data['title']}: {len(cat_data['pages'])} sections")
-
-        return categorized
-
-    def build_skill(self) -> None:
-        """Build complete skill structure from extracted data.
-
-        Creates the output directory structure with:
-        - references/ — one markdown file per category
-        - references/index.md — category index with statistics
-        - SKILL.md — main skill file with frontmatter and overview
-        - scripts/ — empty (reserved for future use)
-        - assets/ — empty (reserved for image export)
-        """
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        # Categorize content
-        categorized = self.categorize_content()
-
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        total_sections = len(categorized)
-        section_num = 1
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data, section_num, total_sections)
-            section_num += 1
-
-        # Generate index
-        self._generate_index(categorized)
-
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
-
-    # ------------------------------------------------------------------
-    # Output generation (private)
-    # ------------------------------------------------------------------
-
-    def _reference_filename(self, cat_data: dict, section_num: int, total_sections: int) -> str:
-        """Basename of a category's reference file — single source of truth shared
-        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
-        sections = cat_data.get("pages") or []
-        if not sections:
-            return f"section_{section_num:02d}.md"
-        section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-        base = Path(self.pptx_path).stem if self.pptx_path else ""
-        if total_sections == 1:
-            return f"{base}.md" if base else "main.md"
-        base_name = base if base else "section"
-        return f"{base_name}_s{min(section_nums)}-s{max(section_nums)}.md"
-
-    def _generate_reference_file(
-        self,
-        _cat_key: str,
-        cat_data: dict,
-        section_num: int,
-        total_sections: int,
-    ) -> None:
-        """Generate a reference markdown file for a category of sections.
-
-        Each section's slides are rendered as markdown with slide numbers,
-        body text, code examples, tables, speaker notes, and image counts.
-
-        Args:
-            _cat_key: Category key (unused, for interface consistency)
-            cat_data: Category dict with 'title' and 'pages' keys
-            section_num: 1-based index among all categories
-            total_sections: Total number of categories being generated
-        """
-        sections = cat_data["pages"]
-        filename = (
-            f"{self.skill_dir}/references/"
-            f"{self._reference_filename(cat_data, section_num, total_sections)}"
-        )
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {cat_data['title']}\n\n")
-
-            for section in sections:
-                sec_num = section.get("section_number", "?")
-                heading = section.get("heading", "")
-                heading_level = section.get("heading_level", "h1")
-                slide_range = section.get("slide_range", "")
-
-                f.write(f"---\n\n**📄 Source: Section {sec_num}**")
-                if slide_range:
-                    f.write(f" (Slides {slide_range})")
-                f.write("\n\n")
-
-                # Section heading
-                if heading:
-                    md_level = "#" * (int(heading_level[1]) + 1) if heading_level else "##"
-                    f.write(f"{md_level} {heading}\n\n")
-
-                # Sub-headings (individual slide titles)
-                for sub_heading in section.get("headings", []):
-                    sub_level = sub_heading.get("level", "h3")
-                    sub_text = sub_heading.get("text", "")
-                    if sub_text:
-                        sub_md = "#" * (int(sub_level[1]) + 1) if sub_level else "###"
-                        f.write(f"{sub_md} {sub_text}\n\n")
-
-                # Body text
-                text = section.get("text", "").strip()
-                if text:
-                    f.write(f"{text}\n\n")
-
-                # Code samples
-                code_list = section.get("code_samples", [])
-                if code_list:
-                    f.write("### Code Examples\n\n")
-                    for code in code_list:
-                        lang = code.get("language", "")
-                        f.write(f"```{lang}\n{code['code']}\n```\n\n")
-
-                # Tables as markdown
-                tables = section.get("tables", [])
-                if tables:
-                    f.write("### Tables\n\n")
-                    for table in tables:
-                        headers = table.get("headers", [])
-                        rows = table.get("rows", [])
-                        if headers:
-                            f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                            f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
-
-                # Image count summary
-                img_count = section.get("image_count", 0)
-                if img_count > 0:
-                    f.write(f"### Images\n\n*{img_count} image(s) in this section*\n\n")
-
-                f.write("---\n\n")
-
-        print(f"   Generated: {filename}")
-
-    def _generate_index(self, categorized: dict[str, dict]) -> None:
-        """Generate reference index file listing all categories and statistics.
-
-        Args:
-            categorized: Dict of category key -> category data
-        """
-        filename = f"{self.skill_dir}/references/index.md"
-
-        total_sections = len(categorized)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Presentation Reference\n\n")
-            f.write("## Categories\n\n")
-
-            section_num = 1
-            for _cat_key, cat_data in categorized.items():
-                sections = cat_data["pages"]
-                section_count = len(sections)
-
-                link_filename = self._reference_filename(cat_data, section_num, total_sections)
-                if sections:
-                    section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-                    sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-                else:
-                    sec_range_str = "N/A"
-
-                f.write(
-                    f"- [{cat_data['title']}]({link_filename}) "
-                    f"({section_count} sections, {sec_range_str})\n"
-                )
-                section_num += 1
-
-            f.write("\n## Statistics\n\n")
-            f.write(f"- Total slides: {self.extracted_data.get('total_slides', 0)}\n")
-            f.write(f"- Total sections: {self.extracted_data.get('total_sections', 0)}\n")
-            f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
-            f.write(f"- Tables: {self.extracted_data.get('total_tables', 0)}\n")
-
-            # Metadata
-            metadata = self.extracted_data.get("metadata", {})
-            if metadata.get("author"):
-                f.write(f"- Author: {metadata['author']}\n")
-            if metadata.get("created"):
-                f.write(f"- Created: {metadata['created']}\n")
-
-        print(f"   Generated: {filename}")
+        metadata = self.extracted_data.get("metadata", {})
+        for key, label in self.INDEX_METADATA_FIELDS:
+            if metadata.get(key):
+                f.write(f"- {label}: {metadata[key]}\n")
 
     def _generate_skill_md(self, categorized: dict[str, dict]) -> None:
         """Generate main SKILL.md file with YAML frontmatter and overview.
 
-        Creates a comprehensive skill file with:
-        - YAML frontmatter (name, description)
-        - Document information (from metadata)
-        - "When to Use" section
-        - Section overview with slide counts
-        - Key concepts from headings
-        - Quick reference patterns
-        - Top code examples grouped by language
-        - Table summary
-        - Documentation statistics
-        - Navigation links
+        Full override of the base: the PPTX SKILL.md is presentation-flavored
+        throughout — "Presentation Skill"/"Presentation Information" headers,
+        slide-count metadata fields, presentation-specific "When to Use"
+        bullets, a "Total Slides" line in the overview and statistics, and
+        a tables total taken from extraction (total_tables) rather than the
+        recount the base uses.
 
         Args:
             categorized: Dict of category key -> category data
@@ -1421,14 +1239,8 @@ class PptxToSkillConverter(SkillConverter):
                 for section_heading, table in all_tables[:5]:
                     if section_heading:
                         f.write(f"**From section: {section_heading}**\n\n")
-                    headers = table.get("headers", [])
-                    rows = table.get("rows", [])
-                    if headers:
-                        f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                        f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows[:5]:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
+                    if table.get("headers", []):
+                        self._write_markdown_table(f, table, max_rows=5)
 
             # Statistics
             f.write("## 📊 Presentation Statistics\n\n")
@@ -1458,7 +1270,7 @@ class PptxToSkillConverter(SkillConverter):
 
             # Footer
             f.write("---\n\n")
-            f.write("**Generated by Skill Seeker** | PowerPoint Presentation Scraper\n")
+            f.write(f"**Generated by Skill Seeker** | {self.FOOTER_LABEL}\n")
 
         with open(filename, encoding="utf-8") as f:
             line_count = len(f.read().split("\n"))
@@ -1470,6 +1282,10 @@ class PptxToSkillConverter(SkillConverter):
 
     def _format_key_concepts(self) -> str:
         """Extract key concepts from section and slide headings.
+
+        Overrides the base: presentation-flavored labels ("Major Sections"/
+        "Subsections" instead of "Major Topics"/"Subtopics") plus an extra
+        "Slide Topics" block listing h3 slide titles when no h2s exist.
 
         Returns:
             Markdown string with key concepts section, or empty string
@@ -1520,89 +1336,6 @@ class PptxToSkillConverter(SkillConverter):
 
         return content
 
-    def _format_patterns_from_content(self) -> str:
-        """Extract common documentation patterns from section headings.
-
-        Searches for keywords like "introduction", "overview", "demo",
-        "agenda", etc. that are common in presentations.
-
-        Returns:
-            Markdown string describing found patterns.
-        """
-        patterns: list[dict] = []
-        pattern_keywords = [
-            "introduction",
-            "overview",
-            "agenda",
-            "objectives",
-            "getting started",
-            "demo",
-            "demonstration",
-            "examples",
-            "architecture",
-            "design",
-            "implementation",
-            "best practices",
-            "summary",
-            "conclusion",
-            "q&a",
-            "questions",
-            "next steps",
-            "resources",
-            "references",
-            "appendix",
-        ]
-
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-
-            for keyword in pattern_keywords:
-                if keyword in heading_text:
-                    patterns.append(
-                        {
-                            "type": keyword.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-
-        content = "*Common presentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for pattern in patterns:
-            ptype = pattern["type"]
-            by_type.setdefault(ptype, []).append(pattern)
-
-        for ptype in sorted(by_type.keys()):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-
-        return content
-
-    def _sanitize_filename(self, name: str) -> str:
-        """Convert a string to a filesystem-safe filename.
-
-        Removes special characters, replaces spaces and hyphens with
-        underscores, and lowercases the result.
-
-        Args:
-            name: Input string to sanitize
-
-        Returns:
-            Safe filename string
-        """
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        safe = re.sub(r"[-\s]+", "_", safe)
-        return safe
-
-
-# ---------------------------------------------------------------------------
-# Module-level helpers
-# ---------------------------------------------------------------------------
+    # _format_patterns_from_content is inherited from DocumentSkillBuilder —
+    # PATTERN_KEYWORDS supplies the presentation keyword list and DOC_NOUN
+    # the "Common presentation patterns found" blurb.

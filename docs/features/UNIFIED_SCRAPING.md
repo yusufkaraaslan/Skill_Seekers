@@ -776,7 +776,7 @@ Tests validate:
 2. **code_analyzer.py**: Extracts code signatures at configurable depth
 3. **conflict_detector.py**: Detects API conflicts between sources
 4. **merge_sources.py**: Implements rule-based and Claude-enhanced merging
-5. **unified_scraper.py**: Main orchestrator
+5. **unified_scraper.py**: Main orchestrator. Routes each source through a class-level `SOURCE_DISPATCH` table; the 13 mechanical source types share one `_scrape_with_converter()` engine built on `get_converter()`, so new converter types registered in `CONVERTER_REGISTRY` work in unified configs automatically. Also constructible via the factory: `get_converter("config", {"config_path": ...})`.
 6. **unified_skill_builder.py**: Generates final skill structure
 7. **skill_seeker_mcp/server.py**: MCP integration with auto-detection
 

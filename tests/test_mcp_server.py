@@ -208,10 +208,10 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_success(self, mock_streaming):
         """Test successful page estimation"""
-        # Mock successful subprocess run with streaming
+        # Mock successful in-process run (Phase 5d in-process dispatch)
         # Returns (stdout, stderr, returncode)
         mock_streaming.return_value = ("Estimated 50 pages", "", 0)
 
@@ -225,26 +225,26 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         # Should also have progress message
         self.assertIn("Estimating page count", result[0].text)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_with_max_discovery(self, mock_streaming):
         """Test page estimation with custom max_discovery"""
-        # Mock successful subprocess run with streaming
+        # Mock successful in-process run (Phase 5d in-process dispatch)
         mock_streaming.return_value = ("Estimated 100 pages", "", 0)
 
         args = {"config_path": str(self.config_path), "max_discovery": 500}
 
         _result = await skill_seeker_server.estimate_pages_tool(args)
 
-        # Verify subprocess was called with correct args
+        # Verify run_cli_main was called with the correct argv
         mock_streaming.assert_called_once()
-        call_args = mock_streaming.call_args[0][0]
-        self.assertIn("--max-discovery", call_args)
-        self.assertIn("500", call_args)
+        argv = mock_streaming.call_args[0][1]
+        self.assertIn("--max-discovery", argv)
+        self.assertIn("500", argv)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_subprocess_with_streaming")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_error(self, mock_streaming):
         """Test error handling in page estimation"""
-        # Mock failed subprocess run with streaming
+        # Mock failed in-process run (Phase 5d in-process dispatch)
         mock_streaming.return_value = ("", "Config file not found", 1)
 
         args = {"config_path": "nonexistent.json"}

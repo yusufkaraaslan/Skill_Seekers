@@ -621,3 +621,35 @@ class TestEdgeCases(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPathHasWordBoundaries(unittest.TestCase):
+    """_path_has_word must treat '_' as a separator (snake_case filenames)
+    while still excluding letter-adjacent false positives (dbeaver, blog)."""
+
+    def setUp(self):
+        self.detector = ConfigFileDetector()
+
+    def test_snake_case_matches(self):
+        self.assertTrue(self.detector._path_has_word("config/app_db.yaml", ["db"]))
+        self.assertTrue(self.detector._path_has_word("my_database.yml", ["database"]))
+        self.assertTrue(self.detector._path_has_word("settings/app_logging.conf", ["logging"]))
+        self.assertTrue(self.detector._path_has_word("api_config.json", ["api"]))
+
+    def test_letter_adjacent_still_excluded(self):
+        self.assertFalse(self.detector._path_has_word("tools/dbeaver.ini", ["db"]))
+        self.assertFalse(self.detector._path_has_word("site/blog.toml", ["log"]))
+
+    def test_infer_purpose_snake_case(self):
+        purpose = self.detector._infer_purpose(Path("config/app_db.yaml"), "yaml")
+        self.assertEqual(purpose, "database_configuration")
+        purpose = self.detector._infer_purpose(Path("settings/app_logging.conf"), "ini")
+        self.assertEqual(purpose, "logging_configuration")
+
+    def test_infer_purpose_full_db_product_names(self):
+        """Regression: boundary matching can't find 'postgres' inside
+        'postgresql' or 'mongo'/'db' inside 'mongodb'/'mariadb' — the full
+        product tokens must classify as database configs again."""
+        for name in ["mongodb.yaml", "postgresql.yml", "mongodb.json", "mariadb.yaml"]:
+            purpose = self.detector._infer_purpose(Path(name), "yaml")
+            self.assertEqual(purpose, "database_configuration", name)

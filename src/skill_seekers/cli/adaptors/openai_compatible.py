@@ -289,121 +289,18 @@ Always prioritize accuracy by consulting the attached documentation files before
         return True
 
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
-        """
-        Enhance SKILL.md using the platform's OpenAI-compatible API.
-        """
-        try:
-            from openai import OpenAI
-        except ImportError:
-            print("Error: openai package not installed")
-            print("Install with: pip install openai")
-            return False
-
-        skill_dir = Path(skill_dir)
-        references_dir = skill_dir / "references"
-        skill_md_path = skill_dir / "SKILL.md"
-
-        print("Reading reference documentation...")
-        references = self._read_reference_files(references_dir)
-
-        if not references:
-            print("No reference files found to analyze")
-            return False
-
-        print(f"  Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
-        print(f"  Total size: {total_size:,} characters\n")
-
-        current_skill_md = None
-        if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding="utf-8")
-            print(f"  Found existing SKILL.md ({len(current_skill_md)} chars)")
-        else:
-            print("  No existing SKILL.md, will create new one")
-
-        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
-
-        model = self._resolve_model()
-        print(f"\nAsking {self.PLATFORM_NAME} ({model}) to enhance SKILL.md...")
-        print(f"   Input: {len(prompt):,} characters")
-
-        try:
-            client = OpenAI(
-                api_key=api_key,
-                base_url=self.DEFAULT_API_ENDPOINT,
-            )
-
-            response = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"You are an expert technical writer creating system instructions for {self.PLATFORM_NAME}.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                max_tokens=4096,
-            )
-
-            enhanced_content = response.choices[0].message.content
-
-            # Validate BEFORE touching the original: a truncated or empty response
-            # must not replace a good SKILL.md (ADP-06 / ENH-01).
-            finish_reason = getattr(response.choices[0], "finish_reason", None)
-            if finish_reason == "length":
-                print("  ❌ Enhancement truncated (hit max_tokens); leaving SKILL.md intact.")
-                return False
-            if not enhanced_content or not enhanced_content.strip():
-                print("  ❌ Empty enhancement response; leaving SKILL.md intact.")
-                return False
-
-            print(f"  Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
-
-            # Atomic save: write a temp file, copy the backup, then replace the
-            # original. The old rename-then-write left only SKILL.md.backup (no
-            # SKILL.md) if the write failed after the rename.
-            tmp_path = skill_md_path.with_suffix(".md.tmp")
-            tmp_path.write_text(enhanced_content, encoding="utf-8")
-            if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix(".md.backup")
-                backup_path.write_bytes(skill_md_path.read_bytes())
-                print(f"  Backed up original to: {backup_path.name}")
-            tmp_path.replace(skill_md_path)
-            print("  Saved enhanced SKILL.md")
-
-            return True
-
-        except Exception as e:
-            print(f"Error calling {self.PLATFORM_NAME} API: {e}")
-            return False
-
-    def _read_reference_files(
-        self, references_dir: Path, max_chars: int = 200000
-    ) -> dict[str, str]:
-        """Read reference markdown files from skill directory."""
-        if not references_dir.exists():
-            return {}
-
-        references = {}
-        total_chars = 0
-
-        for ref_file in sorted(references_dir.rglob("*.md")):
-            if total_chars >= max_chars:
-                break
-
-            try:
-                content = ref_file.read_text(encoding="utf-8")
-                if len(content) > 30000:
-                    content = content[:30000] + "\n\n...(truncated)"
-
-                references[ref_file.name] = content
-                total_chars += len(content)
-
-            except Exception as e:
-                print(f"  Could not read {ref_file.name}: {e}")
-
-        return references
+        """Enhance SKILL.md via the platform's OpenAI-compatible API."""
+        return self._enhance_skill_md_via_client(
+            skill_dir,
+            api_key,
+            provider="openai",
+            base_url=self.DEFAULT_API_ENDPOINT,
+            model=self._resolve_model(),
+            system=(
+                "You are an expert technical writer creating system "
+                f"instructions for {self.PLATFORM_NAME}."
+            ),
+        )
 
     def _build_enhancement_prompt(
         self, skill_name: str, references: dict[str, str], current_skill_md: str = None

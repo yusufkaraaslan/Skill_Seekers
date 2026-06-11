@@ -10,6 +10,7 @@ Usage:
 """
 
 import logging
+import os
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -29,9 +30,24 @@ class SkillConverter:
         self.config = config
         self.name = config.get("name", "unnamed")
         # Honor an explicit output dir (from --output) when provided; otherwise
-        # default to output/<name>. Subclasses that re-assign skill_dir do the
-        # same so --output is respected for every source type.
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        # default to output/<name>. This is the single resolution point —
+        # subclasses must consume self.skill_dir rather than re-deriving it.
+        self.skill_dir = self.resolve_skill_dir(config, self.name)
+
+    @staticmethod
+    def resolve_skill_dir(config: dict[str, Any], name: str) -> str:
+        """Resolve the skill output directory from config.
+
+        Strips trailing path separators: derived paths like
+        ``f"{skill_dir}_extracted.json"`` would otherwise land INSIDE the
+        skill directory (and get packaged) when --output ends with '/'.
+        """
+        raw = config.get("output_dir") or f"output/{name}"
+        return str(raw).rstrip("/").rstrip("\\") or raw
+
+    def data_file_for(self, suffix: str = "_extracted.json") -> str:
+        """Path for intermediate extraction data, derived from skill_dir."""
+        return f"{self.skill_dir}{suffix}"
 
     def run(self) -> int:
         """Main entry point — extract source and build skill.
@@ -49,6 +65,7 @@ class SkillConverter:
                     f"⏭️  Skipping extraction for {self.SOURCE_TYPE} source: {self.name} "
                     "(skip_scrape set — building from existing data)"
                 )
+                self._load_cached_data()
             else:
                 logger.info(f"Extracting from {self.SOURCE_TYPE} source: {self.name}")
                 self.extract()
@@ -61,6 +78,29 @@ class SkillConverter:
         except Exception as e:
             logger.exception(f"❌ {self.SOURCE_TYPE} extraction failed: {e}")
             return 1
+
+    def _load_cached_data(self) -> None:
+        """Reload extracted data from disk for a skip_scrape run.
+
+        Document-family converters keep extraction results in memory
+        (``self.extracted_data``, persisted to ``self.data_file``); skipping
+        extract() leaves it None, so build_skill() would crash. Web-style
+        converters load from disk inside build_skill() and need nothing here.
+
+        Raises:
+            FileNotFoundError: If the cached extraction file is missing —
+                run() converts this into a clear error + non-zero exit.
+        """
+        loader = getattr(self, "load_extracted_data", None)
+        if not callable(loader) or getattr(self, "extracted_data", None) is not None:
+            return
+        data_file = getattr(self, "data_file", None) or self.data_file_for()
+        if not os.path.exists(data_file):
+            raise FileNotFoundError(
+                f"skip_scrape is set but no cached extraction data exists at "
+                f"{data_file}. Run once without skip_scrape to extract the source first."
+            )
+        loader(data_file)
 
     def extract(self):
         """Extract content from source. Override in subclass."""
@@ -90,8 +130,10 @@ CONVERTER_REGISTRY: dict[str, tuple[str, str]] = {
     "confluence": ("skill_seekers.cli.confluence_scraper", "ConfluenceToSkillConverter"),
     "notion": ("skill_seekers.cli.notion_scraper", "NotionToSkillConverter"),
     "chat": ("skill_seekers.cli.chat_scraper", "ChatToSkillConverter"),
-    # NOTE: UnifiedScraper takes (config_path: str), not (config: dict).
-    # Callers must construct it directly, not via get_converter().
+    # UnifiedScraper consumes a factory-shaped dict:
+    #   {"config_path": ..., "merge_mode": ..., "output_dir": ..., "dry_run": ...}
+    # where only "config_path" (path to the unified config JSON) is required.
+    # A legacy positional config-path str is still accepted for direct callers.
     "config": ("skill_seekers.cli.unified_scraper", "UnifiedScraper"),
 }
 

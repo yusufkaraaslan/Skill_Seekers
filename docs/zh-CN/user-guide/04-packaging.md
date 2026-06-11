@@ -339,10 +339,7 @@ skill-seekers upload output/my-skill-weaviate.zip \
 ### Cursor IDE
 
 ```bash
-# 打包（实际创建 .cursorrules 文件）
-skill-seekers package output/my-skill/ --target cursor
-
-# 或直接安装
+# 直接安装到 Cursor 的 skills 目录
 skill-seekers install-agent output/my-skill/ --agent cursor
 ```
 
@@ -371,7 +368,8 @@ skill-seekers quality output/my-skill/
 # 详细报告
 skill-seekers quality output/my-skill/ --report
 
-# 设置最低阈值
+# 设置最低阈值（低于阈值时以非零退出码退出；不带 --threshold 时
+# 该命令仅报告并始终以 0 退出）
 skill-seekers quality output/my-skill/ --threshold 7.0
 ```
 
@@ -507,4 +505,4 @@ skill-seekers package output/large-skill/ --streaming
 
 - [工作流指南](05-workflows.md) - 打包前应用工作流
 - [MCP Reference](../reference/MCP_REFERENCE.md) - 通过 MCP 打包
-- [Vector DB Integrations](../integrations/) - 平台特定指南
+- [Vector DB Integrations](../../integrations/) - 平台特定指南

@@ -11,9 +11,17 @@ import re
 import sys
 from pathlib import Path
 
+# Still used by enhance_skill_tool and install_skill_tool's enhancement phase,
+# which deliberately stay subprocess-based (they spawn a LOCAL coding agent).
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import (
+    CLI_DIR,
+    TextContent,
+    run_cli_main,
+    run_cli_tool,
+    text_response,
+)
 
 
 # Path to CLI tools
@@ -32,6 +40,12 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
 
     Returns:
         List of TextContent with packaging results
+
+    Note:
+        Runs package_skill.main() in-process (Phase 5d). The old subprocess
+        timeout no longer applies — the "Maximum time" line in the output is
+        advisory only. On a non-zero exit the output keeps the "❌ Error:"
+        marker that install_skill_tool sniffs to abort before upload.
     """
     from skill_seekers.cli.adaptors import get_adaptor
 
@@ -59,10 +73,8 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
     has_api_key = os.environ.get(env_var_name, "").strip() if env_var_name else False
     should_upload = auto_upload and has_api_key
 
-    # Run package_skill.py with target parameter
-    cmd = [
-        sys.executable,
-        str(CLI_DIR / "package_skill.py"),
+    # Run package_skill.main() in-process with the same argv the subprocess got
+    argv = [
         skill_dir,
         "--no-open",  # Don't open folder in MCP context
         "--skip-quality-check",  # Skip interactive quality checks in MCP context
@@ -72,9 +84,9 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
 
     # Add upload flag only if we have API key
     if should_upload:
-        cmd.append("--upload")
+        argv.append("--upload")
 
-    # Timeout: 5 minutes for packaging + upload
+    # Advisory only (output text); the in-process call is unbounded
     timeout = 300
 
     progress_msg = f"📦 Packaging skill for {adaptor.PLATFORM_NAME}...\n"
@@ -82,7 +94,9 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
         progress_msg += f"📤 Will auto-upload to {adaptor.PLATFORM_NAME} if successful\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli import package_skill
+
+    stdout, stderr, returncode = run_cli_main(package_skill.main, argv)
 
     output = progress_msg + stdout
 
@@ -157,6 +171,12 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
 
     Returns:
         List of TextContent with upload results
+
+    Note:
+        Runs upload_skill.main() in-process (Phase 5d) — the upload itself is
+        a non-interactive API call (upload_skill_api), so no subprocess is
+        needed. The old subprocess timeout no longer applies — the
+        "Maximum time" line in the output is advisory only.
     """
     from skill_seekers.cli.adaptors import get_adaptor
 
@@ -188,27 +208,22 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
             )
         ]
 
-    # Run upload_skill.py with target parameter
-    cmd = [sys.executable, str(CLI_DIR / "upload_skill.py"), skill_zip, "--target", target]
+    # Run upload_skill.main() in-process with the same argv the subprocess got
+    argv = [skill_zip, "--target", target]
 
     # Add API key if provided
     if api_key:
-        cmd.extend(["--api-key", api_key])
+        argv.extend(["--api-key", api_key])
 
-    # Timeout: 5 minutes for upload
+    # Advisory only (output text); the in-process call is unbounded
     timeout = 300
 
     progress_msg = f"📤 Uploading skill to {adaptor.PLATFORM_NAME}...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli import upload_skill
 
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(upload_skill.main, argv, progress_msg)
 
 
 async def enhance_skill_tool(args: dict) -> list[TextContent]:
@@ -228,6 +243,13 @@ async def enhance_skill_tool(args: dict) -> list[TextContent]:
 
     Returns:
         List of TextContent with enhancement results
+
+    Note:
+        Phase 5d deliberately did NOT migrate the 'local' mode to in-process:
+        enhance_skill_local spawns a LOCAL coding agent (long-running,
+        fork-bomb-guard semantics — the agent must be a real child process so
+        recursion guards and timeouts apply). It stays on
+        run_subprocess_with_streaming.
     """
     from skill_seekers.cli.adaptors import get_adaptor
 
@@ -553,8 +575,10 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
         output_lines.append("")
 
         if not dry_run:
-            # Run enhance_skill_local in headless mode
-            # Build command directly
+            # Run enhance_skill_local in headless mode.
+            # Phase 5d: deliberately KEPT as a subprocess — it spawns a LOCAL
+            # coding agent (long-running, fork-bomb-guard semantics), which
+            # must be a real child process.
             cmd = [
                 sys.executable,
                 str(CLI_DIR / "enhance_skill_local.py"),
@@ -607,7 +631,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             # zip_path below and the workflow marched on to upload a missing file.
             if "❌ Error:" in package_output:
                 output_lines.append("❌ Packaging failed; aborting before upload.")
-                return [TextContent(type="text", text="\n".join(output_lines))]
+                return text_response("\n".join(output_lines))
 
             # Extract package path from output (supports .zip and .tar.gz).
             # package_skill.py prints "   Output: <path>" and

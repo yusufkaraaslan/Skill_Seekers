@@ -276,8 +276,8 @@ class GitHubScraper(SkillConverter):
             logger.info(f"Code analysis depth: {self.code_analysis_depth}")
 
         # Output paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_github_data.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for("_github_data.json")
 
         # Extracted data storage
         self.extracted_data = {
@@ -995,6 +995,13 @@ class GitHubScraper(SkillConverter):
 class GitHubToSkillConverter:
     """
     Convert extracted GitHub data to AI skill format (C1.10).
+
+    Builder strategy invoked by GitHubScraper (the registered SkillConverter
+    for "github") and by UnifiedScraper._scrape_github() to build the
+    standalone sub-skill. Not a SkillConverter itself: it has no extract()
+    phase — it only consumes the already-written {skill_dir}_github_data.json
+    produced by GitHubScraper.scrape(), so it sits outside the run() template
+    (extract → build_skill) by design.
     """
 
     def __init__(self, config: dict[str, Any]):
@@ -1006,7 +1013,7 @@ class GitHubToSkillConverter:
         self.per_issue_files = config.get("per_issue_files", False)
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        self.skill_dir = SkillConverter.resolve_skill_dir(config, self.name)
         self.data_file = f"{self.skill_dir}_github_data.json"
 
         # Load extracted data

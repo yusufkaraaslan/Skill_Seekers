@@ -39,7 +39,7 @@ except ImportError:
 # BeautifulSoup is a core dependency (always available)
 from bs4 import BeautifulSoup, Comment, Tag
 
-from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.document_skill_builder import DocumentSkillBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +112,18 @@ def infer_description_from_feed(
     )
 
 
-class RssToSkillConverter(SkillConverter):
+class RssToSkillConverter(DocumentSkillBuilder):
     """Convert RSS/Atom feeds to AI-ready skills.
 
     Parses RSS 2.0, RSS 1.0 (RDF), and Atom feeds using feedparser.
     Optionally follows article links to scrape full page content via
     requests + BeautifulSoup.
+
+    Build side: feed articles aren't section-shaped (``articles`` + tags
+    instead of ``pages`` + headings), so this class inherits only the
+    ``build_skill`` orchestration from DocumentSkillBuilder and overrides
+    categorization, reference/index/SKILL.md generation, and data loading
+    with article-shaped equivalents.
     """
 
     SOURCE_TYPE = "rss"
@@ -142,8 +148,8 @@ class RssToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
-        self.data_file: str = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file: str = self.data_file_for()
 
         # Internal state
         self.extracted_data: dict[str, Any] | None = None
@@ -302,34 +308,10 @@ class RssToSkillConverter(SkillConverter):
 
         return categorized
 
-    def build_skill(self) -> None:
-        """Build complete skill structure from extracted data."""
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        if not self.extracted_data:
-            raise RuntimeError("No extracted data available. Call extract_feed() first.")
-
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        # Categorize content
-        categorized = self.categorize_content()
-
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data)
-
-        # Generate index
-        self._generate_index(categorized)
-
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
+    # build_skill() is inherited from DocumentSkillBuilder — its orchestration
+    # (directories → categorize → references → index → SKILL.md) and progress
+    # output are identical. The missing-data guard is preserved by
+    # categorize_content() raising the same RuntimeError.
 
     # ──────────────────────────────────────────────────────────────────────
     # Feed parsing internals
@@ -606,8 +588,19 @@ class RssToSkillConverter(SkillConverter):
     # Skill generation — reference files
     # ──────────────────────────────────────────────────────────────────────
 
-    def _generate_reference_file(self, cat_key: str, cat_data: dict[str, Any]) -> None:
-        """Generate a reference markdown file for a category of articles."""
+    def _generate_reference_file(
+        self,
+        _cat_key: str,
+        cat_data: dict[str, Any],
+        _section_num: int | None = None,
+        _total_sections: int | None = None,
+    ) -> None:
+        """Generate a reference markdown file for a category of articles.
+
+        Articles are grouped by feed tag, so the section-number/total
+        arguments the base ``build_skill`` passes are ignored — filenames come
+        from the sanitized category title instead.
+        """
         safe_name = self._sanitize_filename(cat_data["title"])
         filepath = f"{self.skill_dir}/references/{safe_name}.md"
 
@@ -878,7 +871,11 @@ class RssToSkillConverter(SkillConverter):
         return (dates[0][:10], dates[-1][:10])
 
     def _sanitize_filename(self, name: str) -> str:
-        """Convert a string to a safe filename."""
+        """Convert a string to a safe filename.
+
+        Overrides the base: feed tags can be all-symbol (e.g. "★★★"), which
+        sanitizes to "" — fall back to "unnamed" instead of an empty stem.
+        """
         safe = re.sub(r"[^\w\s-]", "", name.lower())
         safe = re.sub(r"[-\s]+", "_", safe)
         return safe or "unnamed"

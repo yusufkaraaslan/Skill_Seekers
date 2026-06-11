@@ -1,14 +1,18 @@
 # API Reference - Programmatic Usage
 
-**Version:** 3.6.0
-**Last Updated:** 2026-03-15
-**Status:** ✅ Production Ready
+**Version:** 3.7.0
+**Last Updated:** 2026-06-11
+**Status:** ✅ Verified against v3.7.0 (every import and signature in this document was checked by importing it)
 
 ---
 
 ## Overview
 
-Skill Seekers can be used programmatically for integration into other tools, automation scripts, and CI/CD pipelines. This guide covers the public APIs available for developers who want to embed Skill Seekers functionality into their own applications.
+Skill Seekers can be used programmatically for integration into other tools, automation scripts, and CI/CD pipelines. This guide covers the Python APIs available for developers who want to embed Skill Seekers functionality into their own applications.
+
+> **Stability note — read this first**
+>
+> The **stable, supported interface of the PyPI package is the `skill-seekers` CLI** (and the MCP server). The Python API documented here is real and importable — it is the same code the CLI runs — but it tracks the implementation: module paths, signatures, and config-dict keys may change between minor releases. **Semver guarantees do not extend to these internals.** If you import these modules, pin an exact version (`skill-seekers==3.7.0`) and re-verify on upgrade.
 
 **Use Cases:**
 - Automated documentation skill generation in CI/CD
@@ -16,6 +20,8 @@ Skill Seekers can be used programmatically for integration into other tools, aut
 - Custom skill generation workflows
 - Integration with internal tooling
 - Automated skill updates on documentation changes
+
+Each example below is marked **[offline]** (no network, no AI), **[network]** (fetches remote content), or **[AI]** (calls an LLM API or spawns a local agent).
 
 ---
 
@@ -36,8 +42,11 @@ pip install skill-seekers[gemini]
 # OpenAI ChatGPT support
 pip install skill-seekers[openai]
 
-# All platform support
+# All LLM platform support
 pip install skill-seekers[all-llms]
+
+# Everything (all source types + platforms, except video-full)
+pip install skill-seekers[all]
 ```
 
 ### Development Installation
@@ -52,503 +61,557 @@ pip install -e ".[all-llms]"
 
 ## Core APIs
 
-### 1. Documentation Scraping API
+### 1. Skill Conversion API (`get_converter`)
 
-Extract content from documentation websites using BFS traversal and smart categorization.
-
-#### Basic Usage
+The primary programmatic entry point mirrors the `skill-seekers create` command: a factory returns a `SkillConverter` for any of the 18 source types, and `run()` executes the full extract → build pipeline.
 
 ```python
-from skill_seekers.cli.doc_scraper import scrape_all, build_skill
-import json
+from skill_seekers.cli.skill_converter import get_converter, CONVERTER_REGISTRY
 
-# Load configuration
-with open('configs/react.json', 'r') as f:
-    config = json.load(f)
+# get_converter(source_type: str, config: dict[str, Any]) -> SkillConverter
+# SkillConverter.run() -> int   (0 = success, non-zero = failure)
 
-# Scrape documentation
-pages = scrape_all(
-    base_url=config['base_url'],
-    selectors=config['selectors'],
-    config=config,
-    output_dir='output/react_data'
-)
-
-print(f"Scraped {len(pages)} pages")
-
-# Build skill from scraped data
-skill_path = build_skill(
-    config_name='react',
-    output_dir='output/react',
-    data_dir='output/react_data'
-)
-
-print(f"Skill created at: {skill_path}")
+print(sorted(CONVERTER_REGISTRY))
+# ['asciidoc', 'chat', 'config', 'confluence', 'epub', 'github', 'html',
+#  'jupyter', 'local', 'manpage', 'notion', 'openapi', 'pdf', 'pptx',
+#  'rss', 'video', 'web', 'word']
 ```
 
-#### Advanced Scraping Options
+#### Basic Usage — web documentation **[network]**
 
 ```python
-from skill_seekers.cli.doc_scraper import scrape_all
+from skill_seekers.cli.skill_converter import get_converter
 
-# Custom scraping with advanced options
-pages = scrape_all(
-    base_url='https://docs.example.com',
-    selectors={
-        'main_content': 'article',
-        'title': 'h1',
-        'code_blocks': 'pre code'
-    },
-    config={
-        'name': 'my-framework',
-        'description': 'Custom framework documentation',
-        'rate_limit': 0.5,  # 0.5 second delay between requests
-        'max_pages': 500,   # Limit to 500 pages
-        'url_patterns': {
-            'include': ['/docs/'],
-            'exclude': ['/blog/', '/changelog/']
-        }
-    },
-    output_dir='output/my-framework_data',
-    use_async=True  # Enable async scraping (2-3x faster)
-)
+config = {
+    "name": "django",
+    "description": "Use when working with Django web framework",
+    "base_url": "https://docs.djangoproject.com/en/5.0/",
+    "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+    "url_patterns": {"include": ["/en/5.0/"], "exclude": []},
+    "max_pages": 50,
+    "rate_limit": 0.5,
+    "output_dir": "output/django",
+}
+
+converter = get_converter("web", config)
+exit_code = converter.run()          # scrapes, then builds output/django/SKILL.md
+print("ok" if exit_code == 0 else "failed")
 ```
 
-#### Rebuilding Without Scraping
+#### Template method contract
+
+`run()` is a template method on the `SkillConverter` base class:
+
+1. `extract()` — source-specific extraction (scrape, parse, clone, …)
+2. `build_skill()` — categorize content and write `SKILL.md` + `references/`
+
+`run()` **returns an exit code instead of raising**: exceptions from `extract()`/`build_skill()` are logged and converted to return value `1`. Check the return value, not a `try/except`.
 
 ```python
-from skill_seekers.cli.doc_scraper import build_skill
+converter = get_converter("pdf", {"name": "manual", "pdf_path": "manual.pdf"})
 
-# Rebuild skill from existing data (fast!)
-skill_path = build_skill(
-    config_name='react',
-    output_dir='output/react',
-    data_dir='output/react_data',  # Use existing scraped data
-    skip_scrape=True  # Don't re-scrape
-)
+# Reuse existing on-disk extracted data (skip extraction, rebuild only):
+converter.skip_scrape = True   # run() checks this attribute
+converter.run()
 ```
 
----
+#### Factory errors **[offline]**
 
-### 2. GitHub Repository Analysis API
+- `ValueError` — unknown source type (message lists supported types)
+- `RuntimeError` — the source type's optional dependency is not installed (message includes the `pip install` hint)
 
-Analyze GitHub repositories with three-stream architecture (Code + Docs + Insights).
+#### Unified config through the factory **[offline construction]**
 
-#### Basic GitHub Analysis
-
-```python
-from skill_seekers.cli.github_scraper import scrape_github_repo
-
-# Analyze GitHub repository
-result = scrape_github_repo(
-    repo_url='https://github.com/facebook/react',
-    output_dir='output/react-github',
-    analysis_depth='c3x',  # Options: 'basic' or 'c3x'
-    github_token='ghp_...'  # Optional: higher rate limits
-)
-
-print(f"Analysis complete: {result['skill_path']}")
-print(f"Code files analyzed: {result['stats']['code_files']}")
-print(f"Patterns detected: {result['stats']['patterns']}")
-```
-
-#### Stream-Specific Analysis
+The `"config"` source type wraps the multi-source `UnifiedScraper` (section 4) behind the same factory. It takes the **factory-shaped dict** — only `config_path` is required:
 
 ```python
-from skill_seekers.cli.github_scraper import scrape_github_repo
+from skill_seekers.cli.skill_converter import get_converter
 
-# Focus on specific streams
-result = scrape_github_repo(
-    repo_url='https://github.com/vercel/next.js',
-    output_dir='output/nextjs',
-    analysis_depth='c3x',
-    enable_code_stream=True,      # C3.x codebase analysis
-    enable_docs_stream=True,      # README, docs/, wiki
-    enable_insights_stream=True,  # GitHub metadata, issues
-    include_tests=True,           # Extract test examples
-    include_patterns=True,        # Detect design patterns
-    include_how_to_guides=True    # Generate guides from tests
-)
+scraper = get_converter("config", {
+    "config_path": "configs/unified/react-unified.json",
+    "output_dir": "output/react-complete",   # optional override
+    "merge_mode": "rule-based",              # optional: 'rule-based' | 'claude-enhanced'
+    "dry_run": True,                         # optional: preview sources, write nothing
+})
+scraper.run()
 ```
 
 ---
 
-### 3. PDF Extraction API
+### 2. Source Detection API
 
-Extract content from PDF documents with OCR and image support.
+`SourceDetector` is what `skill-seekers create` uses to auto-detect the source type from a raw input string. It returns a `SourceInfo` dataclass.
 
-#### Basic PDF Extraction
-
-```python
-from skill_seekers.cli.pdf_scraper import scrape_pdf
-
-# Extract from single PDF
-skill_path = scrape_pdf(
-    pdf_path='documentation.pdf',
-    output_dir='output/pdf-skill',
-    skill_name='my-pdf-skill',
-    description='Documentation from PDF'
-)
-
-print(f"PDF skill created: {skill_path}")
-```
-
-#### Advanced PDF Processing
+#### Basic Usage **[offline]**
 
 ```python
-from skill_seekers.cli.pdf_scraper import scrape_pdf
+from skill_seekers.cli.source_detector import SourceDetector
 
-# PDF extraction with all features
-skill_path = scrape_pdf(
-    pdf_path='large-manual.pdf',
-    output_dir='output/manual',
-    skill_name='product-manual',
-    description='Product manual documentation',
-    enable_ocr=True,              # OCR for scanned PDFs
-    extract_images=True,          # Extract embedded images
-    extract_tables=True,          # Parse tables
-    chunk_size=50,                # Pages per chunk (large PDFs)
-    language='eng',               # OCR language
-    dpi=300                       # Image DPI for OCR
-)
+detector = SourceDetector()
+
+# detect(source: str) -> SourceInfo
+info = detector.detect("https://docs.djangoproject.com/")
+print(info.type)            # 'web'
+print(info.parsed)          # {'url': 'https://docs.djangoproject.com/'}
+print(info.suggested_name)  # 'djangoproject'
+print(info.raw_input)       # original input string
+
+detector.detect("fastapi/fastapi").type   # 'github'  -> parsed: {'repo': 'fastapi/fastapi'}
+detector.detect("./manual.pdf").type      # 'pdf'     -> parsed: {'file_path': './manual.pdf'}
+detector.detect("./my-project").type      # 'local'   -> parsed: {'directory': '/abs/path/my-project'}
+detector.detect("configs/react.json").type  # 'config' -> parsed: {'config_path': 'configs/react.json'}
 ```
+
+`SourceInfo` fields: `type`, `parsed` (dict, shape depends on `type`), `suggested_name`, `raw_input`.
+
+Note: local-directory detection requires the path to exist on disk — a non-existent `./name` falls through to other detectors (e.g. `owner/repo` GitHub shorthand).
+
+#### Detect-then-convert pipeline **[network for web/github]**
+
+```python
+from skill_seekers.cli.source_detector import SourceDetector
+from skill_seekers.cli.skill_converter import get_converter
+
+info = SourceDetector().detect("./manual.pdf")
+
+config = {
+    "name": info.suggested_name,
+    "pdf_path": info.parsed["file_path"],
+    "output_dir": f"output/{info.suggested_name}",
+}
+get_converter(info.type, config).run()
+```
+
+(The CLI's `create_command.py:_build_config()` is the canonical mapping from `SourceInfo.parsed` to each converter's config keys.)
+
+---
+
+### 3. Direct Converter Construction
+
+Every converter class can be constructed directly with a config dict (the factory does nothing more than registry lookup + optional-dependency check). The config keys below are read by each converter's `__init__` and are verified against v3.7.0.
+
+#### PDF — `PDFToSkillConverter` **[offline — local file processing]**
+
+```python
+from skill_seekers.cli.pdf_scraper import PDFToSkillConverter
+
+converter = PDFToSkillConverter({
+    "name": "product-manual",                  # required
+    "pdf_path": "manual.pdf",                  # path to the PDF
+    "description": "Product manual reference", # optional
+    "output_dir": "output/product-manual",     # optional (default: output/<name>)
+    "extract_options": {                       # optional
+        "chunk_size": 10,         # pages per chunk
+        "min_quality": 5.0,       # quality threshold for extracted text
+        "extract_images": True,
+        "min_image_size": 100,
+    },
+    "categories": {},                          # optional keyword mapping
+})
+converter.run()
+```
+
+#### Web — `DocToSkillConverter` **[network]**
+
+```python
+from skill_seekers.cli.doc_scraper import DocToSkillConverter
+
+converter = DocToSkillConverter({
+    "name": "react",                                  # required
+    "base_url": "https://react.dev/",                 # required
+    "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre code"},
+    "url_patterns": {"include": ["/learn", "/reference"], "exclude": ["/blog"]},
+    "categories": {},          # optional; smart categorization fills the gap
+    "rate_limit": 0.5,         # seconds between requests
+    "max_pages": 200,          # -1 = unlimited
+    "start_urls": [],          # optional explicit seed URLs
+    "llms_txt_url": None,      # optional llms.txt source
+    "browser": False,          # Playwright rendering for JS-heavy sites
+    "workers": 1,              # parallel scrape workers
+    "async_mode": False,       # asyncio scraping (faster on large sites)
+    "doc_version": "",         # stamped into SKILL.md metadata
+    "output_dir": "output/react",
+})
+converter.run()
+```
+
+Constructor also accepts `dry_run=True` / `resume=True` keyword arguments (or the same keys in the config dict).
+
+#### GitHub — `GitHubScraper` **[network — GitHub API; set `GITHUB_TOKEN` for higher rate limits]**
+
+```python
+from skill_seekers.cli.github_scraper import GitHubScraper
+
+converter = GitHubScraper({
+    "repo": "fastapi/fastapi",        # required, owner/repo
+    "name": "fastapi",                # optional (default: repo short name)
+    "local_repo_path": None,          # optional local clone => unlimited analysis, no API limits
+    "include_code": True,
+    "include_issues": True,
+    "max_issues": 100,
+    "max_comments": 0,
+    "issue_labels": [],               # filter issues by label
+    "issue_state": "all",             # 'open' | 'closed' | 'all'
+    "include_changelog": True,
+    "include_releases": True,
+    "output_dir": "output/fastapi",
+})
+converter.run()
+```
+
+The remaining 15 converters follow the same pattern; see `CONVERTER_REGISTRY` in `src/skill_seekers/cli/skill_converter.py` for the module/class of each, and each class's `__init__` for its config keys (e.g. `word` reads `docx_path`, `local` reads `directory` + the C3.x `detect_patterns`/`extract_test_examples`/… toggles).
 
 ---
 
 ### 4. Unified Multi-Source Scraping API
 
-Combine multiple sources (any of 17 supported types) into a single unified skill.
+`UnifiedScraper` combines multiple sources (any of the 18 supported types) into a single merged skill. It is itself a `SkillConverter` (registered as source type `"config"`).
 
-#### Unified Scraping
+#### Construction forms
 
 ```python
-from skill_seekers.cli.unified_scraper import unified_scrape
+from skill_seekers.cli.unified_scraper import UnifiedScraper
 
-# Scrape from multiple sources
-result = unified_scrape(
-    config_path='configs/unified/react-unified.json',
-    output_dir='output/react-complete'
+# 1. Path to a unified config JSON file
+scraper = UnifiedScraper("configs/unified/react-unified.json")
+
+# 2. Already-loaded unified config dict (name + description required)
+scraper = UnifiedScraper({"name": "react-complete", "description": "...", "sources": [...]})
+
+# 3. Factory-shaped dict (what get_converter("config", ...) passes through)
+scraper = UnifiedScraper({"config_path": "configs/unified/react-unified.json"})
+
+# Keyword overrides (win over the config file's values)
+scraper = UnifiedScraper(
+    "configs/unified/react-unified.json",
+    merge_mode="rule-based",        # or 'claude-enhanced' (AI merge)
+    output_dir="output/react-complete",
+    dry_run=False,
 )
-
-print(f"Unified skill created: {result['skill_path']}")
-print(f"Sources merged: {result['sources']}")
-print(f"Conflicts detected: {result['conflicts']}")
 ```
 
-#### Conflict Detection
+#### Running **[network — scrapes each source; AI if merge_mode='claude-enhanced']**
 
 ```python
-from skill_seekers.cli.unified_scraper import detect_conflicts
+scraper = UnifiedScraper("configs/unified/react-unified.json")
+scraper.run()    # scrape all sources -> merge -> detect conflicts -> build skill
+```
 
-# Detect discrepancies between sources
-conflicts = detect_conflicts(
-    docs_dir='output/react_data',
-    github_dir='output/react-github',
-    pdf_dir='output/react-pdf'
-)
+#### Dry run preview **[offline]**
 
-for conflict in conflicts:
-    print(f"Conflict in {conflict['topic']}:")
-    print(f"  Docs say: {conflict['docs_version']}")
-    print(f"  Code shows: {conflict['code_version']}")
+```python
+UnifiedScraper("configs/unified/react-unified.json", dry_run=True).run()
+# Logs the sources that WOULD be scraped and the output directory; writes nothing.
+```
+
+#### Conflict detection
+
+Conflict detection is a **method on the instance**, not a module-level function. It is called automatically by `run()` after merging; you can also drive the phases manually:
+
+```python
+scraper = UnifiedScraper("configs/unified/react-unified.json")
+scraper.scrape_all_sources()              # [network]
+merged = scraper.merge_sources()
+conflicts = scraper.detect_conflicts()    # -> list of conflict records
+scraper.build_skill(merged)
 ```
 
 ---
 
 ### 5. Skill Packaging API
 
-Package skills for different LLM platforms using the platform adaptor architecture.
+Package skills for different platforms using the adaptor architecture (Strategy + Factory).
 
-#### Basic Packaging
+#### Basic Packaging **[offline]**
 
 ```python
-from skill_seekers.cli.adaptors import get_adaptor
+from pathlib import Path
+from skill_seekers.cli.adaptors import get_adaptor, ADAPTORS
 
-# Get platform-specific adaptor
-adaptor = get_adaptor('claude')  # Options: claude, gemini, openai, markdown
+# get_adaptor(platform: str, config: dict = None) -> SkillAdaptor
+print(sorted(ADAPTORS))
+# ['atlas', 'chroma', 'claude', 'deepseek', 'faiss', 'fireworks', 'gemini',
+#  'haystack', 'ibm-bob', 'kimi', 'langchain', 'llama-index', 'markdown',
+#  'minimax', 'openai', 'opencode', 'openrouter', 'pinecone', 'qdrant',
+#  'qwen', 'together', 'weaviate']
 
-# Package skill
-package_path = adaptor.package(
-    skill_dir='output/react/',
-    output_path='output/'
-)
+adaptor = get_adaptor("claude")
 
-print(f"Claude skill package: {package_path}")
+# package(skill_dir: Path, output_path: Path, ...) -> Path
+package_path = adaptor.package(Path("output/react"), Path("output"))
+print(package_path)   # output/react.zip
 ```
 
-#### Multi-Platform Packaging
+`get_adaptor` raises `ValueError` for an unknown platform, and `ImportError` if the platform's optional dependency is missing (with an install hint).
+
+#### Packaging with chunking (RAG/vector targets) **[offline]**
 
 ```python
+package_path = adaptor.package(
+    Path("output/react"),
+    Path("output"),
+    enable_chunking=True,        # split content into token-bounded chunks
+    chunk_max_tokens=512,
+    preserve_code_blocks=True,   # never split inside a code fence
+    chunk_overlap_tokens=50,
+)
+```
+
+#### Multi-Platform Packaging **[offline]**
+
+```python
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
 
-# Package for all platforms
-platforms = ['claude', 'gemini', 'openai', 'markdown']
-
-for platform in platforms:
+for platform in ["claude", "gemini", "openai", "markdown"]:
     adaptor = get_adaptor(platform)
-    package_path = adaptor.package(
-        skill_dir='output/react/',
-        output_path='output/'
-    )
-    print(f"{platform.capitalize()} package: {package_path}")
+    pkg = adaptor.package(Path("output/react"), Path("output"))
+    print(f"{platform}: {pkg}")
 ```
 
-#### Custom Packaging Options
+#### Formatting and capability checks **[offline]**
 
 ```python
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
+from skill_seekers.cli.adaptors.base import SkillAdaptor, SkillMetadata
 
-adaptor = get_adaptor('gemini')
+adaptor = get_adaptor("claude")
 
-# Gemini-specific packaging (.tar.gz format)
-package_path = adaptor.package(
-    skill_dir='output/react/',
-    output_path='output/',
-    compress_level=9,  # Maximum compression
-    include_metadata=True
-)
+adaptor.PLATFORM               # 'claude'
+adaptor.supports_upload()      # True
+adaptor.supports_enhancement() # True
+adaptor.get_env_var_name()     # 'ANTHROPIC_API_KEY'
+
+# format_skill_md(skill_dir: Path, metadata: SkillMetadata) -> str
+meta = SkillMetadata(name="my-skill", description="When to use this skill")
+text = adaptor.format_skill_md(Path("output/my-skill"), meta)
 ```
+
+`SkillMetadata` fields: `name`, `description`, `version` (default `"1.0.0"`), `doc_version`, `author`, `tags`.
 
 #### Shared Embedding Methods
 
-The base `SkillAdaptor` class provides two shared embedding methods inherited by all vector database adaptors (chroma, weaviate, pinecone):
+The base `SkillAdaptor` class provides two shared embedding helpers inherited by all vector database adaptors (chroma, weaviate, pinecone, qdrant, faiss):
 
-- `_generate_openai_embeddings(texts, model)` -- Generate embeddings via the OpenAI API.
-- `_generate_st_embeddings(texts, model)` -- Generate embeddings using a local sentence-transformers model.
+- `_generate_openai_embeddings(texts, model)` — generate embeddings via the OpenAI API. **[network]**
+- `_generate_st_embeddings(texts, model)` — generate embeddings using a local sentence-transformers model. **[offline]**
 
-These methods are available on any adaptor instance returned by `get_adaptor()` for vector database targets, so you do not need to implement embedding logic per-adaptor.
+These are underscore-prefixed (internal) but shared deliberately, so vector adaptors do not re-implement embedding logic.
 
 ---
 
 ### 6. Skill Upload API
 
-Upload packaged skills to LLM platforms via their APIs.
+Upload packaged skills to LLM platforms via their APIs. Signature on the base class:
 
-#### Claude AI Upload
+```python
+# upload(package_path: Path, api_key: str, **kwargs) -> dict[str, Any]
+```
+
+The returned dict's keys are **platform-specific** — inspect the concrete adaptor's `upload()` (e.g. `src/skill_seekers/cli/adaptors/claude.py`) for the exact shape. Check `adaptor.supports_upload()` first: adaptors that don't support upload (e.g. `markdown`) return a result dict with `"success": False` and an explanatory `"message"` instead of uploading.
+
+#### Claude AI Upload **[network — Anthropic API]**
 
 ```python
 import os
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
 
-adaptor = get_adaptor('claude')
-
-# Upload to Claude AI
+adaptor = get_adaptor("claude")
 result = adaptor.upload(
-    package_path='output/react-claude.zip',
-    api_key=os.getenv('ANTHROPIC_API_KEY')
+    Path("output/react.zip"),
+    api_key=os.environ["ANTHROPIC_API_KEY"],
 )
-
-print(f"Uploaded to Claude AI: {result['skill_id']}")
 ```
 
-#### Google Gemini Upload
+#### Google Gemini Upload **[network — requires `pip install skill-seekers[gemini]`]**
 
 ```python
-import os
-from skill_seekers.cli.adaptors import get_adaptor
-
-adaptor = get_adaptor('gemini')
-
-# Upload to Google Gemini
-result = adaptor.upload(
-    package_path='output/react-gemini.tar.gz',
-    api_key=os.getenv('GOOGLE_API_KEY')
-)
-
-print(f"Gemini corpus ID: {result['corpus_id']}")
+adaptor = get_adaptor("gemini")
+result = adaptor.upload(Path("output/react.tar.gz"), api_key=os.environ["GOOGLE_API_KEY"])
 ```
 
-#### OpenAI ChatGPT Upload
+#### OpenAI Upload **[network — requires `pip install skill-seekers[openai]`]**
 
 ```python
-import os
-from skill_seekers.cli.adaptors import get_adaptor
-
-adaptor = get_adaptor('openai')
-
-# Upload to OpenAI Vector Store
-result = adaptor.upload(
-    package_path='output/react-openai.zip',
-    api_key=os.getenv('OPENAI_API_KEY')
-)
-
-print(f"Vector store ID: {result['vector_store_id']}")
+adaptor = get_adaptor("openai")
+result = adaptor.upload(Path("output/react-openai.zip"), api_key=os.environ["OPENAI_API_KEY"])
 ```
+
+Use `adaptor.get_env_var_name()` to discover which environment variable a platform conventionally reads, and `adaptor.validate_api_key(key)` for a cheap format check before uploading.
 
 ---
 
 ### 7. AI Enhancement API
 
-Enhance skills with AI-powered improvements using platform-specific models.
+Enhance skills with AI-powered improvements. All API-mode enhancement routes
+through the shared `AgentClient` (`skill_seekers.cli.agent_client`), which
+centralizes provider selection (Anthropic/Gemini/OpenAI/Moonshot), model and
+base-URL overrides, the truncation gate, timeout policy, and atomic
+backup-then-save of SKILL.md.
 
-#### API Mode Enhancement
+#### API Mode Enhancement (per-platform adaptor) **[AI — provider API call]**
 
 ```python
 import os
+from pathlib import Path
 from skill_seekers.cli.adaptors import get_adaptor
 
-adaptor = get_adaptor('claude')
+adaptor = get_adaptor('claude')  # also: gemini, openai, and OpenAI-compatible targets
 
-# Enhance using Claude API
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='api',
-    api_key=os.getenv('ANTHROPIC_API_KEY')
+# Enhance SKILL.md via the platform's API (returns True on success).
+# The original is backed up to SKILL.md.backup and the save is atomic.
+ok = adaptor.enhance(
+    Path('output/react/'),
+    os.getenv('ANTHROPIC_API_KEY'),
 )
-
-print(f"Enhanced skill: {result['enhanced_path']}")
-print(f"Quality score: {result['quality_score']}/10")
 ```
 
-#### LOCAL Mode Enhancement
+#### Direct AgentClient usage **[AI]**
 
 ```python
-from skill_seekers.cli.adaptors import get_adaptor
+from skill_seekers.cli.agent_client import AgentClient
 
-adaptor = get_adaptor('claude')
-
-# Enhance using Claude Code CLI (free!)
-result = adaptor.enhance(
-    skill_dir='output/react/',
-    mode='LOCAL',
-    execution_mode='headless',  # Options: headless, background, daemon
-    timeout=300  # 5 minute timeout
-)
-
-print(f"Enhanced skill: {result['enhanced_path']}")
+client = AgentClient(mode='api')          # or mode='local' (spawns a local agent)
+reply = client.call('Summarize this skill...', timeout=600)
 ```
 
-#### Background Enhancement with Monitoring
+`AgentClient(mode='auto'|'api'|'local', agent=None, api_key=None, provider=None, base_url=None, model=None)`; `call(prompt, max_tokens=4096, timeout=None, output_file=None, cwd=None, system=None, temperature=None) -> str | None`. Also: `is_available()`, `get_model()`, `detect_api_key()`.
+
+#### LOCAL Mode Enhancement (local coding agent, free) **[AI — spawns local agent]**
 
 ```python
-from skill_seekers.cli.enhance_skill_local import enhance_skill
-from skill_seekers.cli.enhance_status import monitor_enhancement
-import time
+from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-# Start background enhancement
-result = enhance_skill(
-    skill_dir='output/react/',
-    mode='background'
+enhancer = LocalSkillEnhancer(
+    'output/react/',
+    agent='claude',        # claude, codex, copilot, opencode, kimi, custom
 )
-
-pid = result['pid']
-print(f"Enhancement started in background (PID: {pid})")
-
-# Monitor progress
-while True:
-    status = monitor_enhancement('output/react/')
-    print(f"Status: {status['state']}, Progress: {status['progress']}%")
-
-    if status['state'] == 'completed':
-        print(f"Enhanced skill: {status['output_path']}")
-        break
-    elif status['state'] == 'failed':
-        print(f"Enhancement failed: {status['error']}")
-        break
-
-    time.sleep(5)  # Check every 5 seconds
+enhancer.run(background=True)   # or headless=True (default), daemon=True
 ```
+
+Monitor background runs from the CLI:
+
+```bash
+skill-seekers enhance-status output/react/ --watch
+```
+
+> LOCAL mode sets `SKILL_SEEKER_ENHANCE_ACTIVE=1` in the spawned agent's
+> environment and refuses to start when it is already set, preventing
+> recursive agent spawns.
 
 ---
 
-### 8. Complete Workflow Automation API
+### 8. Execution Context
 
-Automate the entire workflow: fetch config → scrape → enhance → package → upload.
-
-#### One-Command Install
+`ExecutionContext` is the centralized, pydantic-validated settings singleton the CLI builds from argparse + config files. Converters and enhancement read from it; programmatic callers can initialize and override it.
 
 ```python
-import os
-from skill_seekers.cli.install_skill import install_skill
+from skill_seekers.cli.execution_context import ExecutionContext
 
-# Complete workflow automation
-result = install_skill(
-    config_name='react',  # Use preset config
-    target='claude',      # Target platform
-    api_key=os.getenv('ANTHROPIC_API_KEY'),
-    enhance=True,         # Enable AI enhancement
-    upload=True,          # Upload to platform
-    force=True            # Skip confirmations
-)
+# Classmethods:
+#   initialize(args=None, config_path=None, source_info=None) -> ExecutionContext
+#   get() -> ExecutionContext          (active override, else base singleton)
+#   is_initialized() -> bool
+#   reset() -> None                    (mainly for tests)
 
-print(f"Skill installed: {result['skill_id']}")
-print(f"Package path: {result['package_path']}")
-print(f"Time taken: {result['duration']}s")
+ExecutionContext.is_initialized()   # False until initialize() is called
+ctx = ExecutionContext.initialize() # defaults when args is None
+
+ctx.enhancement.level    # 2
+ctx.scraping.max_pages   # -1 (unlimited)
+ctx.output.output_dir    # None
+ctx.analysis.depth       # 'surface'
 ```
 
-#### Custom Config Install
+#### Temporary overrides (context manager) **[offline]**
+
+`override(**kwargs)` is a context manager; double-underscore keys address nested settings groups (`source`, `enhancement`, `output`, `scraping`, `analysis`). Overrides are **context-local** (stored in a `contextvars.ContextVar`), so concurrent asyncio tasks each see only their own override, and nested overrides stack and unwind cleanly:
 
 ```python
-from skill_seekers.cli.install_skill import install_skill
+ctx = ExecutionContext.get()
 
-# Install with custom configuration
-result = install_skill(
-    config_path='configs/custom/my-framework.json',
-    target='gemini',
-    api_key=os.getenv('GOOGLE_API_KEY'),
-    enhance=True,
-    upload=True,
-    analysis_depth='c3x',  # Deep codebase analysis
-    enable_router=True     # Generate router for large docs
-)
+with ctx.override(enhancement__level=3, scraping__max_pages=100):
+    active = ExecutionContext.get()
+    assert active.enhancement.level == 3      # inside: overridden
+
+assert ExecutionContext.get().enhancement.level == 2  # outside: restored
 ```
+
+Caveat: contextvars flow into asyncio tasks automatically but into worker threads only via `contextvars.copy_context().run(...)` — a bare `threading.Thread` sees the base singleton, not your override.
+
+---
+
+### 9. Services Layer (`skill_seekers.services`)
+
+Domain logic shared by the CLI and the MCP server. Importable **without** the `[mcp]` extra. Import from the submodules:
+
+```python
+from skill_seekers.services.marketplace_manager import MarketplaceManager
+from skill_seekers.services.source_manager import SourceManager
+from skill_seekers.services.config_publisher import ConfigPublisher, detect_category
+from skill_seekers.services.git_repo import GitConfigRepo
+```
+
+#### Marketplace registry CRUD **[offline — local registry file]**
+
+```python
+mm = MarketplaceManager()        # or MarketplaceManager(config_dir="~/.skill-seekers")
+mm.list_marketplaces()           # -> list[dict]; also: add/get/update/remove_marketplace
+```
+
+#### Config source registry CRUD **[offline]**
+
+```python
+sm = SourceManager()
+sm.list_sources()                # also: add/get/update/remove_source
+```
+
+#### Config category detection **[offline]**
+
+```python
+detect_category({"name": "react", "description": "React frontend UI library docs"})
+# 'web-frameworks'   (keyword scoring over CATEGORY_KEYWORDS)
+```
+
+#### Git-backed config repositories **[network — clones/pulls]**
+
+```python
+repo = GitConfigRepo()                       # or GitConfigRepo(cache_dir=...)
+repo.validate_git_url("https://github.com/owner/configs.git")   # offline check
+path = repo.clone_or_pull("https://github.com/owner/configs.git")  # [network]
+configs = repo.find_configs(path)
+```
+
+`ConfigPublisher` (`ConfigPublisher(cache_dir=None)`) pushes configs to registered config-source repos; `MarketplacePublisher` publishes packaged skills to plugin-marketplace repos. Both perform git pushes **[network]**.
 
 ---
 
 ## Configuration Objects
 
-### Config Schema
+The full config-file schema (single-source and unified) is documented in **[CONFIG_FORMAT.md](CONFIG_FORMAT.md)** — that is the authoritative reference. Summary:
 
-Skill Seekers uses JSON configuration files to define scraping behavior.
+### Web (single-source) config keys
 
-```json
-{
-  "name": "framework-name",
-  "description": "When to use this skill",
-  "base_url": "https://docs.example.com/",
-  "selectors": {
-    "main_content": "article",
-    "title": "h1",
-    "code_blocks": "pre code",
-    "navigation": "nav.sidebar"
-  },
-  "url_patterns": {
-    "include": ["/docs/", "/api/", "/guides/"],
-    "exclude": ["/blog/", "/changelog/", "/archive/"]
-  },
-  "categories": {
-    "getting_started": ["intro", "quickstart", "installation"],
-    "api": ["api", "reference", "methods"],
-    "guides": ["guide", "tutorial", "how-to"],
-    "examples": ["example", "demo", "sample"]
-  },
-  "rate_limit": 0.5,
-  "max_pages": 500,
-  "llms_txt_url": "https://example.com/llms.txt",
-  "enable_async": true
-}
-```
-
-### Required Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Skill name (alphanumeric + hyphens) |
-| `description` | string | When to use this skill |
-| `base_url` | string | Documentation website URL |
-| `selectors` | object | CSS selectors for content extraction |
-
-### Optional Fields
+These are the keys `DocToSkillConverter` reads (same dict whether loaded from a `configs/*.json` file or built in code):
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `url_patterns.include` | array | `[]` | URL path patterns to include |
-| `url_patterns.exclude` | array | `[]` | URL path patterns to exclude |
+| `name` | string | *required* | Skill name (alphanumeric + hyphens) |
+| `base_url` | string | *required* | Documentation website URL |
+| `description` | string | generated | When to use this skill |
+| `selectors` | object | `{}` | CSS selectors (`main_content`, `title`, `code_blocks`) |
+| `url_patterns` | object | `{}` | `include` / `exclude` URL substring lists |
 | `categories` | object | `{}` | Category keywords mapping |
 | `rate_limit` | float | `0.5` | Delay between requests (seconds) |
-| `max_pages` | int | `500` | Maximum pages to scrape |
+| `max_pages` | int | `-1` | Maximum pages to scrape (-1 = unlimited) |
+| `start_urls` | array | `[]` | Explicit seed URLs |
 | `llms_txt_url` | string | `null` | URL to llms.txt file |
-| `enable_async` | bool | `false` | Enable async scraping (faster) |
+| `async_mode` | bool | `false` | Asyncio scraping (faster on large sites) |
+| `browser` | bool | `false` | Playwright rendering for JS-heavy sites |
+| `workers` | int | `1` | Parallel scrape workers |
+| `output_dir` | string | `output/<name>` | Where the skill is written |
 
 ### Unified Config Schema (Multi-Source)
 
@@ -568,8 +631,7 @@ Supports all 18 source types: `documentation`, `github`, `pdf`, `local`, `word`,
     {
       "type": "github",
       "repo": "org/repo",
-      "include_code": true,
-      "code_analysis_depth": "deep"
+      "include_code": true
     },
     {
       "type": "pdf",
@@ -592,275 +654,107 @@ Supports all 18 source types: `documentation`, `github`, `pdf`, `local`, `word`,
       "base_url": "https://company.atlassian.net/wiki",
       "space_key": "DOCS"
     }
-  ],
-  "conflict_resolution": "prefer_code",
-  "merge_strategy": "smart"
+  ]
 }
 ```
 
----
-
-## Advanced Options
-
-### Custom Selectors
-
-```python
-from skill_seekers.cli.doc_scraper import scrape_all
-
-# Custom CSS selectors for complex sites
-pages = scrape_all(
-    base_url='https://complex-site.com',
-    selectors={
-        'main_content': 'div.content-wrapper > article',
-        'title': 'h1.page-title',
-        'code_blocks': 'pre.highlight code',
-        'navigation': 'aside.sidebar nav',
-        'metadata': 'meta[name="description"]'
-    },
-    config={'name': 'complex-site'}
-)
-```
-
-### URL Pattern Matching
-
-```python
-# Advanced URL filtering
-config = {
-    'url_patterns': {
-        'include': [
-            '/docs/',           # Exact path match
-            '/api/**',          # Wildcard: all subpaths
-            '/guides/v2.*'      # Regex: version-specific
-        ],
-        'exclude': [
-            '/blog/',
-            '/changelog/',
-            '**/*.png',         # Exclude images
-            '**/*.pdf'          # Exclude PDFs
-        ]
-    }
-}
-```
-
-### Category Inference
-
-```python
-from skill_seekers.cli.doc_scraper import infer_categories
-
-# Auto-detect categories from URL structure
-categories = infer_categories(
-    pages=[
-        {'url': 'https://docs.example.com/getting-started/intro'},
-        {'url': 'https://docs.example.com/api/authentication'},
-        {'url': 'https://docs.example.com/guides/tutorial'}
-    ]
-)
-
-print(categories)
-# Output: {
-#   'getting-started': ['intro'],
-#   'api': ['authentication'],
-#   'guides': ['tutorial']
-# }
-```
+Configs are validated on load by `skill_seekers.cli.config_validator.validate_config(config_path)`, which the CLI and `UnifiedScraper` call for you.
 
 ---
 
 ## Error Handling
 
-### Common Exceptions
+The Python API signals failure three different ways — match on the layer you call:
 
 ```python
-from skill_seekers.cli.doc_scraper import scrape_all
-from skill_seekers.exceptions import (
-    NetworkError,
-    InvalidConfigError,
-    ScrapingError,
-    RateLimitError
-)
+from pathlib import Path
+from skill_seekers.cli.skill_converter import get_converter
+from skill_seekers.cli.adaptors import get_adaptor
+
+# 1. Factory-time errors RAISE:
+try:
+    converter = get_converter("web", config)
+except ValueError as e:      # unknown source type
+    print(e)
+except RuntimeError as e:    # missing optional dependency (includes pip install hint)
+    print(e)
 
 try:
-    pages = scrape_all(
-        base_url='https://docs.example.com',
-        selectors={'main_content': 'article'},
-        config={'name': 'example'}
-    )
-except NetworkError as e:
-    print(f"Network error: {e}")
-    # Retry with exponential backoff
-except InvalidConfigError as e:
-    print(f"Invalid config: {e}")
-    # Fix configuration and retry
-except RateLimitError as e:
-    print(f"Rate limited: {e}")
-    # Increase rate_limit in config
-except ScrapingError as e:
-    print(f"Scraping failed: {e}")
-    # Check selectors and URL patterns
+    adaptor = get_adaptor("chroma")
+except ValueError as e:      # unknown platform
+    print(e)
+except ImportError as e:     # optional dependency not installed
+    print(e)
+
+# 2. Conversion errors are RETURN CODES (run() catches and logs exceptions):
+if converter.run() != 0:
+    raise SystemExit("skill build failed — see log output")
+
+# 3. Adaptor operations either RAISE (network/API errors during real uploads)
+#    or report failure in the returned dict — gate on capability and check
+#    result["success"]:
+if adaptor.supports_upload():
+    result = adaptor.upload(Path("output/react.zip"), api_key=key)
+    if not result.get("success"):
+        print(result.get("message"))
 ```
 
-### Retry Logic
-
-```python
-from skill_seekers.cli.doc_scraper import scrape_all
-from skill_seekers.utils import retry_with_backoff
-
-@retry_with_backoff(max_retries=3, base_delay=1.0)
-def scrape_with_retry(base_url, config):
-    return scrape_all(
-        base_url=base_url,
-        selectors=config['selectors'],
-        config=config
-    )
-
-# Automatically retries on network errors
-pages = scrape_with_retry(
-    base_url='https://docs.example.com',
-    config={'name': 'example', 'selectors': {...}}
-)
-```
+There is no `skill_seekers.exceptions` module — standard exceptions (`ValueError`, `RuntimeError`, `ImportError`, `FileNotFoundError`) are used throughout.
 
 ---
 
 ## Testing Your Integration
 
-### Unit Tests
+Use `dry_run` and small `max_pages` limits to keep tests fast and offline-friendly:
 
 ```python
-import pytest
-from skill_seekers.cli.doc_scraper import scrape_all
+from skill_seekers.cli.skill_converter import get_converter
+from skill_seekers.cli.source_detector import SourceDetector
 
-def test_basic_scraping():
-    """Test basic documentation scraping."""
-    pages = scrape_all(
-        base_url='https://docs.example.com',
-        selectors={'main_content': 'article'},
-        config={
-            'name': 'test-framework',
-            'max_pages': 10  # Limit for testing
-        }
-    )
 
-    assert len(pages) > 0
-    assert all('title' in p for p in pages)
-    assert all('content' in p for p in pages)
+def test_source_detection():            # [offline]
+    info = SourceDetector().detect("https://docs.example.com/")
+    assert info.type == "web"
+    assert info.parsed["url"] == "https://docs.example.com/"
 
-def test_config_validation():
-    """Test configuration validation."""
-    from skill_seekers.cli.config_validator import validate_config
 
-    config = {
-        'name': 'test',
-        'base_url': 'https://example.com',
-        'selectors': {'main_content': 'article'}
-    }
+def test_unified_dry_run(tmp_path):     # [offline] — previews without scraping
+    import json
+    cfg = tmp_path / "unified.json"
+    cfg.write_text(json.dumps({
+        "name": "test",
+        "description": "Test skill",   # name + description are required
+        "sources": [{"type": "github", "repo": "owner/repo"}],
+    }))
+    scraper = get_converter("config", {"config_path": str(cfg), "dry_run": True})
+    assert scraper.run() == 0
 
-    is_valid, errors = validate_config(config)
-    assert is_valid
-    assert len(errors) == 0
-```
 
-### Integration Tests
-
-```python
-import pytest
-import os
-from skill_seekers.cli.install_skill import install_skill
-
-@pytest.mark.integration
-def test_end_to_end_workflow():
-    """Test complete skill installation workflow."""
-    result = install_skill(
-        config_name='react',
-        target='markdown',  # No API key needed for markdown
-        enhance=False,      # Skip AI enhancement
-        upload=False,       # Don't upload
-        force=True
-    )
-
-    assert result['success']
-    assert os.path.exists(result['package_path'])
-    assert result['package_path'].endswith('.zip')
-
-@pytest.mark.integration
-def test_multi_platform_packaging():
-    """Test packaging for multiple platforms."""
+def test_packaging(tmp_path):           # [offline]
+    from pathlib import Path
     from skill_seekers.cli.adaptors import get_adaptor
 
-    platforms = ['claude', 'gemini', 'openai', 'markdown']
-
-    for platform in platforms:
-        adaptor = get_adaptor(platform)
-        package_path = adaptor.package(
-            skill_dir='output/test-skill/',
-            output_path='output/'
-        )
-        assert os.path.exists(package_path)
+    skill = tmp_path / "skill"
+    skill.mkdir()
+    (skill / "SKILL.md").write_text("---\nname: t\ndescription: d\n---\n# T\n")
+    pkg = get_adaptor("markdown").package(skill, tmp_path)
+    assert pkg.exists()
 ```
 
 ---
 
-## Performance Optimization
+## Performance Notes
 
-### Async Scraping
-
-```python
-from skill_seekers.cli.doc_scraper import scrape_all
-
-# Enable async for 2-3x speed improvement
-pages = scrape_all(
-    base_url='https://docs.example.com',
-    selectors={'main_content': 'article'},
-    config={'name': 'example'},
-    use_async=True  # 2-3x faster
-)
-```
-
-### Caching and Rebuilding
-
-```python
-from skill_seekers.cli.doc_scraper import build_skill
-
-# First scrape (slow - 15-45 minutes)
-build_skill(config_name='react', output_dir='output/react')
-
-# Rebuild without re-scraping (fast - <1 minute)
-build_skill(
-    config_name='react',
-    output_dir='output/react',
-    data_dir='output/react_data',
-    skip_scrape=True  # Use cached data
-)
-```
-
-### Batch Processing
-
-```python
-from concurrent.futures import ThreadPoolExecutor
-from skill_seekers.cli.install_skill import install_skill
-
-configs = ['react', 'vue', 'angular', 'svelte']
-
-def install_config(config_name):
-    return install_skill(
-        config_name=config_name,
-        target='markdown',
-        enhance=False,
-        upload=False,
-        force=True
-    )
-
-# Process 4 configs in parallel
-with ThreadPoolExecutor(max_workers=4) as executor:
-    results = list(executor.map(install_config, configs))
-
-for config, result in zip(configs, results):
-    print(f"{config}: {result['success']}")
-```
+- **Async scraping**: set `"async_mode": True` in a web config for 2–3x faster scraping on large sites; `"workers": N` parallelizes the thread-based scraper.
+- **Rebuild without re-scraping**: set `converter.skip_scrape = True` before `run()` to rebuild `SKILL.md` from existing on-disk extracted data (`output/<name>_data/`).
+- **Resume**: web configs support checkpointing — pass `resume=True` to `DocToSkillConverter` (or `"resume": True` in the config) to continue an interrupted scrape.
+- **Batch processing**: converters are independent; run several `get_converter(...).run()` calls in a `ThreadPoolExecutor`. Don't share one `ExecutionContext.override()` across plain threads (see section 8 caveat).
 
 ---
 
 ## CI/CD Integration Examples
+
+For pipelines, prefer the CLI — it is the stable interface:
 
 ### GitHub Actions
 
@@ -890,8 +784,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          skill-seekers install react --target claude --enhance --upload
-          skill-seekers install vue --target gemini --enhance --upload
+          skill-seekers install --config react --target claude
+          skill-seekers install --config vue --target gemini
 
       - name: Archive Skills
         uses: actions/upload-artifact@v3
@@ -907,8 +801,8 @@ generate_skills:
   image: python:3.11
   script:
     - pip install skill-seekers[all-llms]
-    - skill-seekers install react --target claude --enhance --upload
-    - skill-seekers install vue --target gemini --enhance --upload
+    - skill-seekers install --config react --target claude
+    - skill-seekers install --config vue --target gemini --no-upload
   artifacts:
     paths:
       - output/
@@ -920,99 +814,85 @@ generate_skills:
 
 ## Best Practices
 
-### 1. **Use Configuration Files**
-Store configs in version control for reproducibility:
-```python
-import json
-with open('configs/my-framework.json') as f:
-    config = json.load(f)
-scrape_all(config=config)
+### 1. **Prefer the CLI for automation; pin the version for Python imports**
+```bash
+pip install skill-seekers==3.7.0   # internals can shift between minors
 ```
 
-### 2. **Enable Async for Large Sites**
+### 2. **Use the factory, not hardcoded classes**
 ```python
-pages = scrape_all(base_url=url, config=config, use_async=True)
-```
-
-### 3. **Cache Scraped Data**
-```python
-# Scrape once
-scrape_all(config=config, output_dir='output/data')
-
-# Rebuild many times (fast!)
-build_skill(config_name='framework', data_dir='output/data', skip_scrape=True)
-```
-
-### 4. **Use Platform Adaptors**
-```python
-# Good: Platform-agnostic
+# Good: registry-driven
+converter = get_converter(info.type, config)
 adaptor = get_adaptor(target_platform)
-adaptor.package(skill_dir)
 
-# Bad: Hardcoded for one platform
-# create_zip_for_claude(skill_dir)
+# Brittle: hardcoded imports break when modules move
 ```
 
-### 5. **Handle Errors Gracefully**
+### 3. **Check run() return codes**
 ```python
-try:
-    result = install_skill(config_name='framework', target='claude')
-except NetworkError:
-    # Retry logic
-except InvalidConfigError:
-    # Fix config
+if get_converter("web", config).run() != 0:
+    raise SystemExit(1)   # run() logs the exception; it does not re-raise
 ```
 
-### 6. **Monitor Background Enhancements**
+### 4. **Cache scraped data, rebuild cheaply**
 ```python
-# Start enhancement
-enhance_skill(skill_dir='output/react/', mode='background')
+converter = get_converter("web", config)
+converter.run()                 # first run: scrape + build (slow)
 
-# Monitor progress
-monitor_enhancement('output/react/', watch=True)
+converter = get_converter("web", config)
+converter.skip_scrape = True
+converter.run()                 # rebuild from output/<name>_data/ (fast)
+```
+
+### 5. **Probe adaptor capabilities before calling**
+```python
+adaptor = get_adaptor(platform)
+if adaptor.supports_upload():
+    adaptor.upload(pkg, api_key=os.environ[adaptor.get_env_var_name()])
+```
+
+### 6. **Use dry runs in tests**
+```python
+get_converter("config", {"config_path": cfg, "dry_run": True}).run()
 ```
 
 ---
 
 ## API Reference Summary
 
-| API | Module | Use Case |
+| API | Import | Use Case |
 |-----|--------|----------|
-| **Documentation Scraping** | `doc_scraper` | Extract from docs websites |
-| **GitHub Analysis** | `github_scraper` | Analyze code repositories |
-| **PDF Extraction** | `pdf_scraper` | Extract from PDF files |
-| **Word Extraction** | `word_scraper` | Extract from .docx files |
-| **EPUB Extraction** | `epub_scraper` | Extract from .epub files |
-| **Video Transcription** | `video_scraper` | Extract from YouTube/Vimeo/local videos |
-| **Jupyter Extraction** | `jupyter_scraper` | Extract from .ipynb notebooks |
-| **HTML Extraction** | `html_scraper` | Extract from local HTML files |
-| **OpenAPI Parsing** | `openapi_scraper` | Parse OpenAPI/Swagger specs |
-| **AsciiDoc Extraction** | `asciidoc_scraper` | Extract from .adoc files |
-| **PowerPoint Extraction** | `pptx_scraper` | Extract from .pptx files |
-| **RSS/Atom Extraction** | `rss_scraper` | Extract from RSS/Atom feeds |
-| **Man Page Extraction** | `manpage_scraper` | Extract from Unix man pages |
-| **Confluence Extraction** | `confluence_scraper` | Extract from Confluence wikis |
-| **Notion Extraction** | `notion_scraper` | Extract from Notion workspaces |
-| **Chat Extraction** | `chat_scraper` | Extract from Slack/Discord exports |
-| **Local Codebase Analysis** | `codebase_scraper` | Analyze local directories |
-| **Unified Scraping** | `unified_scraper` | Multi-source scraping (17 types) |
-| **Skill Packaging** | `adaptors` | Package for LLM platforms |
-| **Skill Upload** | `adaptors` | Upload to platforms |
-| **AI Enhancement** | `adaptors` | Improve skill quality |
-| **Complete Workflow** | `install_skill` | End-to-end automation |
+| **Skill conversion factory** | `skill_seekers.cli.skill_converter.get_converter` | Any of the 18 source types → skill |
+| **Converter registry** | `skill_seekers.cli.skill_converter.CONVERTER_REGISTRY` | Source type → (module, class) lookup |
+| **Source detection** | `skill_seekers.cli.source_detector.SourceDetector` | Auto-detect type from raw input |
+| **Web docs** | `skill_seekers.cli.doc_scraper.DocToSkillConverter` | Documentation websites |
+| **GitHub repos** | `skill_seekers.cli.github_scraper.GitHubScraper` | Code + docs + community analysis |
+| **PDF** | `skill_seekers.cli.pdf_scraper.PDFToSkillConverter` | PDF documents |
+| **Local codebase** | `skill_seekers.cli.codebase_scraper.CodebaseAnalyzer` | Local directories (C3.x pipeline) |
+| **Multi-source** | `skill_seekers.cli.unified_scraper.UnifiedScraper` | Merge 18 source types + conflict detection |
+| **Packaging / upload / enhance** | `skill_seekers.cli.adaptors.get_adaptor` | 22 platform targets |
+| **AI enhancement** | `skill_seekers.cli.agent_client.AgentClient` | API or local-agent LLM calls |
+| **Local-agent enhancement** | `skill_seekers.cli.enhance_skill_local.LocalSkillEnhancer` | Free enhancement via coding agents |
+| **Settings singleton** | `skill_seekers.cli.execution_context.ExecutionContext` | Initialize / get / override settings |
+| **Marketplace registry** | `skill_seekers.services.marketplace_manager.MarketplaceManager` | Marketplace CRUD |
+| **Config sources** | `skill_seekers.services.source_manager.SourceManager` | Config source registry CRUD |
+| **Config publishing** | `skill_seekers.services.config_publisher` | Push configs; `detect_category()` |
+| **Git config repos** | `skill_seekers.services.git_repo.GitConfigRepo` | Clone/pull + config discovery |
+
+The other 14 converter classes (word, epub, video, jupyter, html, openapi, asciidoc, pptx, rss, manpage, confluence, notion, chat) are listed in `CONVERTER_REGISTRY`.
 
 ---
 
 ## Additional Resources
 
 - **[Main Documentation](../../README.md)** - Complete user guide
-- **[Usage Guide](../guides/USAGE.md)** - CLI usage examples
+- **[CLI Reference](CLI_REFERENCE.md)** - The stable command-line interface
+- **[Config Format](CONFIG_FORMAT.md)** - Authoritative config schema
 - **[MCP Setup](../guides/MCP_SETUP.md)** - MCP server integration
 - **[Multi-LLM Support](../integrations/MULTI_LLM_SUPPORT.md)** - Platform comparison
 - **[CHANGELOG](../../CHANGELOG.md)** - Version history and API changes
 
 ---
 
-**Version:** 3.6.0
-**Last Updated:** 2026-03-15
-**Status:** ✅ Production Ready
+**Version:** 3.7.0
+**Last Updated:** 2026-06-11

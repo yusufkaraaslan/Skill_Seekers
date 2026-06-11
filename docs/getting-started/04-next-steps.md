@@ -158,11 +158,11 @@ export_to_chroma(skill_directory="output/django/")
 **Goal:** Keep skills up-to-date automatically
 
 ```bash
-# Check for updates
-skill-seekers update --config django --check-only
+# Check for changes
+skill-seekers update output/django/ --check-changes
 
 # Update if changed
-skill-seekers update --config django
+skill-seekers update output/django/
 ```
 
 ---
@@ -228,10 +228,11 @@ Automating documentation workflows?
 ```bash
 # Start MCP server
 skill-seekers-mcp --transport http --port 8765
-
-# Add config source
-skill-seekers workflows add-config-source my-org https://github.com/my-org/configs
 ```
+
+Config sources are managed through the MCP tools (`add_config_source`,
+`list_config_sources`, `remove_config_source`) — ask your agent, e.g.
+"Add my-org https://github.com/my-org/configs as a config source".
 
 ---
 

@@ -266,19 +266,9 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
     Sends the reference file content to the AI with a focused prompt
     to reconstruct the Code Timeline from noisy OCR + transcript context.
     """
-    try:
-        import anthropic
-    except ImportError:
-        return
-
     key = api_key or os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
     if not key:
         return
-
-    base_url = os.environ.get("ANTHROPIC_BASE_URL")
-    client_kwargs: dict = {"api_key": key}
-    if base_url:
-        client_kwargs["base_url"] = base_url
 
     prompt = (
         "You are cleaning a video tutorial reference file. The Code Timeline section "
@@ -297,21 +287,19 @@ def _ai_clean_reference(ref_path: str, content: str, api_key: str | None = None)
     )
 
     try:
-        client = anthropic.Anthropic(**client_kwargs)
-        response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
-            max_tokens=8000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        result = response.content[0].text
-        # Require a COMPLETE response before overwriting the reference file: a
-        # response truncated at max_tokens can still exceed 50% of the input yet
-        # silently corrupt the reference. (stop_reason == "end_turn" => complete.)
-        if (
-            result
-            and getattr(response, "stop_reason", None) == "end_turn"
-            and len(result) > len(content) * 0.5
-        ):
+        from skill_seekers.cli.agent_client import AgentClient
+
+        # AgentClient is the single AI transport: it enforces the truncation
+        # gate (max_tokens → None), honors ANTHROPIC_BASE_URL/ANTHROPIC_MODEL,
+        # and classifies API errors. A missing SDK leaves client.client None.
+        client = AgentClient(mode="api", api_key=key, provider="anthropic")
+        if client.client is None:
+            return
+        result = client.call(prompt, max_tokens=8000)
+        # Require a PLAUSIBLY COMPLETE response before overwriting the
+        # reference: even an untruncated reply that lost >50% of the input
+        # would corrupt the reference.
+        if result and len(result) > len(content) * 0.5:
             with open(ref_path, "w", encoding="utf-8") as f:
                 f.write(result)
             logger.info(f"AI-cleaned reference: {os.path.basename(ref_path)}")
@@ -358,15 +346,23 @@ class VideoToSkillConverter(SkillConverter):
         self.end_time: float | None = config.get("end_time")
 
         # Paths
-        self.skill_dir = config.get("output_dir") or config.get("output") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_video_extracted.json"
+        # Same resolution as the base class, with video's legacy "output" key
+        # as a fallback; resolve_skill_dir also strips trailing slashes.
+        self.skill_dir = self.resolve_skill_dir(
+            {"output_dir": config.get("output_dir") or config.get("output")}, self.name
+        )
+        self.data_file = self.data_file_for("_video_extracted.json")
 
         # Results
         self.result: VideoScraperResult | None = None
 
     def extract(self):
-        """Extract content from video source (SkillConverter interface)."""
-        self.process()
+        """Extract content from video source (SkillConverter interface).
+
+        Returns the VideoScraperResult (also stored on ``self.result``) so
+        callers using the public interface don't need to reach for process().
+        """
+        return self.process()
 
     def process(self) -> VideoScraperResult:
         """Run the full video processing pipeline.

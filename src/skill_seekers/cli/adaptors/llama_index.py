@@ -148,6 +148,34 @@ class LlamaIndexAdaptor(StreamingAdaptorMixin, SkillAdaptor):
         # Return as formatted JSON
         return json.dumps(nodes, indent=2, ensure_ascii=False)
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to LlamaIndex Node format.
+
+        Nodes carry the same text/metadata/id_ shape as format_skill_md(),
+        wrapped in a streaming envelope.
+        """
+        nodes = []
+
+        for chunk_text, chunk_meta in chunks:
+            nodes.append(
+                {
+                    "text": chunk_text,
+                    "metadata": self._streaming_chunk_meta(chunk_meta, skill_name),
+                    "id_": chunk_meta["chunk_id"],
+                    "embedding": None,
+                }
+            )
+
+        return {
+            "nodes": nodes,
+            "total_chunks": len(nodes),
+            "streaming": True,
+            "format": "LlamaIndex TextNode",
+        }
+
     def package(
         self,
         skill_dir: Path,

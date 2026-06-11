@@ -14,6 +14,7 @@ from skill_seekers.cli.scraper_utils import (
     score_code_quality,
     extract_table_from_html,
     parse_leading_int,
+    reference_filename,
 )
 
 # Representative inputs with their pinned scores (captured from the pre-merge
@@ -138,3 +139,32 @@ class TestNoDuplicateDefinitions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReferenceFilename(unittest.TestCase):
+    """Shared reference_filename helper (was copy-pasted across 7 scrapers)."""
+
+    def test_empty_pages_uses_section_number(self):
+        self.assertEqual(reference_filename([], 3, 5, "book"), "section_03.md")
+
+    def test_single_section_uses_stem(self):
+        pages = [{"section_number": 1}]
+        self.assertEqual(reference_filename(pages, 1, 1, "book"), "book.md")
+
+    def test_single_section_no_stem_uses_main(self):
+        self.assertEqual(reference_filename([{"section_number": 1}], 1, 1, ""), "main.md")
+
+    def test_multi_section_range(self):
+        pages = [{"section_number": 2}, {"section_number": 5}]
+        self.assertEqual(reference_filename(pages, 1, 3, "book"), "book_s2-s5.md")
+
+    def test_pdf_page_number_variant(self):
+        pages = [{"page_number": 10}, {"page_number": 14}]
+        self.assertEqual(
+            reference_filename(pages, 1, 2, "doc", number_key="page_number", prefix="p"),
+            "doc_p10-p14.md",
+        )
+
+    def test_missing_numbers_fall_back_to_index(self):
+        pages = [{}, {}]
+        self.assertEqual(reference_filename(pages, 1, 2, "x"), "x_s1-s2.md")

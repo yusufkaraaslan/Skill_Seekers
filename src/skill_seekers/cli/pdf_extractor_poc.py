@@ -948,9 +948,18 @@ class PDFExtractor:
             print(
                 f"🚀 Extracting {len(self.doc)} pages in parallel ({self.max_workers} workers)..."
             )
+            import contextvars
+
+            # Propagate contextvars into worker threads (threads don't inherit
+            # them), so per-call state like the MCP log-capture token survives.
+            _caller_ctx = contextvars.copy_context()
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 page_numbers = list(range(len(self.doc)))
-                self.pages = list(executor.map(self.extract_page, page_numbers))
+                self.pages = list(
+                    executor.map(
+                        lambda n: _caller_ctx.copy().run(self.extract_page, n), page_numbers
+                    )
+                )
         else:
             # Sequential extraction
             for page_num in range(len(self.doc)):

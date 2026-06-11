@@ -1,28 +1,34 @@
 # 多源抓取指南
 
 > **Skill Seekers v3.6.0**  
-> **将文档、代码和 PDF 合并为一个技能**
+> **将 18 种来源类型合并为一个统一技能**
 
 ---
 
 ## 什么是多源抓取？
 
-将多个来源合并为单个综合技能：
+将多个来源合并为单个综合技能。Skill Seekers 支持 **18 种来源类型**，可自由混合搭配：
 
 ```
 ┌──────────────┐
-│  Documentation │──┐
-│  (Web docs)    │  │
-└──────────────┘  │
-                   │
-┌──────────────┐  │     ┌──────────────────┐
-│  GitHub Repo │──┼────▶│  Unified Skill   │
-│  (Source code)│  │     │  (Single source  │
-└──────────────┘  │     │   of truth)      │
-                   │     └──────────────────┘
-┌──────────────┐  │
-│  PDF Manual  │──┘
-│  (Reference) │
+│ Documentation│──┐
+│ (Web docs)   │  │
+├──────────────┤  │
+│ GitHub Repo  │  │
+│ (Source code) │  │
+├──────────────┤  │     ┌──────────────────┐
+│ PDF / Word / │  │     │  Unified Skill   │
+│ EPUB / PPTX  │──┼────▶│  (Single source  │
+├──────────────┤  │     │   of truth)      │
+│ Video /      │  │     └──────────────────┘
+│ Jupyter / HTML│  │
+├──────────────┤  │
+│ OpenAPI /    │  │
+│ AsciiDoc /   │  │
+│ RSS / Man    │  │
+├──────────────┤  │
+│ Confluence / │──┘
+│ Notion / Chat│
 └──────────────┘
 ```
 
@@ -38,6 +44,14 @@
 | 产品 + API | 文档 + OpenAPI 规范 | 用法 + 参考 |
 | 旧版 + 当前 | PDF + 网页文档 | 完整历史 |
 | 内部 + 外部 | 本地代码 + 公共文档 | 完整上下文 |
+| 数据科学项目 | Jupyter + GitHub + 文档 | 代码 + 笔记本 + 文档 |
+| 企业维基 | Confluence + GitHub + 视频 | 维基 + 代码 + 教程 |
+| API 优先产品 | OpenAPI + 文档 + Jupyter | 规范 + 文档 + 示例 |
+| CLI 工具 | Man 手册页 + GitHub + AsciiDoc | 参考 + 代码 + 文档 |
+| 团队知识 | Notion + Slack/Discord + 文档 | 笔记 + 讨论 + 文档 |
+| 书籍 + 代码 | EPUB + GitHub + PDF | 理论 + 实现 |
+| 演示文稿 + 代码 | PowerPoint + GitHub + 文档 | 幻灯片 + 代码 + 参考 |
+| 内容订阅 | RSS/Atom + 文档 + GitHub | 更新 + 文档 + 代码 |
 
 ### 优势
 
@@ -75,9 +89,9 @@
 
 ---
 
-## 来源类型
+## 来源类型（支持 17 种）
 
-### 1. 文档
+### 1. 文档（网页）
 
 ```json
 {
@@ -124,6 +138,139 @@
   "name": "internal-tools",
   "directory": "./internal-lib",
   "languages": ["Python", "JavaScript"]
+}
+```
+
+### 5. Word 文档（.docx）
+
+```json
+{
+  "type": "word",
+  "name": "product-spec",
+  "path": "docs/specification.docx"
+}
+```
+
+### 6. 视频（YouTube/Vimeo/本地）
+
+```json
+{
+  "type": "video",
+  "name": "tutorial-video",
+  "url": "https://www.youtube.com/watch?v=example",
+  "language": "en"
+}
+```
+
+### 7. EPUB
+
+```json
+{
+  "type": "epub",
+  "name": "programming-book",
+  "path": "books/python-guide.epub"
+}
+```
+
+### 8. Jupyter Notebook
+
+```json
+{
+  "type": "jupyter",
+  "name": "analysis-notebooks",
+  "path": "notebooks/data-analysis.ipynb"
+}
+```
+
+### 9. 本地 HTML
+
+```json
+{
+  "type": "html",
+  "name": "exported-docs",
+  "path": "exports/documentation.html"
+}
+```
+
+### 10. OpenAPI/Swagger
+
+```json
+{
+  "type": "openapi",
+  "name": "api-spec",
+  "path": "specs/openapi.yaml"
+}
+```
+
+### 11. AsciiDoc
+
+```json
+{
+  "type": "asciidoc",
+  "name": "technical-docs",
+  "path": "docs/manual.adoc"
+}
+```
+
+### 12. PowerPoint（.pptx）
+
+```json
+{
+  "type": "pptx",
+  "name": "architecture-deck",
+  "path": "presentations/architecture.pptx"
+}
+```
+
+### 13. RSS/Atom 订阅
+
+```json
+{
+  "type": "rss",
+  "name": "release-feed",
+  "url": "https://blog.example.com/releases.xml"
+}
+```
+
+### 14. Man 手册页
+
+```json
+{
+  "type": "manpage",
+  "name": "cli-reference",
+  "path": "man/mytool.1"
+}
+```
+
+### 15. Confluence
+
+```json
+{
+  "type": "confluence",
+  "name": "team-wiki",
+  "base_url": "https://company.atlassian.net/wiki",
+  "space_key": "ENGINEERING"
+}
+```
+
+### 16. Notion
+
+```json
+{
+  "type": "notion",
+  "name": "project-docs",
+  "workspace": "my-workspace",
+  "root_page_id": "abc123def456"
+}
+```
+
+### 17. Slack/Discord（聊天）
+
+```json
+{
+  "type": "chat",
+  "name": "team-discussions",
+  "path": "exports/slack-export/"
 }
 ```
 
@@ -239,6 +386,21 @@ skill-seekers create --config my-config.json --merge-mode claude-enhanced
 ```bash
 skill-seekers create --config my-config.json --merge-mode rule-based
 ```
+
+### 通用合并系统
+
+当组合超出标准 docs+github+pdf 三元组的来源类型时，**通用合并系统**（`unified_skill_builder.py` 中的 `_generic_merge()`）会自动处理任意组合。它对已知组合（docs+github、docs+pdf、github+pdf）使用成对合成，对所有其他来源类型组合则回退到通用合并策略。
+
+### AI 驱动的多来源合并
+
+对于复杂的多来源项目，可使用 `complex-merge.yaml` 工作流预设进行 AI 驱动的合并：
+
+```bash
+skill-seekers create --config my-config.json \
+  --enhance-workflow complex-merge
+```
+
+该工作流使用 Claude 智能协调来自不同来源类型的内容，解决冲突，并在原本难以确定性合并的来源之间建立连贯的交叉引用。
 
 ---
 
@@ -406,14 +568,40 @@ skill-seekers create --config my-config.json --merge-mode rule-based
 }
 ```
 
-### API + 文档
+### 文档 + OpenAPI 规范
 
 ```json
 {
   "name": "stripe-complete",
   "sources": [
     {"type": "docs", "base_url": "https://stripe.com/docs"},
-    {"type": "pdf", "pdf_path": "stripe-api-reference.pdf"}
+    {"type": "openapi", "path": "specs/stripe-openapi.yaml"}
+  ]
+}
+```
+
+### 代码 + Jupyter 笔记本
+
+```json
+{
+  "name": "ml-project",
+  "sources": [
+    {"type": "github", "repo": "org/ml-pipeline"},
+    {"type": "jupyter", "path": "notebooks/training.ipynb"},
+    {"type": "jupyter", "path": "notebooks/evaluation.ipynb"}
+  ]
+}
+```
+
+### Confluence + GitHub
+
+```json
+{
+  "name": "internal-platform",
+  "sources": [
+    {"type": "confluence", "base_url": "https://company.atlassian.net/wiki", "space_key": "PLATFORM"},
+    {"type": "github", "repo": "company/platform-core"},
+    {"type": "openapi", "path": "specs/platform-api.yaml"}
   ]
 }
 ```
@@ -430,10 +618,36 @@ skill-seekers create --config my-config.json --merge-mode rule-based
 }
 ```
 
+### CLI 工具（Man 手册页 + GitHub + AsciiDoc）
+
+```json
+{
+  "name": "mytool-complete",
+  "sources": [
+    {"type": "manpage", "path": "man/mytool.1"},
+    {"type": "github", "repo": "org/mytool"},
+    {"type": "asciidoc", "path": "docs/user-guide.adoc"}
+  ]
+}
+```
+
+### 团队知识（Notion + 聊天 + 视频）
+
+```json
+{
+  "name": "onboarding-knowledge",
+  "sources": [
+    {"type": "notion", "workspace": "engineering", "root_page_id": "abc123"},
+    {"type": "chat", "path": "exports/slack-engineering/"},
+    {"type": "video", "url": "https://www.youtube.com/playlist?list=PLonboarding"}
+  ]
+}
+```
+
 ---
 
 ## 另请参阅
 
 - [配置格式](../reference/CONFIG_FORMAT.md) - 完整 JSON 规范
 - [抓取指南](../user-guide/02-scraping.md) - 单个来源选项
-- [MCP 参考](../reference/MCP_REFERENCE.md) - unified_scrape 工具
+- [MCP 参考](../reference/MCP_REFERENCE.md) - `scrape_docs` 工具（处理统一多源配置）

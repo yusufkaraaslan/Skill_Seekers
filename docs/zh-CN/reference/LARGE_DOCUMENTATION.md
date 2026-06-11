@@ -1,69 +1,69 @@
-# Handling Large Documentation Sites (10K+ Pages)
+# 处理大型文档站点（10K+ 页面）
 
-Complete guide for scraping and managing large documentation sites with Skill Seeker.
-
----
-
-## Table of Contents
-
-- [When to Split Documentation](#when-to-split-documentation)
-- [Split Strategies](#split-strategies)
-- [Quick Start](#quick-start)
-- [Detailed Workflows](#detailed-workflows)
-- [Best Practices](#best-practices)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
+使用 Skill Seeker 抓取和管理大型文档站点的完整指南。
 
 ---
 
-## When to Split Documentation
+## 目录
 
-### Size Guidelines
-
-| Documentation Size | Recommendation | Strategy |
-|-------------------|----------------|----------|
-| < 5,000 pages | **One skill** | No splitting needed |
-| 5,000 - 10,000 pages | **Consider splitting** | Category-based |
-| 10,000 - 30,000 pages | **Recommended** | Router + Categories |
-| 30,000+ pages | **Strongly recommended** | Router + Categories |
-
-### Why Split Large Documentation?
-
-**Benefits:**
-- ✅ Faster scraping (parallel execution)
-- ✅ More focused skills (better Claude performance)
-- ✅ Easier maintenance (update one topic at a time)
-- ✅ Better user experience (precise answers)
-- ✅ Avoids context window limits
-
-**Trade-offs:**
-- ⚠️ Multiple skills to manage
-- ⚠️ Initial setup more complex
-- ⚠️ Router adds one extra skill
+- [何时拆分文档](#何时拆分文档)
+- [拆分策略](#拆分策略)
+- [快速开始](#快速开始)
+- [详细工作流](#详细工作流)
+- [最佳实践](#最佳实践)
+- [示例](#示例)
+- [故障排除](#故障排除)
 
 ---
 
-## Split Strategies
+## 何时拆分文档
 
-### 1. **No Split** (One Big Skill)
-**Best for:** Small to medium documentation (< 5K pages)
+### 规模指南
+
+| 文档规模 | 建议 | 策略 |
+|---------|------|------|
+| < 5,000 页 | **单个技能** | 无需拆分 |
+| 5,000 - 10,000 页 | **考虑拆分** | 按类别 |
+| 10,000 - 30,000 页 | **建议拆分** | 路由器 + 类别 |
+| 30,000+ 页 | **强烈建议拆分** | 路由器 + 类别 |
+
+### 为什么要拆分大型文档？
+
+**优势：**
+- ✅ 抓取更快（并行执行）
+- ✅ 技能更聚焦（Claude 表现更好）
+- ✅ 维护更容易（一次更新一个主题）
+- ✅ 用户体验更佳（回答更精准）
+- ✅ 避免上下文窗口限制
+
+**权衡：**
+- ⚠️ 需要管理多个技能
+- ⚠️ 初始设置更复杂
+- ⚠️ 路由器会额外增加一个技能
+
+---
+
+## 拆分策略
+
+### 1. **不拆分**（一个大技能）
+**适用于：** 中小型文档（< 5K 页）
 
 ```bash
 # Just use the config as-is
 skill-seekers create --config configs/react.json
 ```
 
-**Pros:** Simple, one skill to maintain
-**Cons:** Can be slow for large docs, may hit limits
+**优点：** 简单，只需维护一个技能
+**缺点：** 大型文档可能很慢，可能触及限制
 
 ---
 
-### 2. **Category Split** (Multiple Focused Skills)
-**Best for:** 5K-15K pages with clear topic divisions
+### 2. **按类别拆分**（多个聚焦技能）
+**适用于：** 5K-15K 页且主题划分清晰的文档
 
 ```bash
 # Auto-split by categories
-skill-seekers create configs/godot.json --strategy category
+python -m skill_seekers.cli.split_config configs/godot.json --strategy category
 
 # Creates:
 # - godot-scripting.json
@@ -73,17 +73,17 @@ skill-seekers create configs/godot.json --strategy category
 # - etc.
 ```
 
-**Pros:** Focused skills, clear separation
-**Cons:** User must know which skill to use
+**优点：** 技能聚焦，划分清晰
+**缺点：** 用户必须知道该使用哪个技能
 
 ---
 
-### 3. **Router + Categories** (Intelligent Hub) ⭐ RECOMMENDED
-**Best for:** 10K+ pages, best user experience
+### 3. **路由器 + 类别**（智能枢纽）⭐ 推荐
+**适用于：** 10K+ 页面，提供最佳用户体验
 
 ```bash
 # Create router + sub-skills
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 
 # Creates:
 # - godot.json (router/hub)
@@ -92,17 +92,17 @@ skill-seekers create configs/godot.json --strategy router
 # - etc.
 ```
 
-**Pros:** Best of both worlds, intelligent routing, natural UX
-**Cons:** Slightly more complex setup
+**优点：** 兼具两者优势，智能路由，自然的用户体验
+**缺点：** 设置稍微复杂一些
 
 ---
 
-### 4. **Size-Based Split**
-**Best for:** Docs without clear categories
+### 4. **按大小拆分**
+**适用于：** 没有清晰类别划分的文档
 
 ```bash
 # Split every 5000 pages
-skill-seekers create configs/bigdocs.json --strategy size --target-pages 5000
+python -m skill_seekers.cli.split_config configs/bigdocs.json --strategy size --target-pages 5000
 
 # Creates:
 # - bigdocs-part1.json
@@ -111,14 +111,14 @@ skill-seekers create configs/bigdocs.json --strategy size --target-pages 5000
 # - etc.
 ```
 
-**Pros:** Simple, predictable
-**Cons:** May split related topics
+**优点：** 简单、可预测
+**缺点：** 可能把相关主题拆开
 
 ---
 
-## Quick Start
+## 快速开始
 
-### Option 1: Automatic (Recommended)
+### 方案 1：自动（推荐）
 
 ```bash
 # 1. Create config
@@ -132,7 +132,7 @@ skill-seekers estimate configs/godot.json
 # Output: ⚠️  40,000 pages detected - splitting recommended
 
 # 3. Auto-split with router
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 
 # 4. Scrape all sub-skills
 for config in configs/godot-*.json; do
@@ -151,7 +151,7 @@ skill-seekers package output/godot*/
 
 ---
 
-### Option 2: Manual Control
+### 方案 2：手动控制
 
 ```bash
 # 1. Define split in config
@@ -175,13 +175,13 @@ skill-seekers create configs/godot.json
 
 ---
 
-## Detailed Workflows
+## 详细工作流
 
-### Workflow 1: Router + Categories (40K Pages)
+### 工作流 1：路由器 + 类别（40K 页面）
 
-**Scenario:** Godot documentation (40,000 pages)
+**场景：** Godot 文档（40,000 页）
 
-**Step 1: Estimate**
+**第 1 步：估算**
 ```bash
 skill-seekers estimate configs/godot.json
 
@@ -190,9 +190,9 @@ skill-seekers estimate configs/godot.json
 # Recommended: Split into 8 skills (5K each)
 ```
 
-**Step 2: Split Configuration**
+**第 2 步：拆分配置**
 ```bash
-skill-seekers create configs/godot.json --strategy router --target-pages 5000
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router --target-pages 5000
 
 # Creates:
 # configs/godot.json (router)
@@ -203,7 +203,7 @@ skill-seekers create configs/godot.json --strategy router --target-pages 5000
 # configs/godot-shaders.json (11K pages)
 ```
 
-**Step 3: Scrape Sub-Skills (Parallel)**
+**第 3 步：抓取子技能（并行）**
 ```bash
 # Open multiple terminals or use background jobs
 skill-seekers create --config configs/godot-scripting.json &
@@ -218,7 +218,7 @@ wait
 # Time: 4-8 hours (parallel) vs 20-40 hours (sequential)
 ```
 
-**Step 4: Generate Router**
+**第 4 步：生成路由器**
 ```bash
 skill-seekers create configs/godot-*.json
 
@@ -226,7 +226,7 @@ skill-seekers create configs/godot-*.json
 # output/godot/SKILL.md (router skill)
 ```
 
-**Step 5: Package All**
+**第 5 步：全部打包**
 ```bash
 skill-seekers package output/godot*/
 
@@ -239,20 +239,20 @@ skill-seekers package output/godot*/
 # output/godot-shaders.zip
 ```
 
-**Step 6: Upload to Claude**
-Upload all 6 .zip files to Claude. The router will intelligently direct queries to the right sub-skill!
+**第 6 步：上传到 Claude**
+将全部 6 个 .zip 文件上传到 Claude。路由器会智能地将查询导向正确的子技能！
 
 ---
 
-### Workflow 2: Category Split Only (15K Pages)
+### 工作流 2：仅按类别拆分（15K 页面）
 
-**Scenario:** Vue.js documentation (15,000 pages)
+**场景：** Vue.js 文档（15,000 页）
 
-**No router needed - just focused skills:**
+**无需路由器——只要聚焦的技能：**
 
 ```bash
 # 1. Split
-skill-seekers create configs/vue.json --strategy category
+python -m skill_seekers.cli.split_config configs/vue.json --strategy category
 
 # 2. Scrape each
 for config in configs/vue-*.json; do
@@ -265,26 +265,26 @@ skill-seekers package output/vue*/
 # 4. Upload all to Claude
 ```
 
-**Result:** 5 focused Vue skills (components, reactivity, routing, etc.)
+**结果：** 5 个聚焦的 Vue 技能（组件、响应式、路由等）
 
 ---
 
-## Best Practices
+## 最佳实践
 
-### 1. **Choose Target Size Wisely**
+### 1. **明智地选择目标大小**
 
 ```bash
 # Small focused skills (3K-5K pages) - more skills, very focused
-skill-seekers create config.json --target-pages 3000
+python -m skill_seekers.cli.split_config config.json --target-pages 3000
 
 # Medium skills (5K-8K pages) - balanced (RECOMMENDED)
-skill-seekers create config.json --target-pages 5000
+python -m skill_seekers.cli.split_config config.json --target-pages 5000
 
 # Larger skills (8K-10K pages) - fewer skills, broader
-skill-seekers create config.json --target-pages 8000
+python -m skill_seekers.cli.split_config config.json --target-pages 8000
 ```
 
-### 2. **Use Parallel Scraping**
+### 2. **使用并行抓取**
 
 ```bash
 # Serial (slow - 40 hours)
@@ -299,7 +299,7 @@ done
 wait
 ```
 
-### 3. **Test Before Full Scrape**
+### 3. **完整抓取前先测试**
 
 ```bash
 # Test with limited pages first
@@ -311,7 +311,7 @@ skill-seekers create --config configs/godot-2d.json
 # If output looks good, increase to full
 ```
 
-### 4. **Use Checkpoints for Long Scrapes**
+### 4. **长时间抓取使用检查点**
 
 ```bash
 # Enable checkpoints in config
@@ -328,13 +328,13 @@ skill-seekers create --config config.json --resume
 
 ---
 
-## Examples
+## 示例
 
-### Example 1: AWS Documentation (Hypothetical 50K Pages)
+### 示例 1：AWS 文档（假设 50K 页面）
 
 ```bash
 # 1. Split by AWS services
-skill-seekers create configs/aws.json --strategy router --target-pages 5000
+python -m skill_seekers.cli.split_config configs/aws.json --strategy router --target-pages 5000
 
 # Creates ~10 skills:
 # - aws (router)
@@ -350,13 +350,13 @@ skill-seekers create configs/aws.json --strategy router --target-pages 5000
 # 6. Focused, accurate answer!
 ```
 
-### Example 2: Microsoft Docs (100K+ Pages)
+### 示例 2：Microsoft 文档（100K+ 页面）
 
 ```bash
 # Too large even with splitting - use selective categories
 
 # Only scrape key topics
-skill-seekers create configs/microsoft.json --strategy category
+python -m skill_seekers.cli.split_config configs/microsoft.json --strategy category
 
 # Edit configs to include only:
 # - microsoft-azure (Azure docs only)
@@ -368,22 +368,22 @@ skill-seekers create configs/microsoft.json --strategy category
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### Issue: "Splitting creates too many skills"
+### 问题："拆分产生了太多技能"
 
-**Solution:** Increase target size or combine categories
+**解决方案：** 增大目标大小或合并类别
 
 ```bash
 # Instead of 5K per skill, use 8K
-skill-seekers create config.json --target-pages 8000
+python -m skill_seekers.cli.split_config config.json --target-pages 8000
 
 # Or manually combine categories in config
 ```
 
-### Issue: "Router not routing correctly"
+### 问题："路由器路由不正确"
 
-**Solution:** Check routing keywords in router SKILL.md
+**解决方案：** 检查路由器 SKILL.md 中的路由关键词
 
 ```bash
 # Review router
@@ -393,9 +393,9 @@ cat output/godot/SKILL.md
 nano output/godot/SKILL.md
 ```
 
-### Issue: "Parallel scraping fails"
+### 问题："并行抓取失败"
 
-**Solution:** Reduce parallelism or check rate limits
+**解决方案：** 降低并行度或检查速率限制
 
 ```bash
 # Scrape 2-3 at a time instead of all
@@ -410,22 +410,22 @@ wait
 
 ---
 
-## Summary
+## 总结
 
-**For 40K+ Page Documentation:**
+**对于 40K+ 页面的文档：**
 
-1. ✅ **Estimate first**: `skill-seekers estimate config.json`
-2. ✅ **Split with router**: `skill-seekers create config.json --strategy router`
-3. ✅ **Scrape in parallel**: Multiple terminals or background jobs
-4. ✅ **Generate router**: `skill-seekers create configs/*-*.json`
-5. ✅ **Package all**: `skill-seekers package output/*/`
-6. ✅ **Upload to Claude**: All .zip files
+1. ✅ **先估算**：`skill-seekers estimate config.json`
+2. ✅ **用路由器拆分**：`python -m skill_seekers.cli.split_config config.json --strategy router`
+3. ✅ **并行抓取**：多个终端或后台任务
+4. ✅ **生成路由器**：`skill-seekers create configs/*-*.json`
+5. ✅ **全部打包**：`skill-seekers package output/*/`
+6. ✅ **上传到 Claude**：所有 .zip 文件
 
-**Result:** Intelligent, fast, focused skills that work seamlessly together!
+**结果：** 智能、快速、聚焦且无缝协作的技能！
 
 ---
 
-**Questions? See:**
-- [Main README](../README.md)
-- [MCP Setup Guide](MCP_SETUP.md)
-- [Enhancement Guide](ENHANCEMENT.md)
+**有问题？请参阅：**
+- [主 README](../README.md)
+- [MCP 设置指南](MCP_SETUP.md)
+- [增强指南](ENHANCEMENT.md)

@@ -23,7 +23,6 @@ Examples:
     skill-seekers install-agent output/react/ --agent cursor --dry-run
 """
 
-import argparse
 import shutil
 import sys
 from difflib import get_close_matches
@@ -351,45 +350,13 @@ def main(args=None) -> int:
     Returns:
         Exit code (0 for success, 1 for error)
     """
-    parser = argparse.ArgumentParser(
-        prog="skill-seekers-install-agent",
-        description="Install skills to AI coding agent directories",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Install to specific agent
-  skill-seekers install-agent output/react/ --agent cursor
-
-  # Install to all agents
-  skill-seekers install-agent output/react/ --agent all
-
-  # Force overwrite
-  skill-seekers install-agent output/react/ --agent claude --force
-
-  # Preview installation
-  skill-seekers install-agent output/react/ --agent cursor --dry-run
-
-Supported agents:
-  claude, cursor, vscode, copilot, amp, goose, opencode, letta, aide, windsurf,
-  neovate, roo, cline, aider, bolt, kilo, continue, kimi-code, bob, all
-        """,
-    )
-
-    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
-
-    parser.add_argument(
-        "--agent", required=True, help="Agent name (use 'all' to install to all agents)"
-    )
-
-    parser.add_argument(
-        "--force", action="store_true", help="Overwrite existing installation without asking"
-    )
-
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Preview installation without making changes"
-    )
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
     if args is None:
+        # Single source of flags: the central InstallAgentParser.
+        from skill_seekers.cli.parsers.install_agent_parser import InstallAgentParser
+
+        parser = InstallAgentParser().build_standalone(prog="skill-seekers-install-agent")
         args = parser.parse_args()
 
     # Convert skill directory to Path
@@ -426,7 +393,7 @@ Supported agents:
                 elif "does not exist" in message or "SKILL.md not found" in message:
                     # Validation error - only show once
                     print(message)
-                    return 1
+                    return EXIT_ERROR
                 else:
                     print(f"⏳ Installing to {agent_name}...   ⚠️  Skipped (not installed)")
                     skipped_count += 1
@@ -449,7 +416,7 @@ Supported agents:
             print("\nFix permission errors:")
             print("   sudo mkdir -p ~/.amp && sudo chown -R $USER ~/.amp")
 
-        return 0 if installed_count > 0 else 1
+        return EXIT_SUCCESS if installed_count > 0 else EXIT_ERROR
 
     # Single agent installation
     agent_name = args.agent
@@ -466,7 +433,7 @@ Supported agents:
 
     print(message)
 
-    return 0 if success else 1
+    return EXIT_SUCCESS if success else EXIT_ERROR
 
 
 if __name__ == "__main__":

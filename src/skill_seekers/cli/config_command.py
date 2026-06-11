@@ -524,16 +524,12 @@ def test_connections():
 
 def main(args=None):
     """Main entry point for config command."""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Configure Skill Seekers settings")
-    parser.add_argument("--github", action="store_true", help="Go directly to GitHub token setup")
-    parser.add_argument("--api-keys", action="store_true", help="Go directly to API keys setup")
-    parser.add_argument("--show", action="store_true", help="Show current configuration and exit")
-    parser.add_argument("--test", action="store_true", help="Test connections and exit")
-    parser.add_argument("--welcome", action="store_true", help="Show welcome message")
 
     if args is None:
+        # Single source of flags: the central ConfigParser.
+        from skill_seekers.cli.parsers.config_parser import ConfigParser
+
+        parser = ConfigParser().build_standalone()
         args = parser.parse_args()
 
     config = get_config_manager()

@@ -760,6 +760,11 @@ class DependencyAnalyzer:
             NetworkX DiGraph with file dependencies
         """
         self.graph.clear()
+        # Resolution depends only on (imported_module, file_nodes); memoize per
+        # build so the suffix lookup in _resolve_import runs once per distinct
+        # module, not once per import edge.
+        self._resolve_cache: dict[str, str | None] = {}
+        self._suffix_index = self._build_suffix_index()
 
         # Add all file nodes
         for file_path, node in self.file_nodes.items():
@@ -793,6 +798,30 @@ class DependencyAnalyzer:
         This is a simplified resolution - a full implementation would need
         to handle module resolution rules for each language.
         """
+        cache = getattr(self, "_resolve_cache", None)
+        if cache is not None and imported_module in cache:
+            return cache[imported_module]
+        resolved = self._resolve_import_uncached(imported_module)
+        if cache is not None:
+            cache[imported_module] = resolved
+        return resolved
+
+    def _build_suffix_index(self) -> dict[str, tuple[int, str]]:
+        """Map every '/'-boundary tail of each file_nodes key (e.g.
+        "src/pkg/mod.py" → "/pkg/mod.py", "/mod.py") to its first key in
+        insertion order, so the suffix fallback in _resolve_import_uncached
+        is a handful of dict lookups instead of a scan over every file for
+        each distinct unresolved module."""
+        index: dict[str, tuple[int, str]] = {}
+        for pos, key in enumerate(self.file_nodes):
+            start = key.find("/")
+            while start != -1:
+                index.setdefault(key[start:], (pos, key))
+                start = key.find("/", start + 1)
+        return index
+
+    def _resolve_import_uncached(self, imported_module: str) -> str | None:
+        """Uncached resolution body — see _resolve_import."""
         # file_nodes is keyed by slash file paths (e.g. "src/pkg/mod.py"), but
         # imported_module is usually a dotted/namespaced name (e.g. "pkg.mod").
         # Convert dots to slashes and try common source extensions, matching both
@@ -828,8 +857,14 @@ class DependencyAnalyzer:
                 if cand in self.file_nodes:
                     return cand
 
-        # 2) Path-suffix match (a single pass over file_nodes).
+        # 2) Path-suffix match. Prefer the index built once per build_graph;
+        # take the earliest-inserted key across ALL suffix forms to preserve
+        # the first-key-wins tie-breaking of the old single-pass scan.
         suffixes = tuple(f"/{base}{ext}" for base in bases for ext in exts)
+        index = getattr(self, "_suffix_index", None)
+        if index is not None:
+            hits = [hit for hit in map(index.get, suffixes) if hit is not None]
+            return min(hits)[1] if hits else None
         for key in self.file_nodes:
             if key.endswith(suffixes):
                 return key

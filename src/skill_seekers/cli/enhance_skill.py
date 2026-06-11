@@ -23,12 +23,7 @@ from pathlib import Path
 from skill_seekers.cli.constants import API_CONTENT_LIMIT, API_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
 
-try:
-    import anthropic
-except ImportError:
-    print("❌ Error: anthropic package not installed")
-    print("Install with: pip3 install anthropic")
-    sys.exit(1)
+from skill_seekers.cli.agent_client import AgentClient
 
 
 class SkillEnhancer:
@@ -47,14 +42,13 @@ class SkillEnhancer:
                 "environment variable or use --api-key argument"
             )
 
-        # Support custom base URL for alternative API endpoints
-        base_url = os.environ.get("ANTHROPIC_BASE_URL")
-        client_kwargs = {"api_key": self.api_key}
-        if base_url:
-            client_kwargs["base_url"] = base_url
-            print(f"ℹ️  Using custom API base URL: {base_url}")
-
-        self.client = anthropic.Anthropic(**client_kwargs)
+        # All AI calls go through AgentClient (single transport: truncation
+        # gate, timeout policy, error classification, ANTHROPIC_BASE_URL).
+        self.client = AgentClient(mode="api", api_key=self.api_key, provider="anthropic")
+        if self.client.client is None:
+            raise RuntimeError(
+                "anthropic package not installed. Install with: pip3 install anthropic"
+            )
 
     def read_current_skill_md(self):
         """Read existing SKILL.md"""
@@ -71,40 +65,19 @@ class SkillEnhancer:
         print("\n🤖 Asking AI to enhance SKILL.md...")
         print(f"   Input: {len(prompt):,} characters")
 
-        try:
-            message = self.client.messages.create(
-                model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
-                max_tokens=4096,
-                temperature=0.3,
-                messages=[{"role": "user", "content": prompt}],
+        # AgentClient enforces the truncation gate (max_tokens → None), finds
+        # the first text block (ThinkingBlock-safe), resolves the model from
+        # ANTHROPIC_MODEL/defaults, and classifies API errors with logging.
+        # 16384: a rewritten SKILL.md can exceed ~16 KB; 4096 made any such
+        # skill permanently un-enhanceable (truncation gate → None every run).
+        enhanced_content = self.client.call(prompt, max_tokens=16384, temperature=0.3)
+        if not enhanced_content:
+            print(
+                "❌ Error: AI enhancement failed or returned truncated/empty "
+                "content. Refusing to overwrite SKILL.md."
             )
-
-            # Refuse truncated output: the caller backs up then overwrites SKILL.md,
-            # so saving a max_tokens-truncated body would silently corrupt the skill.
-            if getattr(message, "stop_reason", None) == "max_tokens":
-                print(
-                    "❌ Error: AI response was truncated (hit max_tokens). "
-                    "Refusing to overwrite SKILL.md with incomplete content."
-                )
-                return None
-
-            # Handle response content - newer SDK versions may include ThinkingBlock
-            # Find the TextBlock containing the actual response
-            enhanced_content = None
-            for block in message.content:
-                if hasattr(block, "text"):
-                    enhanced_content = block.text
-                    break
-
-            if not enhanced_content:
-                print("❌ Error: No text content found in API response")
-                return None
-
-            return enhanced_content
-
-        except Exception as e:
-            print(f"❌ Error calling AI API: {e}")
             return None
+        return enhanced_content
 
     def _is_video_source(self, references):
         """Check if the references come from video tutorial extraction."""
@@ -436,16 +409,14 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         return prompt
 
     def save_enhanced_skill_md(self, content):
-        """Save the enhanced SKILL.md"""
-        # Backup original
-        if self.skill_md_path.exists():
-            backup_path = self.skill_md_path.with_suffix(".md.backup")
-            self.skill_md_path.rename(backup_path)
-            print(f"  💾 Backed up original to: {backup_path.name}")
+        """Save the enhanced SKILL.md (atomic, with a copy backup).
 
-        # Save enhanced version
-        self.skill_md_path.write_text(content, encoding="utf-8")
-        print("  ✅ Saved enhanced SKILL.md")
+        The previous rename-then-write left only SKILL.md.backup (no SKILL.md)
+        if the write failed after the rename.
+        """
+        from skill_seekers.cli.adaptors.base import save_skill_md_atomic
+
+        save_skill_md_atomic(self.skill_md_path, content)
 
     def run(self):
         """Main enhancement workflow"""

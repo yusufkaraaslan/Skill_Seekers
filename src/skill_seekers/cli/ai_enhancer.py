@@ -22,8 +22,9 @@ Uses AgentClient for all AI invocations — fully agent-agnostic.
 
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+
+from skill_seekers.cli.parallel_batches import flatten_batch_results, run_batches_parallel
 
 logger = logging.getLogger(__name__)
 
@@ -154,36 +155,14 @@ class PatternEnhancer(AIEnhancer):
 
     def _enhance_patterns_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
         """Process pattern batches in parallel using ThreadPoolExecutor."""
-        results = [None] * len(batches)  # Preserve order
-
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            # Submit all batches
-            future_to_idx = {
-                executor.submit(self._enhance_pattern_batch, batch): idx
-                for idx, batch in enumerate(batches)
-            }
-
-            # Collect results as they complete
-            completed = 0
-            total = len(batches)
-            for future in as_completed(future_to_idx):
-                idx = future_to_idx[future]
-                try:
-                    results[idx] = future.result()
-                    completed += 1
-                    # Show progress: always for small jobs (<10), every 5 for larger jobs
-                    if total < 10 or completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
-                except Exception as e:
-                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
-                    results[idx] = batches[idx]  # Return unenhanced on failure
-
-        # Flatten results
-        enhanced = []
-        for batch_result in results:
-            if batch_result:
-                enhanced.extend(batch_result)
-        return enhanced
+        results = run_batches_parallel(
+            batches,
+            self._enhance_pattern_batch,
+            workers,
+            log=logger.info,
+            warn=logger.warning,
+        )
+        return flatten_batch_results(results)
 
     def _enhance_pattern_batch(self, patterns: list[dict]) -> list[dict]:
         """Enhance a batch of patterns"""
@@ -292,36 +271,14 @@ class TestExampleEnhancer(AIEnhancer):
 
     def _enhance_examples_parallel(self, batches: list[list[dict]], workers: int) -> list[dict]:
         """Process example batches in parallel using ThreadPoolExecutor."""
-        results = [None] * len(batches)  # Preserve order
-
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            # Submit all batches
-            future_to_idx = {
-                executor.submit(self._enhance_example_batch, batch): idx
-                for idx, batch in enumerate(batches)
-            }
-
-            # Collect results as they complete
-            completed = 0
-            total = len(batches)
-            for future in as_completed(future_to_idx):
-                idx = future_to_idx[future]
-                try:
-                    results[idx] = future.result()
-                    completed += 1
-                    # Show progress: always for small jobs (<10), every 5 for larger jobs
-                    if total < 10 or completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
-                except Exception as e:
-                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
-                    results[idx] = batches[idx]  # Return unenhanced on failure
-
-        # Flatten results
-        enhanced = []
-        for batch_result in results:
-            if batch_result:
-                enhanced.extend(batch_result)
-        return enhanced
+        results = run_batches_parallel(
+            batches,
+            self._enhance_example_batch,
+            workers,
+            log=logger.info,
+            warn=logger.warning,
+        )
+        return flatten_batch_results(results)
 
     def _enhance_example_batch(self, examples: list[dict]) -> list[dict]:
         """Enhance a batch of examples"""

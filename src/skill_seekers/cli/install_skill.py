@@ -26,7 +26,6 @@ Examples:
     skill-seekers install --config react --dry-run
 """
 
-import argparse
 import asyncio
 import sys
 
@@ -42,6 +41,8 @@ except ImportError:
 
 def main(args=None):
     """Main entry point for CLI"""
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_INTERRUPT, EXIT_SUCCESS
+
     # Check MCP availability first
     if not MCP_AVAILABLE:
         print("\n❌ Error: MCP package not installed")
@@ -52,93 +53,14 @@ def main(args=None):
         print("  skill-seekers scrape --config react")
         print("  skill-seekers package output/react/")
         print()
-        sys.exit(1)
-
-    parser = argparse.ArgumentParser(
-        description="Complete skill installation workflow (fetch → scrape → enhance → package → upload)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Install React skill from official API
-  skill-seekers install --config react
-
-  # Install from local config file
-  skill-seekers install --config configs/custom.json
-
-  # Install without uploading
-  skill-seekers install --config django --no-upload
-
-  # Unlimited scraping (no page limits)
-  skill-seekers install --config godot --unlimited
-
-  # Preview workflow (dry run)
-  skill-seekers install --config react --dry-run
-
-  # Install for Gemini instead of default platform
-  skill-seekers install --config react --target gemini
-
-  # Install for OpenAI ChatGPT
-  skill-seekers install --config fastapi --target openai
-
-Important:
-  - Enhancement is MANDATORY (30-60 sec) for quality (3/10→9/10)
-  - Total time: 20-45 minutes (mostly scraping)
-  - Multi-platform support: claude (default), gemini, openai, markdown
-  - Auto-uploads if API key is set (ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY)
-
-Phases:
-  1. Fetch config (if config name provided)
-  2. Scrape documentation
-  3. AI Enhancement (MANDATORY - no skip option)
-  4. Package for target platform (ZIP or tar.gz)
-  5. Upload to target platform (optional)
-""",
-    )
-
-    parser.add_argument(
-        "--config",
-        required=True,
-        help="Config name (e.g., 'react') or path (e.g., 'configs/custom.json')",
-    )
-
-    parser.add_argument(
-        "--destination",
-        default="output",
-        help="Output directory for skill files (default: output/)",
-    )
-
-    parser.add_argument(
-        "--no-upload", action="store_true", help="Skip automatic upload to target platform"
-    )
-
-    parser.add_argument(
-        "--unlimited",
-        action="store_true",
-        help="Remove page limits during scraping (WARNING: Can take hours)",
-    )
-
-    parser.add_argument("--dry-run", action="store_true", help="Preview workflow without executing")
-
-    from skill_seekers.cli.adaptors import get_enhancement_platforms
-
-    parser.add_argument(
-        "--target",
-        # install requires AI enhancement, so targets are the enhancement-capable
-        # platforms (derived from the registry) plus markdown (export-only).
-        choices=get_enhancement_platforms() + ["markdown"],
-        default=None,
-        help="Target LLM platform (auto-detected from API keys, or 'claude' if none set)",
-    )
+        sys.exit(EXIT_ERROR)
 
     if args is None:
+        # Single source of flags: the central InstallParser.
+        from skill_seekers.cli.parsers.install_parser import InstallParser
+
+        parser = InstallParser().build_standalone()
         args = parser.parse_args()
-    else:
-        # Central dispatch passes the unified namespace; backfill any args
-        # this module's parser defines but the central one doesn't, so the
-        # reads below never hit a missing attribute.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
 
     # Auto-detect target platform if not specified
     if args.target is None:
@@ -179,15 +101,15 @@ Phases:
         # Return success/failure based on output
         output_text = result[0].text
         if "❌" in output_text and "WORKFLOW COMPLETE" not in output_text:
-            return 1
-        return 0
+            return EXIT_ERROR
+        return EXIT_SUCCESS
 
     except KeyboardInterrupt:
         print("\n\n⚠️  Workflow interrupted by user")
-        return 130  # Standard exit code for SIGINT
+        return EXIT_INTERRUPT
     except Exception as e:
         print(f"\n\n❌ Unexpected error: {str(e)}")
-        return 1
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":

@@ -36,3 +36,10 @@ class TestExamplesParser(SubcommandParser):
         )
         parser.add_argument("--json", action="store_true", help="Output JSON format")
         parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
+        # Was module-only until Phase 5c — the unified CLI rejected --recursive.
+        parser.add_argument(
+            "--recursive",
+            action="store_true",
+            default=True,
+            help="Search directory recursively (default: True)",
+        )

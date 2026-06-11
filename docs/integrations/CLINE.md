@@ -161,7 +161,7 @@ Create `myframework-config.json`:
 skill-seekers create  facebook/react
 
 # Or local codebase
-skill-seekers scan  /path/to/repo --comprehensive
+skill-seekers create /path/to/repo --preset comprehensive
 ```
 
 ### Step 2: Optimize for Cline

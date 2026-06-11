@@ -58,6 +58,11 @@ from pathlib import Path
 
 import contextlib
 
+# Single source of truth for agent presets and name normalization — this
+# module previously carried its own copies, whose kimi preset silently
+# diverged from agent_client's ({skill_dir} vs {cwd}, missing parse_output).
+from skill_seekers.cli.agent_client import AGENT_PRESETS, build_local_agent_command
+from skill_seekers.cli.agent_client import normalize_agent_name as _normalize_agent_name
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
 
@@ -109,52 +114,6 @@ def detect_terminal_app():
     else:
         # No TERM_PROGRAM set
         return "Terminal", "default"
-
-
-AGENT_PRESETS = {
-    "claude": {
-        "display_name": "Claude Code",
-        "command": ["claude", "{prompt_file}"],
-        "supports_skip_permissions": True,
-    },
-    "codex": {
-        "display_name": "OpenAI Codex CLI",
-        "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
-        "supports_skip_permissions": False,
-    },
-    "copilot": {
-        "display_name": "GitHub Copilot CLI",
-        "command": ["gh", "copilot", "chat"],
-        "supports_skip_permissions": False,
-    },
-    "opencode": {
-        "display_name": "OpenCode CLI",
-        "command": ["opencode"],
-        "supports_skip_permissions": False,
-    },
-    "kimi": {
-        "display_name": "Kimi Code CLI",
-        "command": ["kimi", "--print", "--input-format", "text", "--work-dir", "{skill_dir}"],
-        "supports_skip_permissions": False,
-        "uses_stdin": True,
-    },
-}
-
-
-def _normalize_agent_name(agent_name: str) -> str:
-    if not agent_name:
-        return "claude"
-    normalized = agent_name.strip().lower()
-    aliases = {
-        "claude-code": "claude",
-        "claude_code": "claude",
-        "codex-cli": "codex",
-        "copilot-cli": "copilot",
-        "open-code": "opencode",
-        "open_code": "opencode",
-        "kimi-cli": "kimi",
-    }
-    return aliases.get(normalized, normalized)
 
 
 class LocalSkillEnhancer:
@@ -236,30 +195,15 @@ class LocalSkillEnhancer:
         return agent_name, cmd_override, display_name
 
     def _build_agent_command(self, prompt_file, include_permissions_flag):
-        if self.agent_cmd:
-            cmd_parts = shlex.split(self.agent_cmd)
-            supports_skip_permissions = False
-        else:
-            preset = AGENT_PRESETS[self.agent]
-            cmd_parts = list(preset["command"])
-            supports_skip_permissions = preset.get("supports_skip_permissions", False)
-
-        if (
-            include_permissions_flag
-            and supports_skip_permissions
-            and "--dangerously-skip-permissions" not in cmd_parts
-        ):
-            cmd_parts.insert(1, "--dangerously-skip-permissions")
-
-        uses_prompt_file = False
-        for idx, arg in enumerate(cmd_parts):
-            if "{prompt_file}" in arg:
-                cmd_parts[idx] = arg.replace("{prompt_file}", prompt_file)
-                uses_prompt_file = True
-            if "{skill_dir}" in arg:
-                cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir.resolve()))
-
-        return cmd_parts, uses_prompt_file
+        # Single home for the preset-template handling — for local enhancement
+        # the working directory IS the skill directory.
+        return build_local_agent_command(
+            self.agent,
+            prompt_file,
+            self.skill_dir.resolve(),
+            include_permissions_flag=include_permissions_flag,
+            agent_cmd=self.agent_cmd,
+        )
 
     def _format_agent_command(self, prompt_file, include_permissions_flag):
         cmd_parts, uses_prompt_file = self._build_agent_command(
@@ -279,6 +223,11 @@ class LocalSkillEnhancer:
             cmd_display = self._format_agent_command(prompt_file, include_permissions_flag)
             print(f"   Command: {cmd_display}")
 
+        # Mark the child environment so a nested ``skill-seekers create``
+        # (e.g. if the spawned agent runs the test suite) won't spawn another
+        # enhance agent — same recursion guard as AgentClient._call_local.
+        child_env = {**os.environ, "SKILL_SEEKER_ENHANCE_ACTIVE": "1"}
+
         try:
             if uses_prompt_file:
                 return (
@@ -288,6 +237,7 @@ class LocalSkillEnhancer:
                         text=True,
                         timeout=timeout,
                         cwd=str(self.skill_dir),
+                        env=child_env,
                     ),
                     None,
                 )
@@ -301,6 +251,7 @@ class LocalSkillEnhancer:
                     timeout=timeout,
                     cwd=str(self.skill_dir),
                     input=prompt_text,
+                    env=child_env,
                 ),
                 None,
             )
@@ -693,6 +644,19 @@ After writing, the file SKILL.md should:
         Returns:
             bool: True if enhancement process started successfully, False otherwise
         """
+        # Recursion guard. A spawned LOCAL agent may itself run the test suite,
+        # and a test that shells out to ``skill-seekers create`` would spawn yet
+        # another enhance agent — a fork-bomb of real LLM processes. The child
+        # environment is marked in ``_run_agent_command`` (and the terminal-mode
+        # shell script); refuse to spawn a nested one here.
+        if os.environ.get("SKILL_SEEKER_ENHANCE_ACTIVE") == "1":
+            print(
+                "⚠️  Skipping LOCAL enhancement: already running inside a Skill "
+                "Seekers enhance agent (SKILL_SEEKER_ENHANCE_ACTIVE=1); refusing "
+                "to spawn a nested agent to avoid recursion."
+            )
+            return False
+
         # Background mode: Run in background thread, return immediately
         if background:
             return self._run_background(headless, timeout)
@@ -782,6 +746,7 @@ After writing, the file SKILL.md should:
         # Create a shell script to run in the terminal
         command_line = self._format_agent_command(prompt_file, include_permissions_flag=False)
         shell_script = f"""#!/bin/bash
+export SKILL_SEEKER_ENHANCE_ACTIVE=1
 {command_line}
 echo ""
 echo "✅ Enhancement complete!"
@@ -1297,58 +1262,32 @@ def _detect_api_target() -> tuple[str, str] | None:
     """
     Auto-detect which API platform to use for enhancement based on env vars.
 
-    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY > MOONSHOT_API_KEY
+    Delegates to agent_client.detect_api_target() — the single provider
+    registry. (A provider hand-listed here and forgotten was the ENH-12 bug:
+    a Moonshot-only user silently fell through to LOCAL mode.)
 
     Returns:
         (target, api_key) tuple if an API key is found, else None.
     """
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-    if anthropic_key:
-        return ("claude", anthropic_key)
+    from skill_seekers.cli.agent_client import detect_api_target
 
-    google_key = os.environ.get("GOOGLE_API_KEY")
-    if google_key:
-        return ("gemini", google_key)
-
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    if openai_key:
-        return ("openai", openai_key)
-
-    # Moonshot/Kimi was previously dropped here, so a Moonshot-only user fell
-    # through to LOCAL mode despite having a valid API key.
-    moonshot_key = os.environ.get("MOONSHOT_API_KEY")
-    if moonshot_key:
-        return ("kimi", moonshot_key)
-
-    return None
+    return detect_api_target()
 
 
-def _run_api_enhance(target: str, api_key: str) -> None:
-    """Delegate to enhance_skill.main() for API-mode enhancement."""
+def _run_api_enhance(target: str, api_key: str, args) -> None:
+    """Delegate to enhance_skill.main() for API-mode enhancement.
+
+    `args` is the namespace already parsed by main()'s parser. Re-using it
+    (instead of re-scanning sys.argv by hand) means the value of a
+    value-taking flag (`--agent kimi`, `--timeout 600`) can't be mistaken
+    for the skill_directory positional.
+    """
     import sys
 
     from skill_seekers.cli.enhance_skill import main as api_main
 
-    # Find the skill_directory positional arg (first non-flag arg after argv[0])
-    skill_dir = None
-    dry_run = False
-    i = 1
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "--dry-run":
-            dry_run = True
-        elif arg in ("--mode",):
-            i += 1  # skip value
-        elif not arg.startswith("-") and skill_dir is None:
-            skill_dir = arg
-        i += 1
-
-    if not skill_dir:
-        print("❌ Error: skill_directory is required")
-        sys.exit(1)
-
-    new_argv = [sys.argv[0], skill_dir, "--target", target, "--api-key", api_key]
-    if dry_run:
+    new_argv = [sys.argv[0], str(args.skill_directory), "--target", target, "--api-key", api_key]
+    if getattr(args, "dry_run", False):
         new_argv.append("--dry-run")
     sys.argv = new_argv
     api_main()
@@ -1464,9 +1403,19 @@ Force Mode (LOCAL only, Default ON):
     if getattr(args, "mode", None) != "LOCAL":
         api_target = _detect_api_target()
         if api_target is not None:
+            from skill_seekers.cli.enhance_command import api_sdk_available
+
             target, api_key = api_target
-            _run_api_enhance(target, api_key)
-            return
+            # Auto-detection only commits to API mode when the provider's SDK
+            # is installed (it's optional for gemini/openai/kimi); explicit
+            # --mode API keeps going so the adaptor can report its own error.
+            if getattr(args, "mode", None) == "API" or api_sdk_available(target):
+                _run_api_enhance(target, api_key, args)
+                return
+            print(
+                f"⚠️  API key found for '{target}' but its SDK is not installed — "
+                "falling back to LOCAL mode."
+            )
 
     # Validate mutually exclusive options
     mode_count = sum([args.interactive_enhancement, args.background, args.daemon])

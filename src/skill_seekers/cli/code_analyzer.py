@@ -302,7 +302,10 @@ class CodeAnalyzer:
             class_block_start = match.end()
             brace_count = 1
             class_block_end = class_block_start
-            for i, char in enumerate(content[class_block_start:], class_block_start):
+            # Index-based scan — slicing content[class_block_start:] copied the
+            # whole remainder of the file for every class match.
+            for i in range(class_block_start, len(content)):
+                char = content[i]
                 if char == "{":
                     brace_count += 1
                 elif char == "}":
@@ -1107,7 +1110,10 @@ class CodeAnalyzer:
             class_block_start = match.end()
             brace_count = 1
             class_block_end = class_block_start
-            for i, char in enumerate(content[class_block_start:], class_block_start):
+            # Index-based scan — slicing content[class_block_start:] copied the
+            # whole remainder of the file for every class match.
+            for i in range(class_block_start, len(content)):
+                char = content[i]
                 if char == "{":
                     brace_count += 1
                 elif char == "}":
@@ -1323,7 +1329,10 @@ class CodeAnalyzer:
             class_block_start = match.end()
             brace_count = 1
             class_block_end = class_block_start
-            for i, char in enumerate(content[class_block_start:], class_block_start):
+            # Index-based scan — slicing content[class_block_start:] copied the
+            # whole remainder of the file for every class match.
+            for i in range(class_block_start, len(content)):
+                char = content[i]
                 if char == "{":
                     brace_count += 1
                 elif char == "}":
@@ -1400,6 +1409,12 @@ class CodeAnalyzer:
             r"\(([^)]*)\)"
             r"(?:\s*:\s*([\w<>.,\s?*]+))?"
         )
+        # Track brace depth incrementally: matches arrive in ascending offset
+        # order, so count braces only in the gap since the previous match and
+        # carry the running depth. (Slicing/scanning the whole prefix per match
+        # was O(n²) on large Kotlin files.)
+        brace_depth = 0
+        last_pos = 0
         for match in re.finditer(func_pattern, content):
             _receiver_type = match.group(1)
             func_name = match.group(2)
@@ -1409,20 +1424,23 @@ class CodeAnalyzer:
             if return_type:
                 return_type = return_type.strip()
 
-            # Skip if inside a class/object body: track brace depth from the
-            # start of the file to this match (depth > 0 ⇒ nested, handled by
-            # _extract_kotlin_methods). Brace-counting is more reliable than the
-            # old indentation heuristic, which mis-handled tabs / 2-space styles.
-            prefix = content[: match.start()]
-            if prefix.count("{") - prefix.count("}") > 0:
+            # Skip if inside a class/object body (depth > 0 ⇒ nested, handled
+            # by _extract_kotlin_methods). Brace-counting is more reliable than
+            # the old indentation heuristic, which mis-handled tabs / 2-space
+            # styles.
+            gap = content[last_pos : match.start()]
+            brace_depth += gap.count("{") - gap.count("}")
+            last_pos = match.start()
+            if brace_depth > 0:
                 continue
 
-            # `suspend` (and other modifiers) are captured inside the match, so
-            # test the matched text — a fixed look-behind window read the wrong
-            # bytes (a neighboring declaration, or missed the modifier entirely).
-            # Word-boundary match so a function NAMED e.g. `suspendCoroutine`
-            # isn't mis-flagged as a suspend function.
-            is_suspend = re.search(r"\bsuspend\b", match.group(0)) is not None
+            # `suspend` must be the MODIFIER, so test only the declaration text
+            # before the function name — searching the whole match also saw the
+            # parameter list, mis-flagging `fun launchJob(block: suspend () -> Unit)`
+            # as a suspend function. Word-boundary match so a function NAMED
+            # e.g. `suspendCoroutine` isn't mis-flagged either.
+            decl_prefix = content[match.start() : match.start(2)]
+            is_suspend = re.search(r"\bsuspend\b", decl_prefix) is not None
             params = self._parse_kotlin_parameters(params_str)
 
             functions.append(
@@ -1686,7 +1704,10 @@ class CodeAnalyzer:
             class_block_start = match.end()
             brace_count = 1
             class_block_end = class_block_start
-            for i, char in enumerate(content[class_block_start:], class_block_start):
+            # Index-based scan — slicing content[class_block_start:] copied the
+            # whole remainder of the file for every class match.
+            for i in range(class_block_start, len(content)):
+                char = content[i]
                 if char == "{":
                     brace_count += 1
                 elif char == "}":

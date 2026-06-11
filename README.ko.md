@@ -12,11 +12,11 @@
 >
 > 번역 개선에 도움을 주시려면 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260)에 참여해 주세요! 여러분의 피드백은 매우 소중합니다.
 
-[![버전](https://img.shields.io/badge/version-3.6.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
+[![버전](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![라이선스: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP 통합](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![테스트 통과](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![테스트 통과](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![프로젝트 보드](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI 버전](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - 다운로드](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -27,7 +27,7 @@
 [![Twitter 팔로우](https://img.shields.io/twitter/follow/_yUSyUS_?style=social)](https://x.com/_yUSyUS_)
 [![GitHub Stars](https://img.shields.io/github/stars/yusufkaraaslan/Skill_Seekers?style=social)](https://github.com/yusufkaraaslan/Skill_Seekers)
 
-**🧠 AI 시스템을 위한 데이터 레이어.** Skill Seekers는 문서 사이트, GitHub 저장소, PDF, 동영상, Jupyter 노트북, 위키 등 17가지 이상의 소스 유형을 구조화된 지식 자산으로 변환합니다. 몇 분 만에 AI 스킬(Claude, Gemini, OpenAI), RAG 파이프라인(LangChain, LlamaIndex, Pinecone), AI 코딩 어시스턴트(Cursor, Windsurf, Cline)에 활용할 수 있습니다.
+**🧠 AI 시스템을 위한 데이터 레이어.** Skill Seekers는 문서 사이트, GitHub 저장소, PDF, 동영상, 노트북, 위키 등 18가지 소스 유형을 구조화된 지식 자산으로 변환합니다. 몇 시간이 아니라 몇 분 만에 AI 스킬(Claude, Gemini, OpenAI), RAG 파이프라인(LangChain, LlamaIndex, Pinecone), AI 코딩 어시스턴트(Cursor, Windsurf, Cline)에 활용할 수 있습니다.
 
 > 🌐 **[SkillSeekersWeb.com 방문하기](https://skillseekersweb.com/)** - 24개 이상의 프리셋 설정을 둘러보고, 설정을 공유하고, 전체 문서에 접근하세요!
 
@@ -63,6 +63,7 @@ skill-seekers package output/react --target claude      # → Claude AI 스킬 (
 skill-seekers package output/react --target langchain   # → LangChain Documents
 skill-seekers package output/react --target llama-index # → LlamaIndex TextNodes
 skill-seekers package output/react --target cursor      # → .cursorrules
+skill-seekers package output/react --target ibm-bob     # → IBM Bob 스킬 디렉터리
 ```
 
 ### 생성되는 출력물
@@ -76,8 +77,9 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 | **LlamaIndex TextNodes** | `--target llama-index` | 쿼리 엔진, 대화 엔진 |
 | **Haystack Documents** | `--target haystack` | 엔터프라이즈 RAG 파이프라인 |
 | **Pinecone 준비 완료** (Markdown) | `--target markdown` | 벡터 업서트 |
-| **ChromaDB / FAISS / Qdrant** | `--format chroma/faiss/qdrant` | 로컬 벡터 데이터베이스 |
-| **Cursor** `.cursorrules` | `--target claude` → 복사 | Cursor IDE AI 컨텍스트 |
+| **ChromaDB / FAISS / Qdrant** | `--target chroma/faiss/qdrant` | 로컬 벡터 데이터베이스 |
+| **IBM Bob 스킬** (디렉터리) | `--target ibm-bob` | IBM Bob 프로젝트/전역 스킬 |
+| **Cursor** `.cursorrules` | `--target markdown` → SKILL.md 복사 | Cursor IDE `.cursorrules` |
 | **Windsurf / Cline / Continue** | `--target claude` → 복사 | VS Code, IntelliJ, Vim |
 
 ### Skill Seekers를 선택해야 하는 이유
@@ -86,47 +88,118 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 - 🎯 **AI 스킬 품질** — 예제, 패턴, 가이드를 포함한 500줄 이상의 SKILL.md 파일
 - 📊 **RAG 준비 완료 청킹** — 코드 블록을 보존하고 컨텍스트를 유지하는 스마트 청킹
 - 🎬 **동영상** — YouTube 및 로컬 동영상에서 코드, 자막, 구조화된 지식 추출
-- 🔄 **18가지 소스 유형** — 문서 + GitHub + PDF + 동영상 + 노트북 + 위키 등을 하나의 지식 자산으로 결합
-- 🌐 **한 번 준비, 모든 대상으로 내보내기** — 재스크래핑 없이 16개 플랫폼으로 내보내기
-- ✅ **실전 검증 완료** — 3,445+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
+- 🔄 **다중 소스** — 18가지 소스 유형(문서, GitHub, PDF, 동영상, 노트북, 위키 등)을 하나의 지식 자산으로 결합
+- 🌐 **한 번 준비, 모든 대상으로 내보내기** — 재스크래핑 없이 동일한 자산을 21개 플랫폼으로 내보내기
+- ✅ **실전 검증 완료** — 3,700+ 테스트, 24+ 프레임워크 프리셋, 프로덕션 준비 완료
 
-## 빠른 시작
+## 🚀 빠른 시작 (3가지 명령어)
 
 ```bash
+# 1. 설치
 pip install skill-seekers
 
-# 모든 소스에서 AI 스킬 생성
-skill-seekers create https://docs.django.com/    # 문서 사이트
-skill-seekers create django/django               # GitHub 저장소
-skill-seekers create ./my-codebase               # 로컬 프로젝트
-skill-seekers create manual.pdf                  # PDF 파일
-skill-seekers create manual.docx                 # Word 문서
-skill-seekers create book.epub                   # EPUB 전자책
-skill-seekers create notebook.ipynb              # Jupyter 노트북
-skill-seekers create page.html                   # 로컬 HTML
-skill-seekers create api-spec.yaml               # OpenAPI/Swagger 스펙
-skill-seekers create guide.adoc                  # AsciiDoc 문서
-skill-seekers create slides.pptx                 # PowerPoint 프레젠테이션
+# 2. 모든 소스에서 스킬 생성
+skill-seekers create https://docs.django.com/
+
+# 3. AI 플랫폼용으로 패키징
+skill-seekers package output/django --target claude
+```
+
+**이게 전부입니다!** 바로 사용할 수 있는 `output/django-claude.zip`이 생성됩니다.
+
+```bash
+# 강화에 다른 AI 에이전트 사용 (기본값: claude)
+skill-seekers create https://docs.django.com/ --agent kimi
+skill-seekers create https://docs.django.com/ --agent codex
+skill-seekers create https://docs.django.com/ --agent-cmd "my-custom-agent run"
+```
+
+### 🛰️ AI 기반 프로젝트 스캔 (신규)
+
+임의의 프로젝트에 `scan`을 실행하면 AI 에이전트가 매니페스트, README, Dockerfile/CI, 샘플링된 소스 import를 읽고 — 감지된 프레임워크별 설정 파일과 자신의 코드를 위한 `<project>-codebase.json`을 생성합니다. 감지된 버전을 고정하므로 재실행 시 버전 변경이 보고됩니다:
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# → react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
+
+# 이후 원하는 것을 빌드
+skill-seekers create ./configs/scanned/react.json
+```
+
+감지 결과에 기존 프리셋이 없으면 AI가 새 설정을 생성합니다. 종료 시 [커뮤니티 레지스트리](https://github.com/yusufkaraaslan/skill-seekers-configs)에 선택적으로 게시할 수 있습니다.
+
+### 기타 소스 (18가지 지원)
+
+```bash
+# GitHub 저장소
+skill-seekers create facebook/react
+
+# 로컬 프로젝트
+skill-seekers create ./my-project
+
+# PDF 문서
+skill-seekers create manual.pdf
+
+# Word 문서
+skill-seekers create report.docx
+
+# EPUB 전자책
+skill-seekers create book.epub
+
+# Jupyter 노트북
+skill-seekers create notebook.ipynb
+
+# OpenAPI 스펙
+skill-seekers create openapi.yaml
+
+# PowerPoint 프레젠테이션
+skill-seekers create presentation.pptx
+
+# AsciiDoc 문서
+skill-seekers create guide.adoc
+
+# 로컬 HTML 파일 (확장자로 자동 감지)
+skill-seekers create page.html
+
+# HTML 파일 디렉터리 전체 (HTML 위주 디렉터리 자동 감지)
+skill-seekers create ./mirror_output/site/
+
+# 코드가 섞인 디렉터리에서 HTML 모드 강제
+skill-seekers create ./repo/ --html-path ./repo/docs/build/html/
+
+# RSS/Atom 피드
+skill-seekers create feed.rss
+
+# Man 페이지
+skill-seekers create curl.1
 
 # 동영상 (YouTube, Vimeo 또는 로컬 파일 — skill-seekers[video] 필요)
 skill-seekers create --video-url https://www.youtube.com/watch?v=... --name mytutorial
 # 처음 사용하시나요? GPU 인식 시각 종속성 자동 설치:
 skill-seekers create --setup
 
-# 용도별 내보내기
-skill-seekers package output/django --target claude     # Claude AI 스킬
-skill-seekers package output/django --target langchain  # LangChain RAG
-skill-seekers package output/django --target cursor     # Cursor IDE 컨텍스트
+# Confluence 위키
+skill-seekers create --space-key TEAM --name wiki
+
+# Notion 페이지
+skill-seekers create --database-id ... --name docs
+
+# Slack/Discord 채팅 내보내기
+skill-seekers create --chat-export-path ./slack-export --name team-chat
 ```
 
-**전체 예제:**
-- [Claude AI 스킬](examples/claude-skill/) - Claude Code용 스킬
-- [LangChain RAG 파이프라인](examples/langchain-rag-pipeline/) - Chroma 기반 QA 체인
-- [Cursor IDE 컨텍스트](examples/cursor-react-skill/) - 프레임워크 인식 AI 코딩
+### 어디로든 내보내기
+
+```bash
+# 여러 플랫폼용으로 패키징
+for platform in claude gemini openai langchain; do
+  skill-seekers package output/django --target $platform
+done
+```
 
 ## Skill Seekers란?
 
-Skill Seekers는 **AI 시스템을 위한 데이터 레이어**로, 18가지 소스 유형 — 문서 사이트, GitHub 저장소, PDF, 동영상, Jupyter 노트북, Word/EPUB/AsciiDoc 문서, OpenAPI/Swagger 스펙, PowerPoint 프레젠테이션, RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 내보내기 등 — 을 모든 AI 대상에 적합한 구조화된 지식 자산으로 변환합니다:
+Skill Seekers는 **AI 시스템을 위한 데이터 레이어**로, 18가지 소스 유형 — 문서 사이트, GitHub 저장소, PDF, 동영상, Jupyter 노트북, Word/EPUB/AsciiDoc 문서, OpenAPI 스펙, PowerPoint 프레젠테이션, RSS 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 내보내기 등 — 을 모든 AI 대상에 적합한 구조화된 지식 자산으로 변환합니다:
 
 | 사용 사례 | 얻을 수 있는 것 | 예시 |
 |----------|---------------|------|
@@ -135,9 +208,24 @@ Skill Seekers는 **AI 시스템을 위한 데이터 레이어**로, 18가지 소
 | **벡터 데이터베이스** | 업서트 준비 완료된 사전 포맷 데이터 | Pinecone, Chroma, Weaviate, FAISS |
 | **AI 코딩 어시스턴트** | IDE AI가 자동으로 읽는 컨텍스트 파일 | Cursor, Windsurf, Cline, Continue.dev |
 
+## 📚 문서
+
+| 원하는 작업 | 읽을 문서 |
+|--------------|-----------|
+| **빠르게 시작하기** | [빠른 시작](docs/getting-started/02-quick-start.md) - 3가지 명령어로 첫 스킬 만들기 |
+| **개념 이해하기** | [핵심 개념](docs/user-guide/01-core-concepts.md) - 작동 원리 |
+| **소스 스크래핑** | [스크래핑 가이드](docs/user-guide/02-scraping.md) - 모든 소스 유형 |
+| **스킬 강화** | [강화 가이드](docs/user-guide/03-enhancement.md) - AI 강화 |
+| **스킬 내보내기** | [패키징 가이드](docs/user-guide/04-packaging.md) - 플랫폼 내보내기 |
+| **명령어 찾아보기** | [CLI 레퍼런스](docs/reference/CLI_REFERENCE.md) - 전체 20개 명령어 |
+| **설정하기** | [설정 형식](docs/reference/CONFIG_FORMAT.md) - JSON 명세 |
+| **문제 해결** | [문제 해결](docs/user-guide/06-troubleshooting.md) - 일반적인 문제 |
+
+**전체 문서:** [docs/README.md](docs/README.md)
+
 Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 
-1. **수집** — 문서, GitHub 저장소, 로컬 코드베이스, PDF, 동영상, Jupyter 노트북, 위키 등 17가지 이상의 소스 유형
+1. **수집** — 문서, GitHub 저장소, 로컬 코드베이스, PDF, 동영상, 노트북, 위키 등 10가지 이상의 소스 유형
 2. **분석** — 심층 AST 파싱, 패턴 감지, API 추출
 3. **구조화** — 메타데이터가 포함된 분류된 참조 파일
 4. **강화** — AI 기반 SKILL.md 생성 (Claude, Gemini 또는 로컬)
@@ -158,7 +246,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 - 🤖 **RAG 준비 완료 데이터** — 사전 청킹된 LangChain `Documents`, LlamaIndex `TextNodes`, Haystack `Documents`
 - 🚀 **99% 더 빠름** — 수일간의 전처리 → 15–45분
 - 📊 **스마트 메타데이터** — 카테고리, 소스, 유형 → 더 높은 검색 정확도
-- 🔄 **다중 소스** — 하나의 파이프라인에서 문서 + GitHub + PDF 결합
+- 🔄 **다중 소스** — 하나의 파이프라인에서 문서 + GitHub + PDF + 동영상 결합
 - 🌐 **플랫폼 독립적** — 재스크래핑 없이 모든 벡터 DB나 프레임워크로 내보내기
 
 ### AI 코딩 어시스턴트 사용자를 위해
@@ -170,6 +258,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 ## 핵심 기능
 
 ### 🌐 문서 스크래핑
+- ✅ **스마트 SPA 디스커버리** - JavaScript SPA 사이트를 위한 3계층 디스커버리 (sitemap.xml → llms.txt → 헤드리스 브라우저 렌더링)
 - ✅ **llms.txt 지원** - LLM 준비 완료 문서 파일 자동 감지 및 사용 (10배 빠름)
 - ✅ **범용 스크래퍼** - 모든 문서 사이트에서 작동
 - ✅ **스마트 분류** - 주제별 자동 콘텐츠 정리
@@ -185,12 +274,13 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 - ✅ **지능형 캐싱** - 재실행 시 50% 빠름
 
 ### 🎬 동영상 추출
-- ✅ **YouTube 및 로컬 동영상** - 동영상에서 자막, 코드, 구조화된 지식 추출
-- ✅ **시각 프레임 분석** - 코드 편집기, 터미널, 슬라이드의 화면 OCR 추출
+- ✅ **YouTube 및 로컬 동영상** - 동영상에서 자막, 화면 속 코드, 구조화된 지식 추출
+- ✅ **시각 프레임 분석** - 코드 편집기, 터미널, 슬라이드, 다이어그램의 OCR 추출
 - ✅ **GPU 자동 감지** - 올바른 PyTorch 빌드 자동 설치 (CUDA/ROCm/MPS/CPU)
 - ✅ **AI 강화** - 2단계: OCR 정리 + 완성도 높은 SKILL.md 생성
 - ✅ **시간 클리핑** - `--start-time`과 `--end-time`으로 특정 구간 추출
 - ✅ **재생 목록 지원** - YouTube 재생 목록의 모든 동영상 일괄 처리
+- ✅ **Vision API 폴백** - 낮은 신뢰도 OCR 프레임에 Claude Vision 사용
 
 ### 🐙 GitHub 저장소 분석
 - ✅ **심층 코드 분석** - Python, JavaScript, TypeScript, Java, C++, Go AST 파싱
@@ -211,7 +301,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 - ✅ **하위 호환** - 레거시 단일 소스 설정 계속 작동
 
 ### 🤖 다중 LLM 플랫폼 지원
-- ✅ **12개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+- ✅ **12개 LLM 플랫폼** - Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 - ✅ **범용 스크래핑** - 동일한 문서가 모든 플랫폼에 적용
 - ✅ **플랫폼별 패키징** - 각 LLM에 최적화된 형식
 - ✅ **원커맨드 내보내기** - `--target` 플래그로 플랫폼 선택
@@ -223,6 +313,7 @@ Skill Seekers는 수일간의 수동 전처리 작업을 대체합니다:
 | **Claude AI** | ZIP + YAML | ✅ 자동 | ✅ 예 | ANTHROPIC_API_KEY | ANTHROPIC_BASE_URL |
 | **Google Gemini** | tar.gz | ✅ 자동 | ✅ 예 | GOOGLE_API_KEY | - |
 | **OpenAI ChatGPT** | ZIP + Vector Store | ✅ 자동 | ✅ 예 | OPENAI_API_KEY | - |
+| **MiniMax AI** | ZIP + Knowledge Files | ✅ 자동 | ✅ 예 | MINIMAX_API_KEY | - |
 | **범용 Markdown** | ZIP | ❌ 수동 | ❌ 아니오 | - | - |
 
 ```bash
@@ -240,29 +331,62 @@ pip install skill-seekers[openai]
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
 
+# MiniMax AI
+pip install skill-seekers[minimax]
+skill-seekers package output/react/ --target minimax
+skill-seekers upload react-minimax.zip --target minimax
+
 # 범용 Markdown (범용 내보내기)
 skill-seekers package output/react/ --target markdown
+# Markdown 파일은 어떤 LLM에서든 직접 사용 가능
 ```
 
 <details>
-<summary>🔧 <strong>Claude 호환 API 환경 변수 (예: GLM-4.7)</strong></summary>
+<summary>🔧 <strong>자신만의 AI 제공자 사용 (OpenAI 호환 엔드포인트 + 구독, Anthropic 크레딧 불필요)</strong></summary>
 
-Skill Seekers는 모든 Claude 호환 API 엔드포인트를 지원합니다:
+선택적 AI **강화** 단계(`create`, `scan`, `enhance`에서 사용)에는 Anthropic 키가 **필요하지 않습니다**. 세 가지 방법으로 실행할 수 있습니다:
+
+**1. 이미 결제 중인 구독 사용 — API 크레딧 전혀 불필요 (LOCAL 에이전트 모드)**
+
+Skill Seekers는 이미 로그인되어 있는 코딩 에이전트 CLI를 호출할 수 있어, 종량제 API 토큰 대신 기존 요금제로 강화를 실행합니다:
 
 ```bash
-# 옵션 1: 공식 Anthropic API (기본값)
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# 옵션 2: GLM-4.7 Claude 호환 API
-export ANTHROPIC_API_KEY=your-glm-47-api-key
-export ANTHROPIC_BASE_URL=https://glm-4-7-endpoint.com/v1
-
-# 모든 AI 강화 기능이 설정된 엔드포인트를 사용합니다
-skill-seekers enhance output/react/
-skill-seekers scan . --enhance
+skill-seekers create <source> --agent codex     # OpenAI Codex CLI → ChatGPT Plus 요금제
+skill-seekers create <source> --agent claude    # Claude Code      → Claude Pro/Max 요금제
 ```
 
-**참고**: `ANTHROPIC_BASE_URL`을 설정하면 GLM-4.7(智谱 AI) 또는 기타 호환 서비스와 같은 모든 Claude 호환 API 엔드포인트를 사용할 수 있습니다.
+지원되는 에이전트: `claude`, `codex`, `copilot`, `opencode`, `kimi`, `custom`
+(`--agent custom`을 `--agent-cmd "<your-cli> ..."`와 조합하면 다른 어떤 도구도 사용 가능).
+
+**2. 모든 OpenAI 호환 제공자 (OpenRouter, Groq, Cerebras, Mistral, NVIDIA NIM 등)**
+
+이들은 모두 OpenAI 호환 `/v1` 엔드포인트를 제공합니다. 환경 변수 세 개만 설정하면 됩니다 — Skill Seekers가 `OPENAI_API_KEY`를 감지하고, OpenAI SDK는 `OPENAI_BASE_URL`을 자동으로 인식합니다:
+
+```bash
+export OPENAI_API_KEY="<your provider key>"
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"   # 제공자 엔드포인트 (아래 표 참조)
+export OPENAI_MODEL="<a model that provider offers>"     # 필수 — 기본값 gpt-4o는 다른 제공자에 존재하지 않습니다
+skill-seekers create <source>
+```
+
+| 제공자       | `OPENAI_BASE_URL`                          |
+|--------------|--------------------------------------------|
+| OpenRouter   | `https://openrouter.ai/api/v1`             |
+| Groq         | `https://api.groq.com/openai/v1`           |
+| Cerebras     | `https://api.cerebras.ai/v1`               |
+| Mistral      | `https://api.mistral.ai/v1`                |
+| NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
+
+> 제공자 감지는 **첫 번째로** 발견되는 API 키 환경 변수를 선택합니다 (`ANTHROPIC_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`). 특정 제공자를 강제하려면 `SKILL_SEEKER_PROVIDER`를 설정하거나, 우선순위가 높은 키가 설정되어 있지 않은지 확인하세요.
+
+**3. Claude 호환 엔드포인트 (예: GLM, 프록시)**
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+export ANTHROPIC_BASE_URL="https://your-claude-compatible-endpoint/v1"
+```
+
+Google Gemini(`GOOGLE_API_KEY`)와 Kimi/Moonshot(`MOONSHOT_API_KEY`)도 기본적으로 지원됩니다. 제공자별 모델 재정의를 포함한 전체 목록은 **[환경 변수 레퍼런스](docs/reference/ENVIRONMENT_VARIABLES.md#llm-provider-selection)**를 참조하세요.
 
 </details>
 
@@ -273,6 +397,9 @@ pip install skill-seekers[gemini]
 
 # OpenAI 지원 설치
 pip install skill-seekers[openai]
+
+# MiniMax 지원 설치
+pip install skill-seekers[minimax]
 
 # 모든 LLM 플랫폼 설치
 pip install skill-seekers[all-llms]
@@ -320,21 +447,25 @@ skill-seekers package output/django --target markdown
 
 - ✅ **Cursor IDE** - AI 기반 코드 제안을 위한 `.cursorrules` 생성
   - 적합: 프레임워크별 코드 생성, 일관된 코딩 패턴
+  - 지원 도구: Cursor IDE (VS Code 포크)
   - 가이드: [Cursor 통합](docs/integrations/CURSOR.md)
   - 예제: [Cursor React 스킬](examples/cursor-react-skill/)
 
 - ✅ **Windsurf** - `.windsurfrules`로 Windsurf AI 어시스턴트 컨텍스트 커스터마이징
   - 적합: IDE 네이티브 AI 지원, 플로우 기반 코딩
+  - 지원 도구: Codeium의 Windsurf IDE
   - 가이드: [Windsurf 통합](docs/integrations/WINDSURF.md)
   - 예제: [Windsurf FastAPI 컨텍스트](examples/windsurf-fastapi-context/)
 
 - ✅ **Cline (VS Code)** - VS Code 에이전트를 위한 시스템 프롬프트 + MCP
   - 적합: VS Code에서의 에이전틱 코드 생성
+  - 지원 도구: VS Code용 Cline 확장
   - 가이드: [Cline 통합](docs/integrations/CLINE.md)
   - 예제: [Cline Django 어시스턴트](examples/cline-django-assistant/)
 
 - ✅ **Continue.dev** - IDE에 구애받지 않는 AI 컨텍스트 서버
   - 적합: 멀티 IDE 환경(VS Code, JetBrains, Vim), 커스텀 LLM 제공자
+  - 지원 도구: Continue.dev 플러그인이 있는 모든 IDE
   - 가이드: [Continue 통합](docs/integrations/CONTINUE_DEV.md)
   - 예제: [Continue 범용 컨텍스트](examples/continue-dev-universal/)
 
@@ -342,7 +473,7 @@ skill-seekers package output/django --target markdown
 ```bash
 # 모든 AI 코딩 어시스턴트에 적용 (Cursor, Windsurf, Cline, Continue.dev)
 skill-seekers create --config configs/django.json
-skill-seekers package output/django --target claude
+skill-seekers package output/django --target claude  # 또는 --target markdown
 
 # 프로젝트에 복사 (Cursor 예시)
 cp output/django-claude/SKILL.md my-project/.cursorrules
@@ -352,6 +483,10 @@ cp output/django-claude/SKILL.md my-project/.windsurf/rules/django.md
 
 # 또는 Cline용
 cp output/django-claude/SKILL.md my-project/.clinerules
+
+# 또는 Continue.dev용 (HTTP 서버)
+python examples/continue-dev-universal/context_server.py
+# ~/.continue/config.json에서 설정
 ```
 
 **통합 허브:** [모든 AI 시스템 통합](docs/integrations/INTEGRATIONS.md)
@@ -382,8 +517,16 @@ result = analyzer.analyze(
     fetch_github_metadata=True
 )
 
+# 코드 스트림 접근 (C3.x 분석)
 print(f"디자인 패턴: {len(result.code_analysis['c3_1_patterns'])}")
+print(f"테스트 예제: {result.code_analysis['c3_2_examples_count']}")
+
+# 문서 스트림 접근 (저장소 문서)
+print(f"README: {result.github_docs['readme'][:100]}")
+
+# 인사이트 스트림 접근 (GitHub 메타데이터)
 print(f"Stars: {result.github_insights['metadata']['stars']}")
+print(f"일반적인 문제: {len(result.github_insights['common_problems'])}")
 ```
 
 **전체 문서**: [3-스트림 구현 요약](docs/archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
@@ -392,13 +535,27 @@ print(f"Stars: {result.github_insights['metadata']['stars']}")
 - ✅ **다중 토큰 설정 시스템** - 여러 GitHub 계정 관리 (개인, 업무, 오픈소스)
   - `~/.config/skill-seekers/config.json`에 보안 설정 저장 (권한 600)
   - 프로필별 속도 제한 전략: `prompt`, `wait`, `switch`, `fail`
+  - 프로필별 타임아웃 설정 (기본값: 30분, 무한 대기 방지)
   - 스마트 폴백 체인: CLI 인자 → 환경 변수 → 설정 파일 → 프롬프트
+  - Claude, Gemini, OpenAI를 위한 API Key 관리
 - ✅ **대화형 설정 마법사** - 아름다운 터미널 UI로 쉬운 설정
+  - 토큰 생성을 위한 브라우저 통합 (GitHub 등을 자동으로 열기)
+  - 토큰 유효성 검사 및 연결 테스트
+  - 색상 코드가 적용된 시각적 상태 표시
 - ✅ **지능형 속도 제한 핸들러** - 더 이상 무한 대기 없음!
-  - 실시간 카운트다운, 자동 프로필 전환
+  - 속도 제한(시간당 60회 vs 5000회)에 대한 사전 경고
+  - GitHub API 응답에서 실시간 감지
+  - 진행 상황이 표시되는 실시간 카운트다운 타이머
+  - 속도 제한 시 자동 프로필 전환
   - 4가지 전략: prompt (질문), wait (카운트다운), switch (전환), fail (중단)
 - ✅ **중단점 재개** - 중단된 작업 계속하기
-- ✅ **CI/CD 지원** - 자동화를 위한 `--non-interactive` 플래그
+  - 설정 가능한 간격으로 진행 상황 자동 저장 (기본값: 60초)
+  - 재개 가능한 모든 작업을 진행 상황과 함께 나열
+  - 오래된 작업 자동 정리 (기본값: 7일)
+- ✅ **CI/CD 지원** - 자동화를 위한 비대화형 모드
+  - `--non-interactive` 플래그로 프롬프트 없이 빠른 실패
+  - `--profile` 플래그로 특정 GitHub 계정 선택
+  - 파이프라인 로그를 위한 명확한 오류 메시지
 
 **빠른 설정:**
 ```bash
@@ -410,23 +567,44 @@ skill-seekers create mycompany/private-repo --profile work
 
 # CI/CD 모드 (즉시 실패, 프롬프트 없음)
 skill-seekers create owner/repo --non-interactive
+
+# 중단된 작업 재개
+skill-seekers resume --list
+skill-seekers resume github_react_20260117_143022
 ```
+
+**속도 제한 전략 설명:**
+- **prompt** (기본값) - 속도 제한 시 무엇을 할지 질문 (대기, 전환, 토큰 설정, 취소)
+- **wait** - 카운트다운 타이머와 함께 자동 대기 (타임아웃 준수)
+- **switch** - 사용 가능한 다음 프로필 자동 시도 (다중 계정 구성용)
+- **fail** - 명확한 오류와 함께 즉시 실패 (CI/CD에 최적)
 
 ### 🎯 부트스트랩 스킬 - 셀프 호스팅
 
-skill-seekers 자체를 Claude Code 스킬로 생성합니다:
+skill-seekers 자체를 스킬로 생성하여 AI 에이전트(Claude Code, Kimi, Codex 등) 내에서 사용할 수 있습니다:
 
 ```bash
+# 스킬 생성
 ./scripts/bootstrap_skill.sh
+
+# Claude Code에 설치
 cp -r output/skill-seekers ~/.claude/skills/
 ```
+
+**얻을 수 있는 것:**
+- ✅ **완전한 스킬 문서** - 모든 CLI 명령어와 사용 패턴
+- ✅ **CLI 명령어 레퍼런스** - 모든 도구와 옵션 문서화
+- ✅ **빠른 시작 예제** - 일반적인 워크플로와 모범 사례
+- ✅ **자동 생성 API 문서** - 코드 분석, 패턴, 예제
 
 ### 🔐 프라이빗 설정 저장소
 - ✅ **Git 기반 설정 소스** - 프라이빗/팀 Git 저장소에서 설정 가져오기
 - ✅ **다중 소스 관리** - 무제한 GitHub, GitLab, Bitbucket 저장소 등록
 - ✅ **팀 협업** - 3–5인 팀 간 커스텀 설정 공유
-- ✅ **엔터프라이즈 지원** - 500명 이상의 개발자까지 확장
+- ✅ **엔터프라이즈 지원** - 우선순위 기반 해석으로 500명 이상의 개발자까지 확장
 - ✅ **보안 인증** - 환경 변수 토큰 (GITHUB_TOKEN, GITLAB_TOKEN)
+- ✅ **지능형 캐싱** - 한 번 클론하면 업데이트는 자동으로 가져오기
+- ✅ **오프라인 모드** - 오프라인 시 캐시된 설정으로 작업
 
 ### 🤖 코드베이스 분석 (C3.x)
 
@@ -434,13 +612,18 @@ cp -r output/skill-seekers ~/.claude/skills/
 - ✅ **9가지 설정 형식** - JSON, YAML, TOML, ENV, INI, Python, JavaScript, Dockerfile, Docker Compose
 - ✅ **7가지 패턴 유형** - 데이터베이스, API, 로깅, 캐시, 이메일, 인증, 서버 설정
 - ✅ **AI 강화** - 선택적 듀얼 모드 AI 분석 (API + LOCAL)
-- ✅ **보안 분석** - 하드코딩된 시크릿과 노출된 자격 증명 탐지
+  - 각 설정이 무엇을 하는지 설명
+  - 모범 사례와 개선 사항 제안
+  - **보안 분석** - 하드코딩된 시크릿과 노출된 자격 증명 탐지
+- ✅ **자동 문서화** - 모든 설정의 JSON + Markdown 문서 생성
+- ✅ **MCP 통합** - 강화 지원이 포함된 `extract_config_patterns` 도구
 
 **C3.3: AI 강화 사용 가이드**
 - ✅ **종합 AI 강화** - 기본 가이드를 전문 튜토리얼로 변환
 - ✅ **5가지 자동 개선** - 단계 설명, 문제 해결, 전제 조건, 다음 단계, 사용 사례
 - ✅ **듀얼 모드 지원** - API 모드 (Claude API) 또는 LOCAL 모드 (Claude Code CLI)
 - ✅ **LOCAL 모드 무료** - Claude Code Max 플랜으로 무료 강화
+- ✅ **품질 변환** - 75줄 템플릿 → 500줄 이상의 종합 가이드
 
 **사용법:**
 ```bash
@@ -515,8 +698,17 @@ stages:
 - ✅ **체크포인트/재개** - 장시간 스크래핑에서 진행 상황 손실 방지
 - ✅ **캐싱 시스템** - 한 번 스크래핑, 즉시 재구축
 
+### 🤖 에이전트 무관 스킬 생성
+- ✅ **다중 에이전트 지원** - `--agent` 플래그로 Claude, Kimi, Codex, Copilot, OpenCode 또는 모든 커스텀 에이전트용 스킬 생성
+- ✅ **커스텀 에이전트 명령어** - `--agent-cmd`로 강화에 사용할 커스텀 에이전트 CLI 명령어 지정
+- ✅ **범용 플래그** - `--agent`와 `--agent-cmd`는 모든 명령어(create, scrape, github, pdf 등)에서 사용 가능
+
+### 📦 마켓플레이스 파이프라인
+- ✅ **마켓플레이스에 게시** - Claude Code 플러그인 마켓플레이스 저장소에 스킬 게시
+- ✅ **엔드투엔드 파이프라인** - 문서 소스에서 게시된 마켓플레이스 항목까지
+
 ### ✅ 품질 보증
-- ✅ **완전한 테스트** - 3,445+ 테스트, 포괄적 커버리지
+- ✅ **완전한 테스트** - 3,700+ 테스트, 포괄적 커버리지
 
 ---
 
@@ -549,7 +741,7 @@ skill-seekers-setup
 | `pip install skill-seekers[gemini]` | + Google Gemini 지원 |
 | `pip install skill-seekers[openai]` | + OpenAI ChatGPT 지원 |
 | `pip install skill-seekers[all-llms]` | + 모든 LLM 플랫폼 |
-| `pip install skill-seekers[mcp]` | + MCP 서버 |
+| `pip install skill-seekers[mcp]` | + Claude Code, Cursor 등을 위한 MCP 서버 |
 | `pip install skill-seekers[video]` | + YouTube/Vimeo 자막 및 메타데이터 추출 |
 | `pip install skill-seekers[video-full]` | + Whisper 전사 및 시각 프레임 추출 |
 | `pip install skill-seekers[jupyter]` | + Jupyter 노트북 지원 |
@@ -585,34 +777,40 @@ skill-seekers install --config django --no-upload
 skill-seekers install --config react --dry-run
 ```
 
+**소요 시간:** 총 20–45분 | **품질:** 프로덕션 준비 완료 (9/10) | **비용:** 무료
+
 **실행 단계:**
 ```
 📥 단계 1: 설정 가져오기 (설정 이름이 제공된 경우)
 📖 단계 2: 문서 스크래핑
-✨ 단계 3: AI 강화
+✨ 단계 3: AI 강화 (필수 - 건너뛰기 불가)
 📦 단계 4: 스킬 패키징
 ☁️  단계 5: Claude에 업로드 (선택사항, API Key 필요)
 ```
+
+**요구 사항:**
+- ANTHROPIC_API_KEY 환경 변수 (자동 업로드용)
+- Claude Code Max 플랜 (로컬 AI 강화용), 또는 `--agent`로 다른 AI 에이전트 선택
 
 ---
 
 ## 📊 기능 매트릭스
 
-Skill Seekers는 **12개 LLM 플랫폼**, **18가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
+Skill Seekers는 **12개 LLM 플랫폼**, **8개 RAG/벡터 대상**, **18가지 소스 유형**을 지원하며 모든 대상에서 완전한 기능 동등성을 제공합니다.
 
-**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI
+**플랫폼:** Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, 범용 Markdown, OpenCode, Kimi (Moonshot AI), DeepSeek AI, Qwen (Alibaba), OpenRouter, Together AI, Fireworks AI
 **소스 유형:** 문서 사이트, GitHub 저장소, PDF, Word (.docx), EPUB, 동영상, 로컬 코드베이스, Jupyter 노트북, 로컬 HTML, OpenAPI/Swagger, AsciiDoc, PowerPoint (.pptx), RSS/Atom 피드, Man 페이지, Confluence 위키, Notion 페이지, Slack/Discord 채팅 내보내기
 
 전체 내용은 [전체 기능 매트릭스](docs/reference/FEATURE_MATRIX.md)를 참조하세요.
 
 ### 빠른 플랫폼 비교
 
-| 기능 | Claude | Gemini | OpenAI | Markdown |
-|------|--------|--------|--------|----------|
-| 형식 | ZIP + YAML | tar.gz | ZIP + Vector | ZIP |
-| 업로드 | ✅ API | ✅ API | ✅ API | ❌ 수동 |
-| 강화 | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ❌ 없음 |
-| 모든 스킬 모드 | ✅ | ✅ | ✅ | ✅ |
+| 기능 | Claude | Gemini | OpenAI | MiniMax | Markdown |
+|------|--------|--------|--------|---------|----------|
+| 형식 | ZIP + YAML | tar.gz | ZIP + Vector | ZIP + Knowledge | ZIP |
+| 업로드 | ✅ API | ✅ API | ✅ API | ✅ API | ❌ 수동 |
+| 강화 | ✅ Sonnet 4 | ✅ 2.0 Flash | ✅ GPT-4o | ✅ M3 | ❌ 없음 |
+| 모든 스킬 모드 | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -629,6 +827,9 @@ skill-seekers create https://react.dev --name react
 
 # 비동기 모드 (3배 빠름)
 skill-seekers create --config configs/godot.json --async --workers 8
+
+# 강화에 특정 AI 에이전트 사용
+skill-seekers create --config configs/react.json --agent kimi
 ```
 
 ### PDF 추출
@@ -709,6 +910,7 @@ skill-seekers create django/django \
 ```bash
 # 기존 통합 설정 사용
 skill-seekers create --config configs/react_unified.json
+skill-seekers create --config configs/django_unified.json
 
 # 또는 통합 설정 생성
 cat > configs/myframework_unified.json << 'EOF'
@@ -746,7 +948,8 @@ skill-seekers create --config configs/myframework_unified.json
 **프라이빗 Git 저장소를 사용하여 팀 간 커스텀 설정 공유:**
 
 ```bash
-# MCP 도구로 팀 프라이빗 저장소 등록
+# 옵션 1: MCP 도구 사용 (권장)
+# 팀 프라이빗 저장소 등록
 add_config_source(
     name="team",
     git_url="https://github.com/mycompany/skill-configs.git",
@@ -773,15 +976,36 @@ graph LR
     C --> F[정리된 참조 파일]
     D --> F
     F --> E
-    E --> G[Claude 스킬 .zip]
-    G --> H[Claude AI에 업로드]
+    E --> G[AI 스킬 .zip]
+    G --> H[AI 플랫폼에 업로드]
 ```
 
-0. **llms.txt 감지** - llms-full.txt, llms.txt, llms-small.txt를 우선 확인
+0. **llms.txt 감지** - llms-full.txt, llms.txt, llms-small.txt를 우선 확인 (스마트 SPA 디스커버리의 일부)
 1. **스크래핑**: 문서의 모든 페이지 추출
 2. **분류**: 콘텐츠를 주제별로 정리 (API, 가이드, 튜토리얼 등)
-3. **강화**: AI가 문서를 분석하고 예제가 포함된 종합적인 SKILL.md 생성
-4. **패키징**: 모든 내용을 Claude 준비 완료된 `.zip` 파일로 번들링
+3. **강화**: AI가 문서를 분석하고 예제가 포함된 종합적인 SKILL.md 생성 (`--agent`로 여러 에이전트 지원)
+4. **패키징**: 모든 내용을 플랫폼 준비 완료된 `.zip` 파일로 번들링
+
+## 아키텍처
+
+시스템은 **8개 핵심 모듈**과 **5개 유틸리티 모듈**(총 약 200개 클래스)로 구성되어 있습니다:
+
+![패키지 개요](docs/UML/exports/00_package_overview.png)
+
+| 모듈 | 목적 | 주요 클래스 |
+|------|------|-------------|
+| **CLICore** | Git 스타일 명령어 디스패처 | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
+| **Scrapers** | 18가지 소스 유형 추출기 | `DocToSkillConverter`, `DocumentSkillBuilder` (공유 빌드 레이어), `UnifiedScraper` |
+| **Adaptors** | 20개 이상의 출력 플랫폼 형식 | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
+| **Analysis** | C3.x 코드베이스 분석 파이프라인 | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10가지 GoF 감지기 |
+| **Enhancement** | `AgentClient`를 통한 AI 기반 스킬 개선 | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
+| **Packaging** | 스킬 패키징, 업로드, 설치 | `PackageSkill`, `InstallAgent` |
+| **MCP** | FastMCP 서버 (40개 도구) | `SkillSeekerMCPServer`, 10개 도구 모듈 |
+| **Sync** | 문서 변경 감지 | `ChangeDetector`, `SyncMonitor`, `Notifier` |
+
+유틸리티 모듈: **Parsers** (28개 CLI 파서), **Storage** (S3/GCS/Azure), **Embedding** (다중 제공자 벡터), **Benchmark** (성능), **Utilities** (16개 공유 헬퍼).
+
+전체 UML 다이어그램: **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** | StarUML 프로젝트: `docs/UML/skill_seekers.mdj` | HTML API 레퍼런스: `docs/UML/html/`
 
 ## 📋 사전 요구 사항
 
@@ -836,11 +1060,14 @@ Claude Code에서 직접 요청:
 
 ## 🤖 AI 에이전트에 설치
 
-Skill Seekers는 18개의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
+Skill Seekers는 19개의 AI 코딩 에이전트에 스킬을 자동으로 설치할 수 있습니다.
 
 ```bash
 # 특정 에이전트에 설치
 skill-seekers install-agent output/react/ --agent cursor
+
+# IBM Bob에 설치 (프로젝트 로컬 .bob/skills/)
+skill-seekers install-agent output/react/ --agent bob
 
 # 모든 에이전트에 한 번에 설치
 skill-seekers install-agent output/react/ --agent all
@@ -867,6 +1094,7 @@ skill-seekers install-agent output/react/ --agent cursor --dry-run
 | **Kilo Code** | `.kilo/skills/` | 프로젝트 |
 | **Continue** | `~/.continue/skills/` | 전역 |
 | **Kimi Code** | `~/.kimi/skills/` | 전역 |
+| **IBM Bob** | `.bob/skills/` | 프로젝트 |
 
 ---
 
@@ -885,7 +1113,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 ./setup_mcp.sh
 ```
 
-**전체 26개 도구:**
+**사용 가능한 전체 40개 도구:**
 - **핵심 (9개):** `list_configs`, `generate_config`, `validate_config`, `estimate_pages`, `scrape_docs`, `package_skill`, `upload_skill`, `enhance_skill`, `install_skill`
 - **확장 (10개):** `scrape_github`, `scrape_pdf`, `unified_scrape`, `merge_sources`, `detect_conflicts`, `add_config_source`, `fetch_config`, `list_config_sources`, `remove_config_source`, `split_config`
 - **벡터 DB (4개):** `export_to_chroma`, `export_to_weaviate`, `export_to_faiss`, `export_to_qdrant`
@@ -901,7 +1129,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 
 ```bash
 # 모든 프리셋 나열
-skill-seekers create --list-configs
+# skill-seekers list-configs  # v3.7.0에서는 사용 불가
 ```
 
 | 카테고리 | 프리셋 |
@@ -1042,6 +1270,55 @@ skill-seekers config --github
 
 ---
 
+## 🆕 v3.6.0 신규 기능
+
+### 워크플로우 프리셋
+`--preset`으로 분석 깊이 제어:
+
+```bash
+skill-seekers create https://docs.react.dev/ --preset quick      # 빠름, 표면 수준
+skill-seekers create https://docs.react.dev/ --preset standard   # 균형 (기본값)
+skill-seekers create https://docs.react.dev/ --preset comprehensive # 심층, 완전 분석
+```
+
+### 라이프사이클 플래그
+```bash
+skill-seekers create https://docs.react.dev/ --dry-run    # 스크래핑 없이 미리보기
+skill-seekers create https://docs.react.dev/ --fresh      # 캐시 무시, 전체 재스크래핑
+skill-seekers create https://docs.react.dev/ --resume     # 중단된 작업 재개
+skill-seekers create https://docs.react.dev/ --skip-scrape # 기존 출력 재패키징
+```
+
+### 상태 확인 및 유틸리티
+```bash
+skill-seekers doctor                    # 설치 및 환경 진단
+skill-seekers sync-config               # 설정 드리프트 감지
+skill-seekers stream <source>           # 대용량 문서 스트리밍 수집
+skill-seekers update output/react/      # 증분 업데이트
+skill-seekers multilang <source>        # 다국어 스킬 생성
+skill-seekers quality output/react/     # 품질 리포트 (--threshold 7 추가로 게이트 적용: 7/10 미만이면 0이 아닌 종료 코드)
+```
+
+### RAG 청킹 옵션 (패키징)
+```bash
+skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
+```
+
+### 마켓플레이스 게시
+```bash
+skill-seekers package output/react/ --marketplace --marketplace-category frontend
+```
+
+### 추가 선택적 종속성
+| Extra | 설치 | 용도 |
+|-------|------|------|
+| `browser` | `pip install "skill-seekers[browser]"` | SPA 사이트를 위한 헤드리스 Playwright |
+| `embedding` | `pip install "skill-seekers[embedding]"` | 임베딩 서버 지원 |
+| `s3` / `gcs` / `azure` | `pip install "skill-seekers[s3]"` 등 | 클라우드 스토리지 업로드 |
+| `rag-upload` | `pip install "skill-seekers[rag-upload]"` | 통합 벡터 DB 업로드 종속성 |
+
+---
+
 ## 📚 문서
 
 ### 시작 가이드
@@ -1049,6 +1326,12 @@ skill-seekers config --github
 - **[QUICKSTART.md](docs/archive/legacy/QUICKSTART.md)** - 경험 있는 사용자를 위한 빠른 시작
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - 일반적인 문제와 해결 방법
 - **[docs/archive/legacy/QUICK_REFERENCE.md](docs/archive/legacy/QUICK_REFERENCE.md)** - 한 페이지 치트 시트
+
+### 아키텍처
+- **[docs/UML_ARCHITECTURE.md](docs/UML_ARCHITECTURE.md)** - 14개 다이어그램이 포함된 UML 아키텍처 개요
+- **[docs/UML/exports/](docs/UML/exports/)** - PNG 다이어그램 내보내기 (패키지 개요 + 13개 클래스 다이어그램)
+- **[docs/UML/html/](docs/UML/html/index.html/index.html)** - 전체 HTML API 레퍼런스 (모든 클래스, 연산, 속성)
+- **[docs/UML/skill_seekers.mdj](docs/UML/skill_seekers.mdj)** - StarUML 프로젝트 파일 ([StarUML](https://staruml.io/)로 열기)
 
 ### 가이드
 - **[docs/reference/LARGE_DOCUMENTATION.md](docs/reference/LARGE_DOCUMENTATION.md)** - 10K–40K+ 페이지 문서 처리
@@ -1082,70 +1365,12 @@ MIT 라이선스 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세
 
 ---
 
-> **참고:** 다음 섹션은 영어 README에서 가져온 것으로, 전체 번역이 진행 중입니다.
-> 최신 문서는 [README.md](../README.md)를 참조하세요.
+## 💛 후원사
 
-## 아키텍처
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-Skill Seekers는 확장성을 염두에 둔 모듈형 아키텍처를 사용합니다：
-
-| 모듈 | 목적 | 주요 파일 |
-|------|------|----------|
-| **CLI** | 명령줄 인터페이스 | `src/skill_seekers/cli/main.py` |
-| **Scrapers** | 소스 유형 변환기 | `src/skill_seekers/cli/*_scraper.py`（17 유형） |
-| **Adaptors** | 플랫폼별 패키징 | `src/skill_seekers/cli/adaptors/`（21 플랫폼） |
-| **Enhancement** | AI 기반 보강 | `src/skill_seekers/cli/enhance_command.py` |
-| **MCP Server** | 모델 컨텍스트 프로토콜 | `src/skill_seekers/mcp/server_fastmcp.py`（40 도구） |
-
-## AI 기반 프로젝트 스캔
-
-프로젝트의 기술 스택을 자동으로 감지하고 프레임워크별로 설정 파일을 생성합니다：
-
-```bash
-skill-seekers scan ./my-react-app --out ./configs/scanned/
-# -> react.json, vite.json, tailwind.json, jest.json, my-react-app-codebase.json
-```
-
-## 에이전트 무관 스킬 생성
-
-Skill Seekers는 대상 플랫폼에 관계없이 동일한 고품질 출력을 생성합니다. 한 번 스크래핑하면 어디서나 패키징할 수 있습니다.
-
-## 마켓플레이스 파이프라인
-
-스킬을 패키징하여 마켓플레이스에 게시합니다：
-
-```bash
-skill-seekers package output/react/ --marketplace --marketplace-category frontend
-```
-
-## v3.6.0 신규 기능
-
-### 워크플로우 프리셋
-```bash
-skill-seekers create https://docs.react.dev/ --preset quick       # 빠른
-skill-seekers create https://docs.react.dev/ --preset standard    # 균형
-skill-seekers create https://docs.react.dev/ --preset comprehensive  # 심층
-```
-
-### 라이프사이클 플래그
-```bash
-skill-seekers create <source> --dry-run      # 스크래핑 없이 미리보기
-skill-seekers create <source> --fresh        # 캐시 무시, 전체 재스크래핑
-skill-seekers create <source> --resume       # 중단된 작업 재개
-skill-seekers create <source> --skip-scrape  # 기존 출력 재패키징
-```
-
-### 상태 확인 및 유틸리티
-```bash
-skill-seekers doctor                 # 설치 및 환경 진단
-skill-seekers sync-config            # 설정 드리프트 감지
-skill-seekers stream <source>        # 대용량 문서 스트리밍 수집
-skill-seekers update output/react/   # 증분 업데이트
-skill-seekers multilang <source>     # 다국어 스킬 생성
-skill-seekers quality output/react/  # 품질 점수
-```
-
-### RAG 청킹（패키징）
-```bash
-skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50
-```
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — 풀 모달, OpenAI 호환 AI 추론 플랫폼입니다. Skill Seekers는 `--target atlas`와 `ATLAS_API_KEY`를 통해 패키징/강화 대상으로 지원합니다.

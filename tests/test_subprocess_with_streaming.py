@@ -67,17 +67,16 @@ class TestSharedHelperIsDeduplicated(unittest.TestCase):
     """
 
     def test_tool_modules_use_shared_helper(self):
+        # Phase 5d: scraping_tools and splitting_tools no longer shell out at
+        # all (in-process run_cli_main); packaging_tools still uses the
+        # subprocess helper for the LOCAL-agent enhancement paths.
         from skill_seekers.mcp.tools import (
             subprocess_utils,
             packaging_tools,
-            scraping_tools,
-            splitting_tools,
         )
 
         shared = subprocess_utils.run_subprocess_with_streaming
         self.assertIs(packaging_tools.run_subprocess_with_streaming, shared)
-        self.assertIs(scraping_tools.run_subprocess_with_streaming, shared)
-        self.assertIs(splitting_tools.run_subprocess_with_streaming, shared)
 
     def test_server_legacy_uses_shared_helper(self):
         from skill_seekers.mcp.tools import subprocess_utils
@@ -94,17 +93,28 @@ class TestSharedHelperIsDeduplicated(unittest.TestCase):
         from skill_seekers.mcp.tools import (
             subprocess_utils,
             packaging_tools,
-            scraping_tools,
-            splitting_tools,
         )
 
-        for module in (packaging_tools, scraping_tools, splitting_tools):
+        for module in (packaging_tools,):
             fn = module.run_subprocess_with_streaming
             self.assertEqual(
                 inspect.getmodule(fn).__name__,
                 subprocess_utils.__name__,
                 f"{module.__name__} should import the helper, not redefine it",
             )
+
+    def test_migrated_modules_do_not_shell_out(self):
+        """Phase 5d: scraping/splitting tools must not import the subprocess
+        helper anymore — they dispatch in-process via _common.run_cli_tool
+        (the shaping wrapper over _common.run_cli_main)."""
+        from skill_seekers.mcp.tools import _common, scraping_tools, splitting_tools
+
+        for module in (scraping_tools, splitting_tools):
+            self.assertFalse(
+                hasattr(module, "run_subprocess_with_streaming"),
+                f"{module.__name__} should no longer use the subprocess helper",
+            )
+            self.assertIs(module.run_cli_tool, _common.run_cli_tool)
 
 
 if __name__ == "__main__":

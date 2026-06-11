@@ -15,6 +15,7 @@ Example:
 from __future__ import annotations
 
 import contextlib
+import contextvars
 import json
 import logging
 import os
@@ -26,6 +27,16 @@ from collections.abc import Generator
 from pydantic import BaseModel, Field, PrivateAttr
 
 logger = logging.getLogger(__name__)
+
+# Context-local override layer for ExecutionContext.override().
+#
+# Stored in a ContextVar (not in the class-level singleton) so that two
+# concurrent users — threads, or asyncio tasks in the MCP server — each see
+# their OWN override without clobbering the other's. The global singleton
+# remains the base layer underneath.
+_override_ctx: contextvars.ContextVar[ExecutionContext | None] = contextvars.ContextVar(
+    "ss_execution_context_override", default=None
+)
 
 
 class SourceInfoConfig(BaseModel):
@@ -166,10 +177,15 @@ class ExecutionContext(BaseModel):
     def get(cls) -> ExecutionContext:
         """Get the singleton instance (thread-safe).
 
-        Returns a default context if not explicitly initialized.
-        This ensures components can always read from the context
-        without try/except blocks.
+        If an ``override()`` is active in the current execution context
+        (thread / asyncio task), the override layer is returned instead of
+        the base singleton. Otherwise returns a default context if not
+        explicitly initialized — this ensures components can always read
+        from the context without try/except blocks.
         """
+        override = _override_ctx.get()
+        if override is not None:
+            return override
         with cls._lock:
             if cls._instance is None:
                 cls._instance = cls()
@@ -214,6 +230,17 @@ class ExecutionContext(BaseModel):
             cls._instance._config_path = config_path
             cls._initialized = True
             return cls._instance
+
+    @classmethod
+    def is_initialized(cls) -> bool:
+        """True when initialize() was explicitly called.
+
+        ``get()`` never raises — it auto-creates a default context — so callers
+        that want "context if the CLI set one up, else my own config fallback"
+        must check this instead of wrapping ``get()`` in try/except.
+        """
+        with cls._lock:
+            return cls._initialized
 
     @classmethod
     def reset(cls) -> None:
@@ -535,10 +562,28 @@ class ExecutionContext(BaseModel):
 
     @contextlib.contextmanager
     def override(self, **kwargs: Any) -> Generator[ExecutionContext, None, None]:
-        """Temporarily override context values.
+        """Temporarily override context values (context-local).
 
-        Thread-safe: uses an override stack so nested/concurrent overrides
-        restore correctly regardless of ordering.
+        The override is stored in a :mod:`contextvars` ContextVar rather than
+        by mutating the global singleton, so concurrent users (threads, or
+        asyncio tasks in the MCP server) each see only their OWN override —
+        no cross-talk. ``ExecutionContext.get()`` returns the active override
+        in the current execution context, falling back to the base singleton.
+        ``is_initialized()`` is unaffected: it still refers to explicit
+        ``initialize()`` of the base singleton.
+
+        Merge semantics: the temporary context is built from ``self`` (the
+        instance ``override()`` was called on). Since callers follow the
+        ``ExecutionContext.get().override(...)`` pattern, an inner override
+        builds on top of the outer one's values — nested overrides stack and
+        unwind cleanly via ContextVar tokens.
+
+        Propagation contract: contextvars flow into asyncio tasks
+        automatically, but into worker threads only via the
+        ``contextvars.copy_context().run(...)`` pattern (doc_scraper et al.
+        already use this for MCP log capture — the same propagation now
+        carries the context override). A thread started without
+        ``copy_context()`` sees the base singleton, not the override.
 
         Usage:
             with ctx.override(enhancement__level=3):
@@ -562,18 +607,14 @@ class ExecutionContext(BaseModel):
         temp_ctx = self.__class__.model_validate(current_data)
         temp_ctx._raw_args = dict(self._raw_args)  # Copy raw args to temp context
 
-        # Swap singleton atomically and save previous state on a stack
-        # so nested/concurrent overrides restore in the correct order.
-        with self.__class__._lock:
-            saved = (self.__class__._instance, self.__class__._initialized)
-            self.__class__._instance = temp_ctx
-            self.__class__._initialized = True
+        # Context-local activation: no mutation of cls._instance or
+        # cls._initialized. The token restores the previous override (None,
+        # or the outer override when nested) on exit.
+        token = _override_ctx.set(temp_ctx)
         try:
             yield temp_ctx
         finally:
-            with self.__class__._lock:
-                self.__class__._instance = saved[0]
-                self.__class__._initialized = saved[1]
+            _override_ctx.reset(token)
 
 
 def get_context() -> ExecutionContext:

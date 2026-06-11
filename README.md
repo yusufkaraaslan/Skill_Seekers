@@ -10,7 +10,7 @@ English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국�
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP Integration](https://img.shields.io/badge/MCP-40-Tools-blue.svg)](https://modelcontextprotocol.io)
-[![Tested](https://img.shields.io/badge/Tests-3445%2B%20Passing-brightgreen.svg)](tests/)
+[![Tested](https://img.shields.io/badge/Tests-3700%2B%20Passing-brightgreen.svg)](tests/)
 [![Project Board](https://img.shields.io/badge/Project-Board-purple.svg)](https://github.com/users/yusufkaraaslan/projects/2)
 [![PyPI version](https://badge.fury.io/py/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/skill-seekers.svg)](https://pypi.org/project/skill-seekers/)
@@ -85,7 +85,7 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob skill dire
 - 🎬 **Videos** — Extract code, transcripts, and structured knowledge from YouTube and local videos
 - 🔄 **Multi-source** — Combine 18 source types (docs, GitHub, PDFs, videos, notebooks, wikis, and more) into one knowledge asset
 - 🌐 **One prep, every target** — Export the same asset to 21 platforms without re-scraping
-- ✅ **Battle-tested** — 3,445+ tests, 24+ framework presets, production-ready
+- ✅ **Battle-tested** — 3,700+ tests, 24+ framework presets, production-ready
 
 ## 🚀 Quick Start (3 Commands)
 
@@ -376,7 +376,7 @@ skill-seekers create <source>
 | Mistral      | `https://api.mistral.ai/v1`                |
 | NVIDIA NIM   | `https://integrate.api.nvidia.com/v1`      |
 
-> Provider detection picks the **first** API-key env var it finds (`ANTHROPIC_API_KEY` → `MOONSHOT_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY`). If you want the OpenAI-compatible route, make sure the higher-priority keys are unset.
+> Provider detection picks the **first** API-key env var it finds (`ANTHROPIC_API_KEY` → `GOOGLE_API_KEY` → `OPENAI_API_KEY` → `MOONSHOT_API_KEY`). Set `SKILL_SEEKER_PROVIDER` to force a specific provider, or make sure the higher-priority keys are unset.
 
 **3. Claude-compatible endpoints (e.g. GLM, proxies)**
 
@@ -707,7 +707,7 @@ stages:
 - ✅ **End-to-End Pipeline** - From documentation source to published marketplace entry
 
 ### ✅ Quality Assurance
-- ✅ **Fully Tested** - 3,445+ tests with comprehensive coverage
+- ✅ **Fully Tested** - 3,700+ tests with comprehensive coverage
 
 ---
 
@@ -994,7 +994,7 @@ The system is organized into **8 core modules** and **5 utility modules** (~200 
 | Module | Purpose | Key Classes |
 |--------|---------|-------------|
 | **CLICore** | Git-style command dispatcher | `CLIDispatcher`, `SourceDetector`, `CreateCommand` |
-| **Scrapers** | 18 source-type extractors | `DocToSkillConverter`, `GitHubScraper`, `UnifiedScraper` |
+| **Scrapers** | 18 source-type extractors | `DocToSkillConverter`, `DocumentSkillBuilder` (shared build layer), `UnifiedScraper` |
 | **Adaptors** | 20+ output platform formats | `SkillAdaptor` (ABC), `ClaudeAdaptor`, `LangChainAdaptor` |
 | **Analysis** | C3.x codebase analysis pipeline | `UnifiedCodebaseAnalyzer`, `PatternRecognizer`, 10 GoF detectors |
 | **Enhancement** | AI-powered skill improvement via `AgentClient` | `AgentClient`, `AIEnhancer`, `UnifiedEnhancer`, `WorkflowEngine` |
@@ -1295,7 +1295,7 @@ skill-seekers sync-config               # Detect config drift
 skill-seekers stream <source>           # Streaming ingestion for large docs
 skill-seekers update output/react/      # Incremental update
 skill-seekers multilang <source>        # Multi-language skill generation
-skill-seekers quality output/react/     # Quality scoring
+skill-seekers quality output/react/     # Quality report (add --threshold 7 to gate: non-zero exit below 7/10)
 ```
 
 ### RAG Chunking Options (package)

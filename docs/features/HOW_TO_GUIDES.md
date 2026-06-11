@@ -30,14 +30,12 @@ The How-To Guide Builder automatically generates comprehensive, step-by-step tut
 First, extract workflow examples from your test files:
 
 ```bash
-# Extract test examples including workflows
-skill-seekers scan tests/ \
-  --extract-test-examples \
-  --output output/codebase/
+# Extract test examples including workflows (on by default during codebase analysis)
+skill-seekers create tests/ --output output/codebase/
 
-# Or use standalone tool
-skill-seekers-extract-test-examples tests/ \
-  --output output/codebase/test_examples/
+# Or use the standalone subcommand (writes JSON to stdout)
+skill-seekers extract-test-examples tests/ --json \
+  > output/codebase/test_examples/test_examples.json
 ```
 
 ### 2. Build How-To Guides (C3.3)
@@ -63,14 +61,11 @@ skill-seekers-how-to-guides examples.json \
 Enable guide generation during codebase analysis:
 
 ```bash
-# Automatic pipeline: extract tests → build guides
-skill-seekers scan tests/ \
-  --extract-test-examples \
-  --build-how-to-guides \
-  --output output/codebase/
+# Automatic pipeline: extract tests → build guides (both on by default)
+skill-seekers create tests/ --output output/codebase/
 
 # Skip guide generation
-skill-seekers scan tests/ \
+skill-seekers create tests/ \
   --skip-how-to-guides
 ```
 
@@ -284,10 +279,7 @@ AI enhancement happens automatically with AUTO mode detection:
 
 ```bash
 # Auto-detects best mode (API if key set, else LOCAL)
-skill-seekers scan tests/ \
-  --extract-test-examples \
-  --build-how-to-guides \
-  --ai-mode auto
+skill-seekers create tests/ --enhance-level 3
 ```
 
 #### Method 2: API Mode
@@ -295,13 +287,10 @@ skill-seekers scan tests/ \
 Use Claude API directly (requires ANTHROPIC_API_KEY):
 
 ```bash
-# Set API key
+# Set API key — API mode is selected automatically when a key is present
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# Enable API mode
-skill-seekers scan tests/ \
-  --build-how-to-guides \
-  --ai-mode api
+skill-seekers create tests/ --enhance-level 3
 ```
 
 **Characteristics:**
@@ -315,10 +304,8 @@ skill-seekers scan tests/ \
 Use Claude Code CLI (no API key needed):
 
 ```bash
-# Uses your Claude Code Max plan (FREE!)
-skill-seekers scan tests/ \
-  --build-how-to-guides \
-  --ai-mode local
+# Uses your Claude Code Max plan (FREE!) — LOCAL mode is selected when no API key is set
+skill-seekers create tests/ --enhance-level 3 --agent claude
 ```
 
 **Characteristics:**
@@ -334,9 +321,7 @@ Generate basic guides without AI:
 
 ```bash
 # Faster, but basic quality
-skill-seekers scan tests/ \
-  --build-how-to-guides \
-  --ai-mode none
+skill-seekers create tests/ --enhance-level 0
 ```
 
 ### API vs LOCAL Mode Comparison
@@ -358,15 +343,12 @@ skill-seekers scan tests/ \
 
 ```bash
 # 1. Extract test examples from your codebase
-skill-seekers scan tests/ \
-  --extract-test-examples \
-  --output output/codebase/
+skill-seekers create tests/ --output output/codebase/
 
-# 2. Build enhanced guides (AUTO mode)
+# 2. Build enhanced guides (AI mode auto-detected)
 skill-seekers-how-to-guides \
-  output/codebase/test_examples/test_examples.json \
+  --input output/codebase/test_examples/test_examples.json \
   --group-by ai-tutorial-group \
-  --ai-mode auto \
   --output output/codebase/tutorials/
 
 # 3. Review generated guides
@@ -400,13 +382,12 @@ which claude
 
 **Issue: Enhancement takes too long**
 ```bash
-# Switch to API mode for faster processing
-skill-seekers scan tests/ \
-  --build-how-to-guides \
-  --ai-mode api  # Much faster than LOCAL
+# API mode (faster than LOCAL) is selected automatically when an API key is set
+export ANTHROPIC_API_KEY=sk-ant-...
+skill-seekers create tests/ --enhance-level 3
 
 # Or disable enhancement for testing
---ai-mode none
+skill-seekers create tests/ --enhance-level 0
 ```
 
 **Issue: Want to skip enhancement for specific guides**
@@ -872,10 +853,8 @@ class GuideCollection:
 How-to guides are built from workflow examples extracted by C3.2:
 
 ```bash
-# Full pipeline
-skill-seekers scan tests/ \
-  --extract-test-examples \
-  --build-how-to-guides
+# Full pipeline (both stages on by default)
+skill-seekers create tests/
 ```
 
 **Data Flow:**
@@ -907,10 +886,7 @@ skill-seekers-how-to-guides examples.json --no-ai
 Automatic guide generation during codebase analysis:
 
 ```bash
-skill-seekers scan /path/to/repo/ \
-  --extract-test-examples \
-  --build-how-to-guides \
-  --output output/codebase/
+skill-seekers create /path/to/repo/ --output output/codebase/
 ```
 
 **Output Structure:**
@@ -946,9 +922,7 @@ skill-seekers-how-to-guides tests/integration/test_examples.json \
 Extract usage patterns from test suites:
 
 ```bash
-skill-seekers scan tests/api/ \
-  --extract-test-examples \
-  --build-how-to-guides
+skill-seekers create tests/api/
 ```
 
 **Result:** Step-by-step API integration guides derived from actual test workflows.
@@ -1375,7 +1349,7 @@ pytest tests/test_how_to_guide_builder.py --cov=skill_seekers.cli.how_to_guide_b
 **Get Started:**
 ```bash
 # Quick start
-skill-seekers scan tests/ --output output/codebase/
+skill-seekers create tests/ --output output/codebase/
 
 # Check your new guides
 cat output/codebase/tutorials/index.md

@@ -327,12 +327,15 @@ class MultiLanguageManager:
             completeness=min(completeness, 1.0),
         )
 
-    def export_by_language(self, output_dir: Path) -> dict[str, Path]:
+    def export_by_language(
+        self, output_dir: Path, languages: set[str] | None = None
+    ) -> dict[str, Path]:
         """
         Export documents organized by language.
 
         Args:
             output_dir: Output directory
+            languages: Optional set of language codes to export (all if None)
 
         Returns:
             Dictionary mapping language codes to output paths
@@ -343,6 +346,8 @@ class MultiLanguageManager:
         exports = {}
 
         for lang_code, docs in self.documents.items():
+            if languages and lang_code not in languages:
+                continue
             lang_file = output_dir / f"documents_{lang_code}.json"
 
             export_data = {
@@ -406,28 +411,21 @@ class MultiLanguageManager:
 
 def main(args=None):
     """CLI entry point for multi-language support."""
-    import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description="Manage multi-language skill documents")
-    parser.add_argument("skill_dir", help="Path to skill directory")
-    parser.add_argument("--detect", action="store_true", help="Detect languages in skill")
-    parser.add_argument("--report", action="store_true", help="Generate translation report")
-    parser.add_argument("--export", help="Export by language to specified directory")
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
+
     if args is None:
+        # Single source of flags: the central MultilangParser.
+        from skill_seekers.cli.parsers.multilang_parser import MultilangParser
+
+        parser = MultilangParser().build_standalone()
         args = parser.parse_args()
-    else:
-        # Central dispatch passes the unified namespace; backfill any args
-        # this module's parser defines but the central one doesn't, so the
-        # reads below never hit a missing attribute.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
 
     skill_dir = Path(args.skill_dir)
     if not skill_dir.exists():
         print(f"❌ Error: Directory not found: {skill_dir}")
-        return 1
+        return EXIT_ERROR
 
     manager = MultiLanguageManager()
 
@@ -447,9 +445,15 @@ def main(args=None):
                 ref_file.name, ref_file.read_text(encoding="utf-8"), {"category": ref_file.stem}
             )
 
+    # Optional language filter. Previously --languages existed only in the
+    # unified CLI's parser and was silently ignored.
+    lang_filter = set(getattr(args, "languages", None) or [])
+
     # Detect languages
     if args.detect:
         languages = manager.get_languages()
+        if lang_filter:
+            languages = [lang for lang in languages if lang in lang_filter]
         print(f"\n🌍 Detected languages: {', '.join(languages)}")
         for lang in languages:
             count = manager.get_document_count(lang)
@@ -463,12 +467,12 @@ def main(args=None):
     if args.export:
         output_dir = Path(args.export)
         output_dir.mkdir(parents=True, exist_ok=True)
-        exports = manager.export_by_language(output_dir)
+        exports = manager.export_by_language(output_dir, languages=lang_filter or None)
         print(f"\n✅ Exported {len(exports)} language files:")
         for lang, path in exports.items():
             print(f"   {lang}: {path}")
 
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

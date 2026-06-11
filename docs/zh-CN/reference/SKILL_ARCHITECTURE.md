@@ -854,7 +854,7 @@ Skill Seeker 使用 `generate_router.py` 为大型文档自动生成路由器技
 
 ```bash
 # 从文档配置生成路由器
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 skill-seekers create configs/godot-*.json
 
 # 检查生成的路由器 SKILL.md

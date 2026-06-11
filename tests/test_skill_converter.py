@@ -81,3 +81,22 @@ class TestSkipScrape:
         assert conv.run() == 0
         assert conv.extracted is True
         assert conv.built is True
+
+
+class TestSkillDirNormalization:
+    """Trailing separators must be stripped once in the base class: derived
+    paths like f"{skill_dir}_extracted.json" would otherwise land INSIDE the
+    skill directory (and get packaged) when --output ends with '/'."""
+
+    def test_trailing_slash_stripped(self):
+        c = SkillConverter({"name": "x", "output_dir": "out/myskill/"})
+        assert c.skill_dir == "out/myskill"
+        assert c.data_file_for() == "out/myskill_extracted.json"
+
+    def test_data_file_for_custom_suffix(self):
+        c = SkillConverter({"name": "x", "output_dir": "out/k"})
+        assert c.data_file_for("_github_data.json") == "out/k_github_data.json"
+
+    def test_resolve_skill_dir_static(self):
+        assert SkillConverter.resolve_skill_dir({"output_dir": "a/b/"}, "n") == "a/b"
+        assert SkillConverter.resolve_skill_dir({}, "n") == "output/n"

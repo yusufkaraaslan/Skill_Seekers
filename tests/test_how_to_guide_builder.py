@@ -1129,3 +1129,34 @@ def test_simple():
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNestedControlFlowSteps(unittest.TestCase):
+    """Steps wrapped in control flow must still be extracted (regression:
+    top-level-only iteration returned ZERO steps for a `with`-wrapped body)."""
+
+    def setUp(self):
+        self.analyzer = WorkflowAnalyzer()
+
+    def test_with_block_yields_steps(self):
+        code = (
+            "def test_flow():\n"
+            "    with open('f') as fh:\n"
+            "        data = fh.read()\n"
+            "        assert data\n"
+        )
+        steps = self.analyzer._extract_steps_python(code, {"code": code, "language": "python"})
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0].code, "data = fh.read()")
+        self.assertEqual(steps[0].verification, "assert data")
+
+    def test_for_block_preserves_order(self):
+        code = "x = setup()\nfor i in range(3):\n    y = do(i)\nassert y\n"
+        steps = self.analyzer._extract_steps_python(code, {"code": code, "language": "python"})
+        self.assertEqual([s.code for s in steps], ["x = setup()", "y = do(i)"])
+        self.assertEqual(steps[1].verification, "assert y")
+
+    def test_nested_function_bodies_are_not_steps(self):
+        code = "def helper():\n    hidden = 1\n\nvisible = 2\n"
+        steps = self.analyzer._extract_steps_python(code, {"code": code, "language": "python"})
+        self.assertEqual([s.code for s in steps], ["visible = 2"])

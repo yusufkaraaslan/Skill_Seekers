@@ -143,30 +143,28 @@ pip install --upgrade skill-seekers[all-llms]
 
 #### 2. Update Codebase Analysis Commands
 
-**Before (v2.5.0 - opt-in):**
+**Before (v2.5.0 - opt-in, old `codebase` subcommand):**
 ```bash
 # Had to enable features explicitly
 skill-seekers codebase --directory . --build-api-reference --build-dependency-graph
 ```
 
-**After (v2.6.0 - opt-out):**
+**After (current — opt-out, via the unified `create` command):**
 ```bash
 # All features enabled by default
-skill-seekers codebase --directory .
+skill-seekers create --directory .
 
 # Or skip specific features
-skill-seekers codebase --directory . --skip-patterns --skip-how-to-guides
+skill-seekers create --directory . --skip-patterns --skip-how-to-guides
 ```
 
-#### 3. Legacy Flags (Deprecated but Still Work)
+#### 3. Legacy Flags (Removed)
 
-Old flags still work but show warnings:
+The old `codebase` subcommand and the `--build-*` opt-in flags are gone — use
+`create` with `--skip-*` flags instead:
 ```bash
-# Works with deprecation warning
-skill-seekers codebase --directory . --build-api-reference
-
-# Recommended: Remove old flags
-skill-seekers codebase --directory .
+# Everything on by default
+skill-seekers create --directory .
 ```
 
 #### 4. Verify MCP Configuration
@@ -362,8 +360,8 @@ skill-seekers create --config react
 skill-seekers package output/react/ --target claude
 skill-seekers upload output/react-claude.zip --target claude
 
-# Or use one command
-skill-seekers install react --target claude --upload
+# Or use one command (uploads by default)
+skill-seekers install --config react --target claude
 ```
 
 #### Step 3: Update Configs (Optional)

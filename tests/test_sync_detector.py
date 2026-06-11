@@ -269,3 +269,31 @@ class TestHeaderChangeNoValidators:
                 )
                 is True
             )
+
+    @patch("skill_seekers.sync.detector.requests.head")
+    def test_no_stored_validators_assumes_changed(self, mock_head, detector):
+        """Regression: a never-seen URL (no stored validators) must report
+        'changed' even when the server DOES send validators — there is nothing
+        to compare against, so a content fetch must verify."""
+        mock_head.return_value.headers = {
+            "Last-Modified": "Wed, 21 Oct 2025 07:28:00 GMT",
+            "ETag": '"abc"',
+        }
+        mock_head.return_value.raise_for_status = MagicMock()
+
+        changed = detector.check_header_changes("https://example.com/new-page")
+        assert changed is True
+
+    @patch("skill_seekers.sync.detector.requests.head")
+    def test_batch_check_headers_includes_never_seen_url(self, mock_head, detector):
+        """A URL absent from previous_metadata must appear in changed_urls."""
+        mock_head.return_value.headers = {
+            "Last-Modified": "Wed, 22 Oct 2025 00:00:00 GMT",
+            "ETag": '"x"',
+        }
+        mock_head.return_value.raise_for_status = MagicMock()
+
+        changed = detector.batch_check_headers(
+            urls=["https://example.com/new-page"], previous_metadata={}
+        )
+        assert "https://example.com/new-page" in changed

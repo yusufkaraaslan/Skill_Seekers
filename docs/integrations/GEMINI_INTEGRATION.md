@@ -345,7 +345,7 @@ python3 -c "import google.generativeai as genai; genai.configure(api_key='AIza..
 ls -lh react-gemini.tar.gz
 
 # Try with verbose output
-skill-seekers upload react-gemini.tar.gz --target gemini --verbose
+skill-seekers upload react-gemini.tar.gz --target gemini
 ```
 
 ### Issue: Enhancement fails
@@ -356,7 +356,7 @@ skill-seekers upload react-gemini.tar.gz --target gemini --verbose
 # Visit: https://aistudio.google.com/apikey
 
 # Try with smaller skill
-skill-seekers enhance output/react/ --target gemini --max-files 5
+skill-seekers enhance output/react/ --target gemini
 
 # Use without enhancement
 skill-seekers package output/react/ --target gemini

@@ -238,6 +238,34 @@ class PineconeAdaptor(StreamingAdaptorMixin, SkillAdaptor):
             ensure_ascii=False,
         )
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to the Pinecone package format.
+
+        Produces the same index_name/namespace/vectors structure as
+        format_skill_md() so upload() can consume streaming packages.
+        """
+        vectors: list[dict[str, Any]] = []
+
+        for chunk_text, chunk_meta in chunks:
+            metadata = self._streaming_chunk_meta(chunk_meta, skill_name)
+            metadata["text"] = self._truncate_text_for_metadata(chunk_text)
+            vectors.append({"id": chunk_meta["chunk_id"], "metadata": metadata})
+
+        index_name = skill_name.replace("_", "-").lower()
+
+        return {
+            "index_name": index_name,
+            "namespace": index_name,
+            "dimension": 1536,
+            "metric": "cosine",
+            "vectors": vectors,
+            "total_chunks": len(vectors),
+            "streaming": True,
+        }
+
     def package(
         self,
         skill_dir: Path,

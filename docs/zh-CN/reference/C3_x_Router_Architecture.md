@@ -1,41 +1,41 @@
-# C3.x Router Architecture - Ultra-Detailed Technical Specification
+# C3.x 路由器架构 - 超详细技术规范
 
-**Created:** 2026-01-08
-**Last Updated:** 2026-01-08 (MAJOR REVISION - Three-Stream GitHub Architecture)
-**Purpose:** Complete architectural design for converting C3.x-analyzed codebases into router-based skill systems
-**Status:** Design phase - Ready for implementation
+**创建日期：** 2026-01-08
+**最后更新：** 2026-01-08（重大修订 - 三流 GitHub 架构）
+**目的：** 将经 C3.x 分析的代码库转换为基于路由器的技能系统的完整架构设计
+**状态：** 设计阶段 - 可以开始实现
 
 ---
 
-## Executive Summary
+## 执行摘要
 
-### Problem Statement
+### 问题陈述
 
-Current C3.x codebase analysis generates monolithic skills that are:
-- **Too large** for optimal AI consumption (666 lines vs 150-300 ideal)
-- **Token inefficient** (77-88% waste on topic-specific queries)
-- **Confusing** to AI (8 OAuth providers presented when user wants 1)
-- **Hard to maintain** (single giant file vs modular structure)
+当前 C3.x 代码库分析生成的单体技能存在以下问题：
+- **过大**，不利于 AI 最优消费（666 行 vs 理想的 150-300 行）
+- **Token 效率低**（针对特定主题的查询有 77-88% 的浪费）
+- **让 AI 困惑**（用户只想要 1 个 OAuth 提供方时却展示了 8 个）
+- **难以维护**（单个巨型文件 vs 模块化结构）
 
-**FastMCP E2E Test Results:**
-- Monolithic SKILL.md: 666 lines / 20KB
-- Human quality: A+ (96/100) - Excellent documentation
-- AI quality: B+ (87/100) - Too large, redundancy issues
-- **Token waste:** 77% on OAuth-specific queries (load 666 lines, use 150)
+**FastMCP E2E 测试结果：**
+- 单体 SKILL.md：666 行 / 20KB
+- 人类质量：A+（96/100）- 优秀的文档
+- AI 质量：B+（87/100）- 过大、存在冗余问题
+- **Token 浪费：** OAuth 特定查询浪费 77%（加载 666 行，只用 150 行）
 
-### Proposed Solution
+### 提议的解决方案
 
-**Two-Part Architecture:**
+**两部分架构：**
 
-1. **Three-Stream Source Integration** (NEW!)
-   - GitHub as multi-source provider
-   - Split: Code → C3.x, Docs → Markdown, Issues → Insights
-   - C3.x as depth mode (basic/deep), not separate tool
+1. **三流来源集成**（新！）
+   - GitHub 作为多源提供者
+   - 拆分：代码 → C3.x，文档 → Markdown，Issue → 洞察
+   - C3.x 作为深度模式（basic/deep），而非独立工具
 
-2. **Router-Based Skill Structure**
-   - 1 main router + N focused sub-skills
-   - 45% token reduction
-   - 100% content relevance
+2. **基于路由器的技能结构**
+   - 1 个主路由器 + N 个聚焦的子技能
+   - Token 减少 45%
+   - 内容相关性 100%
 
 ```
 GitHub Repository
@@ -53,47 +53,47 @@ Router Generator
   └─ fastmcp-api (400 lines)
 ```
 
-**Benefits:**
-- **45% token reduction** (20KB → 11KB avg per query)
-- **100% relevance** (only load needed sub-skill)
-- **GitHub insights** (real user problems from issues)
-- **Complete coverage** (code + docs + community knowledge)
+**优势：**
+- **Token 减少 45%**（每次查询平均 20KB → 11KB）
+- **100% 相关性**（只加载所需的子技能）
+- **GitHub 洞察**（来自 issue 的真实用户问题）
+- **完整覆盖**（代码 + 文档 + 社区知识）
 
-### Impact Metrics
+### 影响指标
 
-| Metric | Before (Monolithic) | After (Router + 3-Stream) | Improvement |
-|--------|---------------------|---------------------------|-------------|
-| Average tokens/query | 20KB | 11KB | **45% reduction** |
-| Relevant content % | 23% (OAuth query) | 100% | **4.3x increase** |
-| Main skill size | 20KB | 5KB | **4x smaller** |
-| Data sources | 1 (code only) | 3 (code+docs+issues) | **3x richer** |
-| Common problems coverage | 0% | 100% (from issues) | **New capability** |
-
----
-
-## Table of Contents
-
-1. [Source Architecture (NEW)](#source-architecture)
-2. [Current State Analysis](#current-state-analysis)
-3. [Proposed Router Architecture](#proposed-router-architecture)
-4. [Data Flow & Algorithms](#data-flow-algorithms)
-5. [Technical Implementation](#technical-implementation)
-6. [File Structure](#file-structure)
-7. [Filtering Strategies](#filtering-strategies)
-8. [Quality Metrics](#quality-metrics)
-9. [Edge Cases & Solutions](#edge-cases-solutions)
-10. [Scalability Analysis](#scalability-analysis)
-11. [Migration Path](#migration-path)
-12. [Testing Strategy](#testing-strategy)
-13. [Implementation Phases](#implementation-phases)
+| 指标 | 之前（单体） | 之后（路由器 + 三流） | 改进 |
+|------|------------|---------------------|------|
+| 每次查询的平均 token | 20KB | 11KB | **减少 45%** |
+| 相关内容百分比 | 23%（OAuth 查询） | 100% | **提升 4.3 倍** |
+| 主技能大小 | 20KB | 5KB | **缩小 4 倍** |
+| 数据来源 | 1（仅代码） | 3（代码+文档+issue） | **丰富 3 倍** |
+| 常见问题覆盖率 | 0% | 100%（来自 issue） | **全新能力** |
 
 ---
 
-## 1. Source Architecture (NEW)
+## 目录
 
-### 1.1 Rethinking Source Types
+1. [来源架构（新）](#来源架构)
+2. [现状分析](#现状分析)
+3. [提议的路由器架构](#提议的路由器架构)
+4. [数据流与算法](#数据流与算法)
+5. [技术实现](#技术实现)
+6. [文件结构](#文件结构)
+7. [过滤策略](#过滤策略)
+8. [质量指标](#质量指标)
+9. [边界情况与解决方案](#边界情况与解决方案)
+10. [可扩展性分析](#可扩展性分析)
+11. [迁移路径](#迁移路径)
+12. [测试策略](#测试策略)
+13. [实现阶段](#实现阶段)
 
-**OLD (Confusing) Model:**
+---
+
+## 1. 来源架构（新）
+
+### 1.1 重新思考来源类型
+
+**旧的（令人困惑的）模型：**
 ```
 Source Types:
 1. Documentation (HTML scraping)
@@ -104,7 +104,7 @@ Source Types:
 Problem: GitHub and C3.x both analyze code at different depths!
 ```
 
-**NEW (Correct) Model:**
+**新的（正确的）模型：**
 ```
 Source Types:
 1. Documentation (HTML scraping from docs sites)
@@ -114,9 +114,9 @@ Source Types:
 Insight: GitHub is a SOURCE PROVIDER, C3.x is an ANALYSIS DEPTH
 ```
 
-### 1.2 Three-Stream GitHub Architecture
+### 1.2 三流 GitHub 架构
 
-**Core Principle:** GitHub repositories contain THREE types of valuable data:
+**核心原则：** GitHub 仓库包含三种有价值的数据：
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -170,9 +170,9 @@ Insight: GitHub is a SOURCE PROVIDER, C3.x is an ANALYSIS DEPTH
               └───────────────┘
 ```
 
-### 1.3 Source Type Definitions (Revised)
+### 1.3 来源类型定义（修订版）
 
-**Source Type 1: Documentation (HTML)**
+**来源类型 1：文档（HTML）**
 ```json
 {
   "type": "documentation",
@@ -182,12 +182,12 @@ Insight: GitHub is a SOURCE PROVIDER, C3.x is an ANALYSIS DEPTH
 }
 ```
 
-**What it does:**
-- Scrapes HTML documentation sites
-- Extracts structured content
-- Time: 20-40 minutes
+**作用：**
+- 抓取 HTML 文档站点
+- 提取结构化内容
+- 耗时：20-40 分钟
 
-**Source Type 2: Codebase (Unified)**
+**来源类型 2：代码库（统一）**
 ```json
 {
   "type": "codebase",
@@ -198,21 +198,21 @@ Insight: GitHub is a SOURCE PROVIDER, C3.x is an ANALYSIS DEPTH
 }
 ```
 
-**What it does:**
-1. **Acquire source:**
-   - If GitHub URL: Clone to `/tmp/repo/`
-   - If local path: Use directly
+**作用：**
+1. **获取来源：**
+   - 如果是 GitHub URL：克隆到 `/tmp/repo/`
+   - 如果是本地路径：直接使用
 
-2. **Split into streams:**
-   - **Code stream:** `*.py`, `*.js`, etc. → C3.x or basic analysis
-   - **Docs stream:** `README.md`, `docs/*.md` → Documentation parser
-   - **Metadata stream:** Issues, stats → Insights extractor
+2. **拆分为流：**
+   - **代码流：** `*.py`、`*.js` 等 → C3.x 或基础分析
+   - **文档流：** `README.md`、`docs/*.md` → 文档解析器
+   - **元数据流：** Issue、统计数据 → 洞察提取器
 
-3. **Analysis depth modes:**
-   - **basic** (1-2 min): File structure, imports, entry points
-   - **c3x** (20-60 min): Full C3.x suite (patterns, examples, architecture)
+3. **分析深度模式：**
+   - **basic**（1-2 分钟）：文件结构、导入、入口点
+   - **c3x**（20-60 分钟）：完整 C3.x 套件（模式、示例、架构）
 
-**Source Type 3: PDF (Supplementary)**
+**来源类型 3：PDF（补充）**
 ```json
 {
   "type": "pdf",
@@ -220,13 +220,13 @@ Insight: GitHub is a SOURCE PROVIDER, C3.x is an ANALYSIS DEPTH
 }
 ```
 
-**What it does:**
-- Extracts text and code from PDFs
-- Adds as supplementary references
+**作用：**
+- 从 PDF 中提取文本和代码
+- 作为补充参考添加
 
-### 1.4 C3.x as Analysis Depth (Not Source Type)
+### 1.4 C3.x 作为分析深度（而非来源类型）
 
-**Key Insight:** C3.x is NOT a source type, it's an **analysis depth level**.
+**关键洞察：** C3.x 不是来源类型，而是一种**分析深度级别**。
 
 ```python
 # OLD (Wrong)
@@ -245,16 +245,16 @@ sources = [
 ]
 ```
 
-**Analysis Depth Modes:**
+**分析深度模式：**
 
-| Mode | Time | Components | Use Case |
-|------|------|------------|----------|
-| **basic** | 1-2 min | File structure, imports, entry points | Quick overview, testing |
-| **c3x** | 20-60 min | C3.1-C3.7 (patterns, examples, guides, configs, architecture) | Production skills |
+| 模式 | 耗时 | 组件 | 用例 |
+|------|------|------|------|
+| **basic** | 1-2 分钟 | 文件结构、导入、入口点 | 快速概览、测试 |
+| **c3x** | 20-60 分钟 | C3.1-C3.7（模式、示例、指南、配置、架构） | 生产级技能 |
 
-### 1.5 GitHub Three-Stream Output
+### 1.5 GitHub 三流输出
 
-**When you specify a GitHub codebase source:**
+**当你指定一个 GitHub 代码库来源时：**
 
 ```json
 {
@@ -265,7 +265,7 @@ sources = [
 }
 ```
 
-**You get THREE data streams automatically:**
+**你会自动获得三个数据流：**
 
 ```python
 {
@@ -311,9 +311,9 @@ sources = [
 }
 ```
 
-### 1.6 Multi-Source Merging Strategy
+### 1.6 多源合并策略
 
-**Scenario:** User provides both documentation URL AND GitHub repo
+**场景：** 用户同时提供文档 URL 和 GitHub 仓库
 
 ```json
 {
@@ -332,13 +332,13 @@ sources = [
 }
 ```
 
-**Result: 4 data streams to merge:**
-1. HTML documentation (scraped docs site)
-2. Code analysis (C3.x from GitHub)
-3. Repo documentation (README/docs from GitHub)
-4. GitHub insights (issues, stats)
+**结果：4 个待合并的数据流：**
+1. HTML 文档（抓取的文档站点）
+2. 代码分析（来自 GitHub 的 C3.x）
+3. 仓库文档（来自 GitHub 的 README/docs）
+4. GitHub 洞察（issue、统计数据）
 
-**Merge Priority:**
+**合并优先级：**
 ```
 Priority 1: C3.x code analysis (ground truth - what code DOES)
 Priority 2: HTML documentation (official intent - what code SHOULD do)
@@ -346,20 +346,20 @@ Priority 3: Repo documentation (README/docs - quick reference)
 Priority 4: GitHub insights (community knowledge - common problems)
 ```
 
-**Conflict Resolution:**
-- If HTML docs say `GoogleProvider(app_id=...)`
-- But C3.x code shows `GoogleProvider(client_id=...)`
-- → Create hybrid content showing BOTH with warning
+**冲突解决：**
+- 如果 HTML 文档写的是 `GoogleProvider(app_id=...)`
+- 但 C3.x 代码显示的是 `GoogleProvider(client_id=...)`
+- → 创建混合内容，同时展示两者并附警告
 
 ---
 
-## 2. Current State Analysis
+## 2. 现状分析
 
-### 2.1 FastMCP E2E Test Output
+### 2.1 FastMCP E2E 测试输出
 
-**Input:** `/tmp/fastmcp` repository (361 files)
+**输入：** `/tmp/fastmcp` 仓库（361 个文件）
 
-**C3.x Analysis Results:**
+**C3.x 分析结果：**
 ```
 output/fastmcp-e2e-test_unified_data/c3_analysis_temp/
 ├── patterns/
@@ -374,7 +374,7 @@ output/fastmcp-e2e-test_unified_data/c3_analysis_temp/
     └── architectural_patterns.json (Service Layer Pattern detected)
 ```
 
-**Generated Monolithic Skill:**
+**生成的单体技能：**
 ```
 output/fastmcp-e2e-test/
 ├── SKILL.md (666 lines, 20KB)
@@ -387,54 +387,54 @@ output/fastmcp-e2e-test/
     └── api.md (6.5KB)
 ```
 
-### 2.2 Content Distribution Analysis
+### 2.2 内容分布分析
 
-**SKILL.md breakdown (666 lines):**
-- OAuth/Authentication: ~150 lines (23%)
-- Async patterns: ~80 lines (12%)
-- Testing: ~60 lines (9%)
-- Design patterns: ~80 lines (12%)
-- Architecture: ~70 lines (11%)
-- Examples: ~120 lines (18%)
-- Other: ~106 lines (15%)
+**SKILL.md 拆解（666 行）：**
+- OAuth/身份验证：约 150 行（23%）
+- 异步模式：约 80 行（12%）
+- 测试：约 60 行（9%）
+- 设计模式：约 80 行（12%）
+- 架构：约 70 行（11%）
+- 示例：约 120 行（18%）
+- 其他：约 106 行（15%）
 
-**Problem:** User asking "How to add Google OAuth?" must load ALL 666 lines, but only 150 are relevant (77% waste).
+**问题：** 用户问"如何添加 Google OAuth？"时必须加载全部 666 行，但只有 150 行是相关的（77% 浪费）。
 
-### 2.3 What We're Missing (Without GitHub Insights)
+### 2.3 我们缺失的内容（没有 GitHub 洞察时）
 
-**Current approach:** Only analyzes code
+**当前方法：** 只分析代码
 
-**Missing valuable data:**
-- ❌ Common user problems (from open issues)
-- ❌ Known solutions (from closed issues)
-- ❌ Popular questions (from issue labels)
-- ❌ Official quick start (from README)
-- ❌ Contribution guide (from CONTRIBUTING.md)
-- ❌ Repository popularity (stars, forks)
+**缺失的有价值数据：**
+- ❌ 常见用户问题（来自开放的 issue）
+- ❌ 已知解决方案（来自已关闭的 issue）
+- ❌ 热门问题（来自 issue 标签）
+- ❌ 官方快速开始（来自 README）
+- ❌ 贡献指南（来自 CONTRIBUTING.md）
+- ❌ 仓库受欢迎程度（star、fork）
 
-**With three-stream GitHub architecture:**
-- ✅ All of the above automatically included
-- ✅ "Common Issues" section in SKILL.md
-- ✅ README content as quick reference
-- ✅ Real user problems addressed
+**采用三流 GitHub 架构后：**
+- ✅ 以上全部自动包含
+- ✅ SKILL.md 中有"常见问题"部分
+- ✅ README 内容作为快速参考
+- ✅ 解决真实用户问题
 
-### 2.4 Token Usage Scenarios
+### 2.4 Token 使用场景
 
-**Scenario 1: OAuth-specific query**
-- User: "How do I add Google OAuth to my FastMCP server?"
-- **Current:** Load 666 lines (77% waste)
-- **With router:** Load 150 lines router + 250 lines OAuth = 400 lines (40% waste)
-- **With GitHub insights:** Also get issue #42 "OAuth setup fails" solution
+**场景 1：OAuth 特定查询**
+- 用户："如何为我的 FastMCP 服务器添加 Google OAuth？"
+- **当前：** 加载 666 行（浪费 77%）
+- **使用路由器：** 加载 150 行路由器 + 250 行 OAuth = 400 行（浪费 40%）
+- **加上 GitHub 洞察：** 还能得到 issue #42 "OAuth setup fails" 的解决方案
 
-**Scenario 2: "What are common FastMCP problems?"**
-- **Current:** No way to answer (code analysis doesn't know user problems)
-- **With GitHub insights:** Top 10 issues with solutions immediately available
+**场景 2："FastMCP 有哪些常见问题？"**
+- **当前：** 无法回答（代码分析不了解用户问题）
+- **加上 GitHub 洞察：** 前 10 个 issue 及其解决方案立即可用
 
 ---
 
-## 3. Proposed Router Architecture
+## 3. 提议的路由器架构
 
-### 3.1 Router + Sub-Skills Structure
+### 3.1 路由器 + 子技能结构
 
 ```
 fastmcp/                      # Main router skill
@@ -475,7 +475,7 @@ fastmcp-api/                  # API reference sub-skill
         └── *.md (316 files)
 ```
 
-### 3.2 Enhanced Router SKILL.md Template (With GitHub Insights)
+### 3.2 增强版路由器 SKILL.md 模板（含 GitHub 洞察）
 
 ```markdown
 ---
@@ -536,15 +536,15 @@ FastMCP uses a Service Layer Pattern with 206 Strategy pattern instances.
 [Links to sub-skills with trigger keywords]
 ```
 
-**Size target:** 150 lines / 5KB
+**大小目标：** 150 行 / 5KB
 
-**Data sources used:**
-- ✅ GitHub metadata (stars, issues count)
-- ✅ README.md (quick start)
-- ✅ GitHub issues (common problems)
-- ✅ C3.7 architecture (pattern info)
+**使用的数据来源：**
+- ✅ GitHub 元数据（star 数、issue 数）
+- ✅ README.md（快速开始）
+- ✅ GitHub issue（常见问题）
+- ✅ C3.7 架构（模式信息）
 
-### 3.3 Enhanced Sub-Skill Template (OAuth Example)
+### 3.3 增强版子技能模板（OAuth 示例）
 
 ```markdown
 ---
@@ -617,20 +617,20 @@ GoogleProvider(client_id="...", client_secret="...")
 - `fastmcp-testing` skill for authentication testing patterns
 ```
 
-**Size target:** 250 lines / 8KB
+**大小目标：** 250 行 / 8KB
 
-**Data sources used:**
-- ✅ C3.x test examples (real code)
-- ✅ README.md (official docs)
-- ✅ GitHub issues (common problems + solutions)
-- ✅ C3.x patterns (design patterns)
-- ✅ Conflict detection (docs vs code)
+**使用的数据来源：**
+- ✅ C3.x 测试示例（真实代码）
+- ✅ README.md（官方文档）
+- ✅ GitHub issue（常见问题 + 解决方案）
+- ✅ C3.x 模式（设计模式）
+- ✅ 冲突检测（文档 vs 代码）
 
 ---
 
-## 4. Data Flow & Algorithms
+## 4. 数据流与算法
 
-### 4.1 Complete Pipeline (Enhanced with Three-Stream)
+### 4.1 完整流水线（三流增强版）
 
 ```
 INPUT: User provides GitHub repo URL
@@ -770,7 +770,7 @@ OUTPUT
   └─ fastmcp-api.zip
 ```
 
-### 4.2 GitHub Three-Stream Fetcher Algorithm
+### 4.2 GitHub 三流获取器算法
 
 ```python
 class GitHubThreeStreamFetcher:
@@ -966,7 +966,7 @@ class GitHubThreeStreamFetcher:
         }
 ```
 
-### 4.3 Multi-Source Merge Algorithm (Enhanced)
+### 4.3 多源合并算法（增强版）
 
 ```python
 class EnhancedSourceMerger:
@@ -1125,7 +1125,7 @@ class EnhancedSourceMerger:
         return keywords.get(topic, [])
 ```
 
-### 4.4 Topic Definition Algorithm (Enhanced with GitHub Insights)
+### 4.4 主题定义算法（结合 GitHub 洞察的增强版）
 
 ```python
 def define_topics_enhanced(
@@ -1213,9 +1213,9 @@ def define_topics_enhanced(
 
 ---
 
-## 5. Technical Implementation
+## 5. 技术实现
 
-### 5.1 Core Classes (Enhanced)
+### 5.1 核心类（增强版）
 
 ```python
 # src/skill_seekers/cli/github_fetcher.py
@@ -1714,7 +1714,7 @@ Based on analysis of GitHub issues:
         return sub_skills[0] if sub_skills else 'main'
 ```
 
-### 5.2 Enhanced Topic Templates (With GitHub Issues)
+### 5.2 增强版主题模板（含 GitHub Issue）
 
 ```python
 # src/skill_seekers/cli/topic_templates.py (Enhanced)
@@ -1847,9 +1847,9 @@ Based on {{ github_issues|length }} GitHub issues related to OAuth:
 
 ---
 
-## 6. File Structure (Enhanced)
+## 6. 文件结构（增强版）
 
-### 6.1 Input Structure (Three-Stream)
+### 6.1 输入结构（三流）
 
 ```
 GitHub Repository (https://github.com/jlowin/fastmcp)
@@ -1910,7 +1910,7 @@ STREAM 3: Insights Input
 └── top_labels.json
 ```
 
-### 6.2 Output Structure (Enhanced)
+### 6.2 输出结构（增强版）
 
 ```
 output/
@@ -1956,34 +1956,34 @@ output/
 
 ---
 
-## 7. Filtering Strategies (Unchanged)
+## 7. 过滤策略（未变化）
 
-[Content from original document - no changes needed]
+[原文档中的内容 - 无需更改]
 
 ---
 
-## 8. Quality Metrics (Enhanced)
+## 8. 质量指标（增强版）
 
-### 8.1 Size Constraints (Unchanged)
+### 8.1 大小约束（未变化）
 
-**Targets:**
-- Router: 150 lines (±20)
-- OAuth sub-skill: 250 lines (±30)
-- Async sub-skill: 200 lines (±30)
-- Testing sub-skill: 250 lines (±30)
-- API sub-skill: 400 lines (±50)
+**目标：**
+- 路由器：150 行（±20）
+- OAuth 子技能：250 行（±30）
+- 异步子技能：200 行（±30）
+- 测试子技能：250 行（±30）
+- API 子技能：400 行（±50）
 
-### 8.2 Content Quality (Enhanced)
+### 8.2 内容质量（增强版）
 
-**Requirements:**
-- Minimum 3 code examples per sub-skill (from C3.x)
-- Minimum 2 GitHub issues per sub-skill (if available)
-- All code blocks must have language tags
-- No placeholder content (TODO, [Add...])
-- Cross-references must be valid
-- GitHub issue links must be valid (#42, etc.)
+**要求：**
+- 每个子技能至少 3 个代码示例（来自 C3.x）
+- 每个子技能至少 2 个 GitHub issue（如可用）
+- 所有代码块必须有语言标签
+- 没有占位内容（TODO、[Add...]）
+- 交叉引用必须有效
+- GitHub issue 链接必须有效（#42 等）
 
-**Validation:**
+**验证：**
 ```python
 def validate_content_quality_enhanced(skill_md: str, has_github: bool):
     """Check content quality including GitHub integration."""
@@ -2013,16 +2013,16 @@ def validate_content_quality_enhanced(skill_md: str, has_github: bool):
             "Missing Common Issues section from GitHub"
 ```
 
-### 8.3 GitHub Integration Quality (NEW)
+### 8.3 GitHub 集成质量（新）
 
-**Requirements:**
-- Router must include repository stats (stars, forks, language)
-- Router must include top 5 common issues
-- Each sub-skill must include relevant issues (if any exist)
-- Issue references must be properly formatted (#42)
-- Closed issues should show "✅ Solution found"
+**要求：**
+- 路由器必须包含仓库统计（star、fork、语言）
+- 路由器必须包含前 5 个常见问题
+- 每个子技能必须包含相关 issue（如果存在）
+- Issue 引用必须正确格式化（#42）
+- 已关闭的 issue 应显示 "✅ Solution found"
 
-**Validation:**
+**验证：**
 ```python
 def validate_github_integration(skill_md: str, topic: str, github_insights: InsightsStream):
     """Validate GitHub integration quality."""
@@ -2047,11 +2047,11 @@ def validate_github_integration(skill_md: str, topic: str, github_insights: Insi
             f"Closed issue #{match} should indicate solution found"
 ```
 
-### 8.4 Token Efficiency (Enhanced)
+### 8.4 Token 效率（增强版）
 
-**Requirement:** Average 40%+ token reduction vs monolithic
+**要求：** 相比单体平均减少 40%+ 的 token
 
-**NEW: GitHub overhead calculation**
+**新增：GitHub 开销计算**
 ```python
 def measure_token_efficiency_with_github(scenarios: List[Dict]):
     """
@@ -2080,151 +2080,151 @@ def measure_token_efficiency_with_github(scenarios: List[Dict]):
     return reduction
 ```
 
-**Result:** Even with GitHub integration, router achieves 35-40% token reduction.
+**结果：** 即使加上 GitHub 集成，路由器仍能实现 35-40% 的 token 减少。
 
 ---
 
-## 9-13. [Remaining Sections]
+## 9-13. [其余章节]
 
-[Edge Cases, Scalability, Migration, Testing, Implementation Phases sections remain largely the same as original document, with these enhancements:]
+[边界情况、可扩展性、迁移、测试、实现阶段等章节与原文档基本相同，并增加以下增强：]
 
-- Add GitHub fetcher tests
-- Add issue categorization tests
-- Add hybrid content generation tests
-- Update implementation phases to include GitHub integration
-- Add time estimates for GitHub API fetching (1-2 min)
-
----
-
-## Implementation Phases (Updated)
-
-### Phase 1: Three-Stream GitHub Fetcher (Day 1, 8 hours)
-
-**NEW PHASE - Highest Priority**
-
-**Tasks:**
-1. Create `github_fetcher.py` ✅
-   - Clone repository
-   - Fetch GitHub API metadata
-   - Fetch issues (open + closed)
-   - Classify files (code vs docs)
-
-2. Create `GitHubThreeStreamFetcher` class ✅
-   - `fetch()` main method
-   - `classify_files()` splitter
-   - `analyze_issues()` insights extractor
-
-3. Integrate with `unified_codebase_analyzer.py` ✅
-   - Detect GitHub URLs
-   - Call three-stream fetcher
-   - Return unified result
-
-4. Write tests ✅
-   - Test file classification
-   - Test issue analysis
-   - Test real GitHub fetch (with token)
-
-**Deliverable:** Working three-stream GitHub fetcher
+- 添加 GitHub 获取器测试
+- 添加 issue 分类测试
+- 添加混合内容生成测试
+- 更新实现阶段以包含 GitHub 集成
+- 添加 GitHub API 获取的时间估算（1-2 分钟）
 
 ---
 
-### Phase 2: Enhanced Source Merging (Day 2, 6 hours)
+## 实现阶段（更新版）
 
-**Tasks:**
-1. Update `source_merger.py` ✅
-   - Add GitHub docs stream handling
-   - Add GitHub insights stream handling
-   - Categorize issues by topic
-   - Create hybrid content with issue links
+### 阶段 1：三流 GitHub 获取器（第 1 天，8 小时）
 
-2. Update topic definition ✅
-   - Use GitHub issue labels
-   - Weight issues in topic scoring
+**新阶段 - 最高优先级**
 
-3. Write tests ✅
-   - Test issue categorization
-   - Test hybrid content generation
-   - Test conflict detection
+**任务：**
+1. 创建 `github_fetcher.py` ✅
+   - 克隆仓库
+   - 获取 GitHub API 元数据
+   - 获取 issue（开放 + 已关闭）
+   - 文件分类（代码 vs 文档）
 
-**Deliverable:** Enhanced merge with GitHub integration
+2. 创建 `GitHubThreeStreamFetcher` 类 ✅
+   - `fetch()` 主方法
+   - `classify_files()` 拆分器
+   - `analyze_issues()` 洞察提取器
 
----
+3. 与 `unified_codebase_analyzer.py` 集成 ✅
+   - 检测 GitHub URL
+   - 调用三流获取器
+   - 返回统一结果
 
-### Phase 3: Router Generation with GitHub (Day 2-3, 6 hours)
+4. 编写测试 ✅
+   - 测试文件分类
+   - 测试 issue 分析
+   - 测试真实 GitHub 获取（使用 token）
 
-**Tasks:**
-1. Update router templates ✅
-   - Add README quick start section
-   - Add repository stats
-   - Add top 5 common issues
-   - Link issues to sub-skills
-
-2. Update sub-skill templates ✅
-   - Add "Common Issues" section
-   - Format issue references
-   - Add solution indicators
-
-3. Write tests ✅
-   - Test router with GitHub data
-   - Test sub-skills with issues
-   - Validate issue links
-
-**Deliverable:** Complete router with GitHub integration
+**交付物：** 可用的三流 GitHub 获取器
 
 ---
 
-### Phase 4: Testing & Refinement (Day 3, 4 hours)
+### 阶段 2：增强的来源合并（第 2 天，6 小时）
 
-**Tasks:**
-1. Run full E2E test on FastMCP ✅
-   - With GitHub three-stream
-   - Validate all 3 streams present
-   - Check issue integration
-   - Measure token savings
+**任务：**
+1. 更新 `source_merger.py` ✅
+   - 添加 GitHub 文档流处理
+   - 添加 GitHub 洞察流处理
+   - 按主题对 issue 分类
+   - 创建带 issue 链接的混合内容
 
-2. Manual testing ✅
-   - Test 10 real queries
-   - Verify issue relevance
-   - Check GitHub links work
+2. 更新主题定义 ✅
+   - 使用 GitHub issue 标签
+   - 在主题评分中为 issue 加权
 
-3. Performance optimization ✅
-   - GitHub API rate limiting
-   - Parallel stream processing
-   - Caching GitHub data
+3. 编写测试 ✅
+   - 测试 issue 分类
+   - 测试混合内容生成
+   - 测试冲突检测
 
-**Deliverable:** Production-ready pipeline
-
----
-
-### Phase 5: Documentation (Day 4, 2 hours)
-
-**Tasks:**
-1. Update documentation ✅
-   - This architecture document
-   - CLI help text
-   - README with GitHub example
-
-2. Create examples ✅
-   - FastMCP with GitHub
-   - React with GitHub
-   - Add to official configs
-
-**Deliverable:** Complete documentation
+**交付物：** 集成 GitHub 的增强合并功能
 
 ---
 
-## Total Timeline: 4 days (26 hours)
+### 阶段 3：含 GitHub 的路由器生成（第 2-3 天，6 小时）
 
-**Day 1 (8 hours):** GitHub three-stream fetcher
-**Day 2 (8 hours):** Enhanced merging + router generation
-**Day 3 (8 hours):** Testing, refinement, quality validation
-**Day 4 (2 hours):** Documentation and examples
+**任务：**
+1. 更新路由器模板 ✅
+   - 添加 README 快速开始部分
+   - 添加仓库统计
+   - 添加前 5 个常见问题
+   - 将 issue 链接到子技能
+
+2. 更新子技能模板 ✅
+   - 添加"常见问题"部分
+   - 格式化 issue 引用
+   - 添加解决方案标识
+
+3. 编写测试 ✅
+   - 测试包含 GitHub 数据的路由器
+   - 测试包含 issue 的子技能
+   - 验证 issue 链接
+
+**交付物：** 集成 GitHub 的完整路由器
 
 ---
 
-## Appendix A: Configuration Examples (Updated)
+### 阶段 4：测试与完善（第 3 天，4 小时）
 
-### Example 1: GitHub with Three-Stream (NEW)
+**任务：**
+1. 在 FastMCP 上运行完整 E2E 测试 ✅
+   - 使用 GitHub 三流
+   - 验证 3 个流全部存在
+   - 检查 issue 集成
+   - 测量 token 节省
+
+2. 手动测试 ✅
+   - 测试 10 个真实查询
+   - 验证 issue 相关性
+   - 检查 GitHub 链接可用
+
+3. 性能优化 ✅
+   - GitHub API 速率限制
+   - 并行流处理
+   - 缓存 GitHub 数据
+
+**交付物：** 生产就绪的流水线
+
+---
+
+### 阶段 5：文档（第 4 天，2 小时）
+
+**任务：**
+1. 更新文档 ✅
+   - 本架构文档
+   - CLI 帮助文本
+   - 含 GitHub 示例的 README
+
+2. 创建示例 ✅
+   - 含 GitHub 的 FastMCP
+   - 含 GitHub 的 React
+   - 添加到官方配置
+
+**交付物：** 完整的文档
+
+---
+
+## 总时间线：4 天（26 小时）
+
+**第 1 天（8 小时）：** GitHub 三流获取器
+**第 2 天（8 小时）：** 增强合并 + 路由器生成
+**第 3 天（8 小时）：** 测试、完善、质量验证
+**第 4 天（2 小时）：** 文档和示例
+
+---
+
+## 附录 A：配置示例（更新版）
+
+### 示例 1：使用三流的 GitHub（新）
 
 ```json
 {
@@ -2244,14 +2244,14 @@ def measure_token_efficiency_with_github(scenarios: List[Dict]):
 }
 ```
 
-**Result:**
-- ✅ Code analyzed with C3.x
-- ✅ README/docs extracted
-- ✅ 100 issues analyzed
-- ✅ Router + 4 sub-skills generated
-- ✅ All skills include GitHub insights
+**结果：**
+- ✅ 使用 C3.x 分析代码
+- ✅ 提取 README/docs
+- ✅ 分析 100 个 issue
+- ✅ 生成路由器 + 4 个子技能
+- ✅ 所有技能均包含 GitHub 洞察
 
-### Example 2: Documentation + GitHub (Multi-Source)
+### 示例 2：文档 + GitHub（多源）
 
 ```json
 {
@@ -2276,15 +2276,15 @@ def measure_token_efficiency_with_github(scenarios: List[Dict]):
 }
 ```
 
-**Result:**
-- ✅ HTML docs scraped (200 pages)
-- ✅ Code analyzed with C3.x
-- ✅ GitHub insights added
-- ✅ Conflicts detected (docs vs code)
-- ✅ Hybrid content generated
-- ✅ Router + sub-skills with all sources
+**结果：**
+- ✅ 抓取 HTML 文档（200 页）
+- ✅ 使用 C3.x 分析代码
+- ✅ 添加 GitHub 洞察
+- ✅ 检测冲突（文档 vs 代码）
+- ✅ 生成混合内容
+- ✅ 路由器 + 包含所有来源的子技能
 
-### Example 3: Local Codebase (No GitHub)
+### 示例 3：本地代码库（无 GitHub）
 
 ```json
 {
@@ -2302,60 +2302,60 @@ def measure_token_efficiency_with_github(scenarios: List[Dict]):
 }
 ```
 
-**Result:**
-- ✅ Code analyzed with C3.x
-- ❌ No GitHub insights (not applicable)
-- ✅ Router + sub-skills generated
-- ✅ Works without GitHub data
+**结果：**
+- ✅ 使用 C3.x 分析代码
+- ❌ 没有 GitHub 洞察（不适用）
+- ✅ 生成路由器 + 子技能
+- ✅ 没有 GitHub 数据也能工作
 
 ---
 
-**End of Enhanced Architecture Document**
+**增强架构文档结束**
 
 ---
 
-## Summary of Major Changes
+## 主要变更摘要
 
-### What Changed:
+### 变更内容：
 
-1. **Source Architecture Redesigned**
-   - GitHub is now a "multi-source provider" (3 streams)
-   - C3.x is now an "analysis depth mode", not a source type
-   - Unified codebase analyzer handles local AND GitHub
+1. **来源架构重新设计**
+   - GitHub 现在是"多源提供者"（3 个流）
+   - C3.x 现在是"分析深度模式"，而非来源类型
+   - 统一代码库分析器同时处理本地和 GitHub
 
-2. **Three-Stream GitHub Integration**
-   - Stream 1: Code → C3.x analysis
-   - Stream 2: Docs → README/CONTRIBUTING/docs/*.md
-   - Stream 3: Insights → Issues, labels, stats
+2. **三流 GitHub 集成**
+   - 流 1：代码 → C3.x 分析
+   - 流 2：文档 → README/CONTRIBUTING/docs/*.md
+   - 流 3：洞察 → Issue、标签、统计数据
 
-3. **Enhanced Router Content**
-   - Repository stats in overview
-   - README quick start
-   - Top 5 common issues from GitHub
-   - Issue-to-skill routing
+3. **增强的路由器内容**
+   - 概览中包含仓库统计
+   - README 快速开始
+   - 来自 GitHub 的前 5 个常见问题
+   - Issue 到技能的路由
 
-4. **Enhanced Sub-Skill Content**
-   - "Common Issues" section per topic
-   - Real user problems from GitHub
-   - Known solutions from closed issues
-   - Issue references (#42, etc.)
+4. **增强的子技能内容**
+   - 每个主题都有"常见问题"部分
+   - 来自 GitHub 的真实用户问题
+   - 来自已关闭 issue 的已知解决方案
+   - Issue 引用（#42 等）
 
-5. **Data Flow Updated**
-   - Parallel stream processing
-   - Issue categorization by topic
-   - Hybrid content with GitHub data
+5. **数据流更新**
+   - 并行流处理
+   - 按主题对 issue 分类
+   - 包含 GitHub 数据的混合内容
 
-6. **Implementation Updated**
-   - New classes: `GitHubThreeStreamFetcher`, `UnifiedCodebaseAnalyzer`
-   - Enhanced templates with GitHub support
-   - New quality metrics for GitHub integration
+6. **实现更新**
+   - 新类：`GitHubThreeStreamFetcher`、`UnifiedCodebaseAnalyzer`
+   - 支持 GitHub 的增强模板
+   - 针对 GitHub 集成的新质量指标
 
-### Key Benefits:
+### 关键收益：
 
-1. **Richer Skills:** Code + Docs + Community Knowledge
-2. **Real User Problems:** From GitHub issues
-3. **Official Quick Starts:** From README
-4. **Better Architecture:** Clean separation of concerns
-5. **Still Efficient:** 35-40% token reduction (even with GitHub overhead)
+1. **更丰富的技能：** 代码 + 文档 + 社区知识
+2. **真实用户问题：** 来自 GitHub issue
+3. **官方快速开始：** 来自 README
+4. **更好的架构：** 关注点清晰分离
+5. **依然高效：** Token 减少 35-40%（即使有 GitHub 开销）
 
-_This document now represents the complete, production-ready architecture for C3.x router skills with three-stream GitHub integration._
+_本文档现在代表了带有三流 GitHub 集成的 C3.x 路由器技能的完整、生产就绪架构。_

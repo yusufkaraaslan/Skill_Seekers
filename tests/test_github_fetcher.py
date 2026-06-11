@@ -338,6 +338,67 @@ class TestGitHubAPI:
         assert mock_get.call_count == 2
 
     @patch("requests.get")
+    def test_fetch_issues_returns_partial_on_mid_pagination_failure(self, mock_get):
+        """Regression: when a later page fails, the pages already fetched must
+        be returned, not discarded."""
+        import requests
+
+        def make_resp(count, has_next):
+            r = Mock()
+            r.json.return_value = [
+                {"title": f"Issue {n}", "number": n, "state": "open", "comments": 0, "labels": []}
+                for n in range(count)
+            ]
+            r.raise_for_status = Mock()
+            r.headers = {"Link": '<...>; rel="next"'} if has_next else {}
+            return r
+
+        # Pages 1 and 2 succeed (200 issues), page 3 times out.
+        mock_get.side_effect = [
+            make_resp(100, True),
+            make_resp(100, True),
+            requests.Timeout("timed out"),
+        ]
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        issues = fetcher._fetch_issues_page(state="open", max_count=300)
+
+        assert len(issues) == 200
+
+    @patch("requests.get")
+    def test_fetch_issues_partial_failure_keeps_open_closed_quota(self, mock_get):
+        """Regression: discarding partially-fetched open issues let fetch_issues
+        spend the FULL quota on closed issues, skewing the open/closed mix."""
+        import requests
+
+        def make_resp(count, state, has_next):
+            r = Mock()
+            r.json.return_value = [
+                {"title": f"Issue {n}", "number": n, "state": state, "comments": 0, "labels": []}
+                for n in range(count)
+            ]
+            r.raise_for_status = Mock()
+            r.headers = {"Link": '<...>; rel="next"'} if has_next else {}
+            return r
+
+        # Open: pages 1-2 succeed (200 issues), page 3 fails.
+        # Closed: one page of 50.
+        mock_get.side_effect = [
+            make_resp(100, "open", True),
+            make_resp(100, "open", True),
+            requests.Timeout("timed out"),
+            make_resp(50, "closed", False),
+        ]
+
+        fetcher = GitHubThreeStreamFetcher("https://github.com/test/repo")
+        issues = fetcher.fetch_issues(max_issues=300)
+
+        open_count = sum(1 for i in issues if i["state"] == "open")
+        closed_count = sum(1 for i in issues if i["state"] == "closed")
+        assert open_count == 200
+        assert closed_count == 50
+
+    @patch("requests.get")
     def test_fetch_issues_filters_pull_requests(self, mock_get):
         """Test that pull requests are filtered out of issues."""
         mock_response = Mock()

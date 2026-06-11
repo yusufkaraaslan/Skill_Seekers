@@ -2,6 +2,11 @@
 """
 Page Count Estimator for Skill Seeker
 Quickly estimates how many pages a config will scrape without downloading content
+
+Usage:
+    skill-seekers estimate --all
+    skill-seekers estimate configs/react.json
+    skill-seekers estimate configs/godot.json --max-discovery 2000
 """
 
 import json
@@ -18,6 +23,7 @@ from skill_seekers.cli.constants import (
     DEFAULT_RATE_LIMIT,
     DISCOVERY_THRESHOLD,
 )
+from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
 
 def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
@@ -347,63 +353,15 @@ def list_all_configs():
 
 def main(args=None):
     """Main entry point"""
-    import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Estimate page count for Skill Seeker configs",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # List all available configs
-  skill-seekers estimate --all
+    from skill_seekers.cli.parsers.estimate_parser import EstimateParser
 
-  # Estimate pages for a config
-  skill-seekers estimate configs/react.json
-
-  # Estimate with higher discovery limit
-  skill-seekers estimate configs/godot.json --max-discovery 2000
-
-  # Quick estimate (stop at 100 pages)
-  skill-seekers estimate configs/vue.json --max-discovery 100
-        """,
-    )
-
-    parser.add_argument("config", nargs="?", help="Path to config JSON file")
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="List all available configs from api/configs_repo/official/",
-    )
-    parser.add_argument(
-        "--max-discovery",
-        "-m",
-        type=int,
-        default=DEFAULT_MAX_DISCOVERY,
-        help=f"Maximum pages to discover (default: {DEFAULT_MAX_DISCOVERY}, use -1 for unlimited)",
-    )
-    parser.add_argument(
-        "--unlimited",
-        "-u",
-        action="store_true",
-        help="Remove discovery limit - discover all pages (same as --max-discovery -1)",
-    )
-    parser.add_argument(
-        "--timeout",
-        "-t",
-        type=int,
-        default=30,
-        help="HTTP request timeout in seconds (default: 30)",
-    )
+    # Single source of flags: the central EstimateParser. Built even when args
+    # is provided (unified-CLI dispatch) because parser.error() is used below.
+    parser = EstimateParser().build_standalone()
 
     if args is None:
         args = parser.parse_args()
-    else:
-        # Central dispatch passes the unified namespace; backfill any args
-        # this module's parser defines but the central one doesn't, so the
-        # reads below never hit a missing attribute.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
 
     # Handle --all flag
     if args.all:
@@ -427,14 +385,14 @@ Examples:
         # Return exit code based on results
         if results["hit_limit"]:
             return 2  # Warning: hit limit
-        return 0  # Success
+        return EXIT_SUCCESS
 
     except KeyboardInterrupt:
         print("\n\n⚠️  Estimation interrupted by user")
-        return 1
+        return EXIT_ERROR
     except Exception as e:
         print(f"\n\n❌ Error during estimation: {e}")
-        return 1
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":

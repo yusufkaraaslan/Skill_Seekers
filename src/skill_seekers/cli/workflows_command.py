@@ -259,41 +259,24 @@ def main(argv=None, args=None) -> None:
 
     Two call styles:
       - standalone (`skill-seekers-workflows …` / tests): main(argv_list)
-      - unified CLI dispatch: main(args=<namespace from the central parser>),
-        whose subcommand dest is ``workflows_action`` (not ``action``).
+      - unified CLI dispatch: main(args=<namespace from the central parser>)
+    Both build their flags from the central WorkflowsParser, so the
+    subcommand dest is ``workflows_action`` either way.
     """
-    import argparse
 
     parser = None
-    if args is not None:
-        action = getattr(args, "workflows_action", None)
-    else:
-        parser = argparse.ArgumentParser(
+    if args is None:
+        # Single source of subcommands: the central WorkflowsParser (its
+        # subparser dest is ``workflows_action`` in both call styles).
+        from skill_seekers.cli.parsers.workflows_parser import WorkflowsParser
+
+        parser = WorkflowsParser().build_standalone(
             prog="skill-seekers-workflows",
             description="Manage enhancement workflow presets",
         )
-        subparsers = parser.add_subparsers(dest="action", metavar="ACTION")
-
-        subparsers.add_parser("list", help="List all workflows (bundled + user)")
-
-        show_p = subparsers.add_parser("show", help="Print YAML content of a workflow")
-        show_p.add_argument("workflow_name")
-
-        copy_p = subparsers.add_parser("copy", help="Copy bundled workflow(s) to user dir")
-        copy_p.add_argument("workflow_names", nargs="+")
-
-        add_p = subparsers.add_parser("add", help="Install custom YAML file(s) into user dir")
-        add_p.add_argument("files", nargs="+")
-        add_p.add_argument("--name")
-
-        remove_p = subparsers.add_parser("remove", help="Delete user workflow(s)")
-        remove_p.add_argument("workflow_names", nargs="+")
-
-        validate_p = subparsers.add_parser("validate", help="Validate a workflow by name or file")
-        validate_p.add_argument("workflow_name")
-
         args = parser.parse_args(argv)
-        action = args.action
+
+    action = getattr(args, "workflows_action", None)
 
     if action is None:
         if parser is not None:

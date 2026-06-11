@@ -20,7 +20,7 @@
 # 确保 skill-seekers 已安装
 skill-seekers --version
 
-# 应输出：skill-seekers 3.1.0
+# 应输出：skill-seekers 3.6.0
 ```
 
 ---

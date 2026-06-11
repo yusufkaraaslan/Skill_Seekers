@@ -24,7 +24,7 @@ skill-seekers package output/django --target claude
 
 ## 你可以从什么来源创建
 
-`create` 命令自动检测你的来源（支持 17 种来源类型）：
+`create` 命令自动检测你的来源：
 
 | 来源类型 | 示例命令 |
 |-------------|-----------------|
@@ -34,14 +34,21 @@ skill-seekers package output/django --target claude
 | **PDF 文件** | `skill-seekers create manual.pdf` |
 | **Word 文档** | `skill-seekers create report.docx` |
 | **EPUB 电子书** | `skill-seekers create book.epub` |
+| **视频** | `skill-seekers create https://youtube.com/watch?v=...` |
 | **Jupyter Notebook** | `skill-seekers create analysis.ipynb` |
-| **本地 HTML** | `skill-seekers create page.html` |
-| **OpenAPI/Swagger** | `skill-seekers create api-spec.yaml` |
+| **本地 HTML（文件）** | `skill-seekers create page.html` |
+| **本地 HTML（目录）** | `skill-seekers create ./mirror_output/site/` |
+| **OpenAPI 规范** | `skill-seekers create api-spec.yaml` |
 | **AsciiDoc** | `skill-seekers create guide.adoc` |
 | **PowerPoint** | `skill-seekers create slides.pptx` |
 | **RSS/Atom 订阅** | `skill-seekers create feed.rss` |
-| **Man Page** | `skill-seekers create curl.1` |
+| **Man Page** | `skill-seekers create grep.1` |
+| **Confluence** | `skill-seekers create --space-key  DEV` |
+| **Notion** | `skill-seekers create --database-id  abc123` |
+| **Slack/Discord** | `skill-seekers create --chat-export-path  slack-export/` |
 | **配置文件** | `skill-seekers create configs/custom.json` |
+
+对于一个你还不清楚需要为哪些框架创建技能的现有项目，可使用 `skill-seekers scan <dir>` —— 它会通过 AI 检测技术栈，并为每个框架生成一份配置。参见[扫描项目](../../getting-started/05-scan-a-project.md)。
 
 ---
 
@@ -96,47 +103,46 @@ skill-seekers create paper.pdf --name research
 skill-seekers package output/research --target claude
 ```
 
+### 视频
+
+```bash
+# YouTube 视频转录
+skill-seekers create https://www.youtube.com/watch?v=dQw4w9WgXcQ --name tutorial
+skill-seekers package output/tutorial --target claude
+```
+
 ### Jupyter Notebook
 
 ```bash
-# 数据分析 notebook
-skill-seekers create analysis.ipynb --name data-analysis
-skill-seekers package output/data-analysis --target claude
+# 数据科学 notebook
+skill-seekers create analysis.ipynb --name ml-analysis
+skill-seekers package output/ml-analysis --target claude
 ```
 
-### OpenAPI/Swagger 规范
+### PowerPoint / Word / EPUB
 
 ```bash
-# API 规范
-skill-seekers create api-spec.yaml --name my-api
-skill-seekers package output/my-api --target claude
+# PowerPoint 幻灯片
+skill-seekers create presentation.pptx --name quarterly-review
+
+# Word 文档
+skill-seekers create spec.docx --name api-spec
+
+# EPUB 电子书
+skill-seekers create rust-book.epub --name rust-guide
 ```
 
-### PowerPoint 演示文稿
+### Confluence / Notion / Slack
 
 ```bash
-# 幻灯片
-skill-seekers create slides.pptx --name presentation
-skill-seekers package output/presentation --target claude
-```
+# Confluence wiki 空间
+skill-seekers create --space-key  DEV --name team-docs
 
-### 其他来源类型
-
-```bash
-# Confluence wiki
-skill-seekers create --space-key DEV --name team-wiki
-
-# Notion 页面
-skill-seekers create --database-id abc123 --name my-notes
-
-# RSS/Atom 订阅
-skill-seekers create feed.rss --name blog
-
-# Man pages
-skill-seekers create curl.1 --name curl-docs
+# Notion 工作区
+skill-seekers create --database-id  abc123 --name product-wiki
 
 # Slack/Discord 导出
-skill-seekers create --chat-export-path ./slack-export/ --name team-chat
+skill-seekers create --chat-export-path  slack-export/ --name team-chat
 ```
 
 ---

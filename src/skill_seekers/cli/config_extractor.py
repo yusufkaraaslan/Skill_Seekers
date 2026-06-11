@@ -344,16 +344,28 @@ class ConfigFileDetector:
     @staticmethod
     def _path_has_word(path_lower: str, words: list[str]) -> bool:
         """Token-boundary match so short/common tokens like 'db'/'ci'/'api'/'log'
-        don't match inside unrelated names ('db' in 'dbeaver', 'log' in 'blog')."""
-        return any(re.search(rf"\b{re.escape(w)}\b", path_lower) for w in words)
+        don't match inside unrelated names ('db' in 'dbeaver', 'log' in 'blog').
+
+        Uses explicit lookarounds instead of ``\\b`` because '_' is a word
+        character: ``\\b`` would never fire inside snake_case names, missing
+        e.g. 'db' in 'app_db.yaml' or 'logging' in 'app_logging.conf'.
+        """
+        return any(
+            re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", path_lower) for w in words
+        )
 
     def _infer_purpose(self, file_path: Path, _config_type: str) -> str:
         """Infer configuration purpose from file path and name"""
         path_lower = str(file_path).lower()
         filename = file_path.name.lower()
 
-        # Database configs
-        if self._path_has_word(path_lower, ["database", "db", "postgres", "mysql", "mongo"]):
+        # Database configs. Token-boundary matching won't find 'postgres' inside
+        # 'postgresql' or 'mongo'/'db' inside 'mongodb', so the full product
+        # tokens must be listed alongside the short forms.
+        if self._path_has_word(
+            path_lower,
+            ["database", "db", "postgres", "postgresql", "mysql", "mongo", "mongodb", "mariadb"],
+        ):
             return "database_configuration"
 
         # API configs

@@ -42,7 +42,17 @@ for platform in claude gemini openai langchain; do
 done
 ```
 
-### 3. 探索增强工作流
+### 3. 扫描整个项目（AI 驱动）
+
+用一条命令为真实项目引导生成完整的知识库 —— 参见
+[扫描项目](../../getting-started/05-scan-a-project.md)：
+
+```bash
+skill-seekers scan ./my-react-app --out ./configs/scanned/
+# 为每个检测到的框架生成一份配置 + my-react-app-codebase.json
+```
+
+### 4. 探索增强工作流
 
 ```bash
 # 查看可用工作流
@@ -98,7 +108,7 @@ skill-seekers create ./my-project \
 - [高级：自定义工作流](../advanced/custom-workflows.md)
 - [MCP 参考](../reference/MCP_REFERENCE.md)
 - [API 参考](../advanced/api-reference.md)
-- [贡献指南](../../CONTRIBUTING.md)
+- [贡献指南](../../../CONTRIBUTING.md)
 
 ---
 
@@ -138,11 +148,8 @@ skill-seekers create https://docs.djangoproject.com/ --name django
 
 # 导出到 ChromaDB
 skill-seekers package output/django/ --target chroma
-```
 
-```python
-# 或直接导出（Python API）
-from skill_seekers.package import export_to_chroma
+# 或直接导出
 export_to_chroma(skill_directory="output/django/")
 ```
 
@@ -151,11 +158,11 @@ export_to_chroma(skill_directory="output/django/")
 **目标：** 自动保持 skills 最新
 
 ```bash
-# 检查更新
-skill-seekers update --config django --check-only
+# 检查变化
+skill-seekers update output/django/ --check-changes
 
 # 如有变化则更新
-skill-seekers update --config django
+skill-seekers update output/django/
 ```
 
 ---
@@ -265,7 +272,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 - **文档：** 改进这些文档
 - **代码：** 提交 PR
 
-请参阅 [贡献指南](../../CONTRIBUTING.md)
+请参阅 [贡献指南](../../../CONTRIBUTING.md)
 
 ### 保持更新
 

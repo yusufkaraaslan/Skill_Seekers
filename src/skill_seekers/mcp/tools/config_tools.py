@@ -6,18 +6,14 @@ for documentation scraping.
 """
 
 import json
-import sys
 from pathlib import Path
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import TextContent, text_response
 
-
-# Path to CLI tools
 
 # Import config validator for validation
-sys.path.insert(0, str(CLI_DIR))
 try:
-    from config_validator import ConfigValidator
+    from skill_seekers.cli.config_validator import ConfigValidator
 except ImportError:
     ConfigValidator = None  # Graceful degradation if not available
 
@@ -83,16 +79,11 @@ async def generate_config(args: dict) -> list[TextContent]:
 
     # Don't silently clobber an existing (possibly hand-edited) config.
     if config_path.exists() and not force:
-        return [
-            TextContent(
-                type="text",
-                text=(
-                    f"⚠️ Config already exists: {config_path}\n\n"
-                    "Not overwriting. Pass force=true to replace it "
-                    "(this discards any manual edits)."
-                ),
-            )
-        ]
+        return text_response(
+            f"⚠️ Config already exists: {config_path}\n\n"
+            "Not overwriting. Pass force=true to replace it "
+            "(this discards any manual edits)."
+        )
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
@@ -183,9 +174,6 @@ async def validate_config(args: dict) -> list[TextContent]:
     """
     config_path = args["config_path"]
 
-    # Import validation classes
-    sys.path.insert(0, str(CLI_DIR))
-
     try:
         # Check if file exists
         if not Path(config_path).exists():
@@ -195,7 +183,7 @@ async def validate_config(args: dict) -> list[TextContent]:
 
         # Try unified config validator first
         try:
-            from config_validator import validate_config
+            from skill_seekers.cli.config_validator import validate_config
 
             validator = validate_config(config_path)
 
@@ -252,7 +240,7 @@ async def validate_config(args: dict) -> list[TextContent]:
             # Fall back to legacy validation
             import json
 
-            from doc_scraper import validate_config
+            from skill_seekers.cli.doc_scraper import validate_config
 
             with open(config_path) as f:
                 config = json.load(f)

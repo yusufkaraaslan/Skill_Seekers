@@ -39,20 +39,28 @@
 
 ### API 模式（如果密钥可用则默认）
 
-使用 Claude API 进行快速增强。
+通过 `AgentClient` 使用任意受支持的 AI 提供商 API。提供商：Anthropic（Claude）、Moonshot/Kimi、Google Gemini、OpenAI。
 
 **要求：**
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+# 设置以下任意一个即可激活 API 模式：
+export ANTHROPIC_API_KEY=sk-ant-...   # Claude
+export MOONSHOT_API_KEY=...           # Kimi
+export GOOGLE_API_KEY=...             # Gemini
+export OPENAI_API_KEY=...             # OpenAI
 ```
+
+如果设置了多个密钥，按优先顺序取第一个：Anthropic → Gemini →
+OpenAI → Moonshot/Kimi。可通过 `SKILL_SEEKER_PROVIDER` 强制指定某一个
+（参见[环境变量](../reference/ENVIRONMENT_VARIABLES.md)）。
 
 **用法：**
 ```bash
 # 自动检测 API 模式
 skill-seekers create <source>
 
-# 显式指定
-skill-seekers enhance output/my-skill/ --agent api
+# 显式指定目标平台（API 模式）
+skill-seekers enhance output/my-skill/ --target claude
 ```
 
 **优点：**
@@ -67,27 +75,33 @@ skill-seekers enhance output/my-skill/ --agent api
 
 ### LOCAL 模式（无密钥则默认）
 
-使用 Claude Code（Max 套餐免费）。
+通过 `AgentClient` 使用本地 AI 编程代理。支持 Claude Code、Kimi Code、Codex、Copilot、OpenCode 或自定义代理。
 
 **要求：**
-- 已安装 Claude Code
-- Claude Code Max 订阅
+- 已安装任意一个受支持的代理（Claude Code、Codex、Copilot、OpenCode、Kimi）
 
 **用法：**
 ```bash
-# 自动检测 LOCAL 模式（无 API key）
+# 自动检测 LOCAL 模式（无 API key），默认使用 Claude Code
 skill-seekers create <source>
 
-# 显式指定
-skill-seekers enhance output/my-skill/ --agent local
+# 使用其他本地代理
+skill-seekers enhance output/my-skill/ --agent codex
+skill-seekers enhance output/my-skill/ --agent copilot
+skill-seekers enhance output/my-skill/ --agent kimi
+skill-seekers enhance output/my-skill/ --agent opencode
+
+# 自定义代理
+skill-seekers enhance output/my-skill/ --agent custom --agent-cmd "my-agent {prompt_file}"
 ```
 
 **优点：**
-- 免费（使用 Claude Code Max）
+- 免费（需有代理订阅）
 - 更好的质量（完整上下文）
+- 代理无关 —— 适用于任何受支持的编程代理
 
 **缺点：**
-- 需要 Claude Code
+- 需要本地编程代理
 - 稍慢（~60-120 秒）
 
 ---
@@ -114,7 +128,7 @@ skill-seekers create <source> --enhance-level 3
 skill-seekers enhance output/my-skill/
 
 # 使用特定 agent
-skill-seekers enhance output/my-skill/ --agent local
+skill-seekers enhance output/my-skill/ --agent claude
 
 # 设置超时
 skill-seekers enhance output/my-skill/ --timeout 1200
@@ -354,8 +368,8 @@ skill-seekers enhance output/my-skill/  # 再次运行以进一步润色
 # 设置 API key
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# 或使用 LOCAL 模式
-skill-seekers enhance output/my-skill/ --agent local
+# 或使用 LOCAL 模式（无 API key 时自动选择；指定一个已安装的代理）
+skill-seekers enhance output/my-skill/ --agent claude
 ```
 
 ### "增强超时"
@@ -376,9 +390,9 @@ skill-seekers enhance output/my-skill/ --background
 # 安装 Claude Code
 # 参见: https://claude.ai/code
 
-# 或切换到 API 模式
+# 或切换到 API 模式（设置密钥后自动使用）
 export ANTHROPIC_API_KEY=sk-ant-...
-skill-seekers enhance output/my-skill/ --agent api
+skill-seekers enhance output/my-skill/
 ```
 
 ### "未找到工作流"

@@ -27,7 +27,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.document_skill_builder import DocumentSkillBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -116,16 +116,26 @@ def infer_description_from_manpages(
     )
 
 
-class ManPageToSkillConverter(SkillConverter):
+class ManPageToSkillConverter(DocumentSkillBuilder):
     """Convert Unix man pages into a skill directory structure.
 
     Supports extraction via the ``man`` command or by reading raw man-page
     files from a directory.  Parsed content is saved as an intermediate JSON
     file so that the (potentially slow) extraction step can be decoupled
     from skill generation.
+
+    Build side: inherits ``build_skill`` orchestration, loading, and
+    ``_sanitize_filename`` from ``DocumentSkillBuilder``.  Everything else
+    (categorisation, reference/index/SKILL.md generation) is overridden
+    because man-page output is genuinely man-shaped — pages carry
+    options/examples/see_also rather than heading+text+code sections.
     """
 
     SOURCE_TYPE = "manpage"
+    LOAD_TOTAL_KEY = "total_pages"
+    # Only surfaces in the inherited load_extracted_data print ("Loaded N
+    # man page(s)") — every other UNIT_LABEL consumer is overridden below.
+    UNIT_LABEL = "man page(s)"
 
     def __init__(self, config: dict) -> None:
         """Initialise the converter from a configuration dictionary.
@@ -150,8 +160,8 @@ class ManPageToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Categories config
         self.categories: dict = config.get("categories", {})
@@ -815,24 +825,9 @@ class ManPageToSkillConverter(SkillConverter):
         return sorted(set(refs))
 
     # ------------------------------------------------------------------
-    # Loading
+    # Loading: inherited from DocumentSkillBuilder (LOAD_TOTAL_KEY +
+    # UNIT_LABEL reproduce the man loader output exactly).
     # ------------------------------------------------------------------
-
-    def load_extracted_data(self, json_path: str) -> bool:
-        """Load previously extracted data from JSON.
-
-        Args:
-            json_path: Path to the intermediate JSON file.
-
-        Returns:
-            ``True`` on success.
-        """
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_pages", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} man page(s)")
-        return True
 
     # ------------------------------------------------------------------
     # Categorisation
@@ -936,39 +931,8 @@ class ManPageToSkillConverter(SkillConverter):
     # ------------------------------------------------------------------
     # Build
     # ------------------------------------------------------------------
-
-    def build_skill(self) -> None:
-        """Build the complete skill directory structure.
-
-        Creates the output directory, generates reference files, an index,
-        and the main SKILL.md.
-        """
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        # Categorise content
-        categorized = self.categorize_content()
-
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        total_cats = len(categorized)
-        cat_num = 1
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data, cat_num, total_cats)
-            cat_num += 1
-
-        # Generate index
-        self._generate_index(categorized)
-
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
+    # build_skill() is inherited from DocumentSkillBuilder — the orchestration
+    # (mkdir, categorize, references, index, SKILL.md, prints) is identical.
 
     # ------------------------------------------------------------------
     # Generation (private)
@@ -1269,6 +1233,9 @@ class ManPageToSkillConverter(SkillConverter):
             f.write("See `references/index.md` for complete reference structure.\n\n")
 
             # Footer
+            # NOTE: "Skill Seekers" (plural) is inconsistent with the
+            # "Skill Seeker" footer every other scraper emits. Preserved
+            # as-is: golden trees require byte-identical output.
             f.write("---\n\n")
             f.write("**Generated by Skill Seekers** | Man Page Scraper\n")
 
@@ -1276,21 +1243,3 @@ class ManPageToSkillConverter(SkillConverter):
         with open(filename, encoding="utf-8") as f:
             line_count = len(f.read().splitlines())
         print(f"   Generated: {filename} ({line_count} lines)")
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _sanitize_filename(name: str) -> str:
-        """Convert a string to a safe filename.
-
-        Args:
-            name: Arbitrary string.
-
-        Returns:
-            Lowercase snake_case filename-safe string.
-        """
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        safe = re.sub(r"[-\s]+", "_", safe)
-        return safe

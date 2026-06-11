@@ -679,16 +679,112 @@ class TestEnhanceDispatcher:
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir)])
+        # gemini's SDK is an optional dep — don't depend on the local install
+        monkeypatch.setattr("skill_seekers.cli.enhance_command.api_sdk_available", lambda _t: True)
 
         called_with = {}
 
-        def fake_run_api(target, api_key):
+        def fake_run_api(target, api_key, args):
             called_with["target"] = target
             called_with["api_key"] = api_key
+            called_with["skill_dir"] = args.skill_directory
 
         monkeypatch.setattr("skill_seekers.cli.enhance_skill_local._run_api_enhance", fake_run_api)
         main()
-        assert called_with == {"target": "gemini", "api_key": "AIza-test"}
+        assert called_with == {
+            "target": "gemini",
+            "api_key": "AIza-test",
+            "skill_dir": str(skill_dir),
+        }
+
+    def test_api_enhance_with_agent_flag_uses_real_skill_dir(self, monkeypatch, tmp_path):
+        """Regression: `--agent kimi <dir>` with only MOONSHOT_API_KEY set.
+
+        The old _run_api_enhance re-scanned sys.argv and only skipped the
+        value of --mode, so 'kimi' (the value of --agent) was mistaken for
+        skill_directory and enhance_skill exited 1 with 'Directory not
+        found: kimi'."""
+        import sys
+        from skill_seekers.cli import enhance_skill
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
+        monkeypatch.setattr("skill_seekers.cli.enhance_command.api_sdk_available", lambda _t: True)
+        monkeypatch.setattr(
+            sys, "argv", ["enhance_skill_local.py", "--agent", "kimi", str(skill_dir)]
+        )
+
+        captured = {}
+        monkeypatch.setattr(
+            enhance_skill, "main", lambda: captured.setdefault("argv", list(sys.argv))
+        )
+        main()
+
+        assert captured["argv"][1] == str(skill_dir), (
+            f"skill_directory misparsed as {captured['argv'][1]!r}"
+        )
+        assert captured["argv"][2:] == ["--target", "kimi", "--api-key", "sk-moonshot-test"]
+
+    def test_api_enhance_with_timeout_flag_uses_real_skill_dir(self, monkeypatch, tmp_path):
+        """Regression: the value of --timeout ('600') must not be taken as
+        skill_directory by the API-mode delegation."""
+        import sys
+        from skill_seekers.cli import enhance_skill
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        monkeypatch.setattr(
+            sys, "argv", ["enhance_skill_local.py", "--timeout", "600", str(skill_dir)]
+        )
+
+        captured = {}
+        monkeypatch.setattr(
+            enhance_skill, "main", lambda: captured.setdefault("argv", list(sys.argv))
+        )
+        main()
+
+        assert captured["argv"][1] == str(skill_dir), (
+            f"skill_directory misparsed as {captured['argv'][1]!r}"
+        )
+
+    def test_main_falls_back_to_local_when_sdk_missing(self, monkeypatch, tmp_path):
+        """Regression: only MOONSHOT_API_KEY set but the kimi SDK isn't
+        installed → main() must fall back to LOCAL mode (pre-PR behavior)
+        instead of hard-failing in API mode."""
+        import sys
+        from skill_seekers.cli.enhance_skill_local import main
+
+        skill_dir = _make_skill_dir(tmp_path)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
+        monkeypatch.setattr("skill_seekers.cli.enhance_command.api_sdk_available", lambda _t: False)
+        monkeypatch.setattr(sys, "argv", ["enhance_skill_local.py", str(skill_dir)])
+
+        api_called = []
+        monkeypatch.setattr(
+            "skill_seekers.cli.enhance_skill_local._run_api_enhance",
+            lambda *a: api_called.append(a),
+        )
+
+        with patch("skill_seekers.cli.enhance_skill_local.LocalSkillEnhancer") as mock_enhancer:
+            mock_instance = MagicMock()
+            mock_instance.run.return_value = True
+            mock_enhancer.return_value = mock_instance
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+        assert exc_info.value.code == 0
+        assert api_called == [], "_run_api_enhance must not be called when the SDK is missing"
+        mock_enhancer.assert_called_once()
 
     def test_main_uses_local_when_mode_local(self, monkeypatch, tmp_path):
         """main() stays in LOCAL mode when --mode LOCAL is passed."""
@@ -834,3 +930,50 @@ class TestHeadlessSuccessGate:
         prompt_file.write_text("enhance", encoding="utf-8")
 
         assert enhancer._run_headless(prompt_file, timeout=60) is True
+
+
+class TestRecursionGuard:
+    """LocalSkillEnhancer must participate in the SKILL_SEEKER_ENHANCE_ACTIVE
+    fork-bomb guard: a spawned enhance agent that runs tests invoking
+    `skill-seekers create` must not spawn another real agent."""
+
+    def test_run_refuses_when_marker_set(self, tmp_path, monkeypatch):
+        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# x")
+        monkeypatch.setenv("SKILL_SEEKER_ENHANCE_ACTIVE", "1")
+        enhancer = LocalSkillEnhancer(str(skill_dir), force=True)
+        assert enhancer.run(headless=True) is False
+
+    def test_run_agent_command_marks_child_env(self, tmp_path, monkeypatch):
+        from skill_seekers.cli import enhance_skill_local as mod
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# x")
+        prompt_file = tmp_path / "prompt.md"
+        prompt_file.write_text("prompt")
+
+        captured = {}
+
+        def fake_run(_cmd, **kwargs):
+            captured["env"] = kwargs.get("env")
+
+            class R:
+                returncode = 0
+                stdout = ""
+                stderr = ""
+
+            return R()
+
+        monkeypatch.delenv("SKILL_SEEKER_ENHANCE_ACTIVE", raising=False)
+        monkeypatch.setattr(mod.subprocess, "run", fake_run)
+        enhancer = mod.LocalSkillEnhancer(str(skill_dir), force=True)
+        result, error = enhancer._run_agent_command(
+            str(prompt_file), timeout=5, include_permissions_flag=True, quiet=True
+        )
+        assert error is None
+        assert captured["env"] is not None
+        assert captured["env"].get("SKILL_SEEKER_ENHANCE_ACTIVE") == "1"

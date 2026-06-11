@@ -43,9 +43,8 @@ app = Server("skill-seeker") if MCP_AVAILABLE and Server is not None else None
 CLI_DIR = Path(__file__).parent.parent / "cli"
 
 # Import config validator for submit_config validation
-sys.path.insert(0, str(CLI_DIR))
 try:
-    from config_validator import ConfigValidator
+    from skill_seekers.cli.config_validator import ConfigValidator
 except ImportError:
     ConfigValidator = None  # Graceful degradation if not available
 
@@ -916,9 +915,6 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
     """Validate a config file - supports both legacy and unified formats"""
     config_path = args["config_path"]
 
-    # Import validation classes
-    sys.path.insert(0, str(CLI_DIR))
-
     try:
         # Check if file exists
         if not Path(config_path).exists():
@@ -928,7 +924,7 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
 
         # Try unified config validator first
         try:
-            from config_validator import validate_config
+            from skill_seekers.cli.config_validator import validate_config
 
             validator = validate_config(config_path)
 
@@ -973,7 +969,7 @@ async def validate_config_tool(args: dict) -> list[TextContent]:
             # Fall back to legacy validation
             import json
 
-            from doc_scraper import validate_config
+            from skill_seekers.cli.doc_scraper import validate_config
 
             with open(config_path) as f:
                 config = json.load(f)
@@ -1190,8 +1186,8 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
 
 async def fetch_config_tool(args: dict) -> list[TextContent]:
     """Fetch config from API, git URL, or named source"""
-    from skill_seekers.mcp.git_repo import GitConfigRepo
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.git_repo import GitConfigRepo
+    from skill_seekers.services.source_manager import SourceManager
 
     config_name = args.get("config_name")
     destination = args.get("destination", "configs")
@@ -2054,7 +2050,7 @@ What happens next:
 
 async def add_config_source_tool(args: dict) -> list[TextContent]:
     """Register a git repository as a config source"""
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
     git_url = args.get("git_url")
@@ -2120,7 +2116,7 @@ Usage:
 
 async def list_config_sources_tool(args: dict) -> list[TextContent]:
     """List all registered config sources"""
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     enabled_only = args.get("enabled_only", False)
 
@@ -2175,7 +2171,7 @@ To add a source:
 
 async def remove_config_source_tool(args: dict) -> list[TextContent]:
     """Remove a registered config source"""
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
 

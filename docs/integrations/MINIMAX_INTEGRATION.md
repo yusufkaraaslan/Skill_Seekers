@@ -314,7 +314,7 @@ skill-seekers upload react-minimax.zip --target minimax
 
 ```bash
 # Include version in output name
-skill-seekers package output/react/ --target minimax --output react-v2.0-minimax.zip
+skill-seekers package output/react/ --target minimax
 ```
 
 ---

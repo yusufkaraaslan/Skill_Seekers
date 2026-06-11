@@ -6,14 +6,8 @@ focused skills and generating router/hub skills for managing split documentation
 """
 
 import glob
-import sys
 
-from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
-
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
-
-
-# Path to CLI tools
+from skill_seekers.mcp.tools._common import TextContent, run_cli_tool
 
 
 async def split_config(args: dict) -> list[TextContent]:
@@ -41,40 +35,38 @@ async def split_config(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Split results showing created configs and recommendations,
                           or error message if split failed.
+
+    Note:
+        Runs split_config.main() in-process (Phase 5d). The old subprocess
+        timeout no longer applies — the "Maximum time" line in the output is
+        advisory only.
     """
     config_path = args["config_path"]
     strategy = args.get("strategy", "auto")
     target_pages = args.get("target_pages", 5000)
     dry_run = args.get("dry_run", False)
 
-    # Run split_config.py
-    cmd = [
-        sys.executable,
-        str(CLI_DIR / "split_config.py"),
+    argv = [
         config_path,
         "--strategy",
         strategy,
         "--target-pages",
         str(target_pages),
     ]
-
     if dry_run:
-        cmd.append("--dry-run")
+        argv.append("--dry-run")
 
-    # Timeout: 5 minutes for config splitting
+    # Advisory only (output text); the in-process call is unbounded
     timeout = 300
 
     progress_msg = "✂️ Splitting configuration...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # split_config.main() takes no args parameter and parses sys.argv through
+    # its own parser — run_cli_main patches sys.argv for the call.
+    from skill_seekers.cli import split_config as split_config_cli
 
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(split_config_cli.main, argv, progress_msg)
 
 
 async def generate_router(args: dict) -> list[TextContent]:
@@ -93,6 +85,11 @@ async def generate_router(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Router skill creation results with usage instructions,
                           or error message if generation failed.
+
+    Note:
+        Runs generate_router.main() in-process (Phase 5d). The old subprocess
+        timeout no longer applies — the "Maximum time" line in the output is
+        advisory only.
     """
     config_pattern = args["config_pattern"]
     router_name = args.get("router_name")
@@ -105,26 +102,18 @@ async def generate_router(args: dict) -> list[TextContent]:
             TextContent(type="text", text=f"❌ No config files match pattern: {config_pattern}")
         ]
 
-    # Run generate_router.py
-    cmd = [
-        sys.executable,
-        str(CLI_DIR / "generate_router.py"),
-    ] + config_files
-
+    argv = list(config_files)
     if router_name:
-        cmd.extend(["--name", router_name])
+        argv.extend(["--name", router_name])
 
-    # Timeout: 5 minutes for router generation
+    # Advisory only (output text); the in-process call is unbounded
     timeout = 300
 
     progress_msg = "🧭 Generating router skill...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # generate_router.main() takes no args parameter and parses sys.argv
+    # through its own parser — run_cli_main patches sys.argv for the call.
+    from skill_seekers.cli import generate_router as generate_router_cli
 
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(generate_router_cli.main, argv, progress_msg)

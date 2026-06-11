@@ -854,7 +854,7 @@ Skill Seeker auto-generates router skills for large documentation using `generat
 
 ```bash
 # Generate a router from documentation configs
-skill-seekers create configs/godot.json --strategy router
+python -m skill_seekers.cli.split_config configs/godot.json --strategy router
 skill-seekers create configs/godot-*.json
 
 # Examine generated router SKILL.md

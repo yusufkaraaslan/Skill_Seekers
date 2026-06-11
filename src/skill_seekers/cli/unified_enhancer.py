@@ -2,12 +2,14 @@
 """
 Unified AI Enhancement System
 
-Replaces all separate enhancer classes with a single unified interface:
-- PatternEnhancer (C3.1)
-- TestExampleEnhancer (C3.2)
-- GuideEnhancer (C3.3)
-- ConfigEnhancer (C3.4)
-- SkillEnhancer (SKILL.md)
+Target single interface for the per-feature enhancer classes (the
+consolidation itself is Phase 3 of docs/UNIFICATION_PLAN.md — today the
+canonical implementations still live in their own modules):
+- PatternEnhancer (C3.1, ai_enhancer.py)
+- TestExampleEnhancer (C3.2, ai_enhancer.py)
+- GuideEnhancer (C3.3, guide_enhancer.py)
+- ConfigEnhancer (C3.4, config_enhancer.py)
+- SkillEnhancer (SKILL.md, enhance_skill.py)
 
 Benefits:
 - Single source of truth
@@ -19,9 +21,10 @@ Benefits:
 
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Literal
+
+from skill_seekers.cli.parallel_batches import flatten_batch_results, run_batches_parallel
 
 logger = logging.getLogger(__name__)
 
@@ -156,35 +159,14 @@ class UnifiedEnhancer:
 
     def _enhance_parallel(self, batches: list[list[dict]], prompt_template: str) -> list[dict]:
         """Process batches in parallel using ThreadPoolExecutor."""
-        results = [None] * len(batches)  # Preserve order
-
-        with ThreadPoolExecutor(max_workers=self.config.parallel_workers) as executor:
-            future_to_idx = {
-                executor.submit(self._enhance_batch, batch, prompt_template): idx
-                for idx, batch in enumerate(batches)
-            }
-
-            completed = 0
-            total = len(batches)
-            for future in as_completed(future_to_idx):
-                idx = future_to_idx[future]
-                try:
-                    results[idx] = future.result()
-                    completed += 1
-
-                    # Show progress
-                    if total < 10 or completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
-                except Exception as e:
-                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
-                    results[idx] = batches[idx]  # Return unenhanced on failure
-
-        # Flatten results
-        enhanced = []
-        for batch_result in results:
-            if batch_result:
-                enhanced.extend(batch_result)
-        return enhanced
+        results = run_batches_parallel(
+            batches,
+            lambda batch: self._enhance_batch(batch, prompt_template),
+            self.config.parallel_workers,
+            log=logger.info,
+            warn=logger.warning,
+        )
+        return flatten_batch_results(results)
 
     def _enhance_batch(self, items: list[dict], prompt_template: str) -> list[dict]:
         """Enhance a batch of items."""
@@ -302,37 +284,13 @@ Format as JSON array.""",
             return f"{idx + 1}. {desc}"
 
 
-# Backward compatibility aliases
-class PatternEnhancer(UnifiedEnhancer):
-    """Backward compatible pattern enhancer."""
-
-    def enhance_patterns(self, patterns: list[dict]) -> list[dict]:
-        return self.enhance(patterns, "pattern")
-
-
-class TestExampleEnhancer(UnifiedEnhancer):
-    """Backward compatible test example enhancer."""
-
-    def enhance_examples(self, examples: list[dict]) -> list[dict]:
-        return self.enhance(examples, "example")
-
-
-class GuideEnhancer(UnifiedEnhancer):
-    """Backward compatible guide enhancer."""
-
-    def enhance_guides(self, guides: list[dict]) -> list[dict]:
-        return self.enhance(guides, "guide")
-
-
-class ConfigEnhancer(UnifiedEnhancer):
-    """Backward compatible config enhancer."""
-
-    def enhance_config(self, config: list[dict]) -> list[dict]:
-        return self.enhance(config, "config")
-
-
-# Main enhancer export
-AIEnhancer = UnifiedEnhancer
+# NOTE: this module used to define "backward compatibility" subclasses named
+# PatternEnhancer / TestExampleEnhancer / GuideEnhancer / ConfigEnhancer plus
+# an `AIEnhancer = UnifiedEnhancer` alias. They had ZERO importers and
+# collided with the real, in-use classes of the same names in ai_enhancer.py,
+# guide_enhancer.py, and config_enhancer.py — so they were removed. The
+# consolidation of those hierarchies into this module is Phase 3 of
+# docs/UNIFICATION_PLAN.md; until then, the per-feature modules are canonical.
 
 if __name__ == "__main__":
     # Quick test

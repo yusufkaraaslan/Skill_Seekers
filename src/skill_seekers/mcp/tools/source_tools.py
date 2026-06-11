@@ -11,12 +11,19 @@ This module contains tools for managing config sources:
 
 import json
 import os
-import re
 from pathlib import Path
 
 # MCP types (imported conditionally)
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import TextContent, text_response
 
+# Community-registry submission engine lives in the services layer (shared
+# with the CLI scan publish flow). REGISTRY_REPO and find_existing_submission
+# stay re-exported here as part of this module's public surface.
+from skill_seekers.services.source_manager import (
+    REGISTRY_REPO,  # noqa: F401
+    find_existing_submission,  # noqa: F401
+    submit_config,
+)
 
 import httpx
 
@@ -45,8 +52,8 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with fetch results or config list
     """
-    from skill_seekers.mcp.git_repo import GitConfigRepo
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.git_repo import GitConfigRepo
+    from skill_seekers.services.source_manager import SourceManager
 
     config_name = args.get("config_name")
     destination = args.get("destination", "configs")
@@ -337,7 +344,8 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
     Submit a custom config to skill-seekers-configs repository via GitHub issue.
 
     Validates the config (both legacy and unified formats) and creates a GitHub
-    issue for community review.
+    issue for community review. Thin MCP wrapper over
+    ``services.source_manager.submit_config``.
 
     Args:
         args: Dictionary containing:
@@ -349,289 +357,13 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with submission results
     """
-    try:
-        from github import Github, GithubException
-    except ImportError:
-        return [
-            TextContent(
-                type="text",
-                text="❌ Error: PyGithub not installed.\n\nInstall with: pip install PyGithub",
-            )
-        ]
-
-    # Import config validator
-    try:
-        import sys
-        from pathlib import Path
-
-        sys.path.insert(0, str(CLI_DIR))
-        from config_validator import ConfigValidator
-    except ImportError:
-        ConfigValidator = None
-
-    config_path = args.get("config_path")
-    config_json_str = args.get("config_json")
-    testing_notes = args.get("testing_notes", "")
-    github_token = args.get("github_token") or os.environ.get("GITHUB_TOKEN")
-
-    try:
-        # Load config data
-        if config_path:
-            config_file = Path(config_path)
-            if not config_file.exists():
-                return [
-                    TextContent(type="text", text=f"❌ Error: Config file not found: {config_path}")
-                ]
-
-            with open(config_file) as f:
-                config_data = json.load(f)
-                config_json_str = json.dumps(config_data, indent=2)
-                config_name = config_data.get("name", config_file.stem)
-
-        elif config_json_str:
-            try:
-                config_data = json.loads(config_json_str)
-                config_name = config_data.get("name", "unnamed")
-            except json.JSONDecodeError as e:
-                return [TextContent(type="text", text=f"❌ Error: Invalid JSON: {str(e)}")]
-
-        else:
-            return [
-                TextContent(
-                    type="text", text="❌ Error: Must provide either config_path or config_json"
-                )
-            ]
-
-        # Use ConfigValidator for comprehensive validation
-        if ConfigValidator is None:
-            return [
-                TextContent(
-                    type="text",
-                    text="❌ Error: ConfigValidator not available. Please ensure config_validator.py is in the CLI directory.",
-                )
-            ]
-
-        try:
-            validator = ConfigValidator(config_data)
-            validator.validate()
-
-            # Get format info
-            is_unified = validator.is_unified
-            config_name = config_data.get("name", "unnamed")
-
-            # Additional format validation (ConfigValidator only checks structure)
-            # Validate name format (alphanumeric, hyphens, underscores only)
-            if not re.match(r"^[a-zA-Z0-9_-]+$", config_name):
-                raise ValueError(
-                    f"Invalid name format: '{config_name}'\nNames must contain only alphanumeric characters, hyphens, and underscores"
-                )
-
-            # Validate URL formats
-            if not is_unified:
-                # Legacy config - check base_url
-                base_url = config_data.get("base_url", "")
-                if base_url and not (
-                    base_url.startswith("http://") or base_url.startswith("https://")
-                ):
-                    raise ValueError(
-                        f"Invalid base_url format: '{base_url}'\nURLs must start with http:// or https://"
-                    )
-            else:
-                # Unified config - check URLs in sources
-                for idx, source in enumerate(config_data.get("sources", [])):
-                    if source.get("type") == "documentation":
-                        source_url = source.get("base_url", "")
-                        if source_url and not (
-                            source_url.startswith("http://") or source_url.startswith("https://")
-                        ):
-                            raise ValueError(
-                                f"Source {idx} (documentation): Invalid base_url format: '{source_url}'\nURLs must start with http:// or https://"
-                            )
-
-        except ValueError as validation_error:
-            # Provide detailed validation feedback
-            error_msg = f"""❌ Config validation failed:
-
-{str(validation_error)}
-
-Please fix these issues and try again.
-
-💡 Validation help:
-- Names: alphanumeric, hyphens, underscores only (e.g., "my-framework", "react_docs")
-- URLs: must start with http:// or https://
-- Selectors: should be a dict with keys like 'main_content', 'title', 'code_blocks'
-- Rate limit: non-negative number (default: 0.5)
-- Max pages: positive integer or -1 for unlimited
-
-📚 Example configs: https://github.com/yusufkaraaslan/skill-seekers-configs/tree/main/official
-"""
-            return [TextContent(type="text", text=error_msg)]
-
-        # Detect category based on config format and content
-        if is_unified:
-            # For unified configs, look at source types
-            source_types = [src.get("type") for src in config_data.get("sources", [])]
-            if (
-                "documentation" in source_types
-                and "github" in source_types
-                or "documentation" in source_types
-                and "pdf" in source_types
-                or len(source_types) > 1
-            ):
-                category = "multi-source"
-            else:
-                category = "unified"
-        else:
-            # For legacy configs, use name-based detection
-            name_lower = config_name.lower()
-            category = "other"
-            if any(
-                x in name_lower
-                for x in ["react", "vue", "django", "laravel", "fastapi", "astro", "hono"]
-            ):
-                category = "web-frameworks"
-            elif any(x in name_lower for x in ["godot", "unity", "unreal"]):
-                category = "game-engines"
-            elif any(x in name_lower for x in ["kubernetes", "ansible", "docker"]):
-                category = "devops"
-            elif any(x in name_lower for x in ["tailwind", "bootstrap", "bulma"]):
-                category = "css-frameworks"
-
-        # Collect validation warnings
-        warnings = []
-        if not is_unified:
-            # Legacy config warnings
-            if "max_pages" not in config_data:
-                warnings.append("⚠️ No max_pages set - will use default (100)")
-            elif config_data.get("max_pages") in (None, -1):
-                warnings.append(
-                    "⚠️ Unlimited scraping enabled - may scrape thousands of pages and take hours"
-                )
-        else:
-            # Unified config warnings
-            for src in config_data.get("sources", []):
-                if src.get("type") == "documentation" and "max_pages" not in src:
-                    warnings.append(
-                        "⚠️ No max_pages set for documentation source - will use default (100)"
-                    )
-                elif src.get("type") == "documentation" and src.get("max_pages") in (None, -1):
-                    warnings.append("⚠️ Unlimited scraping enabled for documentation source")
-
-        # Check for GitHub token
-        if not github_token:
-            return [
-                TextContent(
-                    type="text",
-                    text="❌ Error: GitHub token required.\n\nProvide github_token parameter or set GITHUB_TOKEN environment variable.\n\nCreate token at: https://github.com/settings/tokens",
-                )
-            ]
-
-        # Create GitHub issue
-        try:
-            gh = Github(github_token)
-            repo = gh.get_repo("yusufkaraaslan/skill-seekers-configs")
-
-            # Build issue body
-            issue_body = f"""## Config Submission
-
-### Framework/Tool Name
-{config_name}
-
-### Category
-{category}
-
-### Config Format
-{"Unified (multi-source)" if is_unified else "Legacy (single-source)"}
-
-### Configuration JSON
-```json
-{config_json_str}
-```
-
-### Testing Results
-{testing_notes if testing_notes else "Not provided"}
-
-### Documentation URL
-{config_data.get("base_url") if not is_unified else "See sources in config"}
-
-{"### Validation Warnings" if warnings else ""}
-{chr(10).join(f"- {w}" for w in warnings) if warnings else ""}
-
----
-
-### Checklist
-- [x] Config validated with ConfigValidator
-- [ ] Test scraping completed
-- [ ] Added to appropriate category
-- [ ] API updated
-"""
-
-            # Idempotency guard: if an open submission already exists for this
-            # config (e.g. a retry after a transient failure), return it instead
-            # of opening a duplicate.
-            try:
-                expected_title = f"[CONFIG] {config_name}"
-                existing = gh.search_issues(
-                    f"repo:yusufkaraaslan/skill-seekers-configs is:issue is:open "
-                    f'in:title "{expected_title}"'
-                )
-                for found in existing:
-                    # GitHub title search is fuzzy substring matching, so
-                    # "[CONFIG] react" also matches "[CONFIG] react-native".
-                    # Require an exact title match before treating it as a
-                    # duplicate, or we'd suppress a legitimate distinct config.
-                    if found.title.strip() != expected_title:
-                        continue
-                    return [
-                        TextContent(
-                            type="text",
-                            text=(
-                                f"ℹ️ A submission for '{config_name}' is already open:\n"
-                                f"{found.html_url}\n\nNo duplicate issue was created."
-                            ),
-                        )
-                    ]
-            except Exception:
-                # A search hiccup shouldn't block submission — fall through.
-                pass
-
-            # Create issue
-            issue = repo.create_issue(
-                title=f"[CONFIG] {config_name}",
-                body=issue_body,
-                labels=["config-submission", "needs-review"],
-            )
-
-            result = f"""✅ Config submitted successfully!
-
-📝 Issue created: {issue.html_url}
-🏷️  Issue #{issue.number}
-📦 Config: {config_name}
-📊 Category: {category}
-🏷️  Labels: config-submission, needs-review
-
-What happens next:
-  1. Maintainers will review your config
-  2. They'll test it with the actual documentation
-  3. If approved, it will be added to official/{category}/
-  4. The API will auto-update and your config becomes available!
-
-💡 Track your submission: {issue.html_url}
-📚 All configs: https://github.com/yusufkaraaslan/skill-seekers-configs
-"""
-
-            return [TextContent(type="text", text=result)]
-
-        except GithubException as e:
-            return [
-                TextContent(
-                    type="text",
-                    text=f"❌ GitHub Error: {str(e)}\n\nCheck your token permissions (needs 'repo' or 'public_repo' scope).",
-                )
-            ]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"❌ Error: {str(e)}")]
+    result = submit_config(
+        config_path=args.get("config_path"),
+        config_json=args.get("config_json"),
+        testing_notes=args.get("testing_notes", ""),
+        github_token=args.get("github_token"),
+    )
+    return text_response(result["message"])
 
 
 async def add_config_source_tool(args: dict) -> list[TextContent]:
@@ -654,7 +386,7 @@ async def add_config_source_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with registration results
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
     git_url = args.get("git_url")
@@ -731,7 +463,7 @@ async def list_config_sources_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with source list
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     enabled_only = args.get("enabled_only", False)
 
@@ -797,7 +529,7 @@ async def remove_config_source_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with removal results
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
 
@@ -874,7 +606,7 @@ async def push_config_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text="❌ Missing required parameter: source_name")]
 
     try:
-        from skill_seekers.mcp.config_publisher import ConfigPublisher
+        from skill_seekers.services.config_publisher import ConfigPublisher
 
         publisher = ConfigPublisher()
         result = publisher.publish(

@@ -128,40 +128,12 @@ def watch_status(skill_dir, interval=2):
 
 
 def main(args=None):
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Check enhancement status",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Check status once
-  skill-seekers enhance-status output/react/
-
-  # Watch status in real-time
-  skill-seekers enhance-status output/react/ --watch
-
-  # Get JSON output (for scripts)
-  skill-seekers enhance-status output/react/ --json
-""",
-    )
-
-    parser.add_argument("skill_directory", help="Path to skill directory (e.g., output/react/)")
-
-    parser.add_argument(
-        "--watch",
-        "-w",
-        action="store_true",
-        help="Watch status in real-time (updates every 2 seconds)",
-    )
-
-    parser.add_argument("--json", action="store_true", help="Output raw JSON (for scripting)")
-
-    parser.add_argument(
-        "--interval", type=int, default=2, help="Watch update interval in seconds (default: 2)"
-    )
 
     if args is None:
+        # Single source of flags: the central EnhanceStatusParser.
+        from skill_seekers.cli.parsers.enhance_status_parser import EnhanceStatusParser
+
+        parser = EnhanceStatusParser().build_standalone()
         args = parser.parse_args()
 
     # Watch mode

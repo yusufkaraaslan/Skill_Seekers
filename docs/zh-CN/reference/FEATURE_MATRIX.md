@@ -5,80 +5,86 @@
 ## 平台支持
 
 | 平台 | 打包格式 | 上传 | 增强 | 需要 API 密钥 |
-|----------|---------------|--------|-------------|------------------|
+|------|----------|------|------|---------------|
 | **Claude AI** | ZIP | ✅ Anthropic API | ✅ Sonnet 4 | ANTHROPIC_API_KEY |
 | **Google Gemini** | tar.gz | ✅ Files API | ✅ Gemini 2.0 | GOOGLE_API_KEY |
 | **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
-| **OpenCode** | 目录 | ❌ 手动 | ❌ 无 | 无 |
+| **MiniMax** | ZIP | ❌ 手动 | ❌ 无 | 无 |
+| **OpenCode** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Kimi** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **DeepSeek** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Qwen** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **OpenRouter** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Together AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Fireworks AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
-| **MiniMax** | ZIP | ❌ 手动 | ❌ 无 | 无 |
+| **IBM Bob** | 目录 | ❌ 手动 | ❌ 无 | 无 |
+| **LangChain** | JSON | ❌ 手动 | ❌ 无 | 无 |
+| **LlamaIndex** | JSON | ❌ 手动 | ❌ 无 | 无 |
+| **Haystack** | JSON | ❌ 手动 | ❌ 无 | 无 |
+| **Pinecone** | 向量 | ❌ 手动 | ❌ 无 | PINECONE_API_KEY |
+| **Weaviate** | 向量 | ❌ 手动 | ❌ 无 | 无 |
+| **Chroma** | 向量 | ❌ 手动 | ❌ 无 | 无 |
+| **FAISS** | 索引 | ❌ 手动 | ❌ 无 | 无 |
+| **Qdrant** | 向量 | ❌ 手动 | ❌ 无 | 无 |
 | **通用 Markdown** | ZIP | ❌ 手动 | ❌ 无 | 无 |
-
-## 来源类型支持（17 种）
-
-| 来源类型 | CLI 命令 | 平台 | 检测 |
-|-------------|------------|-----------|-----------|
-| **文档（网页）** | `create <url>` | 全部 12 个 | HTTP/HTTPS URL |
-| **GitHub 仓库** | `create owner/repo` | 全部 12 个 | `owner/repo` 或 github.com URL |
-| **PDF** | `create file.pdf` | 全部 12 个 | `.pdf` 扩展名 |
-| **Word（.docx）** | `create file.docx` | 全部 12 个 | `.docx` 扩展名 |
-| **EPUB** | `create file.epub` | 全部 12 个 | `.epub` 扩展名 |
-| **视频** | `create <url/file>` | 全部 12 个 | YouTube/Vimeo URL、视频扩展名 |
-| **本地代码库** | `scan ./path` | 全部 12 个 | 目录路径 |
-| **Jupyter Notebook** | `create file.ipynb` | 全部 12 个 | `.ipynb` 扩展名 |
-| **本地 HTML** | `create file.html` | 全部 12 个 | `.html`/`.htm` 扩展名 |
-| **OpenAPI/Swagger** | `create spec.yaml` | 全部 12 个 | `.yaml`/`.yml` 且含 OpenAPI 内容 |
-| **AsciiDoc** | `create file.adoc` | 全部 12 个 | `.adoc`/`.asciidoc` 扩展名 |
-| **PowerPoint** | `create file.pptx` | 全部 12 个 | `.pptx` 扩展名 |
-| **RSS/Atom** | `create feed.rss` | 全部 12 个 | `.rss`/`.atom` 扩展名 |
-| **Man 手册页** | `create cmd.1` | 全部 12 个 | `.1`–`.8`/`.man` 扩展名 |
-| **Confluence** | `create --space-key` | 全部 12 个 | API 或导出目录 |
-| **Notion** | `create --database-id` | 全部 12 个 | API 或导出目录 |
-| **Slack/Discord** | `create --chat-export-path` | 全部 12 个 | 导出目录或 API |
 
 ## 技能模式支持
 
-| 模式 | 描述 | 平台 | 示例配置 |
-|------|-------------|-----------|-----------------|
-| **文档** | 抓取 HTML 文档 | 全部 12 个 | react.json、django.json（共 14 个） |
-| **GitHub** | 分析仓库 | 全部 12 个 | react_github.json、godot_github.json |
-| **PDF** | 从 PDF 提取 | 全部 12 个 | example_pdf.json |
-| **统一** | 多源（文档+GitHub+PDF+更多） | 全部 12 个 | react_unified.json（共 5 个） |
-| **本地仓库** | 无限本地分析 | 全部 12 个 | deck_deck_go_local.json |
+| 模式 | 描述 | 平台 | CLI 命令 | `create` 检测 |
+|------|------|------|----------|---------------|
+| **文档** | 抓取 HTML 文档 | 全部 21 个 | `scrape` | `https://...` URL |
+| **GitHub** | 分析仓库 | 全部 21 个 | `github` | `owner/repo` 或 github.com URL |
+| **PDF** | 从 PDF 提取 | 全部 21 个 | `pdf` | `.pdf` 扩展名 |
+| **Word** | 从 DOCX 提取 | 全部 21 个 | `word` | `.docx` 扩展名 |
+| **EPUB** | 从 EPUB 提取 | 全部 21 个 | `epub` | `.epub` 扩展名 |
+| **视频** | 视频转录 | 全部 21 个 | `video` | YouTube/Vimeo URL、视频扩展名 |
+| **本地仓库** | 本地代码库分析 | 全部 21 个 | `analyze` | 目录路径 |
+| **Jupyter** | 从 notebook 提取 | 全部 21 个 | `jupyter` | `.ipynb` 扩展名 |
+| **HTML** | 提取本地 HTML 文件 | 全部 21 个 | `html` | `.html`/`.htm` 扩展名 |
+| **OpenAPI** | 提取 API 规范 | 全部 21 个 | `openapi` | `.yaml`/`.yml` 且含 OpenAPI 内容 |
+| **AsciiDoc** | 提取 AsciiDoc 文件 | 全部 21 个 | `asciidoc` | `.adoc`/`.asciidoc` 扩展名 |
+| **PowerPoint** | 从 PPTX 提取 | 全部 21 个 | `pptx` | `.pptx` 扩展名 |
+| **RSS/Atom** | 从订阅源提取 | 全部 21 个 | `rss` | `.rss`/`.atom` 扩展名 |
+| **Man 手册页** | 提取 man 手册页 | 全部 21 个 | `manpage` | `.1`-`.8`/`.man` 扩展名 |
+| **Confluence** | 从 Confluence 提取 | 全部 21 个 | `confluence` | API 或导出目录 |
+| **Notion** | 从 Notion 提取 | 全部 21 个 | `notion` | API 或导出目录 |
+| **聊天** | 提取 Slack/Discord | 全部 21 个 | `chat` | 导出目录或 API |
+| **统一** | 多源组合 | 全部 21 个 | `unified` | N/A（由配置驱动） |
 
 ## CLI 命令支持
 
-| 命令 | 平台 | 来源类型 | 多平台标志 |
-|---------|-----------|-------------|---------------------|
-| `create` | 全部 | 自动检测全部 17 种 | 否（输出是通用的） |
-| `scan` | 全部 | 本地代码库 | 否（输出是通用的） |
-| `doctor` | 全部 | N/A | 否 |
-| `enhance` | Claude、Gemini、OpenAI | 全部 | ✅ `--target` |
-| `enhance-status` | 全部 | N/A | 否 |
-| `package` | 全部 | 全部 | ✅ `--target` |
-| `upload` | Claude、Gemini、OpenAI | 全部 | ✅ `--target` |
-| `install` | 全部 | 全部 | ✅ `--target` |
-| `install-agent` | 全部 | 全部 | 否（代理特定路径） |
-| `estimate` | 全部 | 仅文档 | 否（估算是通用的） |
-| `extract-test-examples` | 全部 | 代码库 | 否 |
-| `resume` | 全部 | 全部 | 否 |
-| `quality` | 全部 | 全部 | 否 |
-| `config` | 全部 | N/A | 否 |
-| `workflows` | 全部 | N/A | 否 |
-| `sync-config` | 全部 | N/A | 否 |
-| `stream` | 全部 | 大文件 | 否 |
-| `update` | 全部 | 文档 | 否 |
-| `multilang` | 全部 | 多语言文档 | 否 |
+| 命令 | 平台 | 技能模式 | 多平台标志 | 可选依赖 |
+|------|------|----------|------------|----------|
+| `scrape` | 全部 | 仅文档 | 否（输出是通用的） | 无 |
+| `github` | 全部 | 仅 GitHub | 否（输出是通用的） | 无 |
+| `pdf` | 全部 | 仅 PDF | 否（输出是通用的） | `[pdf]` |
+| `word` | 全部 | 仅 Word | 否（输出是通用的） | `[word]` |
+| `epub` | 全部 | 仅 EPUB | 否（输出是通用的） | `[epub]` |
+| `video` | 全部 | 仅视频 | 否（输出是通用的） | `[video]` |
+| `analyze` | 全部 | 仅本地 | 否（输出是通用的） | 无 |
+| `jupyter` | 全部 | 仅 Jupyter | 否（输出是通用的） | `[jupyter]` |
+| `html` | 全部 | 仅 HTML | 否（输出是通用的） | 无 |
+| `openapi` | 全部 | 仅 OpenAPI | 否（输出是通用的） | `[openapi]` |
+| `asciidoc` | 全部 | 仅 AsciiDoc | 否（输出是通用的） | `[asciidoc]` |
+| `pptx` | 全部 | 仅 PPTX | 否（输出是通用的） | `[pptx]` |
+| `rss` | 全部 | 仅 RSS | 否（输出是通用的） | `[rss]` |
+| `manpage` | 全部 | 仅 man 手册页 | 否（输出是通用的） | 无 |
+| `confluence` | 全部 | 仅 Confluence | 否（输出是通用的） | `[confluence]` |
+| `notion` | 全部 | 仅 Notion | 否（输出是通用的） | `[notion]` |
+| `chat` | 全部 | 仅聊天 | 否（输出是通用的） | `[chat]` |
+| `unified` | 全部 | 仅统一 | 否（输出是通用的） | 因来源而异 |
+| `scan` | 全部 | 项目引导 | 否（输出是通用的） | 无（使用现有 `AgentClient`） |
+| `enhance` | Claude、Gemini、OpenAI | 全部 | ✅ `--target` | 无 |
+| `package` | 全部 | 全部 | ✅ `--target` | 无 |
+| `upload` | Claude、Gemini、OpenAI | 全部 | ✅ `--target` | 无 |
+| `estimate` | 全部 | 仅文档 | 否（估算是通用的） | 无 |
+| `install` | 全部 | 全部 | ✅ `--target` | 无 |
+| `install-agent` | 全部 | 全部 | 否（智能体特定路径） | 无 |
 
 ## MCP 工具支持
 
 | 工具 | 平台 | 技能模式 | 多平台参数 |
-|------|-----------|-------------|----------------------|
+|------|------|----------|------------|
 | **配置工具** |
 | `generate_config` | 全部 | 全部 | 否（创建通用 JSON） |
 | `list_configs` | 全部 | 全部 | 否 |
@@ -89,7 +95,7 @@
 | `scrape_docs` | 全部 | 文档 + 统一 | 否（输出是通用的） |
 | `scrape_github` | 全部 | 仅 GitHub | 否（输出是通用的） |
 | `scrape_pdf` | 全部 | 仅 PDF | 否（输出是通用的） |
-| `scrape_generic` | 全部 | 10 种新来源类型 | 否（输出是通用的） |
+| `scrape_generic` | 全部 | 10 种新类型 | 否（输出是通用的） |
 | **打包工具** |
 | `package_skill` | 全部 | 全部 | ✅ `target` 参数 |
 | `upload_skill` | Claude、Gemini、OpenAI | 全部 | ✅ `target` 参数 |
@@ -137,29 +143,29 @@
 
 ### 单源工作流
 ```
-Config → Create → Build → [Enhance] → Package --target X → [Upload --target X]
+Config → Scrape → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**平台：** 全部 12 个
+**平台：** 全部 21 个
 **模式：** 文档、GitHub、PDF
 
 ### 统一多源工作流
 ```
-Config → Create All → Detect Conflicts → Merge → Build → [Enhance] → Package --target X → [Upload --target X]
+Config → Scrape All → Detect Conflicts → Merge → Build → [Enhance] → Package --target X → [Upload --target X]
 ```
-**平台：** 全部 12 个
+**平台：** 全部 21 个
 **模式：** 仅统一
 
 ### 完整安装工作流
 ```
-install --target X → Fetch → Create → Enhance → Package → Upload
+install --target X → Fetch → Scrape → Enhance → Package → Upload
 ```
-**平台：** 全部 12 个
+**平台：** 全部 21 个
 **模式：** 全部（通过配置类型检测）
 
 ## API 密钥要求
 
 | 平台 | 环境变量 | 密钥格式 | 用于 |
-|----------|---------------------|------------|--------------|
+|------|----------|----------|------|
 | Claude | `ANTHROPIC_API_KEY` | `sk-ant-*` | 上传、API 增强 |
 | Gemini | `GOOGLE_API_KEY` | `AIza*` | 上传、API 增强 |
 | OpenAI | `OPENAI_API_KEY` | `sk-*` | 上传、API 增强 |
@@ -246,7 +252,7 @@ skill-seekers install --config vue --target markdown
 ### 按来源拆分统一配置
 ```bash
 # 将多源配置拆分为单独的配置
-skill-seekers split --config configs/react_unified.json --strategy source
+python -m skill_seekers.cli.split_config configs/react_unified.json --strategy source
 
 # 创建：
 # - react-documentation.json（仅文档）
@@ -267,13 +273,13 @@ wait
 发布前，验证所有组合：
 
 ### CLI 命令 × 平台
-- [ ] create → package claude → upload claude
-- [ ] create → package gemini → upload gemini
-- [ ] create → package openai → upload openai
-- [ ] create → package markdown
-- [ ] create (GitHub) → package（所有平台）
-- [ ] create (PDF) → package（所有平台）
-- [ ] create (unified) → package（所有平台）
+- [ ] scrape → package claude → upload claude
+- [ ] scrape → package gemini → upload gemini
+- [ ] scrape → package openai → upload openai
+- [ ] scrape → package markdown
+- [ ] github → package（所有平台）
+- [ ] pdf → package（所有平台）
+- [ ] unified → package（所有平台）
 - [ ] enhance claude
 - [ ] enhance gemini
 - [ ] enhance openai
@@ -300,8 +306,21 @@ wait
 - [ ] 文档 → Markdown
 - [ ] GitHub → 所有平台
 - [ ] PDF → 所有平台
-- [ ] 统一 → 所有平台
+- [ ] Word → 所有平台
+- [ ] EPUB → 所有平台
+- [ ] 视频 → 所有平台
 - [ ] 本地仓库 → 所有平台
+- [ ] Jupyter → 所有平台
+- [ ] HTML → 所有平台
+- [ ] OpenAPI → 所有平台
+- [ ] AsciiDoc → 所有平台
+- [ ] PPTX → 所有平台
+- [ ] RSS → 所有平台
+- [ ] Man 手册页 → 所有平台
+- [ ] Confluence → 所有平台
+- [ ] Notion → 所有平台
+- [ ] 聊天 → 所有平台
+- [ ] 统一 → 所有平台
 
 ## 平台特定说明
 
@@ -341,6 +360,8 @@ A：
 - **Claude：** 最佳默认选择，出色的 MCP 集成
 - **Gemini：** 如果你需要长上下文（1M token）或 grounding
 - **OpenAI：** 如果你需要向量搜索和语义检索
+- **MiniMax/Kimi/DeepSeek/Qwen：** 适合中文 LLM 生态系统兼容
+- **OpenRouter/Together/Fireworks：** 适合多模型路由或开源模型访问
 - **Markdown：** 如果你需要通用兼容性或离线使用
 
 **Q：我可以为不同平台增强技能吗？**
@@ -350,7 +371,7 @@ A：可以！增强会添加平台特定的格式：
 - OpenAI：纯文本 assistant instructions
 
 **Q：所有技能模式都适用于所有平台吗？**
-A：是的！所有 17 种来源类型和所有 5 种技能模式（文档、GitHub、PDF、统一、本地仓库）都适用于全部 12 个平台。
+A：是的！所有 18 种来源类型都适用于全部 21 个平台（Claude、Gemini、OpenAI、MiniMax、OpenCode、Kimi、DeepSeek、Qwen、OpenRouter、Together AI、Fireworks AI、IBM Bob、LangChain、LlamaIndex、Haystack、Pinecone、Weaviate、Chroma、FAISS、Qdrant 和 Markdown）。
 
 ## 另请参阅
 

@@ -13,8 +13,6 @@ Usage:
 import json
 import logging
 import os
-import re
-from pathlib import Path
 
 # Optional dependency guard
 try:
@@ -28,7 +26,7 @@ except ImportError:
 # BeautifulSoup is a core dependency (always available)
 from bs4 import BeautifulSoup, Comment
 
-from .skill_converter import SkillConverter
+from .document_skill_builder import DocumentSkillBuilder
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
 from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
@@ -71,10 +69,25 @@ def infer_description_from_epub(metadata: dict | None = None, name: str = "") ->
     )
 
 
-class EpubToSkillConverter(SkillConverter):
-    """Convert EPUB e-book to AI skill."""
+class EpubToSkillConverter(DocumentSkillBuilder):
+    """Convert EPUB e-book to AI skill.
+
+    Build side (categorize/reference/index/SKILL.md) comes from
+    DocumentSkillBuilder; this class owns EPUB extraction only.
+    """
 
     SOURCE_TYPE = "epub"
+    SOURCE_PATH_ATTR = "epub_path"
+    SOURCE_LABEL = "EPUB"
+    FOOTER_LABEL = "EPUB Scraper"
+    SKILL_MD_METADATA_FIELDS = (
+        ("title", "Title"),
+        ("author", "Author"),
+        ("language", "Language"),
+        ("publisher", "Publisher"),
+        ("date", "Date"),
+    )
+    INDEX_METADATA_FIELDS = (("author", "Author"), ("date", "Date"))
 
     def __init__(self, config):
         super().__init__(config)
@@ -86,8 +99,8 @@ class EpubToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Categories config
         self.categories = config.get("categories", {})
@@ -207,7 +220,7 @@ class EpubToSkillConverter(SkillConverter):
         }
 
         # Save extracted data
-        os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(result_data, f, indent=2, ensure_ascii=False, default=str)
 
@@ -410,490 +423,6 @@ class EpubToSkillConverter(SkillConverter):
             logger.debug("Could not enumerate SVG images in EPUB")
 
         return image_count
-
-    def load_extracted_data(self, json_path):
-        """Load previously extracted data from JSON."""
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} sections")
-        return True
-
-    def categorize_content(self):
-        """Categorize sections based on headings or keywords."""
-        print("\n📋 Categorizing content...")
-
-        categorized = {}
-        sections = self.extracted_data.get("pages", [])
-
-        # For single EPUB source, use single category with all sections
-        if self.epub_path:
-            epub_basename = Path(self.epub_path).stem
-            category_key = self._sanitize_filename(epub_basename)
-            categorized[category_key] = {
-                "title": epub_basename,
-                "pages": sections,
-            }
-            print("✅ Created 1 category (single EPUB source)")
-            print(f"   - {epub_basename}: {len(sections)} sections")
-            return categorized
-
-        # Keyword-based categorization (multi-source scenario)
-        if self.categories:
-            first_value = next(iter(self.categories.values()), None)
-            if isinstance(first_value, list) and first_value and isinstance(first_value[0], dict):
-                # Already categorized format
-                for cat_key, pages in self.categories.items():
-                    categorized[cat_key] = {
-                        "title": cat_key.replace("_", " ").title(),
-                        "pages": pages,
-                    }
-            else:
-                # Keyword-based categorization
-                for cat_key in self.categories:
-                    categorized[cat_key] = {
-                        "title": cat_key.replace("_", " ").title(),
-                        "pages": [],
-                    }
-
-                for section in sections:
-                    text = section.get("text", "").lower()
-                    heading_text = section.get("heading", "").lower()
-
-                    scores = {}
-                    for cat_key, keywords in self.categories.items():
-                        if isinstance(keywords, list):
-                            score = sum(
-                                1
-                                for kw in keywords
-                                if isinstance(kw, str)
-                                and (kw.lower() in text or kw.lower() in heading_text)
-                            )
-                        else:
-                            score = 0
-                        if score > 0:
-                            scores[cat_key] = score
-
-                    if scores:
-                        best_cat = max(scores, key=scores.get)
-                        categorized[best_cat]["pages"].append(section)
-                    else:
-                        if "other" not in categorized:
-                            categorized["other"] = {"title": "Other", "pages": []}
-                        categorized["other"]["pages"].append(section)
-        else:
-            # No categorization - single category
-            categorized["content"] = {"title": "Content", "pages": sections}
-
-        print(f"✅ Created {len(categorized)} categories")
-        for _cat_key, cat_data in categorized.items():
-            print(f"   - {cat_data['title']}: {len(cat_data['pages'])} sections")
-
-        return categorized
-
-    def build_skill(self):
-        """Build complete skill structure."""
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        # Categorize content
-        categorized = self.categorize_content()
-
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        total_sections = len(categorized)
-        section_num = 1
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data, section_num, total_sections)
-            section_num += 1
-
-        # Generate index
-        self._generate_index(categorized)
-
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
-
-    def _reference_filename(self, cat_data, section_num, total_sections):
-        """Basename of a category's reference file — single source of truth shared
-        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
-        sections = cat_data.get("pages") or []
-        if not sections:
-            return f"section_{section_num:02d}.md"
-        section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-        base = Path(self.epub_path).stem if self.epub_path else ""
-        if total_sections == 1:
-            return f"{base}.md" if base else "main.md"
-        base_name = base if base else "section"
-        return f"{base_name}_s{min(section_nums)}-s{max(section_nums)}.md"
-
-    def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
-        """Generate a reference markdown file for a category."""
-        filename = (
-            f"{self.skill_dir}/references/"
-            f"{self._reference_filename(cat_data, section_num, total_sections)}"
-        )
-        sections = cat_data.get("pages") or []
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {cat_data['title']}\n\n")
-
-            for section in sections:
-                sec_num = section.get("section_number", "?")
-                heading = section.get("heading", "")
-                heading_level = section.get("heading_level", "h1")
-
-                f.write(f"---\n\n**📄 Source: Section {sec_num}**\n\n")
-
-                # Add heading
-                if heading:
-                    md_level = "#" * (int(heading_level[1]) + 1) if heading_level else "##"
-                    f.write(f"{md_level} {heading}\n\n")
-
-                # Add sub-headings (h3+) found within the section
-                for sub_heading in section.get("headings", []):
-                    sub_level = sub_heading.get("level", "h3")
-                    sub_text = sub_heading.get("text", "")
-                    if sub_text:
-                        sub_md = "#" * (int(sub_level[1]) + 1) if sub_level else "###"
-                        f.write(f"{sub_md} {sub_text}\n\n")
-
-                # Add text content
-                if section.get("text"):
-                    f.write(f"{section['text']}\n\n")
-
-                # Add code samples
-                code_list = section.get("code_samples", [])
-                if code_list:
-                    f.write("### Code Examples\n\n")
-                    for code in code_list:
-                        lang = code.get("language", "")
-                        f.write(f"```{lang}\n{code['code']}\n```\n\n")
-
-                # Add tables as markdown
-                tables = section.get("tables", [])
-                if tables:
-                    f.write("### Tables\n\n")
-                    for table in tables:
-                        headers = table.get("headers", [])
-                        rows = table.get("rows", [])
-                        if headers:
-                            f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                            f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
-
-                # Add images
-                images = section.get("images", [])
-                if images:
-                    assets_dir = os.path.join(self.skill_dir, "assets")
-                    os.makedirs(assets_dir, exist_ok=True)
-
-                    f.write("### Images\n\n")
-                    for img in images:
-                        img_index = img.get("index", 0)
-                        img_data = img.get("data", b"")
-                        img_filename = f"section_{sec_num}_img_{img_index}.png"
-                        img_path = os.path.join(assets_dir, img_filename)
-
-                        # Require NON-EMPTY bytes — b"" passed the isinstance
-                        # check and produced a 0-byte PNG plus a broken ![] link.
-                        if isinstance(img_data, (bytes, bytearray)) and len(img_data) > 0:
-                            with open(img_path, "wb") as img_file:
-                                img_file.write(img_data)
-                            f.write(f"![Image {img_index}](../assets/{img_filename})\n\n")
-
-                f.write("---\n\n")
-
-        print(f"   Generated: {filename}")
-
-    def _generate_index(self, categorized):
-        """Generate reference index."""
-        filename = f"{self.skill_dir}/references/index.md"
-
-        total_sections = len(categorized)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Documentation Reference\n\n")
-            f.write("## Categories\n\n")
-
-            section_num = 1
-            for _cat_key, cat_data in categorized.items():
-                sections = cat_data["pages"]
-                section_count = len(sections)
-
-                link_filename = self._reference_filename(cat_data, section_num, total_sections)
-                if sections:
-                    section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-                    sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-                else:
-                    sec_range_str = "N/A"
-
-                f.write(
-                    f"- [{cat_data['title']}]({link_filename}) "
-                    f"({section_count} sections, {sec_range_str})\n"
-                )
-                section_num += 1
-
-            f.write("\n## Statistics\n\n")
-            f.write(f"- Total sections: {self.extracted_data.get('total_sections', 0)}\n")
-            f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
-
-            # Metadata
-            metadata = self.extracted_data.get("metadata", {})
-            if metadata.get("author"):
-                f.write(f"- Author: {metadata['author']}\n")
-            if metadata.get("date"):
-                f.write(f"- Date: {metadata['date']}\n")
-
-        print(f"   Generated: {filename}")
-
-    def _generate_skill_md(self, categorized):
-        """Generate main SKILL.md file."""
-        filename = f"{self.skill_dir}/SKILL.md"
-
-        skill_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
-        desc = self.description[:1024] if len(self.description) > 1024 else self.description
-
-        with open(filename, "w", encoding="utf-8") as f:
-            # YAML frontmatter
-            f.write("---\n")
-            f.write(f"name: {skill_name}\n")
-            f.write(f"description: {desc}\n")
-            f.write("---\n\n")
-
-            f.write(f"# {self.name.title()} Documentation Skill\n\n")
-            f.write(f"{self.description}\n\n")
-
-            # Document metadata
-            metadata = self.extracted_data.get("metadata", {})
-            if any(v for v in metadata.values() if v):
-                f.write("## 📋 Document Information\n\n")
-                if metadata.get("title"):
-                    f.write(f"**Title:** {metadata['title']}\n\n")
-                if metadata.get("author"):
-                    f.write(f"**Author:** {metadata['author']}\n\n")
-                if metadata.get("language"):
-                    f.write(f"**Language:** {metadata['language']}\n\n")
-                if metadata.get("publisher"):
-                    f.write(f"**Publisher:** {metadata['publisher']}\n\n")
-                if metadata.get("date"):
-                    f.write(f"**Date:** {metadata['date']}\n\n")
-
-            # When to Use
-            f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
-
-            # Section Overview
-            total_sections = self.extracted_data.get("total_sections", 0)
-            f.write("## 📖 Section Overview\n\n")
-            f.write(f"**Total Sections:** {total_sections}\n\n")
-            f.write("**Content Breakdown:**\n\n")
-            for _cat_key, cat_data in categorized.items():
-                section_count = len(cat_data["pages"])
-                f.write(f"- **{cat_data['title']}**: {section_count} sections\n")
-            f.write("\n")
-
-            # Key Concepts from headings
-            f.write(self._format_key_concepts())
-
-            # Quick Reference patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
-
-            # Code examples (top 15, grouped by language)
-            all_code = []
-            for section in self.extracted_data.get("pages", []):
-                all_code.extend(section.get("code_samples", []))
-
-            all_code.sort(key=lambda x: x.get("quality_score", 0), reverse=True)
-            top_code = all_code[:15]
-
-            if top_code:
-                f.write("## 📝 Code Examples\n\n")
-                f.write("*High-quality examples extracted from documentation*\n\n")
-
-                by_lang: dict[str, list] = {}
-                for code in top_code:
-                    lang = code.get("language", "unknown")
-                    by_lang.setdefault(lang, []).append(code)
-
-                for lang in sorted(by_lang.keys()):
-                    examples = by_lang[lang]
-                    f.write(f"### {lang.title()} Examples ({len(examples)})\n\n")
-                    for i, code in enumerate(examples[:5], 1):
-                        quality = code.get("quality_score", 0)
-                        code_text = code.get("code", "")
-                        f.write(f"**Example {i}** (Quality: {quality:.1f}/10):\n\n")
-                        f.write(f"```{lang}\n")
-                        if len(code_text) <= 500:
-                            f.write(code_text)
-                        else:
-                            f.write(code_text[:500] + "\n...")
-                        f.write("\n```\n\n")
-
-            # Table Summary (first 5 tables)
-            all_tables = []
-            for section in self.extracted_data.get("pages", []):
-                for table in section.get("tables", []):
-                    all_tables.append((section.get("heading", ""), table))
-
-            if all_tables:
-                f.write("## 📊 Table Summary\n\n")
-                f.write(f"*{len(all_tables)} table(s) found in document*\n\n")
-                for section_heading, table in all_tables[:5]:
-                    if section_heading:
-                        f.write(f"**From section: {section_heading}**\n\n")
-                    headers = table.get("headers", [])
-                    rows = table.get("rows", [])
-                    if headers:
-                        f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                        f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows[:5]:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
-
-            # Statistics
-            f.write("## 📊 Documentation Statistics\n\n")
-            f.write(f"- **Total Sections**: {total_sections}\n")
-            f.write(f"- **Code Blocks**: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- **Images/Diagrams**: {self.extracted_data.get('total_images', 0)}\n")
-            f.write(f"- **Tables**: {len(all_tables)}\n")
-
-            langs = self.extracted_data.get("languages_detected", {})
-            if langs:
-                f.write(f"- **Programming Languages**: {len(langs)}\n\n")
-                f.write("**Language Breakdown:**\n\n")
-                for lang, count in sorted(langs.items(), key=lambda x: x[1], reverse=True):
-                    f.write(f"- {lang}: {count} examples\n")
-                f.write("\n")
-
-            # Navigation
-            f.write("## 🗺️ Navigation\n\n")
-            f.write("**Reference Files:**\n\n")
-            total_sections = len(categorized)
-            for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
-                cat_file = self._reference_filename(cat_data, section_num, total_sections)
-                f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
-            f.write("\n")
-            f.write("See `references/index.md` for complete documentation structure.\n\n")
-
-            # Footer
-            f.write("---\n\n")
-            f.write("**Generated by Skill Seeker** | EPUB Scraper\n")
-
-        with open(filename, encoding="utf-8") as f:
-            line_count = len(f.read().split("\n"))
-        print(f"   Generated: {filename} ({line_count} lines)")
-
-    def _format_key_concepts(self) -> str:
-        """Extract key concepts from headings across all sections."""
-        all_headings = []
-        for section in self.extracted_data.get("pages", []):
-            # Main heading
-            heading = section.get("heading", "").strip()
-            level = section.get("heading_level", "h1")
-            if heading and len(heading) > 3:
-                all_headings.append((level, heading))
-            # Sub-headings
-            for sub in section.get("headings", []):
-                text = sub.get("text", "").strip()
-                sub_level = sub.get("level", "h3")
-                if text and len(text) > 3:
-                    all_headings.append((sub_level, text))
-
-        if not all_headings:
-            return ""
-
-        content = "## 🔑 Key Concepts\n\n"
-        content += "*Main topics covered in this documentation*\n\n"
-
-        h1_headings = [text for level, text in all_headings if level == "h1"]
-        h2_headings = [text for level, text in all_headings if level == "h2"]
-
-        if h1_headings:
-            content += "**Major Topics:**\n\n"
-            for heading in h1_headings[:10]:
-                content += f"- {heading}\n"
-            content += "\n"
-
-        if h2_headings:
-            content += "**Subtopics:**\n\n"
-            for heading in h2_headings[:15]:
-                content += f"- {heading}\n"
-            content += "\n"
-
-        return content
-
-    def _format_patterns_from_content(self) -> str:
-        """Extract common patterns from text content."""
-        patterns = []
-        pattern_keywords = [
-            "getting started",
-            "installation",
-            "configuration",
-            "usage",
-            "api",
-            "examples",
-            "tutorial",
-            "guide",
-            "best practices",
-            "troubleshooting",
-            "faq",
-        ]
-
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-
-            for keyword in pattern_keywords:
-                if keyword in heading_text:
-                    patterns.append(
-                        {
-                            "type": keyword.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-
-        content = "*Common documentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for pattern in patterns:
-            ptype = pattern["type"]
-            by_type.setdefault(ptype, []).append(pattern)
-
-        for ptype in sorted(by_type.keys()):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-
-        return content
-
-    def _sanitize_filename(self, name):
-        """Convert string to safe filename."""
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        safe = re.sub(r"[-\s]+", "_", safe)
-        return safe
 
 
 # ---------------------------------------------------------------------------

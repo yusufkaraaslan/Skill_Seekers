@@ -92,7 +92,7 @@ Edit `~/.continue/config.json`:
 
 ```bash
 # Start Skill Seekers MCP server
-skill-seekers mcp-server --port 8765
+skill-seekers-mcp --transport http --port 8765
 
 # Or as systemd service (Linux)
 sudo systemctl enable skill-seekers-mcp
@@ -191,7 +191,7 @@ Create `myframework-config.json`:
 skill-seekers create  facebook/react
 
 # Or local codebase
-skill-seekers scan  /path/to/repo --comprehensive
+skill-seekers create /path/to/repo --preset comprehensive
 ```
 
 ### Step 2: Optimize for Continue.dev

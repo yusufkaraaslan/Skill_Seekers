@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from skill_seekers.mcp.source_manager import SourceManager
+from skill_seekers.services.source_manager import SourceManager
 
 
 @pytest.fixture

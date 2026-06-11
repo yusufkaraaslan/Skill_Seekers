@@ -985,11 +985,8 @@ serverless deploy
 
 **Solution:**
 ```bash
-# 1. Scrape all sources
-skill-seekers create --config configs/docs.json
-skill-seekers create --config --docs-config configs/docs.json \
-  --github internal/repo \
-  --name internal-kb
+# 1. Scrape all sources via a unified config (sources array with docs + github)
+skill-seekers create --config configs/internal-kb-unified.json --name internal-kb
 
 # 2. Package for LlamaIndex
 skill-seekers package output/internal-kb --target llama-index

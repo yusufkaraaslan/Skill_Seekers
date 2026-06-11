@@ -10,9 +10,42 @@ Single home for small utilities that were copy-pasted across many
   now gated behind ``notebook_mode``.
 - ``extract_table_from_html``: pull headers/rows from a BeautifulSoup ``<table>``
   (was byte-identical in the word and epub scrapers).
+- ``reference_filename``: basename for a category's reference .md file (was
+  near-identical in the word/pdf/epub/html/pptx/asciidoc/jupyter scrapers).
 """
 
 import re
+
+
+def reference_filename(
+    pages: list[dict],
+    section_num: int,
+    total_sections: int,
+    base_stem: str = "",
+    *,
+    number_key: str = "section_number",
+    prefix: str = "s",
+) -> str:
+    """Basename of a category's reference file — the single source of truth
+    shared by the file writer, index.md, and the SKILL.md nav, so the links
+    can't drift from the actual filenames (DOC-07).
+
+    Args:
+        pages: The category's page/section dicts.
+        section_num: 1-based category index (used for the empty fallback).
+        total_sections: Total number of categories being written.
+        base_stem: Source-file stem (e.g. ``Path(self.docx_path).stem``).
+        number_key: Dict key holding each page's number (pdf uses
+            ``"page_number"``; everything else ``"section_number"``).
+        prefix: Range prefix in the filename (pdf uses ``"p"``).
+    """
+    if not pages:
+        return f"section_{section_num:02d}.md"
+    nums = [p.get(number_key, i + 1) for i, p in enumerate(pages)]
+    if total_sections == 1:
+        return f"{base_stem}.md" if base_stem else "main.md"
+    base_name = base_stem or "section"
+    return f"{base_name}_{prefix}{min(nums)}-{prefix}{max(nums)}.md"
 
 
 def parse_leading_int(value, default: int = 0) -> int:

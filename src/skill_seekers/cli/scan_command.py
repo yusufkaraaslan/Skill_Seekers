@@ -567,9 +567,9 @@ def generate_config_with_ai(
         except Exception as e:
             logger.warning("AI-generated config failed validation: %s", e)
             continue
-        # The community submission flow (submit_config_tool) additionally
-        # requires the name to match ^[a-zA-Z0-9_-]+$. Reject here so we
-        # don't silently write a config that can't be published.
+        # The community submission flow (services.source_manager.submit_config)
+        # additionally requires the name to match ^[a-zA-Z0-9_-]+$. Reject here
+        # so we don't silently write a config that can't be published.
         name = str(data.get("name", ""))
         if not re.match(r"^[a-zA-Z0-9_-]+$", name):
             logger.warning(
@@ -621,6 +621,14 @@ def generate_config_with_ai(
 # Re-imported at module level so tests can monkeypatch
 # ``skill_seekers.cli.scan_command.resolve_config_path``.
 from skill_seekers.cli.config_fetcher import resolve_config_path  # noqa: E402
+
+# Community-registry submission engine — shared with the MCP submit_config
+# tool via the services layer (CLI must not import skill_seekers.mcp).
+from skill_seekers.services.source_manager import (  # noqa: E402
+    REGISTRY_REPO,
+    find_existing_submission,
+    submit_config,
+)
 
 
 def _config_filename_for(detection: Detection) -> str:
@@ -801,6 +809,11 @@ def resolve_or_generate_with_status(
     # (3) user config dir; all three require the ``.json`` suffix to match
     # actual files on disk, so we append it here. The API fallback inside
     # the function strips/re-adds it as needed.
+    #
+    # Snapshot out_dir first so the intermediate cleanup below can tell an
+    # API-fetched cache artifact (created during this run) apart from a
+    # pre-existing user-managed file — the latter must never be deleted.
+    pre_existing = {p.resolve() for p in out_dir.glob("*.json")}
     resolved: Path | None = None
     for candidate in _canonical_name_candidates(detection.name):
         lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
@@ -819,6 +832,24 @@ def resolve_or_generate_with_status(
             return None, False
         _set_detected_version(data, detection.version)
         _atomic_write_json(target, data)
+        # An API fetch may have landed a canonical-named file inside out_dir
+        # (e.g. godot.json next to our godot-engine.json target). Remove that
+        # intermediate: scan's diff is keyed by filename slug, so a leftover
+        # canonical file shows up as a phantom "removed" config on the next
+        # scan and gets archived — churn on every re-scan. Only files this
+        # run created qualify: resolve_config_path can also return a
+        # pre-existing file inside out_dir (e.g. a user-managed
+        # configs/godot.json found via its CWD-relative lookup when
+        # out_dir == ./configs) — copy that, never delete it.
+        try:
+            if (
+                resolved != target
+                and resolved.parent.resolve() == out_dir.resolve()
+                and resolved.resolve() not in pre_existing
+            ):
+                resolved.unlink()
+        except OSError as e:
+            logger.debug("Could not remove fetched intermediate %s: %s", resolved, e)
         return target, False
 
     if not allow_generate:
@@ -858,58 +889,34 @@ def resolve_or_generate(
 
 _SUBMIT_TIMEOUT_SECONDS = 30
 _SUBMIT_RETRY_DELAYS = (5, 15)  # seconds between retries
-_REGISTRY_REPO = "yusufkaraaslan/skill-seekers-configs"
 
 
 async def _find_existing_issue(config_name: str, github_token: str | None) -> str | None:
-    """Search the community registry for an open issue mentioning ``config_name``.
+    """Search the community registry for an open submission of ``config_name``.
 
     Returns the issue URL if found; None on no match, no token, or any error.
     Idempotency guard — prevents opening duplicate submission issues when the
-    user runs scan repeatedly.
+    user runs scan repeatedly. Delegates to the shared (exact-title, bounded)
+    check in services.source_manager so this and the MCP submit tool can't
+    disagree on what counts as a duplicate.
     """
     if not github_token:
         return None
-    try:
-        from github import Github
-    except ImportError:
-        return None
 
     import asyncio
 
-    def _query() -> str | None:
-        try:
-            gh = Github(github_token)
-            # Search open issues in the registry repo with the config name in title.
-            query = f'repo:{_REGISTRY_REPO} is:issue is:open in:title "{config_name}"'
-            issues = gh.search_issues(query=query)
-            for issue in issues:
-                return issue.html_url
-        except Exception as e:
-            logger.debug("Existing-issue search failed for %s: %s", config_name, e)
-        return None
-
     # PyGithub is sync — run in a thread so we don't block the loop.
-    return await asyncio.to_thread(_query)
+    return await asyncio.to_thread(find_existing_submission, config_name, github_token)
 
 
 async def _submit_config(config_path: Path) -> dict:
-    """Async wrapper around the MCP `submit_config_tool` with timeout + retry.
+    """Async wrapper around the shared ``submit_config`` service with timeout + retry.
 
     Retries on transient failures (rate-limit / 5xx) with backoff per
     ``_SUBMIT_RETRY_DELAYS``. Per-attempt timeout from ``_SUBMIT_TIMEOUT_SECONDS``.
-    Returns a dict ``{ok, message, url?}``. Raises ``RuntimeError`` with an
-    actionable message on import failure.
+    Returns a dict ``{ok, message}``.
     """
     import asyncio
-
-    try:
-        from skill_seekers.mcp.tools.source_tools import submit_config_tool
-    except Exception as e:
-        raise RuntimeError(
-            "MCP extras unavailable — `pip install -e .[mcp]` to enable "
-            f"community submission ({type(e).__name__}: {e})"
-        ) from e
 
     last_error: Exception | None = None
     delays = (0,) + _SUBMIT_RETRY_DELAYS  # first attempt fires immediately
@@ -917,8 +924,10 @@ async def _submit_config(config_path: Path) -> dict:
         if delay:
             await asyncio.sleep(delay)
         try:
+            # The service is sync (PyGithub) — run in a thread so the
+            # per-attempt timeout can actually fire.
             result = await asyncio.wait_for(
-                submit_config_tool({"config_path": str(config_path)}),
+                asyncio.to_thread(submit_config, config_path=str(config_path)),
                 timeout=_SUBMIT_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:
@@ -937,15 +946,12 @@ async def _submit_config(config_path: Path) -> dict:
             )
             continue
 
-        if result and hasattr(result[0], "text"):
-            text = result[0].text
-            ok = not text.lstrip().startswith("❌")
-            # Transient failure? Retry. Permanent failure? Return immediately.
-            transient = any(s in text.lower() for s in ("rate limit", "503", "502", "504"))
-            if not ok and transient and attempt < len(delays) - 1:
-                continue
-            return {"ok": ok, "message": text}
-        last_error = RuntimeError("Empty response from submit_config_tool")
+        # Transient failure? Retry. Permanent failure? Return immediately.
+        text = result["message"]
+        transient = any(s in text.lower() for s in ("rate limit", "503", "502", "504"))
+        if not result["ok"] and transient and attempt < len(delays) - 1:
+            continue
+        return result
 
     # All retries exhausted.
     raise RuntimeError(
@@ -1004,7 +1010,7 @@ async def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = Fals
 
         print()
         print(f"📤 Submit '{name}' to the community config registry?")
-        print(f"   ({path.name} — opens an issue at {_REGISTRY_REPO})")
+        print(f"   ({path.name} — opens an issue at {REGISTRY_REPO})")
         try:
             answer = (await _prompt_async("   [y/N] ")).strip().lower()
         except (EOFError, KeyboardInterrupt):

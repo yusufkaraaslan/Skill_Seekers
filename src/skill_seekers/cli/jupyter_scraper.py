@@ -28,7 +28,7 @@ try:
 except ImportError:
     JUPYTER_AVAILABLE = False
 
-from .skill_converter import SkillConverter
+from .document_skill_builder import DocumentSkillBuilder
 from skill_seekers.cli.scraper_utils import score_code_quality
 
 logger = logging.getLogger(__name__)
@@ -200,10 +200,39 @@ def infer_description_from_notebook(metadata: dict | None = None, name: str = ""
     )
 
 
-class JupyterToSkillConverter(SkillConverter):
-    """Convert Jupyter Notebook (.ipynb) to skill."""
+class JupyterToSkillConverter(DocumentSkillBuilder):
+    """Convert Jupyter Notebook (.ipynb) to skill.
+
+    Shared build machinery (load/build orchestration, reference-file wrapper,
+    filename resolution) comes from DocumentSkillBuilder; notebook cells
+    aren't plain sections, so categorization, the per-section reference body,
+    index.md, and SKILL.md stay jupyter-specific overrides.
+    """
 
     SOURCE_TYPE = "jupyter"
+    SOURCE_PATH_ATTR = "notebook_path"
+    SOURCE_LABEL = "notebook"
+    FOOTER_LABEL = "Jupyter Notebook Scraper"
+    # Notebook analysis stages on top of the shared documentation keywords.
+    PATTERN_KEYWORDS = DocumentSkillBuilder.PATTERN_KEYWORDS + (
+        "data loading",
+        "preprocessing",
+        "modeling",
+        "evaluation",
+        "results",
+        "conclusion",
+        "summary",
+    )
+
+    @property
+    def source_stem(self) -> str:
+        """Notebook stem only when notebook_path is a single FILE.
+
+        Directory sources keep the generic ``section_*`` reference naming
+        (the base property would use the directory name as the stem).
+        """
+        path = self.source_path
+        return Path(path).stem if path and Path(path).is_file() else ""
 
     def __init__(self, config: dict):
         super().__init__(config)
@@ -213,8 +242,8 @@ class JupyterToSkillConverter(SkillConverter):
         self.description = (
             config.get("description") or f"Use when referencing {self.name} notebook documentation"
         )
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
         self.categories = config.get("categories", {})
         self.extracted_data: dict | None = None
 
@@ -621,17 +650,8 @@ class JupyterToSkillConverter(SkillConverter):
         return imports
 
     # ------------------------------------------------------------------
-    # Load / Categorize / Build
+    # Categorize (load/build orchestration inherited from DocumentSkillBuilder)
     # ------------------------------------------------------------------
-
-    def load_extracted_data(self, json_path: str) -> bool:
-        """Load previously extracted data from JSON."""
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} sections")
-        return True
 
     def categorize_content(self) -> dict[str, dict]:
         """Categorize sections based on cell type and topic keywords."""
@@ -722,107 +742,56 @@ class JupyterToSkillConverter(SkillConverter):
         for cat_data in categorized.values():
             print(f"   - {cat_data['title']}: {len(cat_data['pages'])} sections")
 
-    def build_skill(self) -> None:
-        """Build complete skill directory structure."""
-        print(f"\n🏗️  Building skill: {self.name}")
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        categorized = self.categorize_content()
-        print("\n📝 Generating reference files...")
-        total_categories = len(categorized)
-        for section_num, (cat_key, cat_data) in enumerate(categorized.items(), 1):
-            self._generate_reference_file(cat_key, cat_data, section_num, total_categories)
-        self._generate_index(categorized)
-        self._generate_skill_md(categorized)
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
-
     # ------------------------------------------------------------------
     # Private generation methods
     # ------------------------------------------------------------------
 
-    def _nb_basename(self) -> str:
-        """Return the notebook stem if notebook_path points to a single file."""
-        if self.notebook_path and Path(self.notebook_path).is_file():
-            return Path(self.notebook_path).stem
-        return ""
+    def _write_reference_section(self, f, section) -> None:
+        """Write one notebook section (markdown/code/raw cell) into a
+        reference file — cells carry execution counts, outputs, and tags
+        the base heading+text+code shape doesn't know about."""
+        sec_num = section.get("section_number", "?")
+        heading = section.get("heading", "")
+        heading_level = section.get("heading_level", "h1")
+        cell_type = section.get("cell_type", "markdown")
 
-    def _ref_filename(self, sections: list[dict], section_num: int, total_sections: int) -> str:
-        """Determine the reference file path for a category."""
-        nb_base = self._nb_basename()
-        if sections:
-            sec_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-            if total_sections == 1:
-                name = nb_base if nb_base else "main"
-                return f"{self.skill_dir}/references/{name}.md"
-            sec_range = f"s{min(sec_nums)}-s{max(sec_nums)}"
-            base = nb_base or "section"
-            return f"{self.skill_dir}/references/{base}_{sec_range}.md"
-        return f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        f.write(f"---\n\n**📄 Source: Section {sec_num}**")
+        if cell_type == "code":
+            ec = section.get("execution_count")
+            f.write(f" (Code Cell{f' [In {ec}]' if ec else ''})")
+        elif cell_type == "raw":
+            f.write(" (Raw Cell)")
+        f.write("\n\n")
 
-    def _generate_reference_file(
-        self, _cat_key: str, cat_data: dict, section_num: int, total_sections: int
-    ) -> None:
-        """Generate a reference markdown file for a category."""
-        sections = cat_data["pages"]
-        filename = self._ref_filename(sections, section_num, total_sections)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {cat_data['title']}\n\n")
-            for section in sections:
-                sec_num = section.get("section_number", "?")
-                heading = section.get("heading", "")
-                heading_level = section.get("heading_level", "h1")
-                cell_type = section.get("cell_type", "markdown")
-
-                f.write(f"---\n\n**📄 Source: Section {sec_num}**")
-                if cell_type == "code":
-                    ec = section.get("execution_count")
-                    f.write(f" (Code Cell{f' [In {ec}]' if ec else ''})")
-                elif cell_type == "raw":
-                    f.write(" (Raw Cell)")
-                f.write("\n\n")
-
-                if heading:
-                    md_lvl = (
-                        "#" * (int(heading_level[1]) + 1) if heading_level.startswith("h") else "##"
-                    )
-                    f.write(f"{md_lvl} {heading}\n\n")
-                for sub in section.get("headings", []):
-                    sl, st = sub.get("level", "h3"), sub.get("text", "")
-                    if st:
-                        smd = "#" * (int(sl[1]) + 1) if sl.startswith("h") else "###"
-                        f.write(f"{smd} {st}\n\n")
-                if section.get("text"):
-                    f.write(f"{section['text']}\n\n")
-                for code in section.get("code_samples", []):
-                    ec = code.get("execution_count")
-                    if ec:
-                        f.write(f"**In [{ec}]:**\n\n")
-                    f.write(f"```{code.get('language', '')}\n{code['code']}\n```\n\n")
-                if section.get("output_text"):
-                    f.write(f"**Output:**\n\n```\n{section['output_text']}\n```\n\n")
-                for err in section.get("output_errors", []):
-                    f.write(f"**Errors:**\n\n```\n{err}\n```\n\n")
-                disp = section.get("output_display", [])
-                if disp:
-                    mimes = [d.get("mime_type", "") for d in disp]
-                    f.write(f"*Rich output: {', '.join(mimes)}*\n\n")
-                for table in section.get("tables", []):
-                    headers, rows = table.get("headers", []), table.get("rows", [])
-                    if headers:
-                        f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                        f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                    for row in rows:
-                        f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                    f.write("\n")
-                tags = section.get("tags", [])
-                if tags:
-                    f.write(f"*Tags: {', '.join(str(t) for t in tags)}*\n\n")
-                f.write("---\n\n")
-        print(f"   Generated: {filename}")
+        if heading:
+            md_lvl = "#" * (int(heading_level[1]) + 1) if heading_level.startswith("h") else "##"
+            f.write(f"{md_lvl} {heading}\n\n")
+        for sub in section.get("headings", []):
+            sl, st = sub.get("level", "h3"), sub.get("text", "")
+            if st:
+                smd = "#" * (int(sl[1]) + 1) if sl.startswith("h") else "###"
+                f.write(f"{smd} {st}\n\n")
+        if section.get("text"):
+            f.write(f"{section['text']}\n\n")
+        for code in section.get("code_samples", []):
+            ec = code.get("execution_count")
+            if ec:
+                f.write(f"**In [{ec}]:**\n\n")
+            f.write(f"```{code.get('language', '')}\n{code['code']}\n```\n\n")
+        if section.get("output_text"):
+            f.write(f"**Output:**\n\n```\n{section['output_text']}\n```\n\n")
+        for err in section.get("output_errors", []):
+            f.write(f"**Errors:**\n\n```\n{err}\n```\n\n")
+        disp = section.get("output_display", [])
+        if disp:
+            mimes = [d.get("mime_type", "") for d in disp]
+            f.write(f"*Rich output: {', '.join(mimes)}*\n\n")
+        for table in section.get("tables", []):
+            self._write_markdown_table(f, table)
+        tags = section.get("tags", [])
+        if tags:
+            f.write(f"*Tags: {', '.join(str(t) for t in tags)}*\n\n")
+        f.write("---\n\n")
 
     def _generate_index(self, categorized: dict[str, dict]) -> None:
         """Generate reference index file."""
@@ -841,7 +810,7 @@ class JupyterToSkillConverter(SkillConverter):
                     rng = "N/A"
                 # Route through the shared helper so the index link always
                 # matches the reference file the writer creates (no drift).
-                link = os.path.basename(self._ref_filename(pages, section_num, total_cats))
+                link = self._reference_filename(cd, section_num, total_cats)
                 f.write(f"- [{cd['title']}]({link}) ({count} sections, {rng})\n")
 
             f.write("\n## Statistics\n\n")
@@ -964,7 +933,7 @@ class JupyterToSkillConverter(SkillConverter):
             # files so the links match real filenames (DOC-07).
             _total = len(categorized)
             for _sn, cd in enumerate(categorized.values(), 1):
-                cat_file = os.path.basename(self._ref_filename(cd["pages"], _sn, _total))
+                cat_file = self._reference_filename(cd, _sn, _total)
                 f.write(f"- `references/{cat_file}` - {cd['title']}\n")
             f.write("\nSee `references/index.md` for complete notebook structure.\n\n")
             f.write("---\n\n**Generated by Skill Seeker** | Jupyter Notebook Scraper\n")
@@ -1000,60 +969,8 @@ class JupyterToSkillConverter(SkillConverter):
             content += "**Subtopics:**\n\n" + "".join(f"- {h}\n" for h in h2s[:15]) + "\n"
         return content
 
-    def _format_patterns_from_content(self) -> str:
-        """Extract common patterns from text content headings."""
-        pattern_keywords = [
-            "getting started",
-            "installation",
-            "configuration",
-            "usage",
-            "api",
-            "examples",
-            "tutorial",
-            "guide",
-            "best practices",
-            "troubleshooting",
-            "faq",
-            "data loading",
-            "preprocessing",
-            "modeling",
-            "evaluation",
-            "results",
-            "conclusion",
-            "summary",
-        ]
-        patterns: list[dict] = []
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-            for kw in pattern_keywords:
-                if kw in heading_text:
-                    patterns.append(
-                        {
-                            "type": kw.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-        content = "*Common documentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for p in patterns:
-            by_type.setdefault(p["type"], []).append(p)
-        for ptype in sorted(by_type):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-        return content
-
-    def _sanitize_filename(self, name: str) -> str:
-        """Convert string to safe filename."""
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        return re.sub(r"[-\s]+", "_", safe)
+    # _format_patterns_from_content is inherited from DocumentSkillBuilder —
+    # PATTERN_KEYWORDS above supplies the notebook keyword list.
 
 
 # ---------------------------------------------------------------------------

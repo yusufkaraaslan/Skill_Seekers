@@ -150,6 +150,21 @@ class StreamingAdaptorMixin:
             "streaming": True,
         }
 
+    @staticmethod
+    def _streaming_chunk_meta(chunk_meta: dict, skill_name: str) -> dict:
+        """
+        Normalize streaming chunk metadata for embedding in a package.
+
+        Drops the duplicated full-text ``content`` key and restores the
+        ``type``/``version`` fields that the standard (non-streaming) package
+        formats carry but ChunkMetadata drops.
+        """
+        meta = {k: v for k, v in chunk_meta.items() if k != "content"}
+        meta.setdefault("source", skill_name)
+        meta["type"] = "documentation" if meta.get("file") == "SKILL.md" else "reference"
+        meta.setdefault("version", "1.0.0")
+        return meta
+
     def estimate_chunks(
         self, skill_dir: Path, chunk_size: int = 4000, chunk_overlap: int = 200
     ) -> dict[str, Any]:

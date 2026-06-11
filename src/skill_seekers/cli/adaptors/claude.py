@@ -7,8 +7,6 @@ Refactored from upload_skill.py and enhance_skill.py.
 """
 
 import json
-import os
-import shutil
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -325,150 +323,18 @@ version: {metadata.version}
         return True
 
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
+        """Enhance SKILL.md using the Claude API (via AgentClient).
+
+        Model chain: config custom_model → ANTHROPIC_MODEL env (inside
+        AgentClient.get_model) → default. ANTHROPIC_BASE_URL (GLM-4.x and
+        other Claude-compatible endpoints) is honored by AgentClient itself.
         """
-        Enhance SKILL.md using Claude API.
-
-        Reads reference files, sends them to Claude, and generates
-        an improved SKILL.md with real examples and better organization.
-
-        Args:
-            skill_dir: Path to skill directory
-            api_key: Anthropic API key
-
-        Returns:
-            True if enhancement succeeded
-        """
-        # Check for anthropic library
-        try:
-            import anthropic
-        except ImportError:
-            print("❌ Error: anthropic package not installed")
-            print("Install with: pip install anthropic")
-            return False
-
-        skill_dir = Path(skill_dir)
-        references_dir = skill_dir / "references"
-        skill_md_path = skill_dir / "SKILL.md"
-
-        # Read reference files
-        print("📖 Reading reference documentation...")
-        references = self._read_reference_files(references_dir)
-
-        if not references:
-            print("❌ No reference files found to analyze")
-            return False
-
-        print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
-        print(f"  ✓ Total size: {total_size:,} characters\n")
-
-        # Read current SKILL.md
-        current_skill_md = None
-        if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding="utf-8")
-            print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
-        else:
-            print("  ℹ No existing SKILL.md, will create new one")
-
-        # Build enhancement prompt
-        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
-
-        print("\n🤖 Asking Claude to enhance SKILL.md...")
-        print(f"   Input: {len(prompt):,} characters")
-
-        try:
-            # Support custom base_url for GLM-4.7 and other Claude-compatible APIs
-            client_kwargs = {"api_key": api_key}
-            base_url = os.environ.get("ANTHROPIC_BASE_URL")
-            if base_url:
-                client_kwargs["base_url"] = base_url
-                print(f"ℹ️  Using custom API base URL: {base_url}")
-            client = anthropic.Anthropic(**client_kwargs)
-
-            message = client.messages.create(
-                model=(
-                    self.config.get("custom_model")
-                    or os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
-                ),
-                max_tokens=4096,
-                temperature=0.3,
-                messages=[{"role": "user", "content": prompt}],
-            )
-
-            # Validate the response BEFORE touching the original file: the
-            # backup-then-overwrite below is destructive, so a truncated or
-            # empty response must not be allowed to replace a good SKILL.md.
-            if getattr(message, "stop_reason", None) == "max_tokens":
-                print(
-                    "❌ Enhancement response truncated (hit max_tokens); "
-                    "leaving original SKILL.md intact."
-                )
-                return False
-
-            enhanced_content = message.content[0].text
-            if not enhanced_content or not enhanced_content.strip():
-                print("❌ Empty enhancement response; leaving original SKILL.md intact.")
-                return False
-
-            print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
-
-            # Save atomically: write to a temp file, back up the original by
-            # COPY (not rename — so the original survives if anything here
-            # fails), then os.replace() the temp into place. The old
-            # rename-then-write left only SKILL.md.backup (no SKILL.md) if the
-            # write failed after the rename.
-            tmp_path = skill_md_path.with_suffix(".md.tmp")
-            tmp_path.write_text(enhanced_content, encoding="utf-8")
-            if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix(".md.backup")
-                shutil.copy2(skill_md_path, backup_path)
-                print(f"  💾 Backed up original to: {backup_path.name}")
-            os.replace(tmp_path, skill_md_path)
-            print("  ✅ Saved enhanced SKILL.md")
-
-            return True
-
-        except Exception as e:
-            print(f"❌ Error calling Claude API: {e}")
-            return False
-
-    def _read_reference_files(
-        self, references_dir: Path, max_chars: int = 200000
-    ) -> dict[str, str]:
-        """
-        Read reference markdown files from skill directory.
-
-        Args:
-            references_dir: Path to references directory
-            max_chars: Maximum total characters to read
-
-        Returns:
-            Dictionary mapping filename to content
-        """
-        if not references_dir.exists():
-            return {}
-
-        references = {}
-        total_chars = 0
-
-        # Read all .md files recursively (including subdirectories)
-        for ref_file in sorted(references_dir.rglob("*.md")):
-            if total_chars >= max_chars:
-                break
-
-            try:
-                content = ref_file.read_text(encoding="utf-8")
-                # Limit individual file size
-                if len(content) > 30000:
-                    content = content[:30000] + "\n\n...(truncated)"
-
-                references[ref_file.name] = content
-                total_chars += len(content)
-
-            except Exception as e:
-                print(f"  ⚠️  Could not read {ref_file.name}: {e}")
-
-        return references
+        return self._enhance_skill_md_via_client(
+            skill_dir,
+            api_key,
+            provider="anthropic",
+            model=self.config.get("custom_model"),
+        )
 
     def _build_enhancement_prompt(
         self, skill_name: str, references: dict[str, str], current_skill_md: str = None

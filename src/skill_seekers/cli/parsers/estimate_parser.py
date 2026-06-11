@@ -26,6 +26,7 @@ class EstimateParser(SubcommandParser):
         parser.add_argument("--all", action="store_true", help="List all available configs")
         parser.add_argument(
             "--max-discovery",
+            "-m",
             type=int,
             default=DEFAULT_MAX_DISCOVERY,
             help=(
@@ -33,4 +34,19 @@ class EstimateParser(SubcommandParser):
                 "Without a default the unified CLI passed None, which estimate_pages treats as "
                 "unlimited."
             ),
+        )
+        # Keep in sync with estimate_pages.main()'s parser — a flag defined there
+        # but not here is REJECTED by the unified CLI before main() runs.
+        parser.add_argument(
+            "--unlimited",
+            "-u",
+            action="store_true",
+            help="Remove discovery limit - discover all pages (same as --max-discovery -1)",
+        )
+        parser.add_argument(
+            "--timeout",
+            "-t",
+            type=int,
+            default=30,
+            help="HTTP request timeout in seconds (default: 30)",
         )

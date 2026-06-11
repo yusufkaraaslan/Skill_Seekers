@@ -642,8 +642,8 @@ aws s3 cp "$BACKUP_DIR/backup_$TIMESTAMP.tar.gz" \
 # Check memory usage
 ps aux --sort=-%mem | head -10
 
-# Reduce batch size
-skill-seekers create --config config.json --batch-size 10
+# Reduce parallel workers
+skill-seekers create --config config.json --workers 2
 
 # Enable memory limits
 docker run --memory=4g skillseekers:latest
@@ -684,8 +684,8 @@ skill-seekers create --config config.json --async
 # Increase concurrency
 # (adjust in config: "concurrency": 10)
 
-# Use caching
-skill-seekers create --config config.json --use-cache
+# Re-runs reuse cached data automatically (use --fresh to discard)
+skill-seekers create --config config.json
 ```
 
 #### 4. API Errors

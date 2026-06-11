@@ -275,9 +275,10 @@ Always prioritize accuracy by consulting the attached documentation files before
                             uploaded_file = client.files.create(file=f, purpose="assistants")
                             file_ids.append(uploaded_file.id)
 
-                    # Attach files to vector store
+                    # Attach files to vector store (batch attach lives on
+                    # file_batches.create in both old and new SDKs)
                     if file_ids:
-                        vs_api.files.create_batch(
+                        vs_api.file_batches.create(
                             vector_store_id=vector_store.id, file_ids=file_ids
                         )
 
@@ -340,126 +341,17 @@ Always prioritize accuracy by consulting the attached documentation files before
         return True
 
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
-        """
-        Enhance SKILL.md using GPT-4o API.
-
-        Args:
-            skill_dir: Path to skill directory
-            api_key: OpenAI API key
-
-        Returns:
-            True if enhancement succeeded
-        """
-        # Check for openai library
-        try:
-            from openai import OpenAI
-        except ImportError:
-            print("❌ Error: openai package not installed")
-            print("Install with: pip install openai")
-            return False
-
-        skill_dir = Path(skill_dir)
-        references_dir = skill_dir / "references"
-        skill_md_path = skill_dir / "SKILL.md"
-
-        # Read reference files
-        print("📖 Reading reference documentation...")
-        references = self._read_reference_files(references_dir)
-
-        if not references:
-            print("❌ No reference files found to analyze")
-            return False
-
-        print(f"  ✓ Read {len(references)} reference files")
-        total_size = sum(len(c) for c in references.values())
-        print(f"  ✓ Total size: {total_size:,} characters\n")
-
-        # Read current SKILL.md
-        current_skill_md = None
-        if skill_md_path.exists():
-            current_skill_md = skill_md_path.read_text(encoding="utf-8")
-            print(f"  ℹ Found existing SKILL.md ({len(current_skill_md)} chars)")
-        else:
-            print("  ℹ No existing SKILL.md, will create new one")
-
-        # Build enhancement prompt
-        prompt = self._build_enhancement_prompt(skill_dir.name, references, current_skill_md)
-
-        print("\n🤖 Asking GPT-4o to enhance SKILL.md...")
-        print(f"   Input: {len(prompt):,} characters")
-
-        try:
-            client = OpenAI(api_key=api_key)
-
-            response = client.chat.completions.create(
-                model=self.config.get("custom_model") or "gpt-4o",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert technical writer creating Assistant instructions for OpenAI ChatGPT.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                max_tokens=4096,
-            )
-
-            enhanced_content = response.choices[0].message.content
-            print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
-
-            # Backup original
-            if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix(".md.backup")
-                skill_md_path.rename(backup_path)
-                print(f"  💾 Backed up original to: {backup_path.name}")
-
-            # Save enhanced version
-            skill_md_path.write_text(enhanced_content, encoding="utf-8")
-            print("  ✅ Saved enhanced SKILL.md")
-
-            return True
-
-        except Exception as e:
-            print(f"❌ Error calling OpenAI API: {e}")
-            return False
-
-    def _read_reference_files(
-        self, references_dir: Path, max_chars: int = 200000
-    ) -> dict[str, str]:
-        """
-        Read reference markdown files from skill directory.
-
-        Args:
-            references_dir: Path to references directory
-            max_chars: Maximum total characters to read
-
-        Returns:
-            Dictionary mapping filename to content
-        """
-        if not references_dir.exists():
-            return {}
-
-        references = {}
-        total_chars = 0
-
-        # Read all .md files recursively (including subdirectories)
-        for ref_file in sorted(references_dir.rglob("*.md")):
-            if total_chars >= max_chars:
-                break
-
-            try:
-                content = ref_file.read_text(encoding="utf-8")
-                # Limit individual file size
-                if len(content) > 30000:
-                    content = content[:30000] + "\n\n...(truncated)"
-
-                references[ref_file.name] = content
-                total_chars += len(content)
-
-            except Exception as e:
-                print(f"  ⚠️  Could not read {ref_file.name}: {e}")
-
-        return references
+        """Enhance SKILL.md using the OpenAI API (via AgentClient)."""
+        return self._enhance_skill_md_via_client(
+            skill_dir,
+            api_key,
+            provider="openai",
+            model=self.config.get("custom_model") or "gpt-4o",
+            system=(
+                "You are an expert technical writer creating Assistant "
+                "instructions for OpenAI ChatGPT."
+            ),
+        )
 
     def _build_enhancement_prompt(
         self, skill_name: str, references: dict[str, str], current_skill_md: str = None

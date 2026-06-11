@@ -652,4 +652,4 @@ skill-seekers create --config my-config.json --merge-mode rule-based
 
 - [Config Format](../reference/CONFIG_FORMAT.md) - Full JSON specification
 - [Scraping Guide](../user-guide/02-scraping.md) - Individual source options
-- [MCP Reference](../reference/MCP_REFERENCE.md) - unified_scrape tool
+- [MCP Reference](../reference/MCP_REFERENCE.md) - `scrape_docs` tool (handles unified multi-source configs)

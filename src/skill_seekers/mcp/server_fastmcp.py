@@ -69,104 +69,59 @@ except ImportError as e:
         print(f"Import error: {e}")
         sys.exit(1)
 
-# Import all tool implementations
-try:
-    from .tools import (
-        add_config_source_impl,
-        build_how_to_guides_impl,
-        detect_patterns_impl,
-        enhance_skill_impl,
-        # Scraping tools
-        estimate_pages_impl,
-        # Vector database tools
-        export_to_chroma_impl,
-        export_to_faiss_impl,
-        export_to_qdrant_impl,
-        export_to_weaviate_impl,
-        extract_config_patterns_impl,
-        extract_test_examples_impl,
-        # Source tools
-        fetch_config_impl,
-        # Marketplace tools
-        add_marketplace_impl,
-        list_marketplaces_impl,
-        remove_marketplace_impl,
-        publish_to_marketplace_impl,
-        # Config tools
-        generate_config_impl,
-        generate_router_impl,
-        install_skill_impl,
-        list_config_sources_impl,
-        list_configs_impl,
-        # Packaging tools
-        package_skill_impl,
-        remove_config_source_impl,
-        scrape_codebase_impl,
-        scrape_docs_impl,
-        scrape_generic_impl,
-        scrape_github_impl,
-        scrape_pdf_impl,
-        scrape_video_impl,
-        # Splitting tools
-        split_config_impl,
-        submit_config_impl,
-        # Sync config tools
-        sync_config_impl,
-        upload_skill_impl,
-        validate_config_impl,
-        # Workflow tools
-        list_workflows_impl,
-        get_workflow_impl,
-        create_workflow_impl,
-        update_workflow_impl,
-        delete_workflow_impl,
-    )
-except ImportError:
-    # Fallback for direct script execution
-    import os
-
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from tools import (
-        add_config_source_impl,
-        build_how_to_guides_impl,
-        detect_patterns_impl,
-        enhance_skill_impl,
-        estimate_pages_impl,
-        export_to_chroma_impl,
-        export_to_faiss_impl,
-        export_to_qdrant_impl,
-        export_to_weaviate_impl,
-        extract_config_patterns_impl,
-        extract_test_examples_impl,
-        fetch_config_impl,
-        add_marketplace_impl,
-        list_marketplaces_impl,
-        remove_marketplace_impl,
-        publish_to_marketplace_impl,
-        generate_config_impl,
-        generate_router_impl,
-        install_skill_impl,
-        list_config_sources_impl,
-        list_configs_impl,
-        package_skill_impl,
-        remove_config_source_impl,
-        scrape_codebase_impl,
-        scrape_docs_impl,
-        scrape_generic_impl,
-        scrape_github_impl,
-        scrape_pdf_impl,
-        scrape_video_impl,
-        split_config_impl,
-        submit_config_impl,
-        sync_config_impl,
-        upload_skill_impl,
-        validate_config_impl,
-        list_workflows_impl,
-        get_workflow_impl,
-        create_workflow_impl,
-        update_workflow_impl,
-        delete_workflow_impl,
-    )
+# Import all tool implementations (absolute import: works both as a package
+# module and under direct script execution, as long as skill-seekers is
+# installed — `pip install -e .` is required anyway).
+from skill_seekers.mcp.tools import (  # noqa: E402  (must follow the FastMCP availability check)
+    add_config_source_impl,
+    build_how_to_guides_impl,
+    detect_patterns_impl,
+    enhance_skill_impl,
+    # Scraping tools
+    estimate_pages_impl,
+    # Vector database tools
+    export_to_chroma_impl,
+    export_to_faiss_impl,
+    export_to_qdrant_impl,
+    export_to_weaviate_impl,
+    extract_config_patterns_impl,
+    extract_test_examples_impl,
+    # Source tools
+    fetch_config_impl,
+    # Marketplace tools
+    add_marketplace_impl,
+    list_marketplaces_impl,
+    remove_marketplace_impl,
+    publish_to_marketplace_impl,
+    # Config tools
+    generate_config_impl,
+    generate_router_impl,
+    install_skill_impl,
+    list_config_sources_impl,
+    list_configs_impl,
+    # Packaging tools
+    package_skill_impl,
+    remove_config_source_impl,
+    scrape_codebase_impl,
+    scrape_docs_impl,
+    scrape_generic_impl,
+    scrape_github_impl,
+    scrape_pdf_impl,
+    scrape_video_impl,
+    # Splitting tools
+    split_config_impl,
+    submit_config_impl,
+    # Sync config tools
+    sync_config_impl,
+    upload_skill_impl,
+    validate_config_impl,
+    # Workflow tools
+    list_workflows_impl,
+    get_workflow_impl,
+    create_workflow_impl,
+    update_workflow_impl,
+    delete_workflow_impl,
+)
 
 # Initialize FastMCP server
 mcp = None

@@ -273,6 +273,12 @@ class ChangeDetector:
             if not new_modified and not new_etag:
                 return True
 
+            # Same when we have no STORED validators (never-seen URL, or the
+            # previous fetch recorded none): there is nothing to compare
+            # against, so report "changed" and let the content fetch decide.
+            if not old_modified and not old_etag:
+                return True
+
             # Check if headers indicate change
             if old_modified and new_modified and old_modified != new_modified:
                 return True

@@ -191,27 +191,43 @@ class WorkflowAnalyzer:
 
         return steps, metadata
 
+    @classmethod
+    def _iter_step_statements(cls, body: list[ast.stmt]):
+        """Yield step statements in source order.
+
+        Descends into control-flow blocks (with/for/while/if/try) so a test
+        whose body is wrapped in e.g. ``with open(...):`` still yields steps,
+        but — unlike ast.walk() — preserves document order and never enters
+        nested function/class definitions (their bodies aren't workflow steps).
+        """
+        for node in body:
+            if isinstance(node, (ast.Assign, ast.Expr, ast.Assert)):
+                yield node
+            elif isinstance(
+                node, (ast.With, ast.AsyncWith, ast.For, ast.AsyncFor, ast.While, ast.If, ast.Try)
+            ):
+                yield from cls._iter_step_statements(getattr(node, "body", []))
+                for handler in getattr(node, "handlers", []):
+                    yield from cls._iter_step_statements(handler.body)
+                yield from cls._iter_step_statements(getattr(node, "orelse", []))
+                yield from cls._iter_step_statements(getattr(node, "finalbody", []))
+
     def _extract_steps_python(self, code: str, workflow: dict) -> list[WorkflowStep]:
         """Extract steps from Python code using AST"""
         steps = []
 
         try:
             tree = ast.parse(code)
-            statements = []
 
             # Steps live at the top level of the test-function wrapper (the
             # common case); descend ONE level into it, else use the module body.
-            # Don't ast.walk() — that flattens nested control flow (if/for/with)
-            # out of context and scrambles step order.
             body = tree.body
             if len(body) == 1 and isinstance(body[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
                 body = body[0].body
-            for node in body:
-                if isinstance(node, (ast.Assign, ast.Expr, ast.Assert)):
-                    statements.append(node)
+            statements = list(self._iter_step_statements(body))
 
             step_num = 1
-            for stmt in statements:
+            for idx, stmt in enumerate(statements):
                 # Skip assertions for now (they're verifications)
                 if isinstance(stmt, ast.Assert):
                     continue
@@ -225,7 +241,6 @@ class WorkflowAnalyzer:
                 description = self._generate_step_description(stmt, step_code)
 
                 # Check if next statement is assertion (verification)
-                idx = statements.index(stmt)
                 verification = None
                 if idx + 1 < len(statements) and isinstance(statements[idx + 1], ast.Assert):
                     verification = ast.get_source_segment(code, statements[idx + 1])
@@ -242,6 +257,12 @@ class WorkflowAnalyzer:
 
         except SyntaxError:
             # Fall back to heuristic method
+            return self._extract_steps_heuristic(code, workflow)
+
+        # Valid Python that yields no AST steps (e.g. only nested defs or bare
+        # control flow) still deserves a guide — fall back to the line-based
+        # heuristic rather than emitting an empty step list.
+        if not steps:
             return self._extract_steps_heuristic(code, workflow)
 
         return steps
