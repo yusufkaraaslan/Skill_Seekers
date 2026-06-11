@@ -10,7 +10,7 @@
 | Phase | State | Branch / PR |
 |---|---|---|
 | 1 — CLI drift & preset bugs | **done** (2026-06-11) | `refactor/phase-1-quick-fixes` |
-| 2 — DocumentSkillBuilder | pending | |
+| 2 — DocumentSkillBuilder | **done** (2026-06-11) | `refactor/phase-2-document-skill-builder` |
 | 3 — Enhancement consolidation | pending | |
 | 4 — UnifiedScraper conformance | pending | |
 | 5 — Config / dispatch / MCP platform | pending | |
@@ -49,6 +49,29 @@ Also:
 
 Each fix gets a regression test. The durable fix for the parser-drift class
 is Phase 5 (single argument registry); Phase 1 just makes the flags work.
+
+### Phase 2 results (2026-06-11)
+
+All 9 document scrapers (epub, word, pptx, html, pdf, man, rss, chat,
+jupyter) now inherit `cli/document_skill_builder.py:DocumentSkillBuilder`.
+Net −1,859/+424 lines across the scrapers; the shared machinery lives once.
+Every port is **byte-identical**, proven by golden trees captured from the
+pre-refactor code (`tests/golden/phase2/*`, harness in
+`tests/phase2_golden_utils.py`, protocol: `UPDATE_GOLDENS=1` only on purpose).
+Dedup depth varies by tier: epub/word/pptx/html share nearly everything;
+pdf/jupyter share orchestration + several generators; man/rss/chat share the
+`build_skill` spine and helpers, keeping their domain-shaped reference/SKILL
+writers as overrides.
+
+Follow-up hook candidates surfaced by the ports (do as a small Phase 2.1 —
+each removes a full-method override that exists only for wording/keys):
+- `DOC_NOUN` ("documentation"/"presentation"/"chat") + index title hook
+- `PATTERN_KEYWORDS` class attr on `_format_patterns_from_content`
+- `LOAD_TOTAL_KEY` on `load_extracted_data` (man/pdf use `total_pages`)
+- `category_stem(cat_key)` hook in `_reference_filename` (chat)
+- sectioned `_generate_skill_md` (metadata block / when-to-use bullets /
+  extra-stats hooks) — would let html/pptx/chat drop their full overrides
+- footer "Skill Seeker" vs "Skill Seekers" inconsistency (man)
 
 ## Phase 2 — Unify the build side of scrapers (LARGE, highest ROI)
 

@@ -25,10 +25,9 @@ from pathlib import Path
 # BeautifulSoup is a core dependency (always available)
 from bs4 import BeautifulSoup, Comment, Tag
 
-from .skill_converter import SkillConverter
+from .document_skill_builder import DocumentSkillBuilder
 from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
-from skill_seekers.cli.scraper_utils import reference_filename
 
 logger = logging.getLogger(__name__)
 
@@ -98,12 +97,14 @@ def _collect_html_files(html_path: str) -> list[Path]:
     raise ValueError(f"Path is neither a file nor a directory: {html_path}")
 
 
-class HtmlToSkillConverter(SkillConverter):
+class HtmlToSkillConverter(DocumentSkillBuilder):
     """Convert local HTML files to a skill.
 
     Supports single HTML files and directories of HTML files. Parses document
     structure, extracts headings, content, code blocks, tables, images, and
-    links, then builds a complete skill directory structure.
+    links. The build side (categorize/reference/index/SKILL.md) comes from
+    DocumentSkillBuilder; this class owns HTML extraction plus the html-only
+    build behaviors (multi-file grouping, source-file annotations, links).
 
     Attributes:
         config: Configuration dict with name, html_path, description.
@@ -116,6 +117,9 @@ class HtmlToSkillConverter(SkillConverter):
     """
 
     SOURCE_TYPE = "html"
+    SOURCE_PATH_ATTR = "html_path"
+    SOURCE_LABEL = "HTML"
+    FOOTER_LABEL = "HTML Scraper"
 
     def __init__(self, config: dict) -> None:
         """Initialize the HTML to skill converter.
@@ -1085,27 +1089,25 @@ class HtmlToSkillConverter(SkillConverter):
         return result
 
     # ------------------------------------------------------------------
-    # Load / Categorize / Build
+    # Build-side overrides (base machinery in DocumentSkillBuilder)
     # ------------------------------------------------------------------
 
-    def load_extracted_data(self, json_path: str) -> bool:
-        """Load previously extracted data from JSON.
-
-        Args:
-            json_path: Path to the intermediate extracted JSON file.
-
-        Returns:
-            True on success.
-        """
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} sections")
-        return True
+    @property
+    def source_stem(self) -> str:
+        """Reference-filename base: file stem for a single HTML file,
+        the skill name for a directory source ('' when no path)."""
+        if not self.html_path:
+            return ""
+        path = Path(self.html_path)
+        return path.stem if path.is_file() else self.name
 
     def categorize_content(self) -> dict:
         """Categorize sections based on headings or keywords.
+
+        Overrides the base categorizer: html's single-source fast path is
+        gated on the path being an actual FILE (not just a truthy path), and
+        a directory source groups sections per source HTML file — neither is
+        expressible via the base hooks.
 
         For single-source HTML (single file), groups all sections under one
         category named after the source. For directories, creates categories
@@ -1209,208 +1211,96 @@ class HtmlToSkillConverter(SkillConverter):
 
         return categorized
 
-    def build_skill(self) -> None:
-        """Build complete skill structure from extracted data.
+    def _write_reference_section(self, f, section: dict) -> None:
+        """Write one section's body into a reference file.
 
-        Creates the output directory tree, generates reference markdown files,
-        an index file, and the main SKILL.md file. Delegates to private
-        generator methods for each component.
+        Overrides the base to annotate the source HTML file next to the
+        section number, render images as markdown links (src/alt/title —
+        bytes are never embedded), and append the html-only Links block.
         """
-        print(f"\n🏗️  Building skill: {self.name}")
+        sec_num = section.get("section_number", "?")
+        heading = section.get("heading", "")
+        heading_level = section.get("heading_level", "h1")
+        source = section.get("source_file", "")
 
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
+        f.write(f"---\n\n**📄 Source: Section {sec_num}**")
+        if source:
+            f.write(f" *({source})*")
+        f.write("\n\n")
 
-        # Categorize content
-        categorized = self.categorize_content()
+        # Add heading
+        if heading:
+            md_level = "#" * (int(heading_level[1]) + 1) if heading_level else "##"
+            f.write(f"{md_level} {heading}\n\n")
 
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        total_sections = len(categorized)
-        section_num = 1
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data, section_num, total_sections)
-            section_num += 1
+        # Add sub-headings (h3+) found within the section
+        for sub_heading in section.get("headings", []):
+            sub_level = sub_heading.get("level", "h3")
+            sub_text = sub_heading.get("text", "")
+            if sub_text:
+                sub_md = "#" * (int(sub_level[1]) + 1) if sub_level else "###"
+                f.write(f"{sub_md} {sub_text}\n\n")
 
-        # Generate index
-        self._generate_index(categorized)
+        # Add text content
+        if section.get("text"):
+            f.write(f"{section['text']}\n\n")
 
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
+        # Add code samples
+        code_list = section.get("code_samples", [])
+        if code_list:
+            f.write("### Code Examples\n\n")
+            for code in code_list:
+                lang = code.get("language", "")
+                f.write(f"```{lang}\n{code['code']}\n```\n\n")
 
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
+        # Add tables as markdown
+        table_list = section.get("tables", [])
+        if table_list:
+            f.write("### Tables\n\n")
+            for table in table_list:
+                self._write_markdown_table(f, table)
 
-    # ------------------------------------------------------------------
-    # Private generators
-    # ------------------------------------------------------------------
+        # Add images
+        images = section.get("images", [])
+        if images:
+            f.write("### Images\n\n")
+            for img in images:
+                alt = img.get("alt", "")
+                src = img.get("src", "")
+                title = img.get("title", "")
+                if alt or src:
+                    display = alt or title or f"Image {img.get('index', 0)}"
+                    f.write(f"![{display}]({src})\n\n")
 
-    def _reference_filename(self, cat_data: dict, section_num: int, total_sections: int) -> str:
-        """Basename of a category's reference file — single source of truth shared
-        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
-        base = ""
-        if self.html_path:
-            path = Path(self.html_path)
-            base = path.stem if path.is_file() else self.name
-        return reference_filename(cat_data.get("pages") or [], section_num, total_sections, base)
+        # Add notable links
+        link_list = section.get("links", [])
+        if link_list:
+            f.write("### Links\n\n")
+            for link in link_list[:20]:  # Cap at 20 links per section
+                f.write(f"- [{link['text']}]({link['href']})\n")
+            f.write("\n")
 
-    def _generate_reference_file(
-        self,
-        _cat_key: str,
-        cat_data: dict,
-        section_num: int,
-        total_sections: int,
-    ) -> None:
-        """Generate a reference markdown file for a content category.
+        f.write("---\n\n")
 
-        Creates a markdown file containing all sections in the category,
-        with headings, text content, code examples, tables, and images.
+    def _write_index_statistics(self, f) -> None:
+        """Statistics block of index.md, with the html-only file count line."""
+        f.write(f"- Total sections: {self.extracted_data.get('total_sections', 0)}\n")
+        f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
+        f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
+        f.write(f"- HTML files processed: {self.extracted_data.get('total_files', 0)}\n")
 
-        Args:
-            _cat_key: Category key (unused but matches epub pattern).
-            cat_data: Category dict with 'title' and 'pages' keys.
-            section_num: Current section number for filename generation.
-            total_sections: Total number of categories for filename logic.
-        """
-        sections = cat_data["pages"]
-        filename = (
-            f"{self.skill_dir}/references/"
-            f"{self._reference_filename(cat_data, section_num, total_sections)}"
-        )
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {cat_data['title']}\n\n")
-
-            for section in sections:
-                sec_num = section.get("section_number", "?")
-                heading = section.get("heading", "")
-                heading_level = section.get("heading_level", "h1")
-                source = section.get("source_file", "")
-
-                f.write(f"---\n\n**📄 Source: Section {sec_num}**")
-                if source:
-                    f.write(f" *({source})*")
-                f.write("\n\n")
-
-                # Add heading
-                if heading:
-                    md_level = "#" * (int(heading_level[1]) + 1) if heading_level else "##"
-                    f.write(f"{md_level} {heading}\n\n")
-
-                # Add sub-headings (h3+) found within the section
-                for sub_heading in section.get("headings", []):
-                    sub_level = sub_heading.get("level", "h3")
-                    sub_text = sub_heading.get("text", "")
-                    if sub_text:
-                        sub_md = "#" * (int(sub_level[1]) + 1) if sub_level else "###"
-                        f.write(f"{sub_md} {sub_text}\n\n")
-
-                # Add text content
-                if section.get("text"):
-                    f.write(f"{section['text']}\n\n")
-
-                # Add code samples
-                code_list = section.get("code_samples", [])
-                if code_list:
-                    f.write("### Code Examples\n\n")
-                    for code in code_list:
-                        lang = code.get("language", "")
-                        f.write(f"```{lang}\n{code['code']}\n```\n\n")
-
-                # Add tables as markdown
-                table_list = section.get("tables", [])
-                if table_list:
-                    f.write("### Tables\n\n")
-                    for table in table_list:
-                        headers = table.get("headers", [])
-                        rows = table.get("rows", [])
-                        if headers:
-                            f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                            f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
-
-                # Add images
-                images = section.get("images", [])
-                if images:
-                    f.write("### Images\n\n")
-                    for img in images:
-                        alt = img.get("alt", "")
-                        src = img.get("src", "")
-                        title = img.get("title", "")
-                        if alt or src:
-                            display = alt or title or f"Image {img.get('index', 0)}"
-                            f.write(f"![{display}]({src})\n\n")
-
-                # Add notable links
-                link_list = section.get("links", [])
-                if link_list:
-                    f.write("### Links\n\n")
-                    for link in link_list[:20]:  # Cap at 20 links per section
-                        f.write(f"- [{link['text']}]({link['href']})\n")
-                    f.write("\n")
-
-                f.write("---\n\n")
-
-        print(f"   Generated: {filename}")
-
-    def _generate_index(self, categorized: dict) -> None:
-        """Generate reference index file.
-
-        Creates an index.md in the references directory listing all categories
-        with links, section counts, and overall statistics.
-
-        Args:
-            categorized: Dict of category_key -> category data.
-        """
-        filename = f"{self.skill_dir}/references/index.md"
-
-        total_categories = len(categorized)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Documentation Reference\n\n")
-            f.write("## Categories\n\n")
-
-            section_num = 1
-            for _cat_key, cat_data in categorized.items():
-                sections = cat_data["pages"]
-                section_count = len(sections)
-
-                link_filename = self._reference_filename(cat_data, section_num, total_categories)
-                if sections:
-                    section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-                    sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-                else:
-                    sec_range_str = "N/A"
-
-                f.write(
-                    f"- [{cat_data['title']}]({link_filename}) "
-                    f"({section_count} sections, {sec_range_str})\n"
-                )
-                section_num += 1
-
-            f.write("\n## Statistics\n\n")
-            f.write(f"- Total sections: {self.extracted_data.get('total_sections', 0)}\n")
-            f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
-            f.write(f"- HTML files processed: {self.extracted_data.get('total_files', 0)}\n")
-
-            # Metadata
-            metadata = self.extracted_data.get("metadata", {})
-            if metadata.get("author"):
-                f.write(f"- Author: {metadata['author']}\n")
-
-        print(f"   Generated: {filename}")
+        # Metadata
+        metadata = self.extracted_data.get("metadata", {})
+        if metadata.get("author"):
+            f.write(f"- Author: {metadata['author']}\n")
 
     def _generate_skill_md(self, categorized: dict) -> None:
         """Generate main SKILL.md file.
 
-        Creates the top-level SKILL.md with YAML frontmatter, document
-        information, usage guidance, section overview, key concepts,
-        code examples, table summary, statistics, and navigation links.
+        Overrides the base generator because html adds a "Source files"
+        line inside Document Information (multi-file mode), extra metadata
+        fields (language/description/keywords), and an "HTML Files" line
+        in the statistics block — none expressible via the base hooks.
 
         Args:
             categorized: Dict of category_key -> category data.
@@ -1517,14 +1407,8 @@ class HtmlToSkillConverter(SkillConverter):
                 for section_heading, table in all_tables[:5]:
                     if section_heading:
                         f.write(f"**From section: {section_heading}**\n\n")
-                    headers = table.get("headers", [])
-                    rows = table.get("rows", [])
-                    if headers:
-                        f.write("| " + " | ".join(str(h) for h in headers) + " |\n")
-                        f.write("| " + " | ".join("---" for _ in headers) + " |\n")
-                        for row in rows[:5]:
-                            f.write("| " + " | ".join(str(c) for c in row) + " |\n")
-                        f.write("\n")
+                    if table.get("headers", []):
+                        self._write_markdown_table(f, table, max_rows=5)
 
             # Statistics
             f.write("## 📊 Documentation Statistics\n\n")
@@ -1564,57 +1448,11 @@ class HtmlToSkillConverter(SkillConverter):
     # Content analysis helpers
     # ------------------------------------------------------------------
 
-    def _format_key_concepts(self) -> str:
-        """Extract key concepts from headings across all sections.
-
-        Collects h1 and h2 headings as major topics, and h3+ headings as
-        subtopics. Returns formatted markdown for inclusion in SKILL.md.
-
-        Returns:
-            Formatted markdown string with key concepts section.
-        """
-        all_headings: list[tuple[str, str]] = []
-        for section in self.extracted_data.get("pages", []):
-            # Main heading
-            heading = section.get("heading", "").strip()
-            level = section.get("heading_level", "h1")
-            if heading and len(heading) > 3:
-                all_headings.append((level, heading))
-            # Sub-headings
-            for sub in section.get("headings", []):
-                text = sub.get("text", "").strip()
-                sub_level = sub.get("level", "h3")
-                if text and len(text) > 3:
-                    all_headings.append((sub_level, text))
-
-        if not all_headings:
-            return ""
-
-        content = "## 🔑 Key Concepts\n\n"
-        content += "*Main topics covered in this documentation*\n\n"
-
-        h1_headings = [text for level, text in all_headings if level == "h1"]
-        h2_headings = [text for level, text in all_headings if level == "h2"]
-
-        if h1_headings:
-            content += "**Major Topics:**\n\n"
-            for heading in h1_headings[:10]:
-                content += f"- {heading}\n"
-            content += "\n"
-
-        if h2_headings:
-            content += "**Subtopics:**\n\n"
-            for heading in h2_headings[:15]:
-                content += f"- {heading}\n"
-            content += "\n"
-
-        return content
-
     def _format_patterns_from_content(self) -> str:
         """Extract common documentation patterns from section headings.
 
-        Searches for well-known heading keywords like 'getting started',
-        'installation', 'api', etc. and groups them by type.
+        Overrides the base formatter because html recognizes two extra
+        pattern keywords ('reference', 'changelog') not in the shared list.
 
         Returns:
             Formatted markdown string with pattern descriptions.
@@ -1668,22 +1506,6 @@ class HtmlToSkillConverter(SkillConverter):
             content += "\n"
 
         return content
-
-    def _sanitize_filename(self, name: str) -> str:
-        """Convert string to safe filename.
-
-        Removes special characters, converts spaces and hyphens to
-        underscores, and lowercases the result.
-
-        Args:
-            name: Raw string to sanitize.
-
-        Returns:
-            Filesystem-safe filename string.
-        """
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        safe = re.sub(r"[-\s]+", "_", safe)
-        return safe
 
 
 # ---------------------------------------------------------------------------

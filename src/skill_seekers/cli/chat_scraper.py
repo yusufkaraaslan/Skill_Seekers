@@ -42,7 +42,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from skill_seekers.cli.skill_converter import SkillConverter
+from skill_seekers.cli.document_skill_builder import DocumentSkillBuilder
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
 # Optional dependency guard — Slack SDK
@@ -209,11 +209,15 @@ def _check_discord_deps() -> None:
 # ---------------------------------------------------------------------------
 
 
-class ChatToSkillConverter(SkillConverter):
+class ChatToSkillConverter(DocumentSkillBuilder):
     """Convert Slack or Discord chat history into an AI-ready skill.
 
     Follows the same pipeline pattern as the EPUB, Jupyter, and PPTX scrapers:
     extract -> categorize -> build_skill (reference files + index + SKILL.md).
+    Build orchestration (``build_skill``/``load_extracted_data``) comes from
+    DocumentSkillBuilder; the categorize/reference/index/SKILL.md generators
+    are overridden because chat sections are channel+date message groups,
+    not heading+text document sections.
 
     Supports two input modes per platform:
     - **Export mode**: Parse a previously exported archive (Slack workspace
@@ -366,25 +370,7 @@ class ChatToSkillConverter(SkillConverter):
         )
         return True
 
-    # ------------------------------------------------------------------
-    # Load previously extracted data
-    # ------------------------------------------------------------------
-
-    def load_extracted_data(self, json_path: str) -> bool:
-        """Load previously extracted data from JSON file.
-
-        Args:
-            json_path: Path to the extracted JSON file.
-
-        Returns:
-            True on success.
-        """
-        print(f"\n📂 Loading extracted data from: {json_path}")
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
-        print(f"✅ Loaded {total} sections")
-        return True
+    # load_extracted_data is inherited from DocumentSkillBuilder (identical).
 
     # ------------------------------------------------------------------
     # Categorization
@@ -464,38 +450,8 @@ class ChatToSkillConverter(SkillConverter):
 
         return categorized
 
-    # ------------------------------------------------------------------
-    # Build skill
-    # ------------------------------------------------------------------
-
-    def build_skill(self) -> None:
-        """Build complete skill directory structure from extracted data.
-
-        Creates the output directory tree with:
-        - references/ — one markdown file per category
-        - references/index.md — category index with statistics
-        - SKILL.md — main skill file with frontmatter and overview
-        - scripts/ — reserved for future use
-        - assets/ — reserved for future use
-        """
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        categorized = self.categorize_content()
-
-        print("\n📝 Generating reference files...")
-        total_categories = len(categorized)
-        for section_num, (cat_key, cat_data) in enumerate(categorized.items(), 1):
-            self._generate_reference_file(cat_key, cat_data, section_num, total_categories)
-
-        self._generate_index(categorized)
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
+    # build_skill is inherited from DocumentSkillBuilder (identical
+    # orchestration; the generators below are the chat-specific parts).
 
     # ------------------------------------------------------------------
     # Slack export extraction
@@ -1759,14 +1715,4 @@ class ChatToSkillConverter(SkillConverter):
         code = " ".join(cs.get("code", "").lower() for cs in section.get("code_samples", []))
         return f"{text} {heading} {code}"
 
-    def _sanitize_filename(self, name: str) -> str:
-        """Convert a string to a filesystem-safe filename.
-
-        Args:
-            name: Input string to sanitize.
-
-        Returns:
-            Safe lowercase filename with underscores.
-        """
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        return re.sub(r"[-\s]+", "_", safe)
+    # _sanitize_filename is inherited from DocumentSkillBuilder (identical).

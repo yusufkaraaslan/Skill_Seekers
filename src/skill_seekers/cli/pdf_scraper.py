@@ -13,13 +13,10 @@ Usage:
 
 import json
 import os
-import re
-from pathlib import Path
 
 # Import the PDF extractor
+from .document_skill_builder import DocumentSkillBuilder
 from .pdf_extractor_poc import PDFExtractor
-from .scraper_utils import reference_filename
-from .skill_converter import SkillConverter
 
 
 def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str:
@@ -61,10 +58,23 @@ def infer_description_from_pdf(pdf_metadata: dict = None, name: str = "") -> str
     )
 
 
-class PDFToSkillConverter(SkillConverter):
-    """Convert PDF documentation to AI skill"""
+class PDFToSkillConverter(DocumentSkillBuilder):
+    """Convert PDF documentation to AI skill.
+
+    Shares the build-side template with DocumentSkillBuilder but overrides
+    most generators: PDF pages are page_number-keyed, carry a ``headings``
+    list instead of a single top-level heading, and the output has PDF-only
+    blocks (page ranges, chapter overview, quality statistics, two image
+    formats) that the base doesn't emit.
+    """
 
     SOURCE_TYPE = "pdf"
+    SOURCE_PATH_ATTR = "pdf_path"
+    SOURCE_LABEL = "PDF"
+    FOOTER_LABEL = "PDF Documentation Scraper"
+    UNIT_LABEL = "pages"
+    NUMBER_KEY = "page_number"
+    NUMBER_PREFIX = "p"
 
     def __init__(self, config):
         super().__init__(config)
@@ -124,7 +134,11 @@ class PDFToSkillConverter(SkillConverter):
         return True
 
     def load_extracted_data(self, json_path):
-        """Load previously extracted data from JSON"""
+        """Load previously extracted data from JSON.
+
+        Overrides the base: PDF data carries ``total_pages`` (required),
+        not ``total_sections``.
+        """
         print(f"\n📂 Loading extracted data from: {json_path}")
 
         with open(json_path, encoding="utf-8") as f:
@@ -134,7 +148,12 @@ class PDFToSkillConverter(SkillConverter):
         return True
 
     def categorize_content(self):
-        """Categorize pages based on chapters or keywords"""
+        """Categorize pages based on chapters or keywords.
+
+        Overrides the base: PDF adds a chapter-range categorization branch,
+        and keyword scoring matches against the joined ``headings`` list
+        (PDF pages have no top-level ``heading`` key).
+        """
         print("\n📋 Categorizing content...")
 
         categorized = {}
@@ -143,7 +162,7 @@ class PDFToSkillConverter(SkillConverter):
         # This avoids bad chapter detection splitting content incorrectly
         if self.pdf_path:
             # Get PDF basename for title
-            pdf_basename = Path(self.pdf_path).stem
+            pdf_basename = self.source_stem
             category_key = self._sanitize_filename(pdf_basename)
 
             categorized[category_key] = {
@@ -245,51 +264,18 @@ class PDFToSkillConverter(SkillConverter):
 
         return categorized
 
-    def build_skill(self):
-        """Build complete skill structure"""
-        print(f"\n🏗️  Building skill: {self.name}")
-
-        # Create directories
-        os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/scripts", exist_ok=True)
-        os.makedirs(f"{self.skill_dir}/assets", exist_ok=True)
-
-        # Categorize content
-        categorized = self.categorize_content()
-
-        # Generate reference files
-        print("\n📝 Generating reference files...")
-        total_sections = len(categorized)
-        section_num = 1
-        for cat_key, cat_data in categorized.items():
-            self._generate_reference_file(cat_key, cat_data, section_num, total_sections)
-            section_num += 1
-
-        # Generate index
-        self._generate_index(categorized)
-
-        # Generate SKILL.md
-        self._generate_skill_md(categorized)
-
-        print(f"\n✅ Skill built successfully: {self.skill_dir}/")
-        print(f"\n📦 Next step: Package with: skill-seekers package {self.skill_dir}/")
-
-    def _reference_filename(self, cat_data, section_num, total_sections):
-        """Basename of a category's reference file — the single source of truth
-        shared by the file writer, index.md, and the SKILL.md nav, so the links
-        can't drift from the actual filenames (DOC-07)."""
-        base = Path(self.pdf_path).stem if self.pdf_path else ""
-        return reference_filename(
-            cat_data.get("pages") or [],
-            section_num,
-            total_sections,
-            base,
-            number_key="page_number",
-            prefix="p",
-        )
+    # build_skill and _reference_filename are inherited from
+    # DocumentSkillBuilder (identical orchestration; the filename helper
+    # picks up NUMBER_KEY="page_number" / NUMBER_PREFIX="p" / pdf_path stem
+    # from the class attributes above).
 
     def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
-        """Generate a reference markdown file for a category"""
+        """Generate a reference markdown file for a category.
+
+        Overrides the base: PDF writes a page-range header, per-page
+        "PDF Page N" source markers, only the first heading of each page,
+        supports the legacy ``code_blocks`` key, and links/saves images in
+        two formats (pre-extracted files vs raw bytes)."""
         filename = (
             f"{self.skill_dir}/references/"
             f"{self._reference_filename(cat_data, section_num, total_sections)}"
@@ -366,7 +352,10 @@ class PDFToSkillConverter(SkillConverter):
         print(f"   Generated: {filename}")
 
     def _generate_index(self, categorized):
-        """Generate reference index"""
+        """Generate reference index.
+
+        Overrides the base: category lines use "Pages min-max" ranges and
+        the statistics block reports total_pages + code-quality stats."""
         filename = f"{self.skill_dir}/references/index.md"
 
         total_sections = len(categorized)
@@ -405,7 +394,11 @@ class PDFToSkillConverter(SkillConverter):
         print(f"   Generated: {filename}")
 
     def _generate_skill_md(self, categorized):
-        """Generate main SKILL.md file (enhanced with rich content)"""
+        """Generate main SKILL.md file (enhanced with rich content).
+
+        Overrides the base: PDF emits a "Chapter Overview" (not "Section
+        Overview"), no Document Information or Table Summary blocks, and
+        adds a Code Quality metrics block."""
         filename = f"{self.skill_dir}/SKILL.md"
 
         # Generate skill name (lowercase, hyphens only, max 64 chars)
@@ -536,7 +529,10 @@ class PDFToSkillConverter(SkillConverter):
         print(f"   Generated: {filename} ({line_count} lines)")
 
     def _format_key_concepts(self) -> str:
-        """Extract key concepts from headings across all pages."""
+        """Extract key concepts from headings across all pages.
+
+        Overrides the base: PDF pages only carry a ``headings`` list (no
+        top-level heading), and a missing level defaults to "h1"."""
         all_headings = []
 
         for page in self.extracted_data.get("pages", []):
@@ -572,7 +568,10 @@ class PDFToSkillConverter(SkillConverter):
         return content
 
     def _format_patterns_from_content(self) -> str:
-        """Extract common patterns from text content."""
+        """Extract common patterns from text content.
+
+        Overrides the base: keywords are matched per entry of each page's
+        ``headings`` list and rendered as "(page N)"."""
         # Look for common technical patterns in text
         patterns = []
 
@@ -632,10 +631,3 @@ class PDFToSkillConverter(SkillConverter):
             content += "\n"
 
         return content
-
-    def _sanitize_filename(self, name):
-        """Convert string to safe filename"""
-        # Remove special chars, replace spaces with underscores
-        safe = re.sub(r"[^\w\s-]", "", name.lower())
-        safe = re.sub(r"[-\s]+", "_", safe)
-        return safe
