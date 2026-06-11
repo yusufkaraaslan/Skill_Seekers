@@ -191,3 +191,96 @@ class TestCurrentCommands:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestCentralModuleParserSync:
+    """Central parsers must accept every flag the command modules define.
+
+    A flag defined in a module's main() parser but missing from the central
+    SubcommandParser is REJECTED by the unified CLI with 'unrecognized
+    arguments' before main() ever runs — backfill_parser_defaults can only
+    patch absent attributes, not rescue rejected flags. These were real
+    shipping bugs (estimate --unlimited, update --apply-update, ...).
+    """
+
+    @pytest.fixture(scope="class")
+    def central_parser(self):
+        from skill_seekers.cli.main import create_parser
+
+        return create_parser()
+
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["estimate", "x.json", "--unlimited"],
+            ["estimate", "x.json", "--timeout", "5"],
+            ["update", "dir/", "--generate-package", "pkg.json"],
+            ["update", "dir/", "--apply-update", "pkg.json"],
+            ["quality", "dir/", "--output", "report.json"],
+            ["stream", "big.md", "--streaming-overlap-chars", "100"],
+            ["stream", "big.md", "--batch-size", "10", "--checkpoint", "c.json"],
+            ["stream", "big.md", "--output", "out/"],
+            ["multilang", "dir/", "--report"],
+            ["multilang", "dir/", "--export", "out/"],
+            ["multilang", "dir/", "--languages", "en", "es", "--detect"],
+        ],
+    )
+    def test_previously_drifted_flags_parse(self, central_parser, argv):
+        args = central_parser.parse_args(argv)
+        assert args.command == argv[0]
+
+    def _module_parser(self, module_main):
+        """Capture the parser a module main() builds, without running it."""
+        captured = {}
+        real_init = argparse.ArgumentParser.__init__
+
+        class _Sentinel(Exception):
+            pass
+
+        original_parse = argparse.ArgumentParser.parse_args
+
+        def spy_parse(self_parser, *_a, **_k):
+            captured["parser"] = self_parser
+            raise _Sentinel
+
+        argparse.ArgumentParser.parse_args = spy_parse
+        try:
+            module_main(args=None)
+        except _Sentinel:
+            pass
+        finally:
+            argparse.ArgumentParser.parse_args = original_parse
+            argparse.ArgumentParser.__init__ = real_init
+        return captured["parser"]
+
+    @pytest.mark.parametrize(
+        "command,module_path",
+        [
+            ("estimate", "skill_seekers.cli.estimate_pages"),
+            ("update", "skill_seekers.cli.incremental_updater"),
+            ("quality", "skill_seekers.cli.quality_metrics"),
+            ("stream", "skill_seekers.cli.streaming_ingest"),
+            ("multilang", "skill_seekers.cli.multilang_support"),
+        ],
+    )
+    def test_no_module_flag_missing_from_central(self, central_parser, command, module_path):
+        """Drift guard: every option dest in the module parser must exist in
+        the central subcommand parser (so the unified CLI accepts it)."""
+        import importlib
+
+        module = importlib.import_module(module_path)
+        module_parser = self._module_parser(module.main)
+
+        # Find the central subparser for this command
+        subparsers_action = next(
+            a for a in central_parser._actions if isinstance(a, argparse._SubParsersAction)
+        )
+        central_sub = subparsers_action.choices[command]
+
+        central_dests = {a.dest for a in central_sub._actions}
+        module_dests = {a.dest for a in module_parser._actions if a.dest != "help"}
+        missing = module_dests - central_dests
+        assert not missing, (
+            f"'{command}' module parser defines flags the central parser lacks "
+            f"(unified CLI will reject them): {sorted(missing)}"
+        )

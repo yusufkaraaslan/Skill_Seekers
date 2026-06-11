@@ -24,6 +24,9 @@ class QualityParser(SubcommandParser):
         # metavar keeps the help display as "skill_directory".
         parser.add_argument("skill_dir", metavar="skill_directory", help="Skill directory path")
         parser.add_argument("--report", action="store_true", help="Generate detailed report")
+        # Keep in sync with quality_metrics.main()'s parser — a flag defined there
+        # but not here is REJECTED by the unified CLI before main() runs.
+        parser.add_argument("--output", help="Output path for JSON report")
         parser.add_argument(
             "--threshold",
             type=float,

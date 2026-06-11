@@ -58,6 +58,11 @@ from pathlib import Path
 
 import contextlib
 
+# Single source of truth for agent presets and name normalization — this
+# module previously carried its own copies, whose kimi preset silently
+# diverged from agent_client's ({skill_dir} vs {cwd}, missing parse_output).
+from skill_seekers.cli.agent_client import AGENT_PRESETS
+from skill_seekers.cli.agent_client import normalize_agent_name as _normalize_agent_name
 from skill_seekers.cli.constants import LOCAL_CONTENT_LIMIT, LOCAL_PREVIEW_LIMIT
 from skill_seekers.cli.utils import read_reference_files
 
@@ -109,52 +114,6 @@ def detect_terminal_app():
     else:
         # No TERM_PROGRAM set
         return "Terminal", "default"
-
-
-AGENT_PRESETS = {
-    "claude": {
-        "display_name": "Claude Code",
-        "command": ["claude", "{prompt_file}"],
-        "supports_skip_permissions": True,
-    },
-    "codex": {
-        "display_name": "OpenAI Codex CLI",
-        "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
-        "supports_skip_permissions": False,
-    },
-    "copilot": {
-        "display_name": "GitHub Copilot CLI",
-        "command": ["gh", "copilot", "chat"],
-        "supports_skip_permissions": False,
-    },
-    "opencode": {
-        "display_name": "OpenCode CLI",
-        "command": ["opencode"],
-        "supports_skip_permissions": False,
-    },
-    "kimi": {
-        "display_name": "Kimi Code CLI",
-        "command": ["kimi", "--print", "--input-format", "text", "--work-dir", "{skill_dir}"],
-        "supports_skip_permissions": False,
-        "uses_stdin": True,
-    },
-}
-
-
-def _normalize_agent_name(agent_name: str) -> str:
-    if not agent_name:
-        return "claude"
-    normalized = agent_name.strip().lower()
-    aliases = {
-        "claude-code": "claude",
-        "claude_code": "claude",
-        "codex-cli": "codex",
-        "copilot-cli": "copilot",
-        "open-code": "opencode",
-        "open_code": "opencode",
-        "kimi-cli": "kimi",
-    }
-    return aliases.get(normalized, normalized)
 
 
 class LocalSkillEnhancer:
@@ -258,6 +217,10 @@ class LocalSkillEnhancer:
                 uses_prompt_file = True
             if "{skill_dir}" in arg:
                 cmd_parts[idx] = arg.replace("{skill_dir}", str(self.skill_dir.resolve()))
+            if "{cwd}" in arg:
+                # Shared presets use {cwd}; for local enhancement the working
+                # directory IS the skill directory.
+                cmd_parts[idx] = arg.replace("{cwd}", str(self.skill_dir.resolve()))
 
         return cmd_parts, uses_prompt_file
 

@@ -388,6 +388,11 @@ def main(args=None):
     )
     parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
     parser.add_argument("--checkpoint", help="Checkpoint file path")
+    parser.add_argument(
+        "--output",
+        help="Write the collected chunks as JSON (a .json file path, or a "
+        "directory that will receive chunks.json)",
+    )
     if args is None:
         args = parser.parse_args()
     else:
@@ -453,6 +458,17 @@ def main(args=None):
             ingester.save_checkpoint(
                 Path(args.checkpoint), {"processed_batches": len(all_chunks) // args.batch_size}
             )
+
+    # Write collected chunks when requested. Previously --output existed only
+    # in the unified CLI's parser and was silently ignored — the chunks were
+    # processed and dropped.
+    if getattr(args, "output", None):
+        out = Path(args.output)
+        out_file = out if out.suffix == ".json" else out / "chunks.json"
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        payload = [{"text": text, "metadata": meta} for text, meta in all_chunks]
+        out_file.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\n💾 Wrote {len(payload)} chunks to {out_file}")
 
     # Final progress
     print("\n" + ingester.format_progress())

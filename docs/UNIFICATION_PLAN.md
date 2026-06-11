@@ -9,11 +9,22 @@
 
 | Phase | State | Branch / PR |
 |---|---|---|
-| 1 — CLI drift & preset bugs | **in progress** | `refactor/phase-1-quick-fixes` |
+| 1 — CLI drift & preset bugs | **done** (2026-06-11) | `refactor/phase-1-quick-fixes` |
 | 2 — DocumentSkillBuilder | pending | |
 | 3 — Enhancement consolidation | pending | |
 | 4 — UnifiedScraper conformance | pending | |
 | 5 — Config / dispatch / MCP platform | pending | |
+
+Phase 1 notes: all 5 parser drifts fixed + a programmatic drift-guard test
+(`tests/test_cli_parsers.py::TestCentralModuleParserSync`) that fails if any
+module flag is ever missing from its central parser again. `stream --output`
+and `multilang --languages` were central-parser fictions — now implemented in
+the modules. `AGENT_PRESETS` and agent-name normalization now live ONLY in
+`agent_client.py` (claude's skip-permissions flag became preset metadata so
+interactive callers can omit it). unified_enhancer's zero-importer
+"backward compat" subclasses (which shadowed the real PatternEnhancer /
+TestExampleEnhancer / GuideEnhancer / ConfigEnhancer) were deleted; a guard
+test prevents reintroduction.
 
 ## Phase 1 — Stop the bleeding: shipping bugs from drift (small)
 

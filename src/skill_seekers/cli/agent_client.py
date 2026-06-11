@@ -33,29 +33,39 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Agent presets for LOCAL mode — reused from enhance_skill_local.py pattern
+# Agent presets for LOCAL mode — THE single source of truth, also consumed by
+# enhance_skill_local.LocalSkillEnhancer (it previously carried its own copy,
+# whose kimi preset silently diverged). Placeholders: {prompt_file} is the
+# prompt path; {cwd} / {skill_dir} are both replaced with the working
+# directory by each consumer. "supports_skip_permissions" agents get
+# --dangerously-skip-permissions inserted for headless runs (interactive
+# callers may omit it).
 AGENT_PRESETS = {
     "claude": {
         "display_name": "Claude Code",
-        "command": ["claude", "--dangerously-skip-permissions", "{prompt_file}"],
+        "command": ["claude", "{prompt_file}"],
         "version_check": ["claude", "--version"],
+        "supports_skip_permissions": True,
     },
     "codex": {
         "display_name": "OpenAI Codex CLI",
         "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
         "version_check": ["codex", "--version"],
         "uses_stdin": True,
+        "supports_skip_permissions": False,
     },
     "copilot": {
         "display_name": "GitHub Copilot CLI",
         "command": ["gh", "copilot", "chat", "-"],
         "version_check": ["gh", "copilot", "--version"],
         "uses_stdin": True,
+        "supports_skip_permissions": False,
     },
     "opencode": {
         "display_name": "OpenCode CLI",
         "command": ["opencode"],
         "version_check": ["opencode", "--version"],
+        "supports_skip_permissions": False,
     },
     "kimi": {
         "display_name": "Kimi Code CLI",
@@ -70,6 +80,7 @@ AGENT_PRESETS = {
         "version_check": ["kimi", "--version"],
         "uses_stdin": True,
         "parse_output": "kimi",  # Needs special output parsing
+        "supports_skip_permissions": False,
     },
 }
 
@@ -505,6 +516,14 @@ class AgentClient:
                     part = part.replace("{cwd}", str(cwd or temp_path))
                     part = part.replace("{skill_dir}", str(cwd or temp_path))
                     cmd.append(part)
+                # Headless invocation: always skip permission prompts when the
+                # agent supports it (the flag is no longer baked into the
+                # shared preset so interactive callers can omit it).
+                if (
+                    preset.get("supports_skip_permissions")
+                    and "--dangerously-skip-permissions" not in cmd
+                ):
+                    cmd.insert(1, "--dangerously-skip-permissions")
 
                 # Execute — pipe stdin for agents that read from it (e.g., codex)
                 stdin_input = full_prompt if preset.get("uses_stdin") else None

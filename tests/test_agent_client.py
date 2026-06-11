@@ -604,3 +604,24 @@ class TestProviderRegistry:
         for p in API_PROVIDERS:
             for var in p["env_vars"]:
                 assert API_KEY_MAP[var] == p["provider"]
+
+
+class TestAgentPresetsSingleSource:
+    """agent_client.AGENT_PRESETS is the single source of truth; the copy in
+    enhance_skill_local (whose kimi preset had silently diverged) is gone."""
+
+    def test_enhance_skill_local_shares_the_same_dict(self):
+        from skill_seekers.cli import agent_client, enhance_skill_local
+
+        assert enhance_skill_local.AGENT_PRESETS is agent_client.AGENT_PRESETS
+
+    def test_presets_have_required_shared_fields(self):
+        from skill_seekers.cli.agent_client import AGENT_PRESETS
+
+        for name, preset in AGENT_PRESETS.items():
+            assert "display_name" in preset, name
+            assert "command" in preset and preset["command"], name
+            assert "supports_skip_permissions" in preset, name
+        # The fields whose absence caused the original divergence:
+        assert AGENT_PRESETS["kimi"]["parse_output"] == "kimi"
+        assert "{cwd}" in AGENT_PRESETS["kimi"]["command"]

@@ -98,7 +98,7 @@ class WorkflowEngine:
             self.workflow = workflow
 
         self.history: list[dict[str, Any]] = []
-        self.enhancer = None  # Lazy load UnifiedEnhancer
+        self.enhancer = None  # Lazy load ai_enhancer.AIEnhancer
         self.agent = agent
 
     def _load_workflow(self, workflow_ref: str | Path) -> EnhancementWorkflow:

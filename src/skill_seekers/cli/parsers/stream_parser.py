@@ -28,4 +28,18 @@ class StreamParser(SubcommandParser):
             default=4000,
             help="Maximum characters per chunk (default: 4000)",
         )
-        parser.add_argument("--output", help="Output directory")
+        # Keep in sync with streaming_ingest.main()'s parser — a flag defined there
+        # but not here is REJECTED by the unified CLI before main() runs.
+        parser.add_argument(
+            "--streaming-overlap-chars",
+            type=int,
+            default=200,
+            help="Chunk overlap in characters (default: 200)",
+        )
+        parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
+        parser.add_argument("--checkpoint", help="Checkpoint file path")
+        parser.add_argument(
+            "--output",
+            help="Write the collected chunks as JSON (a .json file path, or a "
+            "directory that will receive chunks.json)",
+        )

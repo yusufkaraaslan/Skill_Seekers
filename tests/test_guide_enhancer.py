@@ -631,3 +631,22 @@ class TestEnhanceViaLocalRegression:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestNoEnhancerNameCollisions:
+    """unified_enhancer must not re-introduce same-named shadow classes for
+    the canonical per-feature enhancers (they had zero importers but shadowed
+    guide_enhancer.GuideEnhancer, ai_enhancer.PatternEnhancer, etc.)."""
+
+    def test_unified_enhancer_defines_no_colliding_names(self):
+        import skill_seekers.cli.unified_enhancer as ue
+
+        for name in ("PatternEnhancer", "TestExampleEnhancer", "GuideEnhancer", "ConfigEnhancer"):
+            assert not hasattr(ue, name), (
+                f"unified_enhancer defines {name}, colliding with the canonical "
+                f"class of the same name in its own module"
+            )
+
+    def test_canonical_classes_importable(self):
+        from skill_seekers.cli.ai_enhancer import PatternEnhancer, TestExampleEnhancer  # noqa: F401
+        from skill_seekers.cli.guide_enhancer import GuideEnhancer  # noqa: F401

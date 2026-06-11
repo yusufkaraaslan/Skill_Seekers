@@ -26,3 +26,7 @@ class UpdateParser(SubcommandParser):
         )
         parser.add_argument("--check-changes", action="store_true", help="Check for changes only")
         parser.add_argument("--force", action="store_true", help="Force update all files")
+        # Keep in sync with incremental_updater.main()'s parser — a flag defined there
+        # but not here is REJECTED by the unified CLI before main() runs.
+        parser.add_argument("--generate-package", help="Generate update package at specified path")
+        parser.add_argument("--apply-update", help="Apply update package from specified path")
