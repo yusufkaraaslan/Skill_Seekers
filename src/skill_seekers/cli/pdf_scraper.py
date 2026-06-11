@@ -128,6 +128,7 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             raise RuntimeError(f"Failed to extract PDF: {self.pdf_path}")
 
         # Save extracted data
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2, ensure_ascii=False)
 

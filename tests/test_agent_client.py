@@ -488,6 +488,112 @@ class TestCallApiTruncation:
         assert kwargs["timeout"] == 999
 
 
+class TestCallTruncationRetry:
+    """A truncated API response triggers exactly ONE retry with double the
+    budget; persistent truncation still returns None (the gate is kept), and
+    non-truncation failures don't retry."""
+
+    def _client(self):
+        with patch.object(AgentClient, "_init_api_client", return_value=MagicMock()):
+            client = AgentClient(mode="api", api_key="sk-ant-x")
+        client.provider = "anthropic"
+        return client
+
+    @staticmethod
+    def _response(stop_reason, text):
+        msg = MagicMock()
+        msg.stop_reason = stop_reason
+        msg.content = [MagicMock(text=text)]
+        return msg
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_truncation_retries_once_with_doubled_budget(self):
+        client = self._client()
+        client.client.messages.create.side_effect = [
+            self._response("max_tokens", "half a SKILL.md"),
+            self._response("end_turn", "full content"),
+        ]
+        assert client.call("prompt", max_tokens=4096) == "full content"
+        calls = client.client.messages.create.call_args_list
+        assert len(calls) == 2
+        assert calls[0].kwargs["max_tokens"] == 4096
+        assert calls[1].kwargs["max_tokens"] == 8192
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_persistent_truncation_returns_none_after_single_retry(self):
+        client = self._client()
+        client.client.messages.create.return_value = self._response("max_tokens", "half")
+        assert client.call("prompt", max_tokens=4096) is None
+        assert client.client.messages.create.call_count == 2
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_non_truncation_failure_does_not_retry(self):
+        client = self._client()
+        client.client.messages.create.side_effect = RuntimeError("boom")
+        assert client.call("prompt", max_tokens=4096) is None
+        assert client.client.messages.create.call_count == 1
+
+
+class TestSkillMdEnhancementBudget:
+    """The SKILL.md rewrite call sites must request a 16K-token budget —
+    with 4096, any skill whose rewrite exceeds ~16 KB hit the truncation
+    gate (None) on every attempt and was permanently un-enhanceable."""
+
+    def test_enhance_skill_requests_16384(self, monkeypatch, tmp_path):
+        from skill_seekers.cli import enhance_skill
+
+        mock_client = MagicMock()
+        mock_client.client = MagicMock()
+        mock_client.call.return_value = "enhanced"
+        monkeypatch.setattr(enhance_skill, "AgentClient", MagicMock(return_value=mock_client))
+
+        enhancer = enhance_skill.SkillEnhancer(tmp_path, api_key="sk-ant-x")
+        references = {
+            "api.md": {
+                "source": "web",
+                "path": str(tmp_path / "references" / "api.md"),
+                "confidence": "high",
+                "size": 9,
+                "content": "# API doc",
+            }
+        }
+        assert enhancer.enhance_skill_md(references, None) == "enhanced"
+        assert mock_client.call.call_args.kwargs["max_tokens"] == 16384
+
+    def test_adaptor_enhance_requests_16384(self, monkeypatch, tmp_path):
+        from skill_seekers.cli import agent_client as agent_client_module
+        from skill_seekers.cli.adaptors.base import SkillAdaptor
+
+        class _Adaptor(SkillAdaptor):
+            PLATFORM = "test"
+            PLATFORM_NAME = "Test"
+
+            def format_skill_md(self, skill_dir, metadata):
+                return ""
+
+            def package(self, skill_dir, output_path, **kwargs):
+                return output_path
+
+            def upload(self, package_path, api_key, **kwargs):
+                return {}
+
+            def _build_enhancement_prompt(self, name, references, current):
+                return "prompt"
+
+        (tmp_path / "references").mkdir()
+        (tmp_path / "references" / "doc.md").write_text("# Doc")
+
+        mock_client = MagicMock()
+        mock_client.mode = "api"
+        mock_client.client = MagicMock()
+        mock_client.call.return_value = "enhanced"
+        monkeypatch.setattr(agent_client_module, "AgentClient", MagicMock(return_value=mock_client))
+
+        ok = _Adaptor()._enhance_skill_md_via_client(tmp_path, "sk-ant-x", provider="anthropic")
+        assert ok is True
+        assert mock_client.call.call_args.kwargs["max_tokens"] == 16384
+
+
 class TestProviderOverride:
     """Regression for ENH-02: a Moonshot/Kimi sk- key must not be misrouted to
     OpenAI when an explicit provider override is set."""
@@ -541,6 +647,70 @@ class TestCallLocalStrayJson:
         assert out == "REAL STDOUT RESPONSE"
 
 
+class TestCallLocalPromptDelivery:
+    """Regression: agents whose command template never consumes {prompt_file}
+    (bare ["opencode"], custom commands without the placeholder) must receive
+    the prompt on stdin — previously subprocess.run got input=None and the
+    prompt sat in an unreferenced temp file."""
+
+    @staticmethod
+    def _fake_run(captured):
+        def fake_run(cmd, **kwargs):
+            captured["cmd"] = cmd
+            captured["input"] = kwargs.get("input")
+            result = MagicMock()
+            result.returncode = 0
+            result.stdout = "ok"
+            result.stderr = ""
+            return result
+
+        return fake_run
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_opencode_receives_prompt_on_stdin(self):
+        client = AgentClient(mode="local", agent="opencode")
+        captured = {}
+        with patch("subprocess.run", side_effect=self._fake_run(captured)):
+            assert client.call("the prompt") == "ok"
+        assert captured["cmd"][0] == "opencode"
+        assert captured["input"] == "the prompt"
+
+    @patch.dict(os.environ, {"SKILL_SEEKER_AGENT_CMD": "mytool run"}, clear=True)
+    def test_custom_without_prompt_file_pipes_stdin(self):
+        client = AgentClient(mode="local", agent="custom")
+        captured = {}
+        with patch("subprocess.run", side_effect=self._fake_run(captured)):
+            assert client.call("the prompt") == "ok"
+        assert captured["cmd"] == ["mytool", "run"]
+        assert captured["input"] == "the prompt"
+
+    @patch.dict(
+        os.environ,
+        {"SKILL_SEEKER_AGENT_CMD": 'mytool --system "be brief" {prompt_file}'},
+        clear=True,
+    )
+    def test_custom_command_is_shlex_split_and_substituted(self):
+        """Custom templates go through build_local_agent_command: shlex split
+        (no literal quote chars) and {prompt_file} substitution — the same
+        path LocalSkillEnhancer already used for the identical env value."""
+        client = AgentClient(mode="local", agent="custom")
+        captured = {}
+        with patch("subprocess.run", side_effect=self._fake_run(captured)):
+            assert client.call("the prompt") == "ok"
+        assert captured["cmd"][:3] == ["mytool", "--system", "be brief"]
+        # {prompt_file} consumed → the prompt travels via the file, not stdin
+        assert captured["cmd"][3].endswith("prompt.md")
+        assert captured["input"] is None
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_prompt_file_agent_does_not_pipe_stdin(self):
+        client = AgentClient(mode="local", agent="claude")
+        captured = {}
+        with patch("subprocess.run", side_effect=self._fake_run(captured)):
+            assert client.call("the prompt") == "ok"
+        assert captured["input"] is None
+
+
 class TestParseKimiOutputUnknownRecords:
     """Unknown record types must not leak into the extracted text.
 
@@ -561,6 +731,46 @@ class TestParseKimiOutputUnknownRecords:
     def test_unknown_record_at_end(self):
         raw = "TextPart(type='text', text='only')\nSomeNewRecord(foo=1)"
         assert AgentClient._parse_kimi_output(raw) == "only"
+
+
+class TestParseKimiOutputInternalBoundaries:
+    """Regression: the old single DOTALL regex truncated a TextPart at an
+    internal "')" before a Capitalized line (print('done') then Config(...)),
+    and garbled/swallowed trailing records when its lookahead failed at the
+    true boundary (a non-record line after the closing "')")."""
+
+    def test_internal_close_before_single_capital_identifier(self):
+        raw = "TextPart(type='text', text='# Example\nprint('done')\nConfig(path)\nmore text')"
+        assert (
+            AgentClient._parse_kimi_output(raw)
+            == "# Example\nprint('done')\nConfig(path)\nmore text"
+        )
+
+    def test_internal_close_with_record_at_end(self):
+        raw = (
+            "TextPart(type='text', text='# Example\nprint('done')\nConfig(path)\nmore text')\n"
+            "TurnEnd()"
+        )
+        assert (
+            AgentClient._parse_kimi_output(raw)
+            == "# Example\nprint('done')\nConfig(path)\nmore text"
+        )
+
+    def test_non_record_line_before_next_record_yields_exact_text(self):
+        raw = (
+            "TextPart(type='text', text='Hello')\n"
+            "Some deprecation note\n"
+            "ThinkPart(type='think', think='...')"
+        )
+        assert AgentClient._parse_kimi_output(raw) == "Hello"
+
+    def test_trailing_non_record_line_after_last_textpart(self):
+        raw = "TextPart(type='text', text='Hello')\ndone."
+        assert AgentClient._parse_kimi_output(raw) == "Hello"
+
+    def test_unclosed_textpart_falls_back_to_raw(self):
+        raw = "TextPart(type='text', text='never closed"
+        assert AgentClient._parse_kimi_output(raw) == raw
 
 
 class TestProviderRegistry:

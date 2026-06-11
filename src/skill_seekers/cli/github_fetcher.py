@@ -332,11 +332,11 @@ class GitHubThreeStreamFetcher:
         if self.issue_labels:
             params["labels"] = ",".join(self.issue_labels)
 
+        # Follow Link: rel="next" pagination until we have max_count issues.
+        # A single page caps at 100, so without this any max_count > 100 was
+        # silently truncated (and PR filtering reduced it further).
+        collected: list[dict] = []
         try:
-            # Follow Link: rel="next" pagination until we have max_count issues.
-            # A single page caps at 100, so without this any max_count > 100 was
-            # silently truncated (and PR filtering reduced it further).
-            collected: list[dict] = []
             page = 1
             while len(collected) < max_count:
                 params["page"] = page
@@ -363,7 +363,9 @@ class GitHubThreeStreamFetcher:
             raise
         except Exception as e:
             print(f"⚠️  Failed to fetch {state} issues: {e}")
-            return []
+            # Keep the pages already fetched: returning [] discarded them AND
+            # let fetch_issues spend the full quota on the other state.
+            return collected[:max_count]
 
     def classify_files(self, repo_path: Path) -> tuple[list[Path], list[Path]]:
         """

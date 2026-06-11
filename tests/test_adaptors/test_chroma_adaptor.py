@@ -119,11 +119,40 @@ class TestChromaAdaptor:
 
         # Upload may fail if chromadb not installed (expected)
         assert "message" in result
-        # Either chromadb not installed or connection error
+        # Either chromadb not installed, chromadb import failure (e.g. pydantic
+        # ConfigError on Python 3.14), or connection error
         assert (
             "chromadb not installed" in result["message"]
+            or "chromadb failed to import" in result["message"]
             or "Failed to connect" in result["message"]
         )
+
+    def test_upload_non_importerror_reports_failed_import(self, tmp_path, monkeypatch):
+        """Non-ImportError import failure (e.g. pydantic ConfigError on
+        Python 3.14) is reported as 'failed to import', not 'not installed'."""
+        import builtins
+        import sys
+
+        package_path = tmp_path / "test-chroma.json"
+        package_path.write_text('{"documents": [], "metadatas": [], "ids": []}')
+
+        adaptor = get_adaptor("chroma")
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "chromadb":
+                raise RuntimeError('unable to infer type for attribute "chroma_server_nofile"')
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.delitem(sys.modules, "chromadb", raising=False)
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+
+        result = adaptor.upload(package_path, "fake-key")
+
+        assert result["success"] is False
+        assert "chromadb failed to import" in result["message"]
+        assert "chromadb not installed" not in result["message"]
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""

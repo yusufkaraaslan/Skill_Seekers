@@ -229,6 +229,19 @@ class TestEstimatePagesToolInProcess:
         result = await estimate_pages_tool({"config_path": "configs/x.json"})
         assert "❌ Error:" in result[0].text
 
+    async def test_output_does_not_claim_hard_timeout_cap(self, monkeypatch):
+        """Regression: the in-process run_cli_main path enforces NO timeout,
+        so the output must not assert a hard 'Maximum time' cap — the value
+        is advisory only."""
+        import skill_seekers.cli.estimate_pages as estimate_pages
+
+        monkeypatch.setattr(estimate_pages, "main", lambda: 0)
+
+        result = await estimate_pages_tool({"config_path": "configs/x.json", "unlimited": True})
+        text = result[0].text
+        assert "Maximum time" not in text
+        assert "advisory — not enforced" in text
+
 
 @pytest.mark.asyncio
 class TestDetectPatternsToolInProcess:
@@ -402,6 +415,90 @@ class TestExtractConfigPatternsToolInProcess:
         text = result[0].text
         assert "❌ Error:" not in text
         assert (out_dir / "config_patterns.json").exists()
+
+    async def test_enhance_maps_to_ai_mode_api(self, monkeypatch, tmp_path):
+        """Regression: config_extractor.main() parses --enhance/--enhance-local
+        but never reads them — enhancement is driven solely by --ai-mode. With
+        the old argv ('--enhance') the tool claimed '🤖 AI enhancement: api'
+        while nothing was enhanced. enhance=True must map to '--ai-mode api'."""
+        import skill_seekers.cli.config_extractor as config_extractor
+
+        seen = {}
+
+        def fake_main():
+            seen["argv"] = list(sys.argv[1:])
+            return 0
+
+        monkeypatch.setattr(config_extractor, "main", fake_main)
+
+        result = await extract_config_patterns_tool(
+            {"directory": str(tmp_path), "output": str(tmp_path / "out"), "enhance": True}
+        )
+        text = result[0].text
+        assert "--enhance" not in seen["argv"]
+        assert seen["argv"][-2:] == ["--ai-mode", "api"]
+        assert "🤖 AI enhancement: api" in text
+
+    async def test_enhance_local_maps_to_ai_mode_local(self, monkeypatch, tmp_path):
+        import skill_seekers.cli.config_extractor as config_extractor
+
+        seen = {}
+
+        def fake_main():
+            seen["argv"] = list(sys.argv[1:])
+            return 0
+
+        monkeypatch.setattr(config_extractor, "main", fake_main)
+
+        result = await extract_config_patterns_tool(
+            {"directory": str(tmp_path), "output": str(tmp_path / "out"), "enhance_local": True}
+        )
+        text = result[0].text
+        assert "--enhance-local" not in seen["argv"]
+        assert seen["argv"][-2:] == ["--ai-mode", "local"]
+        assert "🤖 AI enhancement: local" in text
+
+    async def test_explicit_ai_mode_wins_over_enhance_booleans(self, monkeypatch, tmp_path):
+        import skill_seekers.cli.config_extractor as config_extractor
+
+        seen = {}
+
+        def fake_main():
+            seen["argv"] = list(sys.argv[1:])
+            return 0
+
+        monkeypatch.setattr(config_extractor, "main", fake_main)
+
+        result = await extract_config_patterns_tool(
+            {
+                "directory": str(tmp_path),
+                "output": str(tmp_path / "out"),
+                "enhance": True,
+                "ai_mode": "auto",
+            }
+        )
+        text = result[0].text
+        assert seen["argv"][-2:] == ["--ai-mode", "auto"]
+        assert seen["argv"].count("--ai-mode") == 1
+        assert "🤖 AI enhancement: auto" in text
+
+    async def test_no_enhancement_passes_no_ai_mode(self, monkeypatch, tmp_path):
+        import skill_seekers.cli.config_extractor as config_extractor
+
+        seen = {}
+
+        def fake_main():
+            seen["argv"] = list(sys.argv[1:])
+            return 0
+
+        monkeypatch.setattr(config_extractor, "main", fake_main)
+
+        result = await extract_config_patterns_tool(
+            {"directory": str(tmp_path), "output": str(tmp_path / "out")}
+        )
+        text = result[0].text
+        assert "--ai-mode" not in seen["argv"]
+        assert "🤖 AI enhancement:" not in text
 
 
 @pytest.mark.asyncio

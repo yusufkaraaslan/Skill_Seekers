@@ -168,6 +168,11 @@ class UnifiedScraper(SkillConverter):
         self.output_dir = self.resolve_skill_dir(
             {"output_dir": output_dir or self.config.get("output_dir")}, self.name
         )
+        # Write the resolved value back so build-phase consumers of the raw
+        # config (UnifiedSkillBuilder re-resolves skill_dir from
+        # config["output_dir"]) honor the CLI --output override instead of
+        # falling back to the config file's value / output/<name>.
+        self.config["output_dir"] = self.output_dir
 
         # Use hidden cache directory for intermediate files
         self.cache_dir = f".skillseeker-cache/{self.name}"

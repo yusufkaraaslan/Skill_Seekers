@@ -200,7 +200,7 @@ class OpenAPIToSkillConverter(SkillConverter):
             self.description = infer_description_from_spec(info, self.name)
 
         # Persist extracted data
-        os.makedirs("output", exist_ok=True)
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(self.extracted_data, f, indent=2, ensure_ascii=False)
         logger.info("  Saved extracted data to: %s", self.data_file)

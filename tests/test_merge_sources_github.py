@@ -8,9 +8,20 @@ Tests the multi-layer merging architecture:
 - Layer 4: GitHub insights (issues)
 """
 
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+import skill_seekers.cli.merge_sources as merge_sources_module
 from skill_seekers.cli.conflict_detector import Conflict
 from skill_seekers.cli.github_fetcher import CodeStream, DocsStream, InsightsStream, ThreeStreamData
 from skill_seekers.cli.merge_sources import (
+    AIEnhancedMerger,
+    ClaudeEnhancedMerger,
     RuleBasedMerger,
     _match_issues_to_apis,
     categorize_issues_by_topic,
@@ -493,3 +504,69 @@ class TestIntegration:
         # Verify conflict summary
         assert "conflict_summary" in result
         assert result["conflict_summary"]["total_conflicts"] == 0
+
+
+class TestMainModuleExecution:
+    """Regression tests for `python -m skill_seekers.cli.merge_sources`.
+
+    The ClaudeEnhancedMerger backward-compat alias is bound below the
+    `if __name__ == "__main__"` block, so when merge_sources() referenced
+    the alias it raised NameError during module-body execution
+    (`--mode ai-enhanced` / `--mode claude-enhanced` via -m or as a script).
+    """
+
+    def test_backward_compat_alias_still_exported(self):
+        """External importers keep the ClaudeEnhancedMerger alias."""
+        assert ClaudeEnhancedMerger is AIEnhancedMerger
+
+    @pytest.mark.parametrize("mode", ["ai-enhanced", "claude-enhanced"])
+    def test_module_execution_ai_mode_no_nameerror(self, tmp_path, mode):
+        """-m execution with an AI mode must not crash with NameError."""
+        docs_path = tmp_path / "docs.json"
+        github_path = tmp_path / "github.json"
+        out_path = tmp_path / "merged.json"
+        docs_path.write_text(json.dumps({"pages": []}))
+        github_path.write_text(json.dumps({"apis": {}}))
+
+        env = os.environ.copy()
+        # Keep the AI merge offline and deterministic: no API keys forces
+        # LOCAL mode, and the recursion guard makes _call_local return None
+        # without spawning an agent, so merge_all() falls back to the
+        # rule-based merger.
+        for var in (
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            "GOOGLE_API_KEY",
+            "OPENAI_API_KEY",
+            "MOONSHOT_API_KEY",
+        ):
+            env.pop(var, None)
+        env["SKILL_SEEKER_ENHANCE_ACTIVE"] = "1"
+        # Run the module from this checkout, not a stale installed copy.
+        src_dir = str(Path(merge_sources_module.__file__).resolve().parents[2])
+        env["PYTHONPATH"] = os.pathsep.join(p for p in (src_dir, env.get("PYTHONPATH")) if p)
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "skill_seekers.cli.merge_sources",
+                str(docs_path),
+                str(github_path),
+                "--output",
+                str(out_path),
+                "--mode",
+                mode,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=env,
+        )
+
+        assert "NameError" not in result.stderr, result.stderr
+        assert result.returncode == 0, result.stderr
+        merged = json.loads(out_path.read_text())
+        # AI agent was blocked, so the run must have completed via the
+        # rule-based fallback rather than crashing.
+        assert merged["merge_mode"] == "rule-based"

@@ -1790,6 +1790,92 @@ class TestResolverUsesCanonicalCandidates:
             )
         assert path is None
 
+    def test_resolver_preserves_preexisting_user_config_in_out_dir(self, tmp_path: Path):
+        """Regression: with out_dir == ./configs, resolve_config_path's
+        CWD-relative 'configs/' lookup can return a user-managed file that
+        already lives inside out_dir under a different slug (configs/godot.json
+        for the godot-engine.json target). The intermediate cleanup must not
+        delete a file this run did not create — copy, never move."""
+        out_dir = tmp_path / "configs"
+        out_dir.mkdir()
+        user_config = out_dir / "godot.json"
+        user_config.write_text(
+            json.dumps(
+                {
+                    "name": "godot",
+                    "description": "Hand-maintained by the user",
+                    "sources": [
+                        {"type": "documentation", "base_url": "https://docs.godotengine.org"}
+                    ],
+                }
+            )
+        )
+
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
+            # Simulates step 2 of resolve_config_path: the CWD-relative
+            # configs/ lookup returns the user's pre-existing file (no fetch).
+            return user_config.resolve() if name == "godot.json" else None
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            path, was_generated = resolve_or_generate_with_status(
+                self._det("Godot Engine"),
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=False,
+            )
+
+        assert path == out_dir / "godot-engine.json"
+        assert was_generated is False
+        # The user's hand-maintained file must survive untouched.
+        assert user_config.exists(), "pre-existing user config was deleted by the scan"
+        data = json.loads(user_config.read_text())
+        assert data["description"] == "Hand-maintained by the user"
+
+    def test_resolver_still_removes_fetched_intermediate_in_out_dir(self, tmp_path: Path):
+        """The intermediate cleanup still applies to canonical-named files the
+        resolve step itself fetched into out_dir during this run — otherwise
+        they show up as phantom 'removed' configs on the next scan."""
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+
+        def fake_resolve(name, auto_fetch=True, fetch_destination="configs"):  # noqa: ARG001 — mirrors real signature
+            if name != "godot.json":
+                return None
+            # Simulates the API fetch landing godot.json inside out_dir.
+            fetched = Path(fetch_destination) / "godot.json"
+            fetched.write_text(
+                json.dumps(
+                    {
+                        "name": "godot",
+                        "description": "fetched",
+                        "sources": [
+                            {"type": "documentation", "base_url": "https://docs.godotengine.org"}
+                        ],
+                    }
+                )
+            )
+            return fetched.resolve()
+
+        with patch("skill_seekers.cli.scan_command.resolve_config_path", side_effect=fake_resolve):
+            from skill_seekers.cli.scan_command import resolve_or_generate_with_status
+
+            path, _ = resolve_or_generate_with_status(
+                self._det("Godot Engine"),
+                out_dir=out_dir,
+                client=MagicMock(),
+                allow_network=True,
+                allow_generate=False,
+            )
+
+        assert path == out_dir / "godot-engine.json"
+        assert path.exists()
+        assert not (out_dir / "godot.json").exists(), (
+            "fetched intermediate should be removed to avoid phantom-removed churn"
+        )
+
 
 class TestGenerateSchemaHintDepth:
     """Regression for SCAN-01: the AI schema hint's ``code_analysis_depth`` must

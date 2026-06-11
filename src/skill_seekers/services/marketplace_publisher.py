@@ -4,6 +4,7 @@ Marketplace Publisher
 Publishes packaged skills to Claude Code plugin marketplace repositories.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -92,16 +93,23 @@ class MarketplacePublisher:
                 f"for marketplace '{marketplace_name}'"
             )
 
-        # 5. Clone/pull marketplace repo (full clone, not shallow — needed for push)
+        # 5. Clone/pull marketplace repo (full clone, not shallow — needed for push).
+        # Authenticate clone/pull/push through an explicit token URL; keep the
+        # token OUT of the cached .git/config by storing a tokenless origin.
+        # (Relying on `origin` for pull/push fails auth on private repos because
+        # origin is intentionally tokenless.)
         cache_name = f"marketplace_{marketplace_name}"
         repo_path = self.git_repo.cache_dir / cache_name
-        clone_url = self.git_repo.inject_token(git_url, token) if token else git_url
+        token_url = self.git_repo.inject_token(git_url, token) if token else git_url
         try:
             if repo_path.exists() and (repo_path / ".git").exists():
                 repo_obj = git.Repo(repo_path)
-                repo_obj.remotes.origin.pull(branch)
+                # A previous create_branch publish may have left the cached repo
+                # on a feature branch — return to the base branch before pulling.
+                repo_obj.git.checkout(branch)
+                repo_obj.git.pull(token_url, branch)
             else:
-                repo_obj = git.Repo.clone_from(clone_url, repo_path, branch=branch)
+                repo_obj = git.Repo.clone_from(token_url, repo_path, branch=branch)
             # Clear token from cached .git/config by resetting to non-token URL
             repo_obj.remotes.origin.set_url(git_url)
         except git.GitCommandError as e:
@@ -136,29 +144,38 @@ class MarketplacePublisher:
             repo = git.Repo(repo_path)
 
             target_branch = branch
-            if create_branch:
-                target_branch = f"skill/{skill_name}"
-                repo.git.checkout("-b", target_branch)
+            try:
+                if create_branch:
+                    target_branch = f"skill/{skill_name}"
+                    # -B so a leftover branch from a prior publish of the same
+                    # skill in the persistent cache doesn't make checkout fail
+                    repo.git.checkout("-B", target_branch)
 
-            # Only stage the specific files we wrote (not the entire repo)
-            files_to_stage = []
-            # Stage the plugin directory (skill files + plugin.json)
-            plugin_rel = str(plugin_dir.relative_to(repo_path))
-            files_to_stage.append(plugin_rel)
-            # Stage marketplace.json
-            marketplace_json_rel = str(
-                (repo_path / ".claude-plugin" / "marketplace.json").relative_to(repo_path)
-            )
-            files_to_stage.append(marketplace_json_rel)
-            repo.index.add(files_to_stage)
+                # Only stage the specific files we wrote (not the entire repo)
+                files_to_stage = []
+                # Stage the plugin directory (skill files + plugin.json)
+                plugin_rel = str(plugin_dir.relative_to(repo_path))
+                files_to_stage.append(plugin_rel)
+                # Stage marketplace.json
+                marketplace_json_rel = str(
+                    (repo_path / ".claude-plugin" / "marketplace.json").relative_to(repo_path)
+                )
+                files_to_stage.append(marketplace_json_rel)
+                repo.index.add(files_to_stage)
 
-            action = "update" if force else "add"
-            commit_msg = f"feat: {action} {skill_name} skill plugin"
-            repo.index.commit(commit_msg)
-            commit_sha = repo.head.commit.hexsha[:7]
+                action = "update" if force else "add"
+                commit_msg = f"feat: {action} {skill_name} skill plugin"
+                repo.index.commit(commit_msg)
+                commit_sha = repo.head.commit.hexsha[:7]
 
-            push_url = self.git_repo.inject_token(git_url, token)
-            repo.git.push(push_url, target_branch)
+                # Push through the token URL (origin is stored tokenless).
+                repo.git.push(token_url, target_branch)
+            finally:
+                # Always return the cached repo to the base branch so the next
+                # run starts from a clean, expected state — even if the push failed.
+                if create_branch:
+                    with contextlib.suppress(git.GitCommandError):
+                        repo.git.checkout(branch)
 
             return {
                 "success": True,

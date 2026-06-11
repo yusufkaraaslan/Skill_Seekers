@@ -235,6 +235,43 @@ class WeaviateAdaptor(StreamingAdaptorMixin, SkillAdaptor):
             ensure_ascii=False,
         )
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to the Weaviate package format.
+
+        Produces the same schema/objects/class_name structure as
+        format_skill_md() so upload() can consume streaming packages.
+        """
+        class_name = "".join(word.capitalize() for word in skill_name.split("_"))
+        objects = []
+
+        for chunk_text, chunk_meta in chunks:
+            meta = self._streaming_chunk_meta(chunk_meta, skill_name)
+            objects.append(
+                {
+                    "id": self._generate_uuid(chunk_text, meta),
+                    "properties": {
+                        "content": chunk_text,
+                        "source": meta.get("source", skill_name),
+                        "category": meta.get("category", ""),
+                        "file": meta.get("file", ""),
+                        "type": meta["type"],
+                        "version": meta.get("version", "1.0.0"),
+                        "doc_version": meta.get("doc_version", ""),
+                    },
+                }
+            )
+
+        return {
+            "schema": self._generate_schema(class_name),
+            "objects": objects,
+            "class_name": class_name,
+            "total_chunks": len(objects),
+            "streaming": True,
+        }
+
     def package(
         self,
         skill_dir: Path,

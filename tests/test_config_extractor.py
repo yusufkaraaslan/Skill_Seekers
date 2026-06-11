@@ -645,3 +645,11 @@ class TestPathHasWordBoundaries(unittest.TestCase):
         self.assertEqual(purpose, "database_configuration")
         purpose = self.detector._infer_purpose(Path("settings/app_logging.conf"), "ini")
         self.assertEqual(purpose, "logging_configuration")
+
+    def test_infer_purpose_full_db_product_names(self):
+        """Regression: boundary matching can't find 'postgres' inside
+        'postgresql' or 'mongo'/'db' inside 'mongodb'/'mariadb' — the full
+        product tokens must classify as database configs again."""
+        for name in ["mongodb.yaml", "postgresql.yml", "mongodb.json", "mariadb.yaml"]:
+            purpose = self.detector._infer_purpose(Path(name), "yaml")
+            self.assertEqual(purpose, "database_configuration", name)

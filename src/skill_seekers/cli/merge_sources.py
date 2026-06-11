@@ -767,8 +767,11 @@ def merge_sources(
     # Merge based on mode. Accept the canonical "ai-enhanced" spelling as a
     # synonym for "claude-enhanced" (direct callers passed it and silently fell
     # through to rule-based merging).
+    # Use AIEnhancedMerger directly (not the ClaudeEnhancedMerger alias): the
+    # alias is bound after the __main__ block below, so it doesn't exist yet
+    # when this runs via `python -m skill_seekers.cli.merge_sources`.
     if mode in ("claude-enhanced", "ai-enhanced"):
-        merger = ClaudeEnhancedMerger(docs_data, github_data, conflicts, github_streams)
+        merger = AIEnhancedMerger(docs_data, github_data, conflicts, github_streams)
     else:
         merger = RuleBasedMerger(docs_data, github_data, conflicts, github_streams)
 

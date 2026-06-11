@@ -275,9 +275,10 @@ Always prioritize accuracy by consulting the attached documentation files before
                             uploaded_file = client.files.create(file=f, purpose="assistants")
                             file_ids.append(uploaded_file.id)
 
-                    # Attach files to vector store
+                    # Attach files to vector store (batch attach lives on
+                    # file_batches.create in both old and new SDKs)
                     if file_ids:
-                        vs_api.files.create_batch(
+                        vs_api.file_batches.create(
                             vector_store_id=vector_store.id, file_ids=file_ids
                         )
 

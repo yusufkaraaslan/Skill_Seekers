@@ -14,12 +14,14 @@ Routes `skill-seekers enhance` to the correct backend:
 Decision priority:
   1. Explicit --target flag → API mode with that platform.
   2. Config ai_enhancement.default_agent + matching env key → API mode.
-  3. Auto-detect from env vars: ANTHROPIC_API_KEY → claude,
-     GOOGLE_API_KEY → gemini, OPENAI_API_KEY → openai.
-  4. No API keys → LOCAL mode (AI coding agent).
+  3. Auto-detect from env vars (agent_client.API_PROVIDERS priority order).
+     Skipped with a notice if the detected provider's Python SDK isn't
+     installed (it's an optional dependency for gemini/openai/kimi).
+  4. No API keys (or no usable SDK) → LOCAL mode (AI coding agent).
   5. LOCAL mode + running as root → clear error (AI coding agent refuses root).
 """
 
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -47,6 +49,34 @@ def _is_root() -> bool:
 def _get_api_keys() -> dict[str, str | None]:
     """Collect API keys from environment (single source: agent_client registry)."""
     return get_provider_api_keys()
+
+
+# Python SDK module each API target's enhancement adaptor imports. claude
+# rides the core `anthropic` dep; kimi uses the OpenAI-compatible client
+# (adaptors/openai_compatible.py), so it needs the optional `openai` SDK.
+TARGET_SDK_MODULES: dict[str, str] = {
+    "claude": "anthropic",
+    "gemini": "google.generativeai",
+    "openai": "openai",
+    "kimi": "openai",
+}
+
+
+def api_sdk_available(target: str) -> bool:
+    """Return True if the Python SDK required for `target`'s API mode is importable.
+
+    Uses find_spec (no import side effects) so a missing optional dependency
+    is caught before committing to API mode instead of hard-failing later.
+    """
+    module = TARGET_SDK_MODULES.get(target)
+    if module is None:
+        return True  # Unknown target — let the adaptor surface its own error.
+    try:
+        return importlib.util.find_spec(module) is not None
+    except ImportError:
+        # find_spec on a dotted name imports the parent package; a missing
+        # parent (e.g. no `google` namespace at all) means the SDK is absent.
+        return False
 
 
 def _get_config_default_agent() -> str | None:
@@ -82,12 +112,23 @@ def _pick_mode(args) -> tuple[str, str | None]:
         return "api", config_agent
 
     # 3. Auto-detect from environment variables, in the priority order defined
-    #    by agent_client.API_PROVIDERS (the single provider registry).
+    #    by agent_client.API_PROVIDERS (the single provider registry). Only
+    #    commit to API mode if the provider's SDK is actually installed —
+    #    otherwise (e.g. MOONSHOT_API_KEY set but the optional `openai`
+    #    package missing) fall through to LOCAL mode instead of hard-failing.
     detected = detect_api_target()
     if detected:
-        return "api", detected[0]
+        target = detected[0]
+        if api_sdk_available(target):
+            return "api", target
+        module = TARGET_SDK_MODULES[target]
+        print(
+            f"⚠️  API key found for '{target}' but its SDK ('{module}') is not "
+            "installed — falling back to LOCAL mode."
+        )
+        print(f"   For API mode: pip install {module.replace('.', '-')}")
 
-    # 4. No API keys found → LOCAL mode.
+    # 4. No usable API provider found → LOCAL mode.
     return "local", None
 
 

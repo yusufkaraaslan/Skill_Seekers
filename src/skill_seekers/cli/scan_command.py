@@ -801,6 +801,11 @@ def resolve_or_generate_with_status(
     # (3) user config dir; all three require the ``.json`` suffix to match
     # actual files on disk, so we append it here. The API fallback inside
     # the function strips/re-adds it as needed.
+    #
+    # Snapshot out_dir first so the intermediate cleanup below can tell an
+    # API-fetched cache artifact (created during this run) apart from a
+    # pre-existing user-managed file — the latter must never be deleted.
+    pre_existing = {p.resolve() for p in out_dir.glob("*.json")}
     resolved: Path | None = None
     for candidate in _canonical_name_candidates(detection.name):
         lookup = candidate if candidate.endswith(".json") else f"{candidate}.json"
@@ -823,9 +828,17 @@ def resolve_or_generate_with_status(
         # (e.g. godot.json next to our godot-engine.json target). Remove that
         # intermediate: scan's diff is keyed by filename slug, so a leftover
         # canonical file shows up as a phantom "removed" config on the next
-        # scan and gets archived — churn on every re-scan.
+        # scan and gets archived — churn on every re-scan. Only files this
+        # run created qualify: resolve_config_path can also return a
+        # pre-existing file inside out_dir (e.g. a user-managed
+        # configs/godot.json found via its CWD-relative lookup when
+        # out_dir == ./configs) — copy that, never delete it.
         try:
-            if resolved != target and resolved.parent.resolve() == out_dir.resolve():
+            if (
+                resolved != target
+                and resolved.parent.resolve() == out_dir.resolve()
+                and resolved.resolve() not in pre_existing
+            ):
                 resolved.unlink()
         except OSError as e:
             logger.debug("Could not remove fetched intermediate %s: %s", resolved, e)

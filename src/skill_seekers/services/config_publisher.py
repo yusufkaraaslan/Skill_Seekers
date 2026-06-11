@@ -214,7 +214,10 @@ class ConfigPublisher:
         target_branch = branch
         if create_branch:
             target_branch = f"config/{config_name}"
-            repo.git.checkout("-b", target_branch)
+            # -B so the branch left behind by a prior publish of the same
+            # config (the finally below restores the base branch but doesn't
+            # delete it) can't make checkout fail on a retry/force update.
+            repo.git.checkout("-B", target_branch)
 
         try:
             repo.index.add([str(target_file.relative_to(repo_path))])

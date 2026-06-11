@@ -160,6 +160,44 @@ class FAISSHelpers(StreamingAdaptorMixin, SkillAdaptor):
             ensure_ascii=False,
         )
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to the FAISS package format.
+
+        Produces the same documents/metadatas/ids/config structure as
+        format_skill_md() so the documented import path in upload()
+        works on streaming packages.
+        """
+        documents = []
+        metadatas = []
+        ids = []
+
+        for chunk_text, chunk_meta in chunks:
+            documents.append(chunk_text)
+            metadatas.append(self._streaming_chunk_meta(chunk_meta, skill_name))
+            ids.append(chunk_meta["chunk_id"])
+
+        config = {
+            "index_type": "IndexFlatL2",  # Recommended starting point
+            "dimension": 1536,  # OpenAI ada-002 default
+            "metric": "L2",  # Euclidean distance
+            "description": (
+                "FAISS requires embeddings. Use OpenAI, Cohere, or local models "
+                "to generate embeddings before adding to index."
+            ),
+        }
+
+        return {
+            "documents": documents,
+            "metadatas": metadatas,
+            "ids": ids,
+            "config": config,
+            "total_chunks": len(chunks),
+            "streaming": True,
+        }
+
     def package(
         self,
         skill_dir: Path,

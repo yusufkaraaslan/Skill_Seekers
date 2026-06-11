@@ -96,7 +96,7 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
 
     Note:
         Runs estimate_pages.main() in-process (Phase 5d). The old subprocess
-        timeout no longer applies — the "Maximum time" line in the output is
+        timeout no longer applies — the "Estimated time" line in the output is
         an advisory estimate only (same precedent as converter scrapes via
         _run_converter, which run unbounded).
     """
@@ -116,7 +116,7 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
     argv = [config_path, "--max-discovery", str(max_discovery)]
 
     progress_msg = "🔄 Estimating page count...\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"⏱️ Estimated time: ~{timeout // 60} minutes (advisory — not enforced)\n\n"
 
     from skill_seekers.cli import estimate_pages
 
@@ -143,7 +143,10 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             - config_path (str): Path to config JSON file
             - unlimited (bool, optional): Remove page limit (default: False)
             - enhance_local (bool, optional): Open terminal for local enhancement (default: False)
-            - skip_scrape (bool, optional): Skip scraping, use cached data (default: False)
+            - skip_scrape (bool, optional): Skip scraping, use cached data (default: False).
+              Single-source configs only — not yet supported for unified
+              multi-source configs (a warning is emitted and all sources are
+              re-scraped).
             - dry_run (bool, optional): Preview without saving (default: False)
             - merge_mode (str, optional): Override merge mode for unified configs
 
@@ -211,6 +214,11 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             # .skillseeker-cache before building); the attribute is set for
             # forward-compat but currently has no effect here. Single-source
             # configs DO honor skip_scrape (SkillConverter.run).
+            if skip_scrape:
+                progress_msg += (
+                    "⚠️ skip_scrape is not yet supported for unified multi-source "
+                    "configs — all sources will be re-scraped\n\n"
+                )
             converter = get_converter(
                 "config",
                 {"config_path": config_to_use, "merge_mode": merge_mode, "dry_run": dry_run},
@@ -614,8 +622,8 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
 
     Note:
         Runs pattern_recognizer.main() in-process (Phase 5d). The old
-        subprocess timeout no longer applies — the "Maximum time" line in the
-        output is advisory only.
+        subprocess timeout no longer applies — the "Estimated time" line in
+        the output is advisory only.
 
     Example:
         detect_patterns(file="src/database.py", depth="deep")
@@ -655,7 +663,7 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     if directory:
         progress_msg += f"📁 Directory: {directory}\n"
     progress_msg += f"🎯 Detection depth: {depth}\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"⏱️ Estimated time: ~{timeout // 60} minutes (advisory — not enforced)\n\n"
 
     # pattern_recognizer.main() takes no args parameter and parses sys.argv
     # through its own parser — run_cli_main patches sys.argv for the call.
@@ -700,8 +708,8 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
 
     Note:
         Runs test_example_extractor.main() in-process (Phase 5d). The old
-        subprocess timeout no longer applies — the "Maximum time" line in the
-        output is advisory only.
+        subprocess timeout no longer applies — the "Estimated time" line in
+        the output is advisory only.
 
     Example:
         extract_test_examples(directory="tests/", language="python")
@@ -750,7 +758,7 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
         progress_msg += f"🔤 Language: {language}\n"
     progress_msg += f"🎯 Min confidence: {min_confidence}\n"
     progress_msg += f"📊 Max per file: {max_per_file}\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"⏱️ Estimated time: ~{timeout // 60} minutes (advisory — not enforced)\n\n"
 
     from skill_seekers.cli import test_example_extractor
 
@@ -792,8 +800,8 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
 
     Note:
         Runs how_to_guide_builder.main() in-process (Phase 5d). The old
-        subprocess timeout no longer applies — the "Maximum time" line in the
-        output is advisory only.
+        subprocess timeout no longer applies — the "Estimated time" line in
+        the output is advisory only.
 
     Example:
         build_how_to_guides(
@@ -834,7 +842,7 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     progress_msg += f"🔀 Grouping: {group_by}\n"
     if no_ai:
         progress_msg += "🚫 AI enhancement disabled\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    progress_msg += f"⏱️ Estimated time: ~{timeout // 60} minutes (advisory — not enforced)\n\n"
 
     # how_to_guide_builder.main() takes no args parameter and parses sys.argv
     # through its own parser — run_cli_main patches sys.argv for the call.
@@ -886,8 +894,13 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
 
     Note:
         Runs config_extractor.main() in-process (Phase 5d). The old subprocess
-        timeout no longer applies — the "Maximum time" line in the output is
+        timeout no longer applies — the "Estimated time" line in the output is
         advisory only.
+
+        The 'enhance'/'enhance_local' booleans are mapped to '--ai-mode api' /
+        '--ai-mode local': config_extractor parses --enhance/--enhance-local
+        but never reads them (enhancement is driven solely by --ai-mode). An
+        explicit 'ai_mode' takes precedence over the booleans.
 
         The 'json'/'markdown' parameters are accepted for backward
         compatibility but ignored: config_extractor has no such flags (the old
@@ -909,10 +922,22 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
     enhance_local = args.get("enhance_local", False)
     ai_mode = args.get("ai_mode", "none")
 
+    # config_extractor parses --enhance/--enhance-local but never reads them —
+    # enhancement is driven solely by --ai-mode (choices: auto/api/local/none).
+    # Map the booleans onto --ai-mode so they actually take effect; an explicit
+    # ai_mode wins over the booleans.
+    if not ai_mode or ai_mode == "none":
+        if enhance:
+            ai_mode = "api"
+        elif enhance_local:
+            ai_mode = "local"
+        else:
+            ai_mode = "none"
+
     # Map to config_extractor's REAL flags: positional directory, --output
     # (a JSON *file* path — the tool's `output` parameter is documented as a
     # directory, so map dir → <dir>/config_patterns.json), --max-files,
-    # --enhance, --enhance-local, --ai-mode.
+    # --ai-mode.
     argv = [directory]
     if output:
         output_path = Path(output)
@@ -922,24 +947,20 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
         argv.extend(["--output", str(output_path)])
     if max_files:
         argv.extend(["--max-files", str(max_files)])
-    if enhance:
-        argv.append("--enhance")
-    if enhance_local:
-        argv.append("--enhance-local")
-    if ai_mode and ai_mode != "none":
+    if ai_mode != "none":
         argv.extend(["--ai-mode", ai_mode])
 
     # Advisory only (output text); the in-process call is unbounded
     timeout = 180  # 3 minutes base
-    if enhance or enhance_local or ai_mode != "none":
+    if ai_mode != "none":
         timeout = 360  # 6 minutes with AI enhancement
 
     progress_msg = "⚙️ Extracting configuration patterns...\n"
     progress_msg += f"📁 Directory: {directory}\n"
     progress_msg += f"📄 Max files: {max_files}\n"
-    if enhance or enhance_local or (ai_mode and ai_mode != "none"):
-        progress_msg += f"🤖 AI enhancement: {ai_mode if ai_mode != 'none' else ('api' if enhance else 'local')}\n"
-    progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
+    if ai_mode != "none":
+        progress_msg += f"🤖 AI enhancement: {ai_mode}\n"
+    progress_msg += f"⏱️ Estimated time: ~{timeout // 60} minutes (advisory — not enforced)\n\n"
 
     # config_extractor.main() takes no args parameter and parses sys.argv
     # through its own parser — run_cli_main patches sys.argv for the call.

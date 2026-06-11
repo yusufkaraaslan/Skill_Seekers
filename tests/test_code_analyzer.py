@@ -1330,6 +1330,35 @@ class TestGDScriptParsing(unittest.TestCase):
         self.assertEqual(cls["base_classes"], [])
 
 
+class TestKotlinSuspendModifier(unittest.TestCase):
+    """Regression: is_suspend must detect the `suspend` MODIFIER only, not
+    `suspend` appearing inside the parameter list."""
+
+    def setUp(self):
+        self.analyzer = CodeAnalyzer(depth="deep")
+
+    def test_suspend_lambda_parameter_is_not_async(self):
+        """`fun launchJob(block: suspend () -> Unit)` is NOT a suspend function:
+        `suspend` there is part of the parameter's function type. Searching the
+        whole regex match (which includes the parameter list) mis-flagged it."""
+        code = (
+            "fun launchJob(block: suspend () -> Unit) {\n    block()\n}\n\n"
+            "suspend fun doWork(): Int {\n    return 1\n}\n"
+        )
+        result = self.analyzer.analyze_file("Jobs.kt", code, "Kotlin")
+        funcs = {f["name"]: f for f in result["functions"]}
+        self.assertFalse(funcs["launchJob"]["is_async"])
+        self.assertTrue(funcs["doWork"]["is_async"])
+
+    def test_suspend_with_other_modifiers_still_detected(self):
+        """Canonical Kotlin modifier order puts `suspend` before `inline`, so
+        the modifier check must not require `suspend` adjacent to `fun`."""
+        code = "private suspend inline fun fastWork(x: Int): Int {\n    return x\n}\n"
+        result = self.analyzer.analyze_file("Fast.kt", code, "Kotlin")
+        funcs = {f["name"]: f for f in result["functions"]}
+        self.assertTrue(funcs["fastWork"]["is_async"])
+
+
 if __name__ == "__main__":
     # Run tests with verbose output
     unittest.main(verbosity=2)

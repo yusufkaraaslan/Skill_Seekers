@@ -68,7 +68,9 @@ class SkillEnhancer:
         # AgentClient enforces the truncation gate (max_tokens → None), finds
         # the first text block (ThinkingBlock-safe), resolves the model from
         # ANTHROPIC_MODEL/defaults, and classifies API errors with logging.
-        enhanced_content = self.client.call(prompt, max_tokens=4096, temperature=0.3)
+        # 16384: a rewritten SKILL.md can exceed ~16 KB; 4096 made any such
+        # skill permanently un-enhanceable (truncation gate → None every run).
+        enhanced_content = self.client.call(prompt, max_tokens=16384, temperature=0.3)
         if not enhanced_content:
             print(
                 "❌ Error: AI enhancement failed or returned truncated/empty "

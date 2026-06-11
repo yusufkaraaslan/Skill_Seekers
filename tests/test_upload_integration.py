@@ -91,8 +91,12 @@ class TestChromaUploadBasics:
             result = adaptor.upload(sample_chroma_package)
 
             assert result["success"] is False
-            assert "chromadb not installed" in result["message"]
-            assert "pip install chromadb" in result["message"]
+            # ImportError → "not installed"; other import-time errors (e.g.
+            # pydantic ConfigError on Python 3.14) → "failed to import"
+            assert (
+                "chromadb not installed. Run: pip install chromadb" in result["message"]
+                or "chromadb failed to import" in result["message"]
+            )
         finally:
             if chromadb_backup:
                 sys.modules["chromadb"] = chromadb_backup

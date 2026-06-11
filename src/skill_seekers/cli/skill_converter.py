@@ -10,6 +10,7 @@ Usage:
 """
 
 import logging
+import os
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,7 @@ class SkillConverter:
                     f"⏭️  Skipping extraction for {self.SOURCE_TYPE} source: {self.name} "
                     "(skip_scrape set — building from existing data)"
                 )
+                self._load_cached_data()
             else:
                 logger.info(f"Extracting from {self.SOURCE_TYPE} source: {self.name}")
                 self.extract()
@@ -76,6 +78,29 @@ class SkillConverter:
         except Exception as e:
             logger.exception(f"❌ {self.SOURCE_TYPE} extraction failed: {e}")
             return 1
+
+    def _load_cached_data(self) -> None:
+        """Reload extracted data from disk for a skip_scrape run.
+
+        Document-family converters keep extraction results in memory
+        (``self.extracted_data``, persisted to ``self.data_file``); skipping
+        extract() leaves it None, so build_skill() would crash. Web-style
+        converters load from disk inside build_skill() and need nothing here.
+
+        Raises:
+            FileNotFoundError: If the cached extraction file is missing —
+                run() converts this into a clear error + non-zero exit.
+        """
+        loader = getattr(self, "load_extracted_data", None)
+        if not callable(loader) or getattr(self, "extracted_data", None) is not None:
+            return
+        data_file = getattr(self, "data_file", None) or self.data_file_for()
+        if not os.path.exists(data_file):
+            raise FileNotFoundError(
+                f"skip_scrape is set but no cached extraction data exists at "
+                f"{data_file}. Run once without skip_scrape to extract the source first."
+            )
+        loader(data_file)
 
     def extract(self):
         """Extract content from source. Override in subclass."""

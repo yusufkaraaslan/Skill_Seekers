@@ -220,7 +220,7 @@ class EpubToSkillConverter(DocumentSkillBuilder):
         }
 
         # Save extracted data
-        os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self.data_file) or ".", exist_ok=True)
         with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(result_data, f, indent=2, ensure_ascii=False, default=str)
 

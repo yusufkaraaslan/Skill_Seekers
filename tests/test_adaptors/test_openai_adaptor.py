@@ -8,7 +8,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
@@ -127,6 +127,54 @@ class TestOpenAIAdaptor(unittest.TestCase):
     def test_upload_success(self):
         """Test successful upload to OpenAI - skipped (needs real API for integration test)"""
         pass
+
+    def test_upload_attaches_references_via_file_batches(self):
+        """Regression: batch attach must use vector_stores.file_batches.create.
+
+        The old code called vs_api.files.create_batch, which does not exist on
+        the OpenAI SDK (neither client.vector_stores nor client.beta.vector_stores),
+        so every upload with reference files raised AttributeError (swallowed
+        into a failure dict). The spec'd mocks below mirror the real SDK
+        surface, so calling the nonexistent method fails this test.
+        """
+        try:
+            from openai.resources.vector_stores import FileBatches, Files, VectorStores
+        except ImportError:
+            self.skipTest("openai library not installed")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            skill_dir = Path(temp_dir) / "test-skill"
+            skill_dir.mkdir()
+            (skill_dir / "SKILL.md").write_text("You are an expert assistant")
+            refs_dir = skill_dir / "references"
+            refs_dir.mkdir()
+            (refs_dir / "guide.md").write_text("# User Guide")
+            (refs_dir / "api.md").write_text("# API Reference")
+
+            output_dir = Path(temp_dir) / "output"
+            output_dir.mkdir()
+            package_path = self.adaptor.package(skill_dir, output_dir)
+
+            mock_client = MagicMock()
+            mock_client.vector_stores = MagicMock(spec=VectorStores)
+            mock_client.vector_stores.files = MagicMock(spec=Files)
+            mock_client.vector_stores.file_batches = MagicMock(spec=FileBatches)
+            mock_client.vector_stores.create.return_value = MagicMock(id="vs_123")
+            mock_client.files.create.side_effect = [
+                MagicMock(id="file_1"),
+                MagicMock(id="file_2"),
+            ]
+            mock_client.beta.assistants.create.return_value = MagicMock(id="asst_123")
+
+            with patch("openai.OpenAI", return_value=mock_client):
+                result = self.adaptor.upload(package_path, "sk-test123")
+
+            self.assertTrue(result["success"], msg=result["message"])
+            self.assertEqual(result["skill_id"], "asst_123")
+            self.assertEqual(mock_client.files.create.call_count, 2)
+            mock_client.vector_stores.file_batches.create.assert_called_once_with(
+                vector_store_id="vs_123", file_ids=["file_1", "file_2"]
+            )
 
     def test_enhance_success(self):
         """Test successful enhancement - skipped (needs real API for integration test)"""

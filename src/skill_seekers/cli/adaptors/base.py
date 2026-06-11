@@ -326,8 +326,10 @@ class SkillAdaptor(ABC):
             print(f"❌ {self.PLATFORM_NAME} SDK not available for API enhancement")
             return False
 
+        # 16384: a rewritten SKILL.md can exceed ~16 KB; 4096 made any such
+        # skill permanently un-enhanceable (truncation gate → None every run).
         enhanced_content = client.call(
-            prompt, max_tokens=4096, system=system, temperature=temperature
+            prompt, max_tokens=16384, system=system, temperature=temperature
         )
         # AgentClient returns None on truncation (max_tokens), rate limits,
         # auth and connection errors — all logged there with classification.

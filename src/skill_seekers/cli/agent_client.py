@@ -307,6 +307,11 @@ class AgentClient:
             else:
                 self.mode = "local"
 
+        # Set by _call_api when the truncation gate fires, so call() can
+        # distinguish "truncated" from other failures and retry with a
+        # bigger budget.
+        self._last_truncated = False
+
         # Initialize API client if needed
         self.client = None
         if self.mode == "api" and self.api_key:
@@ -413,9 +418,21 @@ class AgentClient:
         # timeout via get_default_timeout(), so defaulting in call() too left
         # two places to update when the policy changes.
         if self.mode == "api":
-            return self._call_api(
+            result = self._call_api(
                 prompt, max_tokens, timeout, system=system, temperature=temperature
             )
+            # The truncation gate returns None rather than corrupt callers'
+            # output with a cut-off body. Before giving up, retry ONCE with
+            # double the budget — the response may simply not fit.
+            if result is None and self._last_truncated:
+                logger.warning(
+                    "Retrying once with doubled max_tokens=%s after truncation.",
+                    max_tokens * 2,
+                )
+                result = self._call_api(
+                    prompt, max_tokens * 2, timeout, system=system, temperature=temperature
+                )
+            return result
         elif self.mode == "local":
             return self._call_local(prompt, timeout, output_file, cwd)
         return None
@@ -429,6 +446,7 @@ class AgentClient:
         temperature: float | None = None,
     ) -> str | None:
         """Call via API using the detected provider."""
+        self._last_truncated = False
         if not self.client:
             return None
 
@@ -455,6 +473,7 @@ class AgentClient:
                 # SKILL.md / parse JSON with this text, so returning a truncated
                 # body silently corrupts their output.
                 if getattr(response, "stop_reason", None) == "max_tokens":
+                    self._last_truncated = True
                     logger.warning(
                         "API response truncated at max_tokens=%s; returning None "
                         "to avoid using incomplete content.",
@@ -485,6 +504,7 @@ class AgentClient:
                     **kwargs,
                 )
                 if response.choices and response.choices[0].finish_reason == "length":
+                    self._last_truncated = True
                     logger.warning(
                         "API response truncated at max_tokens=%s; returning None "
                         "to avoid using incomplete content.",
@@ -511,6 +531,7 @@ class AgentClient:
                 candidates = getattr(response, "candidates", None) or []
                 # Gemini finish_reason 2 == MAX_TOKENS (truncated).
                 if candidates and getattr(candidates[0], "finish_reason", None) == 2:
+                    self._last_truncated = True
                     logger.warning(
                         "Gemini response truncated at max_tokens=%s; returning None.",
                         max_tokens,
@@ -591,16 +612,13 @@ class AgentClient:
         if timeout is None:
             timeout = get_default_timeout()
         # Handle custom agent from env var
+        custom_cmd = None
         if self.agent == "custom":
             custom_cmd = os.environ.get("SKILL_SEEKER_AGENT_CMD", "").strip()
             if not custom_cmd:
                 logger.warning("⚠️  Custom agent selected but SKILL_SEEKER_AGENT_CMD not set")
                 return None
-            preset = {
-                "display_name": "Custom Agent",
-                "command": custom_cmd.split(),
-                "version_check": custom_cmd.split()[:1] + ["--version"],
-            }
+            preset = {"display_name": "Custom Agent"}
         else:
             preset = AGENT_PRESETS.get(self.agent)
             if not preset:
@@ -622,20 +640,19 @@ class AgentClient:
 
                 # Build command via the shared builder (headless: always
                 # skip permission prompts when the preset supports it). The
-                # custom-agent case carries its template in preset["command"],
-                # so substitute through the same path.
-                if self.agent == "custom":
-                    cmd = []
-                    for part in preset["command"]:
-                        part = part.replace("{prompt_file}", str(prompt_file))
-                        part = part.replace("{cwd}", str(cwd or temp_path))
-                        part = part.replace("{skill_dir}", str(cwd or temp_path))
-                        cmd.append(part)
-                else:
-                    cmd, _ = build_local_agent_command(self.agent, prompt_file, cwd or temp_path)
+                # custom-agent template goes through the same path via
+                # agent_cmd (shlex-split, same placeholder substitution).
+                cmd, uses_prompt_file = build_local_agent_command(
+                    self.agent, prompt_file, cwd or temp_path, agent_cmd=custom_cmd
+                )
 
-                # Execute — pipe stdin for agents that read from it (e.g., codex)
-                stdin_input = full_prompt if preset.get("uses_stdin") else None
+                # Execute — pipe stdin for agents that read from it (e.g.,
+                # codex), and whenever the template never consumed
+                # {prompt_file} (bare ["opencode"], custom commands without
+                # the placeholder) so the prompt actually reaches the agent.
+                stdin_input = (
+                    full_prompt if (preset.get("uses_stdin") or not uses_prompt_file) else None
+                )
                 # Mark the child environment so a nested ``skill-seekers create``
                 # (e.g. if this agent runs the test suite) won't spawn another
                 # enhance agent — see the recursion guard at the top of this method.
@@ -702,17 +719,34 @@ class AgentClient:
         """
         import re
 
-        # DOTALL so multi-line SKILL.md content matches; anchor the closing
-        # "')" to the next record boundary (or end) so an apostrophe inside the
-        # text doesn't truncate the capture. The boundary is ANY CamelCase
-        # record constructor — kimi's record list isn't exhaustive (ToolCallPart
-        # etc.), and enumerating known types swallowed unknown records' internals
-        # into the captured text.
-        text_parts = re.findall(
-            r"TextPart\(type='text', text='(.*?)'\)\s*(?=[A-Z][A-Za-z_]*\(|\Z)",
-            raw_output,
-            re.DOTALL,
-        )
+        # Scanner instead of a single regex: a lazy capture truncated at the
+        # first internal "')" before a CamelCase-looking line (print('done')
+        # then Config(...)), and garbled trailing records when the lookahead
+        # failed at the true boundary. For each opening, the closing is the
+        # LAST "')" before the next record header — a CamelCase constructor
+        # (two+ capitals, e.g. ThinkPart(, ToolCallPart() at line start; kimi's
+        # record list isn't exhaustive, so any such constructor is a boundary.
+        # Single-capital identifiers (Config(, Path() are common in code
+        # samples inside the text and must NOT be treated as boundaries.
+        opening = "TextPart(type='text', text='"
+        header_re = re.compile(r"(?m)^[A-Z][A-Za-z_]*[A-Z][A-Za-z_]*\(")
+
+        text_parts = []
+        pos = 0
+        while True:
+            start = raw_output.find(opening, pos)
+            if start == -1:
+                break
+            content_start = start + len(opening)
+            header = header_re.search(raw_output, content_start)
+            boundary = header.start() if header else len(raw_output)
+            close = raw_output.rfind("')", content_start, boundary)
+            if close == -1:
+                # No closing before the boundary — malformed record; skip it.
+                pos = content_start
+                continue
+            text_parts.append(raw_output[content_start:close])
+            pos = close + 2
         if text_parts:
             return "\n".join(text_parts)
         # Fallback: return raw if no TextPart found

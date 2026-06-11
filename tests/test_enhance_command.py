@@ -37,6 +37,14 @@ def _make_skill_dir(tmp_path):
     return skill_dir
 
 
+def _stub_sdk_available(monkeypatch, available=True):
+    """Make auto-detect mode picking independent of locally installed SDKs."""
+    monkeypatch.setattr(
+        "skill_seekers.cli.enhance_command.api_sdk_available",
+        lambda _target: available,
+    )
+
+
 # ---------------------------------------------------------------------------
 # _is_root
 # ---------------------------------------------------------------------------
@@ -136,6 +144,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        _stub_sdk_available(monkeypatch)  # gemini SDK is an optional dep
 
         from skill_seekers.cli.enhance_command import _pick_mode
 
@@ -148,6 +157,7 @@ class TestPickModeAutoDetect:
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
         monkeypatch.setenv("OPENAI_API_KEY", "sk-proj-test")
+        _stub_sdk_available(monkeypatch)  # openai SDK is an optional dep
 
         from skill_seekers.cli.enhance_command import _pick_mode
 
@@ -157,12 +167,13 @@ class TestPickModeAutoDetect:
 
     def test_moonshot_key_selects_kimi(self, monkeypatch):
         """Regression (ENH-12): a Moonshot-only user must reach API mode, not
-        be silently dropped to LOCAL."""
+        be silently dropped to LOCAL — provided the kimi SDK is installed."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
+        _stub_sdk_available(monkeypatch)  # kimi rides the optional openai SDK
 
         from skill_seekers.cli.enhance_command import _pick_mode
 
@@ -194,6 +205,81 @@ class TestPickModeAutoDetect:
         mode, target = _pick_mode(_make_args())
         assert mode == "api"
         assert target == "claude"
+
+
+# ---------------------------------------------------------------------------
+# _pick_mode — SDK availability gate on auto-detection
+# ---------------------------------------------------------------------------
+
+
+class TestPickModeSdkFallback:
+    """Regression: with ONLY MOONSHOT_API_KEY set, auto-detection routed to API
+    mode targeting kimi, but KimiAdaptor needs the optional `openai` SDK — when
+    it isn't installed the run hard-failed with exit 1 instead of falling back
+    to LOCAL mode (the pre-PR behavior for this env)."""
+
+    def _moonshot_only_env(self, monkeypatch):
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
+
+    def test_moonshot_key_without_openai_sdk_falls_back_to_local(self, monkeypatch, capsys):
+        """Detected target whose SDK is missing → LOCAL mode with a notice."""
+        from skill_seekers.cli import enhance_command
+
+        self._moonshot_only_env(monkeypatch)
+        # Point the kimi requirement at a guaranteed-missing module so the
+        # real find_spec path runs regardless of locally installed SDKs.
+        monkeypatch.setitem(enhance_command.TARGET_SDK_MODULES, "kimi", "skill_seekers_no_such_sdk")
+
+        mode, target = enhance_command._pick_mode(_make_args())
+        assert mode == "local"
+        assert target is None
+        out = capsys.readouterr().out
+        assert "kimi" in out
+        assert "LOCAL" in out
+
+    def test_explicit_target_not_gated_by_sdk_check(self, monkeypatch):
+        """--target forces API mode even if the SDK is missing — the adaptor
+        reports its own error for an explicit user choice."""
+        from skill_seekers.cli import enhance_command
+
+        self._moonshot_only_env(monkeypatch)
+        monkeypatch.setitem(enhance_command.TARGET_SDK_MODULES, "kimi", "skill_seekers_no_such_sdk")
+
+        mode, target = enhance_command._pick_mode(_make_args(target="kimi"))
+        assert mode == "api"
+        assert target == "kimi"
+
+    def test_api_sdk_available_claude_true(self):
+        """anthropic is a core dependency, so claude must always be available."""
+        from skill_seekers.cli.enhance_command import api_sdk_available
+
+        assert api_sdk_available("claude") is True
+
+    def test_api_sdk_available_unknown_target_true(self):
+        """Unknown targets are not gated — the adaptor surfaces its own error."""
+        from skill_seekers.cli.enhance_command import api_sdk_available
+
+        assert api_sdk_available("minimax") is True
+
+    def test_api_sdk_available_missing_module(self, monkeypatch):
+        from skill_seekers.cli import enhance_command
+
+        monkeypatch.setitem(enhance_command.TARGET_SDK_MODULES, "kimi", "skill_seekers_no_such_sdk")
+        assert enhance_command.api_sdk_available("kimi") is False
+
+    def test_api_sdk_available_missing_parent_package(self, monkeypatch):
+        """find_spec on a dotted name raises when the parent package is missing
+        (e.g. no `google` namespace at all) — that must count as unavailable."""
+        from skill_seekers.cli import enhance_command
+
+        monkeypatch.setitem(
+            enhance_command.TARGET_SDK_MODULES, "gemini", "skill_seekers_no_such_pkg.sub"
+        )
+        assert enhance_command.api_sdk_available("gemini") is False
 
 
 # ---------------------------------------------------------------------------

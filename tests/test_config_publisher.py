@@ -457,3 +457,60 @@ class TestPublishSuccess:
         cached_repo = cache_dir / "source_local-test"
         assert (cached_repo / "configs" / "custom" / "first-config.json").exists()
         assert (cached_repo / "configs" / "custom" / "second-config.json").exists()
+
+    def test_publish_create_branch_twice_survives_leftover_branch(self, tmp_path):
+        """Re-publishing with create_branch=True must not fail on the feature
+        branch left in the cache by the first publish (checkout -B, not -b)."""
+        import git as gitmodule
+
+        working_path = tmp_path / "working"
+        working_path.mkdir()
+        _init_repo_with_main_branch(working_path)
+        bare_repo_path = tmp_path / "remote.git"
+        gitmodule.Repo.clone_from(str(working_path), str(bare_repo_path), bare=True)
+
+        mock_source = {
+            "name": "local-test",
+            "git_url": f"file://{bare_repo_path}",
+            "branch": "main",
+            "token_env": "DUMMY_TOKEN",
+        }
+        mock_manager = MagicMock()
+        mock_manager.get_source.return_value = mock_source
+
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        publisher = ConfigPublisher.__new__(ConfigPublisher)
+        from skill_seekers.services.git_repo import GitConfigRepo
+
+        publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
+
+        config_file = tmp_path / "config.json"
+        config_file.write_text(json.dumps({"name": "branchy-config"}))
+
+        with (
+            patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
+        ):
+            first = publisher.publish(
+                config_path=config_file,
+                source_name="local-test",
+                category="custom",
+                create_branch=True,
+            )
+            # The cached repo is back on main but config/branchy-config still
+            # exists locally — the retry/force-update path must survive it.
+            second = publisher.publish(
+                config_path=config_file,
+                source_name="local-test",
+                category="custom",
+                create_branch=True,
+                force=True,
+            )
+
+        assert first["success"] is True
+        assert second["success"] is True
+        assert first["branch"] == "config/branchy-config"
+        cached_repo = gitmodule.Repo(cache_dir / "source_local-test")
+        assert cached_repo.active_branch.name == "main"

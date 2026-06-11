@@ -119,6 +119,32 @@ class LangChainAdaptor(StreamingAdaptorMixin, SkillAdaptor):
         # Return as formatted JSON
         return json.dumps(documents, indent=2, ensure_ascii=False)
 
+    def _convert_chunks_to_platform_format(
+        self, chunks: list[tuple[str, dict]], skill_name: str
+    ) -> dict:
+        """
+        Convert streaming chunks to LangChain Document format.
+
+        Documents carry the same page_content/metadata shape as
+        format_skill_md(), wrapped in a streaming envelope.
+        """
+        documents = []
+
+        for chunk_text, chunk_meta in chunks:
+            documents.append(
+                {
+                    "page_content": chunk_text,
+                    "metadata": self._streaming_chunk_meta(chunk_meta, skill_name),
+                }
+            )
+
+        return {
+            "documents": documents,
+            "total_chunks": len(chunks),
+            "streaming": True,
+            "format": "LangChain Document",
+        }
+
     def package(
         self,
         skill_dir: Path,

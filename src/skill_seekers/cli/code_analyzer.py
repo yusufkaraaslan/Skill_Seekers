@@ -1434,12 +1434,13 @@ class CodeAnalyzer:
             if brace_depth > 0:
                 continue
 
-            # `suspend` (and other modifiers) are captured inside the match, so
-            # test the matched text — a fixed look-behind window read the wrong
-            # bytes (a neighboring declaration, or missed the modifier entirely).
-            # Word-boundary match so a function NAMED e.g. `suspendCoroutine`
-            # isn't mis-flagged as a suspend function.
-            is_suspend = re.search(r"\bsuspend\b", match.group(0)) is not None
+            # `suspend` must be the MODIFIER, so test only the declaration text
+            # before the function name — searching the whole match also saw the
+            # parameter list, mis-flagging `fun launchJob(block: suspend () -> Unit)`
+            # as a suspend function. Word-boundary match so a function NAMED
+            # e.g. `suspendCoroutine` isn't mis-flagged either.
+            decl_prefix = content[match.start() : match.start(2)]
+            is_suspend = re.search(r"\bsuspend\b", decl_prefix) is not None
             params = self._parse_kotlin_parameters(params_str)
 
             functions.append(

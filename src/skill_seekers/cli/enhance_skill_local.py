@@ -1274,32 +1274,20 @@ def _detect_api_target() -> tuple[str, str] | None:
     return detect_api_target()
 
 
-def _run_api_enhance(target: str, api_key: str) -> None:
-    """Delegate to enhance_skill.main() for API-mode enhancement."""
+def _run_api_enhance(target: str, api_key: str, args) -> None:
+    """Delegate to enhance_skill.main() for API-mode enhancement.
+
+    `args` is the namespace already parsed by main()'s parser. Re-using it
+    (instead of re-scanning sys.argv by hand) means the value of a
+    value-taking flag (`--agent kimi`, `--timeout 600`) can't be mistaken
+    for the skill_directory positional.
+    """
     import sys
 
     from skill_seekers.cli.enhance_skill import main as api_main
 
-    # Find the skill_directory positional arg (first non-flag arg after argv[0])
-    skill_dir = None
-    dry_run = False
-    i = 1
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "--dry-run":
-            dry_run = True
-        elif arg in ("--mode",):
-            i += 1  # skip value
-        elif not arg.startswith("-") and skill_dir is None:
-            skill_dir = arg
-        i += 1
-
-    if not skill_dir:
-        print("❌ Error: skill_directory is required")
-        sys.exit(1)
-
-    new_argv = [sys.argv[0], skill_dir, "--target", target, "--api-key", api_key]
-    if dry_run:
+    new_argv = [sys.argv[0], str(args.skill_directory), "--target", target, "--api-key", api_key]
+    if getattr(args, "dry_run", False):
         new_argv.append("--dry-run")
     sys.argv = new_argv
     api_main()
@@ -1415,9 +1403,19 @@ Force Mode (LOCAL only, Default ON):
     if getattr(args, "mode", None) != "LOCAL":
         api_target = _detect_api_target()
         if api_target is not None:
+            from skill_seekers.cli.enhance_command import api_sdk_available
+
             target, api_key = api_target
-            _run_api_enhance(target, api_key)
-            return
+            # Auto-detection only commits to API mode when the provider's SDK
+            # is installed (it's optional for gemini/openai/kimi); explicit
+            # --mode API keeps going so the adaptor can report its own error.
+            if getattr(args, "mode", None) == "API" or api_sdk_available(target):
+                _run_api_enhance(target, api_key, args)
+                return
+            print(
+                f"⚠️  API key found for '{target}' but its SDK is not installed — "
+                "falling back to LOCAL mode."
+            )
 
     # Validate mutually exclusive options
     mode_count = sum([args.interactive_enhancement, args.background, args.daemon])

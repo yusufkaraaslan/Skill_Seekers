@@ -359,8 +359,13 @@ class ConfigFileDetector:
         path_lower = str(file_path).lower()
         filename = file_path.name.lower()
 
-        # Database configs
-        if self._path_has_word(path_lower, ["database", "db", "postgres", "mysql", "mongo"]):
+        # Database configs. Token-boundary matching won't find 'postgres' inside
+        # 'postgresql' or 'mongo'/'db' inside 'mongodb', so the full product
+        # tokens must be listed alongside the short forms.
+        if self._path_has_word(
+            path_lower,
+            ["database", "db", "postgres", "postgresql", "mysql", "mongo", "mongodb", "mariadb"],
+        ):
             return "database_configuration"
 
         # API configs
