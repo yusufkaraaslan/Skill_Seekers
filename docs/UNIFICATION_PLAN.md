@@ -1,0 +1,117 @@
+# Unification Plan — 5 Phases
+
+> Created 2026-06-11 from the full-repo architecture review (see PR for
+> `fix/code-review-findings`). Goal: finish the Grand Unification — one
+> dispatch, one config source, one build pipeline, one AI client.
+> Each phase is independently shippable; do them in order.
+
+## Status
+
+| Phase | State | Branch / PR |
+|---|---|---|
+| 1 — CLI drift & preset bugs | **in progress** | `refactor/phase-1-quick-fixes` |
+| 2 — DocumentSkillBuilder | pending | |
+| 3 — Enhancement consolidation | pending | |
+| 4 — UnifiedScraper conformance | pending | |
+| 5 — Config / dispatch / MCP platform | pending | |
+
+## Phase 1 — Stop the bleeding: shipping bugs from drift (small)
+
+User-facing flags broken TODAY because central parsers (parsers/*.py) drifted
+from module parsers (each command's `main(args=None)`):
+
+1. `estimate` central parser missing `--unlimited`, `--timeout` → CLI rejects them.
+2. `update` central parser missing `--generate-package`, `--apply-update`.
+3. `quality` central parser missing `--output`.
+4. `stream` central/module drift (`--overlap-chars`, `--batch-size`, `--checkpoint`; verify both directions).
+5. `multilang` bidirectional drift (`--report`/`--export` missing centrally; `--languages` central-only).
+
+Also:
+6. `AGENT_PRESETS` duplicated between `agent_client.py` and
+   `enhance_skill_local.py` — the kimi preset has already diverged
+   (`{cwd}` vs `{skill_dir}`, missing `parse_output`). Make
+   `agent_client.AGENT_PRESETS` the single source; enhance_skill_local layers
+   its extra metadata (supports_skip_permissions) on top.
+7. `GuideEnhancer` name collision: `guide_enhancer.py:GuideEnhancer`
+   (standalone) vs `unified_enhancer.py:GuideEnhancer` (subclass). Rename the
+   unified_enhancer one (it's the newer, less-referenced alias).
+
+Each fix gets a regression test. The durable fix for the parser-drift class
+is Phase 5 (single argument registry); Phase 1 just makes the flags work.
+
+## Phase 2 — Unify the build side of scrapers (LARGE, highest ROI)
+
+The 8-9 document scrapers (epub, word, pptx, html, man, rss, chat, jupyter,
+pdf) carry ~90%-identical build machinery (~6k+ avoidable LOC) with
+user-visible inconsistencies (truncation: 500 vs 1000 vs none; frontmatter
+keys; code-example ordering).
+
+1. Normalize extracted-data schema: one page/section dict shape
+   (`section_number` everywhere; pdf's `page_number` mapped). Consider a
+   shared `ExtractedDocument` model.
+2. Extract `DocumentSkillBuilder` (base class between SkillConverter and the
+   document scrapers, or composable builder owned by the base) owning:
+   `categorize_content`, reference-file writing (incl. table rendering,
+   truncation policy), `index.md` generation, `SKILL.md` generation
+   (frontmatter incl. json.dumps quoting + version keys).
+   Per-scraper hooks: source_type_label, base stem, metadata keys.
+3. Port scrapers one at a time, golden-file tests comparing pre/post output.
+
+## Phase 3 — Enhancement consolidation (medium-large)
+
+Vision: AgentClient is the ONLY AI transport.
+
+1. `SkillMarkdownEnhancer`: one implementation of read-references →
+   build-prompt → call AgentClient → validate → atomic save. Replaces the 5
+   copies in enhance_skill.py + adaptors (claude/openai/gemini/
+   openai_compatible `enhance()`).
+2. Route video_scraper._clean_reference_with_ai and
+   video_visual frame classification through AgentClient.
+3. LocalSkillEnhancer → thin orchestration (terminal/background/daemon UI)
+   over AgentClient._call_local; delete its duplicated presets/command
+   building.
+4. Collapse hierarchies: unified_enhancer.py is canonical; delete
+   ai_enhancer.py duplicates; merge guide_enhancer.py.
+5. All 6 SKILL.md-enhancement entry points call SkillMarkdownEnhancer.
+
+## Phase 4 — UnifiedScraper conformance (medium)
+
+1. Replace 17 `_scrape_*` methods with a data-driven loop:
+   `get_converter(source["type"], sub_config)` + public `converter.extract()`
+   + standard `data_file_for()` retrieval. New converter types then work in
+   unified configs automatically.
+2. Move phase logic (scrape-all → conflicts → merge) into `extract()`, build
+   into `build_skill()`; stop overriding `run()` (base template provides
+   skip_scrape/dry_run/error handling).
+3. Constructor takes a config dict (config_path inside it) so the factory
+   special-case in create_command dies.
+4. Bring GitHubToSkillConverter and UnifiedSkillBuilder into the
+   SkillConverter hierarchy (or make them explicit builder strategies the
+   base invokes).
+
+## Phase 5 — Platform unification: config, dispatch, MCP (medium)
+
+1. ExecutionContext = the single runtime config source. Initialized once per
+   entry point (CLI AND MCP server request layer), merging: args/request →
+   config file → ConfigManager (~/.config) → defaults.json. Nothing else
+   reads os.environ directly (env reads live in the context/agent_client
+   provider registry only).
+2. `override()` reimplemented on contextvars (thread/async-safe); forbid
+   global singleton mutation.
+3. Replace create_command._build_config's 227-line if/elif with per-source-
+   type config models (Pydantic) derived from the context.
+4. Finish COMMAND_CLASSES migration for the ~14 legacy commands; single
+   argument registry so every flag is defined exactly once (kills the Phase-1
+   drift class permanently); standardize exit codes.
+5. MCP: `services/` layer (MarketplaceManager, MarketplacePublisher,
+   ConfigPublisher + detect_category, SourceManager) importable by CLI and
+   MCP; replace 11 subprocess tools with in-process dispatch; remove all 6
+   sys.path.insert hacks; scraping_tools uses SourceDetector instead of its
+   hardcoded 4-case detection.
+
+## Invariants for every phase
+
+- `pytest tests/` fast subset green before each commit; full suite before PR.
+- `uvx ruff check` + `format` clean.
+- No behavior change without a regression test pinning the new behavior.
+- Update docs/UML_ARCHITECTURE.md when a phase changes the real structure.
