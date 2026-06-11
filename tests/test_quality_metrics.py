@@ -353,12 +353,22 @@ if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 
 
+def _quality_args(skill_dir, **overrides):
+    """Full namespace as the unified CLI dispatch would pass it (Phase 5c:
+    backfill_parser_defaults is gone — the central parser defines every dest,
+    so main(args=...) callers must pass a complete namespace)."""
+    ns = argparse.Namespace(skill_dir=str(skill_dir), report=False, output=None, threshold=None)
+    for key, value in overrides.items():
+        setattr(ns, key, value)
+    return ns
+
+
 def test_main_report_only_exits_zero(minimal_skill_dir):
     """Without --threshold the command only reports (historical contract:
     CI steps that just want quality_report.json must keep exiting 0)."""
     from skill_seekers.cli.quality_metrics import main
 
-    assert main(argparse.Namespace(skill_dir=str(minimal_skill_dir))) == 0
+    assert main(_quality_args(minimal_skill_dir)) == 0
     assert (minimal_skill_dir / "quality_report.json").exists()
 
 
@@ -366,5 +376,5 @@ def test_main_explicit_threshold_gates(minimal_skill_dir):
     """An explicit --threshold enforces the quality gate."""
     from skill_seekers.cli.quality_metrics import main
 
-    assert main(argparse.Namespace(skill_dir=str(minimal_skill_dir), threshold=10.0)) == 1
-    assert main(argparse.Namespace(skill_dir=str(minimal_skill_dir), threshold=0.0)) == 0
+    assert main(_quality_args(minimal_skill_dir, threshold=10.0)) == 1
+    assert main(_quality_args(minimal_skill_dir, threshold=0.0)) == 0

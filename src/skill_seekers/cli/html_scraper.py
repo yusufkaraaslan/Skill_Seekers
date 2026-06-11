@@ -120,6 +120,15 @@ class HtmlToSkillConverter(DocumentSkillBuilder):
     SOURCE_PATH_ATTR = "html_path"
     SOURCE_LABEL = "HTML"
     FOOTER_LABEL = "HTML Scraper"
+    # html recognizes two extra pattern keywords on top of the shared list.
+    PATTERN_KEYWORDS = DocumentSkillBuilder.PATTERN_KEYWORDS + ("reference", "changelog")
+    SKILL_MD_METADATA_FIELDS = (
+        ("title", "Title"),
+        ("author", "Author"),
+        ("language", "Language"),
+        ("description", "Description"),
+        ("keywords", "Keywords"),
+    )
 
     def __init__(self, config: dict) -> None:
         """Initialize the HTML to skill converter.
@@ -1294,218 +1303,21 @@ class HtmlToSkillConverter(DocumentSkillBuilder):
         if metadata.get("author"):
             f.write(f"- Author: {metadata['author']}\n")
 
-    def _generate_skill_md(self, categorized: dict) -> None:
-        """Generate main SKILL.md file.
+    # _generate_skill_md and _format_patterns_from_content are inherited
+    # from DocumentSkillBuilder: SKILL_MD_METADATA_FIELDS / PATTERN_KEYWORDS
+    # plus the two hooks below reproduce the html output exactly.
 
-        Overrides the base generator because html adds a "Source files"
-        line inside Document Information (multi-file mode), extra metadata
-        fields (language/description/keywords), and an "HTML Files" line
-        in the statistics block — none expressible via the base hooks.
+    def _write_skill_md_metadata(self, f, metadata) -> None:
+        """Document Information body: shared fields plus the html-only
+        multi-file "Source files" line."""
+        super()._write_skill_md_metadata(f, metadata)
+        total_files = self.extracted_data.get("total_files", 1)
+        if total_files > 1:
+            f.write(f"**Source files:** {total_files} HTML files\n\n")
 
-        Args:
-            categorized: Dict of category_key -> category data.
-        """
-        filename = f"{self.skill_dir}/SKILL.md"
-
-        skill_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
-        desc = self.description[:1024] if len(self.description) > 1024 else self.description
-
-        with open(filename, "w", encoding="utf-8") as f:
-            # YAML frontmatter
-            f.write("---\n")
-            f.write(f"name: {skill_name}\n")
-            f.write(f"description: {desc}\n")
-            f.write("---\n\n")
-
-            f.write(f"# {self.name.title()} Documentation Skill\n\n")
-            f.write(f"{self.description}\n\n")
-
-            # Document metadata
-            metadata = self.extracted_data.get("metadata", {})
-            if any(v for v in metadata.values() if v):
-                f.write("## 📋 Document Information\n\n")
-                if metadata.get("title"):
-                    f.write(f"**Title:** {metadata['title']}\n\n")
-                if metadata.get("author"):
-                    f.write(f"**Author:** {metadata['author']}\n\n")
-                if metadata.get("language"):
-                    f.write(f"**Language:** {metadata['language']}\n\n")
-                if metadata.get("description"):
-                    f.write(f"**Description:** {metadata['description']}\n\n")
-                if metadata.get("keywords"):
-                    f.write(f"**Keywords:** {metadata['keywords']}\n\n")
-                total_files = self.extracted_data.get("total_files", 1)
-                if total_files > 1:
-                    f.write(f"**Source files:** {total_files} HTML files\n\n")
-
-            # When to Use
-            f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
-
-            # Section Overview
-            total_sections = self.extracted_data.get("total_sections", 0)
-            f.write("## 📖 Section Overview\n\n")
-            f.write(f"**Total Sections:** {total_sections}\n\n")
-            f.write("**Content Breakdown:**\n\n")
-            for _cat_key, cat_data in categorized.items():
-                section_count = len(cat_data["pages"])
-                f.write(f"- **{cat_data['title']}**: {section_count} sections\n")
-            f.write("\n")
-
-            # Key Concepts from headings
-            f.write(self._format_key_concepts())
-
-            # Quick Reference patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
-
-            # Code examples (top 15, grouped by language)
-            all_code: list[dict] = []
-            for section in self.extracted_data.get("pages", []):
-                all_code.extend(section.get("code_samples", []))
-
-            all_code.sort(key=lambda x: x.get("quality_score", 0), reverse=True)
-            top_code = all_code[:15]
-
-            if top_code:
-                f.write("## 📝 Code Examples\n\n")
-                f.write("*High-quality examples extracted from documentation*\n\n")
-
-                by_lang: dict[str, list] = {}
-                for code in top_code:
-                    lang = code.get("language", "unknown")
-                    by_lang.setdefault(lang, []).append(code)
-
-                for lang in sorted(by_lang.keys()):
-                    examples = by_lang[lang]
-                    f.write(f"### {lang.title()} Examples ({len(examples)})\n\n")
-                    for i, code in enumerate(examples[:5], 1):
-                        quality = code.get("quality_score", 0)
-                        code_text = code.get("code", "")
-                        f.write(f"**Example {i}** (Quality: {quality:.1f}/10):\n\n")
-                        f.write(f"```{lang}\n")
-                        if len(code_text) <= 500:
-                            f.write(code_text)
-                        else:
-                            f.write(code_text[:500] + "\n...")
-                        f.write("\n```\n\n")
-
-            # Table Summary (first 5 tables)
-            all_tables: list[tuple[str, dict]] = []
-            for section in self.extracted_data.get("pages", []):
-                for table in section.get("tables", []):
-                    all_tables.append((section.get("heading", ""), table))
-
-            if all_tables:
-                f.write("## 📊 Table Summary\n\n")
-                f.write(f"*{len(all_tables)} table(s) found in document*\n\n")
-                for section_heading, table in all_tables[:5]:
-                    if section_heading:
-                        f.write(f"**From section: {section_heading}**\n\n")
-                    if table.get("headers", []):
-                        self._write_markdown_table(f, table, max_rows=5)
-
-            # Statistics
-            f.write("## 📊 Documentation Statistics\n\n")
-            f.write(f"- **Total Sections**: {total_sections}\n")
-            f.write(f"- **Code Blocks**: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- **Images/Diagrams**: {self.extracted_data.get('total_images', 0)}\n")
-            f.write(f"- **Tables**: {len(all_tables)}\n")
-            f.write(f"- **HTML Files**: {self.extracted_data.get('total_files', 0)}\n")
-
-            langs = self.extracted_data.get("languages_detected", {})
-            if langs:
-                f.write(f"- **Programming Languages**: {len(langs)}\n\n")
-                f.write("**Language Breakdown:**\n\n")
-                for lang, count in sorted(langs.items(), key=lambda x: x[1], reverse=True):
-                    f.write(f"- {lang}: {count} examples\n")
-                f.write("\n")
-
-            # Navigation
-            f.write("## 🗺️ Navigation\n\n")
-            f.write("**Reference Files:**\n\n")
-            total_sections = len(categorized)
-            for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
-                cat_file = self._reference_filename(cat_data, section_num, total_sections)
-                f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
-            f.write("\n")
-            f.write("See `references/index.md` for complete documentation structure.\n\n")
-
-            # Footer
-            f.write("---\n\n")
-            f.write("**Generated by Skill Seeker** | HTML Scraper\n")
-
-        with open(filename, encoding="utf-8") as f:
-            line_count = len(f.read().split("\n"))
-        print(f"   Generated: {filename} ({line_count} lines)")
-
-    # ------------------------------------------------------------------
-    # Content analysis helpers
-    # ------------------------------------------------------------------
-
-    def _format_patterns_from_content(self) -> str:
-        """Extract common documentation patterns from section headings.
-
-        Overrides the base formatter because html recognizes two extra
-        pattern keywords ('reference', 'changelog') not in the shared list.
-
-        Returns:
-            Formatted markdown string with pattern descriptions.
-        """
-        patterns: list[dict] = []
-        pattern_keywords = [
-            "getting started",
-            "installation",
-            "configuration",
-            "usage",
-            "api",
-            "examples",
-            "tutorial",
-            "guide",
-            "best practices",
-            "troubleshooting",
-            "faq",
-            "reference",
-            "changelog",
-        ]
-
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-
-            for keyword in pattern_keywords:
-                if keyword in heading_text:
-                    patterns.append(
-                        {
-                            "type": keyword.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-
-        content = "*Common documentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for pattern in patterns:
-            ptype = pattern["type"]
-            by_type.setdefault(ptype, []).append(pattern)
-
-        for ptype in sorted(by_type.keys()):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-
-        return content
+    def _write_skill_md_extra_stats(self, f) -> None:
+        """Add the html-only file count to the SKILL.md statistics block."""
+        f.write(f"- **HTML Files**: {self.extracted_data.get('total_files', 0)}\n")
 
 
 # ---------------------------------------------------------------------------

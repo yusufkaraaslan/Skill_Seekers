@@ -414,27 +414,21 @@ def main(args=None):
     import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description="Manage multi-language skill documents")
-    parser.add_argument("skill_dir", help="Path to skill directory")
-    parser.add_argument("--detect", action="store_true", help="Detect languages in skill")
-    parser.add_argument("--report", action="store_true", help="Generate translation report")
-    parser.add_argument("--export", help="Export by language to specified directory")
-    parser.add_argument(
-        "--languages",
-        nargs="+",
-        help="Restrict --detect/--export to these languages (e.g., en es fr)",
-    )
-    if args is None:
-        args = parser.parse_args()
-    else:
-        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
-        backfill_parser_defaults(parser, args)
+    if args is None:
+        # Single source of flags: the central MultilangParser.
+        from skill_seekers.cli.parsers.multilang_parser import MultilangParser
+
+        spec = MultilangParser()
+        parser = argparse.ArgumentParser(description=spec.description)
+        spec.add_arguments(parser)
+        args = parser.parse_args()
 
     skill_dir = Path(args.skill_dir)
     if not skill_dir.exists():
         print(f"❌ Error: Directory not found: {skill_dir}")
-        return 1
+        return EXIT_ERROR
 
     manager = MultiLanguageManager()
 
@@ -481,7 +475,7 @@ def main(args=None):
         for lang, path in exports.items():
             print(f"   {lang}: {path}")
 
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

@@ -378,27 +378,16 @@ def main(args=None):
     """CLI entry point for streaming ingestion."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Stream and chunk skill documents")
-    parser.add_argument("input", help="Input file or directory path")
-    parser.add_argument(
-        "--streaming-chunk-chars", type=int, default=4000, help="Chunk size in characters"
-    )
-    parser.add_argument(
-        "--streaming-overlap-chars", type=int, default=200, help="Chunk overlap in characters"
-    )
-    parser.add_argument("--batch-size", type=int, default=100, help="Batch size for processing")
-    parser.add_argument("--checkpoint", help="Checkpoint file path")
-    parser.add_argument(
-        "--output",
-        help="Write the collected chunks as JSON (a .json file path, or a "
-        "directory that will receive chunks.json)",
-    )
-    if args is None:
-        args = parser.parse_args()
-    else:
-        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
-        backfill_parser_defaults(parser, args)
+    if args is None:
+        # Single source of flags: the central StreamParser.
+        from skill_seekers.cli.parsers.stream_parser import StreamParser
+
+        spec = StreamParser()
+        parser = argparse.ArgumentParser(description=spec.description)
+        spec.add_arguments(parser)
+        args = parser.parse_args()
 
     # Initialize ingester
     ingester = StreamingIngester(
@@ -419,7 +408,7 @@ def main(args=None):
     input_path = Path(args.input)
     if not input_path.exists():
         print(f"❌ Error: Path not found: {input_path}")
-        return 1
+        return EXIT_ERROR
 
     if input_path.is_dir():
         chunks = ingester.stream_skill_directory(input_path, callback=on_progress)
@@ -473,7 +462,7 @@ def main(args=None):
     # Final progress
     print("\n" + ingester.format_progress())
     print(f"\n✅ Processed {len(all_chunks)} total chunks")
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

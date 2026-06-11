@@ -105,8 +105,10 @@ CONVERTER_REGISTRY: dict[str, tuple[str, str]] = {
     "confluence": ("skill_seekers.cli.confluence_scraper", "ConfluenceToSkillConverter"),
     "notion": ("skill_seekers.cli.notion_scraper", "NotionToSkillConverter"),
     "chat": ("skill_seekers.cli.chat_scraper", "ChatToSkillConverter"),
-    # NOTE: UnifiedScraper takes (config_path: str), not (config: dict).
-    # Callers must construct it directly, not via get_converter().
+    # UnifiedScraper consumes a factory-shaped dict:
+    #   {"config_path": ..., "merge_mode": ..., "output_dir": ..., "dry_run": ...}
+    # where only "config_path" (path to the unified config JSON) is required.
+    # A legacy positional config-path str is still accepted for direct callers.
     "config": ("skill_seekers.cli.unified_scraper", "UnifiedScraper"),
 }
 

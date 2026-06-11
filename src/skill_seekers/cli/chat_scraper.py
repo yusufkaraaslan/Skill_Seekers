@@ -1402,63 +1402,48 @@ class ChatToSkillConverter(DocumentSkillBuilder):
     # Output generation (private)
     # ------------------------------------------------------------------
 
-    def _generate_reference_file(
-        self,
-        _cat_key: str,
-        cat_data: dict,
-        section_num: int,
-        total_sections: int,
-    ) -> None:
-        """Generate a reference markdown file for a category.
+    # _generate_reference_file is inherited from DocumentSkillBuilder; the
+    # chat-specific parts are the filename hooks and the section body below.
 
-        Args:
-            _cat_key: Category key (unused, for interface consistency).
-            cat_data: Category dict with 'title' and 'pages'.
-            section_num: 1-based index among all categories.
-            total_sections: Total number of categories being generated.
-        """
-        sections = cat_data["pages"]
+    def category_stem(self, cat_key: str) -> str:
+        """Chat names multi-category reference files by category key
+        (channel/topic) — there is no source file to take a stem from."""
+        return cat_key
 
-        if sections:
-            section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-            if total_sections == 1:
-                filename = f"{self.skill_dir}/references/main.md"
-            else:
-                sec_range = f"s{min(section_nums)}-s{max(section_nums)}"
-                filename = f"{self.skill_dir}/references/{_cat_key}_{sec_range}.md"
-        else:
-            filename = f"{self.skill_dir}/references/section_{section_num:02d}.md"
+    def _reference_filename(self, cat_data, section_num, total_sections, cat_key=""):
+        """Chat special case: a single-category export collapses to main.md
+        (NOT <cat_key>.md, which the category stem would otherwise produce)."""
+        if total_sections == 1 and cat_data.get("pages"):
+            return "main.md"
+        return super()._reference_filename(cat_data, section_num, total_sections, cat_key)
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {cat_data['title']}\n\n")
+    def _write_reference_section(self, f, section) -> None:
+        """Write one chat section (channel/date message group) — carries a
+        message count and "Code Snippets", not the base document shape."""
+        sec_num = section.get("section_number", "?")
+        heading = section.get("heading", "")
+        msg_count = section.get("message_count", 0)
 
-            for section in sections:
-                sec_num = section.get("section_number", "?")
-                heading = section.get("heading", "")
-                msg_count = section.get("message_count", 0)
+        f.write(f"---\n\n**📄 Section {sec_num}**")
+        f.write(f" ({msg_count} messages)\n\n")
 
-                f.write(f"---\n\n**📄 Section {sec_num}**")
-                f.write(f" ({msg_count} messages)\n\n")
+        if heading:
+            f.write(f"## {heading}\n\n")
 
-                if heading:
-                    f.write(f"## {heading}\n\n")
+        # Message text
+        text = section.get("text", "").strip()
+        if text:
+            f.write(f"{text}\n\n")
 
-                # Message text
-                text = section.get("text", "").strip()
-                if text:
-                    f.write(f"{text}\n\n")
+        # Code samples
+        code_list = section.get("code_samples", [])
+        if code_list:
+            f.write("### Code Snippets\n\n")
+            for code in code_list:
+                lang = code.get("language", "")
+                f.write(f"```{lang}\n{code['code']}\n```\n\n")
 
-                # Code samples
-                code_list = section.get("code_samples", [])
-                if code_list:
-                    f.write("### Code Snippets\n\n")
-                    for code in code_list:
-                        lang = code.get("language", "")
-                        f.write(f"```{lang}\n{code['code']}\n```\n\n")
-
-                f.write("---\n\n")
-
-        print(f"   Generated: {filename}")
+        f.write("---\n\n")
 
     def _generate_index(self, categorized: dict[str, dict]) -> None:
         """Generate reference index file listing all categories.
@@ -1478,12 +1463,13 @@ class ChatToSkillConverter(DocumentSkillBuilder):
                 count = len(pages)
                 total_msgs = sum(p.get("message_count", 0) for p in pages)
 
+                # Link via the shared filename helper so the index always
+                # matches the reference file the writer creates (DOC-07).
+                link = self._reference_filename(cd, section_num, total_cats, _ck)
                 if pages:
                     snums = [s.get("section_number", i + 1) for i, s in enumerate(pages)]
                     rng = f"Sections {min(snums)}-{max(snums)}"
-                    link = "main.md" if total_cats == 1 else f"{_ck}_s{min(snums)}-s{max(snums)}.md"
                 else:
-                    link = f"section_{section_num:02d}.md"
                     rng = "N/A"
 
                 f.write(
@@ -1650,6 +1636,11 @@ class ChatToSkillConverter(DocumentSkillBuilder):
                 f.write("\n")
 
             # Navigation
+            # NOTE: these links are derived from sanitized TITLES, while the
+            # actual reference files are named by category key/range via
+            # _reference_filename — so they can drift from the real filenames
+            # (e.g. "#channel" titles). Preserved as-is: golden trees require
+            # byte-identical output. Fix tracked for a goldens-refresh cycle.
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
             for cd in categorized.values():

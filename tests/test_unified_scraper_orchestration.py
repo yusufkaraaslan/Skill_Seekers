@@ -859,3 +859,100 @@ class TestUnifiedDryRunAndOutput:
         # Trailing slash is normalized by the shared resolver.
         scraper = UnifiedScraper(str(cfg), output_dir=str(tmp_path / "custom") + "/", dry_run=True)
         assert scraper.output_dir == str(tmp_path / "custom")
+
+
+# ===========================================================================
+# Factory construction (Phase 4.1): get_converter("config", {...})
+# ===========================================================================
+
+
+class TestFactoryConstruction:
+    """UnifiedScraper honors the get_converter() factory contract: a single
+    factory-shaped config dict ({"config_path": ..., "merge_mode": ...,
+    "output_dir": ..., "dry_run": ...}) — while the legacy positional
+    config-path str keeps working."""
+
+    def _write_config(self, tmp_path, merge_mode=None):
+        config = {
+            "name": "uni",
+            "description": "d",
+            "sources": [
+                {"type": "documentation", "base_url": "https://example.com/docs/"},
+            ],
+        }
+        if merge_mode:
+            config["merge_mode"] = merge_mode
+        path = tmp_path / "uni.json"
+        path.write_text(json.dumps(config))
+        return path
+
+    def test_factory_dict_honors_config_path_output_dir_dry_run(self, tmp_path, monkeypatch):
+        from skill_seekers.cli.skill_converter import get_converter
+
+        cfg = self._write_config(tmp_path)
+        out_dir = tmp_path / "factory-out"
+        monkeypatch.chdir(tmp_path)
+
+        converter = get_converter(
+            "config",
+            {
+                "config_path": str(cfg),
+                "merge_mode": "ai-enhanced",
+                "output_dir": str(out_dir),
+                "dry_run": True,
+            },
+        )
+
+        assert isinstance(converter, UnifiedScraper)
+        assert converter.config_path == str(cfg)
+        assert converter.config["name"] == "uni"
+        assert converter.merge_mode == "ai-enhanced"
+        assert converter.output_dir == str(out_dir)
+        assert converter.dry_run is True
+        # dry_run construction must not create output or cache directories.
+        assert not out_dir.exists()
+        assert not (tmp_path / ".skillseeker-cache").exists()
+
+        # dry_run run() previews without scraping.
+        with patch.object(converter, "scrape_all_sources") as scrape:
+            assert converter.run() == 0
+        scrape.assert_not_called()
+
+    def test_factory_dict_defaults_match_legacy(self, tmp_path, monkeypatch):
+        """Omitted optional keys behave exactly like the legacy defaults."""
+        from skill_seekers.cli.skill_converter import get_converter
+
+        cfg = self._write_config(tmp_path, merge_mode="claude-enhanced")
+        monkeypatch.chdir(tmp_path)
+
+        converter = get_converter("config", {"config_path": str(cfg), "dry_run": True})
+
+        # merge_mode falls back to the config file (normalized alias).
+        assert converter.merge_mode == "ai-enhanced"
+        # output_dir falls back to output/<name>.
+        assert converter.output_dir == "output/uni"
+
+    def test_legacy_positional_str_still_works(self, tmp_path, monkeypatch):
+        cfg = self._write_config(tmp_path)
+        monkeypatch.chdir(tmp_path)
+
+        scraper = UnifiedScraper(str(cfg), merge_mode="rule-based", dry_run=True)
+
+        assert scraper.config_path == str(cfg)
+        assert scraper.config["name"] == "uni"
+        assert scraper.merge_mode == "rule-based"
+        assert scraper.dry_run is True
+
+    def test_explicit_kwargs_win_over_factory_dict(self, tmp_path, monkeypatch):
+        cfg = self._write_config(tmp_path)
+        monkeypatch.chdir(tmp_path)
+
+        scraper = UnifiedScraper(
+            {"config_path": str(cfg), "merge_mode": "rule-based", "output_dir": "from-dict"},
+            merge_mode="ai-enhanced",
+            output_dir=str(tmp_path / "from-kwarg"),
+            dry_run=True,
+        )
+
+        assert scraper.merge_mode == "ai-enhanced"
+        assert scraper.output_dir == str(tmp_path / "from-kwarg")

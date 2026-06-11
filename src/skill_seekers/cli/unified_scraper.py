@@ -76,7 +76,7 @@ class UnifiedScraper(SkillConverter):
 
     def __init__(
         self,
-        config_path: str,
+        config: dict[str, Any] | str,
         merge_mode: str | None = None,
         output_dir: str | None = None,
         dry_run: bool = False,
@@ -85,13 +85,27 @@ class UnifiedScraper(SkillConverter):
         Initialize unified scraper.
 
         Args:
-            config_path: Path to unified config JSON
+            config: Either the factory-shaped dict used by get_converter()
+                ({"config_path": ..., "merge_mode": ..., "output_dir": ...,
+                "dry_run": ...} — only "config_path" is required), or the
+                legacy positional value: a path to the unified config JSON
+                (or the already-loaded unified config dict itself).
             merge_mode: Override config merge_mode ('rule-based' or 'claude-enhanced')
             output_dir: Override output directory (CLI --output); wins over the
                 config file's "output_dir"
             dry_run: Preview the sources that would be scraped without scraping,
                 writing output, or creating directories
         """
+        if isinstance(config, dict) and "config_path" in config:
+            # Factory-shaped dict (get_converter("config", {...})). Explicit
+            # keyword arguments win over the dict's values.
+            merge_mode = merge_mode or config.get("merge_mode")
+            output_dir = output_dir or config.get("output_dir")
+            dry_run = dry_run or bool(config.get("dry_run"))
+            config_path = config["config_path"]
+        else:
+            # Legacy positional: a config path str (or raw unified config dict).
+            config_path = config
         super().__init__({"name": "unified", "config_path": config_path})
         self.config_path = config_path
         self.dry_run = dry_run

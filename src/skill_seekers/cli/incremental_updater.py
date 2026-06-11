@@ -405,22 +405,21 @@ def main(args=None):
     import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description="Detect and apply incremental skill updates")
-    parser.add_argument("skill_dir", help="Path to skill directory")
-    parser.add_argument("--check-changes", action="store_true", help="Check for changes only")
-    parser.add_argument("--generate-package", help="Generate update package at specified path")
-    parser.add_argument("--apply-update", help="Apply update package from specified path")
-    if args is None:
-        args = parser.parse_args()
-    else:
-        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
-        backfill_parser_defaults(parser, args)
+    if args is None:
+        # Single source of flags: the central UpdateParser.
+        from skill_seekers.cli.parsers.update_parser import UpdateParser
+
+        spec = UpdateParser()
+        parser = argparse.ArgumentParser(description=spec.description)
+        spec.add_arguments(parser)
+        args = parser.parse_args()
 
     skill_dir = Path(args.skill_dir)
     if not skill_dir.exists():
         print(f"❌ Error: Directory not found: {skill_dir}")
-        return 1
+        return EXIT_ERROR
 
     # Initialize updater
     updater = IncrementalUpdater(skill_dir)
@@ -430,11 +429,11 @@ def main(args=None):
         update_path = Path(args.apply_update)
         if not update_path.exists():
             print(f"❌ Error: Update package not found: {update_path}")
-            return 1
+            return EXIT_ERROR
 
         print(f"📥 Applying update from: {update_path}")
         success = updater.apply_update_package(update_path)
-        return 0 if success else 1
+        return EXIT_SUCCESS if success else EXIT_ERROR
 
     # Detect changes
     print("🔍 Detecting changes...")
@@ -445,7 +444,7 @@ def main(args=None):
     print(report)
 
     if args.check_changes:
-        return 0 if not change_set.has_changes else 1
+        return EXIT_SUCCESS if not change_set.has_changes else EXIT_ERROR
 
     if change_set.has_changes:
         # Generate update package if specified
@@ -464,7 +463,7 @@ def main(args=None):
     else:
         print("\n✅ No changes detected - skill is up to date!")
 
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

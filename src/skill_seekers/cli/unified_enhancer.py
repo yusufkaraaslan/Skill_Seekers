@@ -21,10 +21,10 @@ Benefits:
 
 import json
 import logging
-import contextvars
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Literal
+
+from skill_seekers.cli.parallel_batches import flatten_batch_results, run_batches_parallel
 
 logger = logging.getLogger(__name__)
 
@@ -159,40 +159,14 @@ class UnifiedEnhancer:
 
     def _enhance_parallel(self, batches: list[list[dict]], prompt_template: str) -> list[dict]:
         """Process batches in parallel using ThreadPoolExecutor."""
-        results = [None] * len(batches)  # Preserve order
-
-        # Propagate contextvars into worker threads (threads don't inherit
-        # them), so per-call state like the MCP log-capture token survives.
-        _caller_ctx = contextvars.copy_context()
-        with ThreadPoolExecutor(max_workers=self.config.parallel_workers) as executor:
-            future_to_idx = {
-                executor.submit(
-                    _caller_ctx.copy().run, self._enhance_batch, batch, prompt_template
-                ): idx
-                for idx, batch in enumerate(batches)
-            }
-
-            completed = 0
-            total = len(batches)
-            for future in as_completed(future_to_idx):
-                idx = future_to_idx[future]
-                try:
-                    results[idx] = future.result()
-                    completed += 1
-
-                    # Show progress
-                    if total < 10 or completed % 5 == 0 or completed == total:
-                        logger.info(f"   Progress: {completed}/{total} batches completed")
-                except Exception as e:
-                    logger.warning(f"⚠️  Batch {idx} failed: {e}")
-                    results[idx] = batches[idx]  # Return unenhanced on failure
-
-        # Flatten results
-        enhanced = []
-        for batch_result in results:
-            if batch_result:
-                enhanced.extend(batch_result)
-        return enhanced
+        results = run_batches_parallel(
+            batches,
+            lambda batch: self._enhance_batch(batch, prompt_template),
+            self.config.parallel_workers,
+            log=logger.info,
+            warn=logger.warning,
+        )
+        return flatten_batch_results(results)
 
     def _enhance_batch(self, items: list[dict], prompt_template: str) -> list[dict]:
         """Enhance a batch of items."""

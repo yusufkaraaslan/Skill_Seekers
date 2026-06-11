@@ -995,6 +995,13 @@ class GitHubScraper(SkillConverter):
 class GitHubToSkillConverter:
     """
     Convert extracted GitHub data to AI skill format (C1.10).
+
+    Builder strategy invoked by GitHubScraper (the registered SkillConverter
+    for "github") and by UnifiedScraper._scrape_github() to build the
+    standalone sub-skill. Not a SkillConverter itself: it has no extract()
+    phase — it only consumes the already-written {skill_dir}_github_data.json
+    produced by GitHubScraper.scrape(), so it sits outside the run() template
+    (extract → build_skill) by design.
     """
 
     def __init__(self, config: dict[str, Any]):

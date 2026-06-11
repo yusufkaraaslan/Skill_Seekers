@@ -13,7 +13,7 @@
 | 2 — DocumentSkillBuilder | **done** (2026-06-11) | `refactor/phase-2-document-skill-builder` |
 | 3 — Enhancement consolidation | **done** (2026-06-11; 3.1 deferred) | `refactor/phase-3-enhancement-consolidation` |
 | 4 — UnifiedScraper conformance | **done** (2026-06-11; 4.1 deferred) | `refactor/phase-3-enhancement-consolidation` (same branch) |
-| 5 — Config / dispatch / MCP platform | **5a+5b done** (2026-06-11); 5c/5d remaining | `refactor/phase-3-enhancement-consolidation` (same branch) |
+| 5 — Config / dispatch / MCP platform | **done** (2026-06-11) | `refactor/phase-3-enhancement-consolidation` (same branch) |
 
 Phase 1 notes: all 5 parser drifts fixed + a programmatic drift-guard test
 (`tests/test_cli_parsers.py::TestCentralModuleParserSync`) that fails if any
@@ -200,14 +200,84 @@ Deferred to **Phase 4.1**:
   semantics unchanged. Thread propagation contract documented
   (copy_context, same pattern as the MCP log capture). +6 tests.
 
-**Remaining (5c/5d — the two big migrations):**
-- 5c: finish COMMAND_CLASSES migration for the ~14 legacy commands with a
-  single argument registry (kills the Phase-1 drift class permanently);
-  standardize exit codes.
-- 5d: MCP entry-point ExecutionContext initialization (request params →
-  config file → ConfigManager → defaults), replace the 11 subprocess tools
-  with in-process dispatch, declarative per-source-type config models
-  replacing create_command._build_config's if/elif chain.
+**5c — single-definition parsers + exit codes (done 2026-06-11):**
+- 13 legacy command modules (config, enhance-status, upload, install,
+  install-agent, estimate, extract-test-examples, resume, quality,
+  workflows, stream, update, multilang) no longer define their own
+  add_argument blocks: `main(args=None)`'s standalone path builds its
+  parser FROM the central SubcommandParser class, so every flag is defined
+  exactly once (kills the Phase-1 drift class permanently). enhance,
+  package, and sync-config were already single-source via shared
+  `arguments/*` modules and were left as-is.
+- `backfill_parser_defaults` else-branches removed from all 7 modules that
+  had them (the central dispatch namespace has every dest by construction);
+  the helper stays in arguments/common.py.
+- Two real drift bugs fixed by completing the central parsers:
+  `install --target` and `extract-test-examples --recursive` were
+  module-only and REJECTED by the unified CLI. `update --force` remains a
+  central-parser no-op (accepted, unread) — now accepted identically in
+  both paths; implementing it is a separate feature.
+- workflows' standalone subparser dest unified to `workflows_action`
+  (was `action`); main() reads it via getattr in both call styles.
+- New `cli/exit_codes.py` (EXIT_SUCCESS/ERROR/VALIDATION/INTERRUPT);
+  test_example_extractor.main now returns 0 instead of None; constants
+  applied across the touched modules.
+- Drift guard upgraded: `tests/test_cli_parsers.py::
+  TestCentralParserSingleSource` asserts module-built and central parsers
+  have IDENTICAL option dests, defaults, and option strings for all 13.
+
+**5d — MCP subprocess→in-process (done 2026-06-11):**
+- 9 tools migrated (estimate_pages, detect_patterns, extract_test_examples,
+  extract_config_patterns, build_how_to_guides, split_config,
+  generate_router, package_skill, upload_skill) via the shared
+  run_cli_main() helper in mcp/tools/_common.py: real-parser argv parsing
+  (sys.argv patch under a lock), redirect_stdout/stderr + the contextvar
+  log-capture pattern, SystemExit/KeyboardInterrupt containment, and an
+  identical (stdout, stderr, returncode) contract so output formats
+  (incl. the "❌ Error:" sniffing in install_skill's workflow) stay
+  byte-identical. Bonus fix: extract_config_patterns_tool had been passing
+  flags the CLI parser rejects — it ALWAYS failed; now mapped to the real
+  flags and pinned by a regression test.
+- enhance_skill_tool (LOCAL agent) and install_skill_tool's enhancement
+  step stay subprocess BY DESIGN (long-running real agent; fork-bomb-guard
+  env semantics) — documented at the call sites.
+
+**4.1 follow-ups (done 2026-06-11, run() conformance deliberately dropped):**
+- UnifiedScraper accepts the factory-shaped dict ({"config_path": ...,
+  "merge_mode", "output_dir", "dry_run"}); get_converter("config", {...})
+  works; the special-cases in create_command._route_to_scraper and
+  scrape_docs_tool are GONE; legacy str-positional construction still
+  supported (+4 tests).
+- GitHubToSkillConverter / UnifiedSkillBuilder documented as builder
+  strategies (deliberately not SkillConverters — no extract() phase).
+- run() template conformance DROPPED deliberately: TestRunOrchestration
+  pins that run() itself (not build_skill) triggers workflows; conformance
+  would require weakening those tests.
+
+**2.1 hook polish (done 2026-06-11):** LOAD_TOTAL_KEY / DOC_NOUN /
+PATTERN_KEYWORDS / RANGE_LABEL / category_stem / sectioned-SKILL.md hooks
+added to DocumentSkillBuilder; full-method overrides collapsed in pdf
+(−61), html (−202), pptx (−106), jupyter (−48), man (−16), chat (−12
+structural), all under byte-identical golden protection (24/24 trees).
+Overrides that survive are genuinely domain-shaped (documented per scraper).
+
+**3.1 safe slice (done 2026-06-11):** cli/parallel_batches.py
+run_batches_parallel() replaced the 3 duplicated ThreadPoolExecutor blocks
+in ai_enhancer/unified_enhancer (contextvars propagation preserved; net
+−75). The full hierarchy merge remains deliberately deferred — consumers
+depend on per-feature prompts; a blind merge would silently change AI
+quality.
+
+**Remaining (small, cosmetic):**
+- Move the ~14 legacy commands from COMMAND_MODULES to COMMAND_CLASSES
+  dispatch (`Cls(args).execute()`) — aesthetic now that parsers are
+  single-definition and dispatch passes namespaces.
+- Declarative per-source-type config models replacing
+  create_command._build_config's if/elif chain.
+- Per-request ExecutionContext initialization at the MCP boundary —
+  lower urgency since the converters' raw-config fallback (fixed earlier)
+  plus the contextvars override (5b) cover the known divergences.
+- AgentClient multimodal support (absorbs video_visual).
 
 ## Phase 5 — Platform unification: config, dispatch, MCP (medium)
 

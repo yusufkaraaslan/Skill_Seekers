@@ -535,29 +535,22 @@ def main(args=None):
     import argparse
     from pathlib import Path
 
-    parser = argparse.ArgumentParser(description="Analyze skill quality metrics")
-    parser.add_argument("skill_dir", help="Path to skill directory")
-    parser.add_argument("--report", action="store_true", help="Generate detailed report")
-    parser.add_argument("--output", help="Output path for JSON report")
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=None,
-        help="Quality gate threshold (0-10). When set, exit non-zero if the "
-        "skill scores below it; without it the command only reports.",
-    )
-    if args is None:
-        args = parser.parse_args()
-    else:
-        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
-        backfill_parser_defaults(parser, args)
+    if args is None:
+        # Single source of flags: the central QualityParser.
+        from skill_seekers.cli.parsers.quality_parser import QualityParser
+
+        spec = QualityParser()
+        parser = argparse.ArgumentParser(description=spec.description)
+        spec.add_arguments(parser)
+        args = parser.parse_args()
 
     # Analyze skill
     skill_dir = Path(args.skill_dir)
     if not skill_dir.exists():
         print(f"❌ Error: Directory not found: {skill_dir}")
-        return 1
+        return EXIT_ERROR
 
     analyzer = QualityAnalyzer(skill_dir)
 
@@ -587,8 +580,8 @@ def main(args=None):
                 f"❌ Quality score {total_score / 10:.1f}/10 is below the "
                 f"threshold of {args.threshold:.1f}/10"
             )
-            return 1
-    return 0
+            return EXIT_ERROR
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":

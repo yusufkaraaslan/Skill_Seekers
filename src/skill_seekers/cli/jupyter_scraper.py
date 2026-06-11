@@ -213,6 +213,16 @@ class JupyterToSkillConverter(DocumentSkillBuilder):
     SOURCE_PATH_ATTR = "notebook_path"
     SOURCE_LABEL = "notebook"
     FOOTER_LABEL = "Jupyter Notebook Scraper"
+    # Notebook analysis stages on top of the shared documentation keywords.
+    PATTERN_KEYWORDS = DocumentSkillBuilder.PATTERN_KEYWORDS + (
+        "data loading",
+        "preprocessing",
+        "modeling",
+        "evaluation",
+        "results",
+        "conclusion",
+        "summary",
+    )
 
     @property
     def source_stem(self) -> str:
@@ -959,55 +969,8 @@ class JupyterToSkillConverter(DocumentSkillBuilder):
             content += "**Subtopics:**\n\n" + "".join(f"- {h}\n" for h in h2s[:15]) + "\n"
         return content
 
-    def _format_patterns_from_content(self) -> str:
-        """Extract common patterns from text content headings."""
-        pattern_keywords = [
-            "getting started",
-            "installation",
-            "configuration",
-            "usage",
-            "api",
-            "examples",
-            "tutorial",
-            "guide",
-            "best practices",
-            "troubleshooting",
-            "faq",
-            "data loading",
-            "preprocessing",
-            "modeling",
-            "evaluation",
-            "results",
-            "conclusion",
-            "summary",
-        ]
-        patterns: list[dict] = []
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-            for kw in pattern_keywords:
-                if kw in heading_text:
-                    patterns.append(
-                        {
-                            "type": kw.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-        content = "*Common documentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for p in patterns:
-            by_type.setdefault(p["type"], []).append(p)
-        for ptype in sorted(by_type):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-        return content
+    # _format_patterns_from_content is inherited from DocumentSkillBuilder —
+    # PATTERN_KEYWORDS above supplies the notebook keyword list.
 
 
 # ---------------------------------------------------------------------------

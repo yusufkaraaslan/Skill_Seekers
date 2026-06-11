@@ -172,7 +172,31 @@ class PptxToSkillConverter(DocumentSkillBuilder):
     SOURCE_PATH_ATTR = "pptx_path"
     SOURCE_LABEL = "PowerPoint"
     FOOTER_LABEL = "PowerPoint Presentation Scraper"
+    DOC_NOUN = "presentation"
     INDEX_METADATA_FIELDS = (("author", "Author"), ("created", "Created"))
+    # Presentation-specific keyword list (replaces the documentation one).
+    PATTERN_KEYWORDS = (
+        "introduction",
+        "overview",
+        "agenda",
+        "objectives",
+        "getting started",
+        "demo",
+        "demonstration",
+        "examples",
+        "architecture",
+        "design",
+        "implementation",
+        "best practices",
+        "summary",
+        "conclusion",
+        "q&a",
+        "questions",
+        "next steps",
+        "resources",
+        "references",
+        "appendix",
+    )
 
     def __init__(self, config: dict) -> None:
         """Initialize the converter with a configuration dictionary.
@@ -1076,46 +1100,9 @@ class PptxToSkillConverter(DocumentSkillBuilder):
 
         f.write("---\n\n")
 
-    def _generate_index(self, categorized: dict[str, dict]) -> None:
-        """Generate reference index file listing all categories and statistics.
-
-        Overrides the base only for the title ("Presentation Reference"
-        instead of "Documentation Reference"); the statistics block comes
-        from _write_index_statistics below.
-
-        Args:
-            categorized: Dict of category key -> category data
-        """
-        filename = f"{self.skill_dir}/references/index.md"
-
-        total_sections = len(categorized)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Presentation Reference\n\n")
-            f.write("## Categories\n\n")
-
-            section_num = 1
-            for _cat_key, cat_data in categorized.items():
-                sections = cat_data["pages"]
-                section_count = len(sections)
-
-                link_filename = self._reference_filename(cat_data, section_num, total_sections)
-                if sections:
-                    section_nums = [s.get(self.NUMBER_KEY, i + 1) for i, s in enumerate(sections)]
-                    sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
-                else:
-                    sec_range_str = "N/A"
-
-                f.write(
-                    f"- [{cat_data['title']}]({link_filename}) "
-                    f"({section_count} {self.UNIT_LABEL}, {sec_range_str})\n"
-                )
-                section_num += 1
-
-            f.write("\n## Statistics\n\n")
-            self._write_index_statistics(f)
-
-        print(f"   Generated: {filename}")
+    # _generate_index is inherited from DocumentSkillBuilder — DOC_NOUN
+    # produces the "Presentation Reference" title; the statistics block
+    # comes from _write_index_statistics below.
 
     def _write_index_statistics(self, f) -> None:
         """Statistics block of index.md.
@@ -1349,69 +1336,6 @@ class PptxToSkillConverter(DocumentSkillBuilder):
 
         return content
 
-    def _format_patterns_from_content(self) -> str:
-        """Extract common documentation patterns from section headings.
-
-        Overrides the base: searches a presentation-specific keyword list
-        ("introduction", "overview", "demo", "agenda", "q&a", ...) instead
-        of the base's documentation keywords, with a matching blurb.
-
-        Returns:
-            Markdown string describing found patterns.
-        """
-        patterns: list[dict] = []
-        pattern_keywords = [
-            "introduction",
-            "overview",
-            "agenda",
-            "objectives",
-            "getting started",
-            "demo",
-            "demonstration",
-            "examples",
-            "architecture",
-            "design",
-            "implementation",
-            "best practices",
-            "summary",
-            "conclusion",
-            "q&a",
-            "questions",
-            "next steps",
-            "resources",
-            "references",
-            "appendix",
-        ]
-
-        for section in self.extracted_data.get("pages", []):
-            heading_text = section.get("heading", "").lower()
-            sec_num = section.get("section_number", 0)
-
-            for keyword in pattern_keywords:
-                if keyword in heading_text:
-                    patterns.append(
-                        {
-                            "type": keyword.title(),
-                            "heading": section.get("heading", ""),
-                            "section": sec_num,
-                        }
-                    )
-                    break
-
-        if not patterns:
-            return "*See reference files for detailed content*\n\n"
-
-        content = "*Common presentation patterns found:*\n\n"
-        by_type: dict[str, list] = {}
-        for pattern in patterns:
-            ptype = pattern["type"]
-            by_type.setdefault(ptype, []).append(pattern)
-
-        for ptype in sorted(by_type.keys()):
-            items = by_type[ptype]
-            content += f"**{ptype}** ({len(items)} sections):\n"
-            for item in items[:3]:
-                content += f"- {item['heading']} (section {item['section']})\n"
-            content += "\n"
-
-        return content
+    # _format_patterns_from_content is inherited from DocumentSkillBuilder —
+    # PATTERN_KEYWORDS supplies the presentation keyword list and DOC_NOUN
+    # the "Common presentation patterns found" blurb.

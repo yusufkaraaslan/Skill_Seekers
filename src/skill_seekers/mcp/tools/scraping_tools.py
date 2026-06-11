@@ -18,14 +18,11 @@ import io
 import json
 import logging
 import os
-import sys
 import tempfile
 from pathlib import Path
 
-from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
-
 # MCP types - with graceful fallback for testing
-from skill_seekers.mcp.tools._common import TextContent
+from skill_seekers.mcp.tools._common import TextContent, run_cli_main
 
 
 # Per-call token so concurrent _run_converter calls (which all attach a handler
@@ -96,12 +93,19 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
 
     Returns:
         List[TextContent]: Tool execution results
+
+    Note:
+        Runs estimate_pages.main() in-process (Phase 5d). The old subprocess
+        timeout no longer applies — the "Maximum time" line in the output is
+        an advisory estimate only (same precedent as converter scrapes via
+        _run_converter, which run unbounded).
     """
     config_path = args["config_path"]
     max_discovery = args.get("max_discovery", 1000)
     unlimited = args.get("unlimited", False)
 
-    # Handle unlimited mode
+    # Handle unlimited mode. The timeout is advisory-only (output text); the
+    # in-process call is not bounded by it.
     if unlimited or max_discovery == -1:
         max_discovery = -1
         timeout = 1800  # 30 minutes for unlimited discovery
@@ -109,20 +113,14 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
         # Estimate: 0.5s per page discovered
         timeout = max(300, max_discovery // 2)  # Minimum 5 minutes
 
-    # Run estimate_pages module
-    cmd = [
-        sys.executable,
-        "-m",
-        "skill_seekers.cli.estimate_pages",
-        config_path,
-        "--max-discovery",
-        str(max_discovery),
-    ]
+    argv = [config_path, "--max-discovery", str(max_discovery)]
 
     progress_msg = "🔄 Estimating page count...\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli import estimate_pages
+
+    stdout, stderr, returncode = run_cli_main(estimate_pages.main, argv)
 
     output = progress_msg + stdout
 
@@ -201,21 +199,24 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
 
     # Run converter in-process
     try:
-        if is_unified:
-            from skill_seekers.cli.unified_scraper import UnifiedScraper
+        from skill_seekers.cli.skill_converter import get_converter
 
-            # dry_run must go through the constructor: UnifiedScraper.run()
-            # previews-and-returns and __init__ skips directory creation.
+        if is_unified:
+            # UnifiedScraper consumes the factory-shaped dict (config_path +
+            # merge_mode/dry_run overrides). dry_run must go through the
+            # constructor: UnifiedScraper.run() previews-and-returns and
+            # __init__ skips directory creation.
             # skip_scrape is NOT yet honored on the unified multi-source path
             # (it would need to reload each source's cached data from
             # .skillseeker-cache before building); the attribute is set for
             # forward-compat but currently has no effect here. Single-source
             # configs DO honor skip_scrape (SkillConverter.run).
-            converter = UnifiedScraper(config_to_use, merge_mode=merge_mode, dry_run=dry_run)
+            converter = get_converter(
+                "config",
+                {"config_path": config_to_use, "merge_mode": merge_mode, "dry_run": dry_run},
+            )
             converter.skip_scrape = skip_scrape
         else:
-            from skill_seekers.cli.skill_converter import get_converter
-
             # For legacy format, detect type from config keys
             with open(config_to_use) as f:
                 config_to_pass = json.load(f)
@@ -611,6 +612,11 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Pattern detection results
 
+    Note:
+        Runs pattern_recognizer.main() in-process (Phase 5d). The old
+        subprocess timeout no longer applies — the "Maximum time" line in the
+        output is advisory only.
+
     Example:
         detect_patterns(file="src/database.py", depth="deep")
         detect_patterns(directory="src/", output="patterns/", json=True)
@@ -629,21 +635,19 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     depth = args.get("depth", "deep")
     json_output = args.get("json", False)
 
-    # Build command
-    cmd = [sys.executable, "-m", "skill_seekers.cli.pattern_recognizer"]
-
+    argv = []
     if file_path:
-        cmd.extend(["--file", file_path])
+        argv.extend(["--file", file_path])
     if directory:
-        cmd.extend(["--directory", directory])
+        argv.extend(["--directory", directory])
     if output:
-        cmd.extend(["--output", output])
+        argv.extend(["--output", output])
     if depth:
-        cmd.extend(["--depth", depth])
+        argv.extend(["--depth", depth])
     if json_output:
-        cmd.append("--json")
+        argv.append("--json")
 
-    timeout = 300  # 5 minutes for pattern detection
+    timeout = 300  # Advisory only (output text); the in-process call is unbounded
 
     progress_msg = "🔍 Detecting design patterns...\n"
     if file_path:
@@ -653,7 +657,11 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     progress_msg += f"🎯 Detection depth: {depth}\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # pattern_recognizer.main() takes no args parameter and parses sys.argv
+    # through its own parser — run_cli_main patches sys.argv for the call.
+    from skill_seekers.cli import pattern_recognizer
+
+    stdout, stderr, returncode = run_cli_main(pattern_recognizer.main, argv)
 
     output_text = progress_msg + stdout
 
@@ -690,6 +698,11 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Extracted test examples
 
+    Note:
+        Runs test_example_extractor.main() in-process (Phase 5d). The old
+        subprocess timeout no longer applies — the "Maximum time" line in the
+        output is advisory only.
+
     Example:
         extract_test_examples(directory="tests/", language="python")
         extract_test_examples(file="tests/test_scraper.py", json=True)
@@ -710,25 +723,23 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
     json_output = args.get("json", False)
     markdown_output = args.get("markdown", False)
 
-    # Build command
-    cmd = [sys.executable, "-m", "skill_seekers.cli.test_example_extractor"]
-
+    argv = []
     if directory:
-        cmd.append(directory)
+        argv.append(directory)
     if file_path:
-        cmd.extend(["--file", file_path])
+        argv.extend(["--file", file_path])
     if language:
-        cmd.extend(["--language", language])
+        argv.extend(["--language", language])
     if min_confidence:
-        cmd.extend(["--min-confidence", str(min_confidence)])
+        argv.extend(["--min-confidence", str(min_confidence)])
     if max_per_file:
-        cmd.extend(["--max-per-file", str(max_per_file)])
+        argv.extend(["--max-per-file", str(max_per_file)])
     if json_output:
-        cmd.append("--json")
+        argv.append("--json")
     if markdown_output:
-        cmd.append("--markdown")
+        argv.append("--markdown")
 
-    timeout = 180  # 3 minutes for test example extraction
+    timeout = 180  # Advisory only (output text); the in-process call is unbounded
 
     progress_msg = "🧪 Extracting usage examples from test files...\n"
     if file_path:
@@ -741,7 +752,9 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
     progress_msg += f"📊 Max per file: {max_per_file}\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    from skill_seekers.cli import test_example_extractor
+
+    stdout, stderr, returncode = run_cli_main(test_example_extractor.main, argv)
 
     output_text = progress_msg + stdout
 
@@ -777,6 +790,11 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Guide building results
 
+    Note:
+        Runs how_to_guide_builder.main() in-process (Phase 5d). The old
+        subprocess timeout no longer applies — the "Maximum time" line in the
+        output is advisory only.
+
     Example:
         build_how_to_guides(
             input="output/codebase/test_examples/test_examples.json",
@@ -798,20 +816,17 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     no_ai = args.get("no_ai", False)
     json_output = args.get("json_output", False)
 
-    # Build command
-    cmd = [sys.executable, "-m", "skill_seekers.cli.how_to_guide_builder"]
-    cmd.append(input_file)
-
+    argv = [input_file]
     if output:
-        cmd.extend(["--output", output])
+        argv.extend(["--output", output])
     if group_by:
-        cmd.extend(["--group-by", group_by])
+        argv.extend(["--group-by", group_by])
     if no_ai:
-        cmd.append("--no-ai")
+        argv.append("--no-ai")
     if json_output:
-        cmd.append("--json-output")
+        argv.append("--json-output")
 
-    timeout = 180  # 3 minutes for guide building
+    timeout = 180  # Advisory only (output text); the in-process call is unbounded
 
     progress_msg = "📚 Building how-to guides from workflow examples...\n"
     progress_msg += f"📄 Input: {input_file}\n"
@@ -821,7 +836,11 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
         progress_msg += "🚫 AI enhancement disabled\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # how_to_guide_builder.main() takes no args parameter and parses sys.argv
+    # through its own parser — run_cli_main patches sys.argv for the call.
+    from skill_seekers.cli import how_to_guide_builder
+
+    stdout, stderr, returncode = run_cli_main(how_to_guide_builder.main, argv)
 
     output_text = progress_msg + stdout
 
@@ -865,6 +884,17 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
     Returns:
         List[TextContent]: Config extraction results with optional AI enhancements
 
+    Note:
+        Runs config_extractor.main() in-process (Phase 5d). The old subprocess
+        timeout no longer applies — the "Maximum time" line in the output is
+        advisory only.
+
+        The 'json'/'markdown' parameters are accepted for backward
+        compatibility but ignored: config_extractor has no such flags (the old
+        subprocess call passed --directory/--json/--markdown, which its parser
+        REJECTED, so this tool always failed with an argparse error before
+        Phase 5d). Results are always written as JSON to the output file.
+
     Example:
         extract_config_patterns(directory=".", output="output/configs")
         extract_config_patterns(directory="/path/to/repo", max_files=50, enhance_local=True)
@@ -878,29 +908,28 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
     enhance = args.get("enhance", False)
     enhance_local = args.get("enhance_local", False)
     ai_mode = args.get("ai_mode", "none")
-    json_output = args.get("json", True)
-    markdown_output = args.get("markdown", True)
 
-    # Build command
-    cmd = [sys.executable, "-m", "skill_seekers.cli.config_extractor"]
-    cmd.extend(["--directory", directory])
-
+    # Map to config_extractor's REAL flags: positional directory, --output
+    # (a JSON *file* path — the tool's `output` parameter is documented as a
+    # directory, so map dir → <dir>/config_patterns.json), --max-files,
+    # --enhance, --enhance-local, --ai-mode.
+    argv = [directory]
     if output:
-        cmd.extend(["--output", output])
+        output_path = Path(output)
+        if output_path.suffix != ".json":
+            output_path = output_path / "config_patterns.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        argv.extend(["--output", str(output_path)])
     if max_files:
-        cmd.extend(["--max-files", str(max_files)])
+        argv.extend(["--max-files", str(max_files)])
     if enhance:
-        cmd.append("--enhance")
+        argv.append("--enhance")
     if enhance_local:
-        cmd.append("--enhance-local")
+        argv.append("--enhance-local")
     if ai_mode and ai_mode != "none":
-        cmd.extend(["--ai-mode", ai_mode])
-    if json_output:
-        cmd.append("--json")
-    if markdown_output:
-        cmd.append("--markdown")
+        argv.extend(["--ai-mode", ai_mode])
 
-    # Adjust timeout for AI enhancement
+    # Advisory only (output text); the in-process call is unbounded
     timeout = 180  # 3 minutes base
     if enhance or enhance_local or ai_mode != "none":
         timeout = 360  # 6 minutes with AI enhancement
@@ -912,7 +941,11 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
         progress_msg += f"🤖 AI enhancement: {ai_mode if ai_mode != 'none' else ('api' if enhance else 'local')}\n"
     progress_msg += f"⏱️ Maximum time: {timeout // 60} minutes\n\n"
 
-    stdout, stderr, returncode = run_subprocess_with_streaming(cmd, timeout=timeout)
+    # config_extractor.main() takes no args parameter and parses sys.argv
+    # through its own parser — run_cli_main patches sys.argv for the call.
+    from skill_seekers.cli import config_extractor
+
+    stdout, stderr, returncode = run_cli_main(config_extractor.main, argv)
 
     output_text = progress_msg + stdout
 

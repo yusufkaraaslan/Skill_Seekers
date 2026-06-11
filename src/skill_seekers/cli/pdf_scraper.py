@@ -73,8 +73,10 @@ class PDFToSkillConverter(DocumentSkillBuilder):
     SOURCE_LABEL = "PDF"
     FOOTER_LABEL = "PDF Documentation Scraper"
     UNIT_LABEL = "pages"
+    LOAD_TOTAL_KEY = "total_pages"
     NUMBER_KEY = "page_number"
     NUMBER_PREFIX = "p"
+    RANGE_LABEL = "Pages"
 
     def __init__(self, config):
         super().__init__(config)
@@ -133,19 +135,9 @@ class PDFToSkillConverter(DocumentSkillBuilder):
         self.extracted_data = result
         return True
 
-    def load_extracted_data(self, json_path):
-        """Load previously extracted data from JSON.
-
-        Overrides the base: PDF data carries ``total_pages`` (required),
-        not ``total_sections``.
-        """
-        print(f"\n📂 Loading extracted data from: {json_path}")
-
-        with open(json_path, encoding="utf-8") as f:
-            self.extracted_data = json.load(f)
-
-        print(f"✅ Loaded {self.extracted_data['total_pages']} pages")
-        return True
+    # load_extracted_data is inherited from DocumentSkillBuilder:
+    # LOAD_TOTAL_KEY="total_pages" + UNIT_LABEL="pages" reproduce the PDF
+    # loader output exactly (with the base's graceful len(pages) fallback).
 
     def categorize_content(self):
         """Categorize pages based on chapters or keywords.
@@ -351,47 +343,19 @@ class PDFToSkillConverter(DocumentSkillBuilder):
 
         print(f"   Generated: {filename}")
 
-    def _generate_index(self, categorized):
-        """Generate reference index.
+    # _generate_index is inherited from DocumentSkillBuilder:
+    # UNIT_LABEL="pages" + RANGE_LABEL="Pages" reproduce the category lines;
+    # the PDF-only statistics live in the hook below.
 
-        Overrides the base: category lines use "Pages min-max" ranges and
-        the statistics block reports total_pages + code-quality stats."""
-        filename = f"{self.skill_dir}/references/index.md"
-
-        total_sections = len(categorized)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Documentation Reference\n\n")
-            f.write("## Categories\n\n")
-
-            section_num = 1
-            for _cat_key, cat_data in categorized.items():
-                pages = cat_data["pages"]
-                page_count = len(pages)
-
-                # Filename via the shared helper so links match the real files.
-                link_filename = self._reference_filename(cat_data, section_num, total_sections)
-                if pages:
-                    page_nums = [p["page_number"] for p in pages]
-                    page_range_str = f"Pages {min(page_nums)}-{max(page_nums)}"
-                else:
-                    page_range_str = "N/A"
-
-                f.write(
-                    f"- [{cat_data['title']}]({link_filename}) ({page_count} pages, {page_range_str})\n"
-                )
-                section_num += 1
-
-            f.write("\n## Statistics\n\n")
-            stats = self.extracted_data.get("quality_statistics", {})
-            f.write(f"- Total pages: {self.extracted_data.get('total_pages', 0)}\n")
-            f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
-            f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
-            if stats:
-                f.write(f"- Average code quality: {stats.get('average_quality', 0):.1f}/10\n")
-                f.write(f"- Valid code blocks: {stats.get('valid_code_blocks', 0)}\n")
-
-        print(f"   Generated: {filename}")
+    def _write_index_statistics(self, f):
+        """Statistics block of index.md: total_pages plus code-quality stats."""
+        stats = self.extracted_data.get("quality_statistics", {})
+        f.write(f"- Total pages: {self.extracted_data.get('total_pages', 0)}\n")
+        f.write(f"- Code blocks: {self.extracted_data.get('total_code_blocks', 0)}\n")
+        f.write(f"- Images: {self.extracted_data.get('total_images', 0)}\n")
+        if stats:
+            f.write(f"- Average code quality: {stats.get('average_quality', 0):.1f}/10\n")
+            f.write(f"- Valid code blocks: {stats.get('valid_code_blocks', 0)}\n")
 
     def _generate_skill_md(self, categorized):
         """Generate main SKILL.md file (enhanced with rich content).

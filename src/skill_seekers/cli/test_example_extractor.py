@@ -1128,57 +1128,18 @@ class TestExampleExtractor:
 
 def main(args=None):
     """Main entry point for CLI"""
-    parser = argparse.ArgumentParser(
-        description="Extract usage examples from test files",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Extract from directory
-  %(prog)s tests/ --language python
+    from skill_seekers.cli.exit_codes import EXIT_SUCCESS
+    from skill_seekers.cli.parsers.test_examples_parser import TestExamplesParser
 
-  # Extract from single file
-  %(prog)s --file tests/test_scraper.py
-
-  # JSON output
-  %(prog)s tests/ --json > examples.json
-
-  # Filter by confidence
-  %(prog)s tests/ --min-confidence 0.7
-        """,
-    )
-
-    parser.add_argument("directory", nargs="?", help="Directory containing test files")
-    parser.add_argument("--file", help="Single test file to analyze")
-    parser.add_argument(
-        "--language", help="Filter by programming language (python, javascript, etc.)"
-    )
-    parser.add_argument(
-        "--min-confidence",
-        type=float,
-        default=0.5,
-        help="Minimum confidence threshold (0.0-1.0, default: 0.5)",
-    )
-    parser.add_argument(
-        "--max-per-file",
-        type=int,
-        default=10,
-        help="Maximum examples per file (default: 10)",
-    )
-    parser.add_argument("--json", action="store_true", help="Output JSON format")
-    parser.add_argument("--markdown", action="store_true", help="Output Markdown format")
-    parser.add_argument(
-        "--recursive",
-        action="store_true",
-        default=True,
-        help="Search directory recursively (default: True)",
-    )
+    # Single source of flags: the central TestExamplesParser. Built even when
+    # args is provided (unified-CLI dispatch) because parser.error() is used
+    # below.
+    spec = TestExamplesParser()
+    parser = argparse.ArgumentParser(description=spec.description)
+    spec.add_arguments(parser)
 
     if args is None:
         args = parser.parse_args()
-    else:
-        from skill_seekers.cli.arguments.common import backfill_parser_defaults
-
-        backfill_parser_defaults(parser, args)
 
     # Validate arguments
     if not args.directory and not args.file:
@@ -1219,6 +1180,12 @@ Examples:
             print(f"  {language}: {count}")
         print("\nUse --json or --markdown for detailed output")
 
+    # Phase 5c: main() used to fall off the end (returning None); return an
+    # explicit exit code so callers and the unified dispatch get an int.
+    return EXIT_SUCCESS
+
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    sys.exit(main())

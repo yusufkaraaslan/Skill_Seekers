@@ -26,6 +26,13 @@ logger = logging.getLogger(__name__)
 class UnifiedSkillBuilder:
     """
     Builds unified skill from multi-source data.
+
+    Builder strategy invoked by UnifiedScraper.build_skill() (the registered
+    SkillConverter for "config"). Not a SkillConverter itself: it has no
+    extract() phase — it only synthesizes the final skill from the in-memory
+    scraped_data/merged_data/conflicts that UnifiedScraper's phases 1-3
+    produced, so it sits outside the run() template (extract → build_skill)
+    by design.
     """
 
     def __init__(

@@ -202,19 +202,19 @@ class CreateCommand:
         source_type = self.source_info.type
         ctx = ExecutionContext.get()
 
-        # UnifiedScraper is special — it takes config_path, not a config dict
+        # UnifiedScraper consumes the factory-shaped dict (config_path +
+        # merge_mode/output_dir/dry_run overrides) rather than a built config.
         if source_type == "config":
-            from skill_seekers.cli.unified_scraper import UnifiedScraper
-
-            config_path = self.source_info.parsed["config_path"]
-            merge_mode = getattr(self.args, "merge_mode", None)
-            converter = UnifiedScraper(
-                config_path,
-                merge_mode=merge_mode,
-                # Same contract as every other source type: --output and
-                # --dry-run must reach the converter.
-                output_dir=ctx.output.output_dir,
-                dry_run=bool(ctx.output.dry_run),
+            converter = get_converter(
+                "config",
+                {
+                    "config_path": self.source_info.parsed["config_path"],
+                    "merge_mode": getattr(self.args, "merge_mode", None),
+                    # Same contract as every other source type: --output and
+                    # --dry-run must reach the converter.
+                    "output_dir": ctx.output.output_dir,
+                    "dry_run": bool(ctx.output.dry_run),
+                },
             )
             return converter.run()
 

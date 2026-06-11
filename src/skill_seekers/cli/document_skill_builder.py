@@ -42,10 +42,33 @@ class DocumentSkillBuilder(SkillConverter):
     FOOTER_LABEL: str = "Document Scraper"
     # Unit noun in progress output and section counts.
     UNIT_LABEL: str = "sections"
+    # Document noun: index.md title ("{Name} {Noun.title()} Reference") and
+    # the Quick Reference blurb ("Common {noun} patterns found").
+    DOC_NOUN: str = "documentation"
+    # Key in the extracted JSON holding the total count reported by
+    # load_extracted_data (man/pdf use "total_pages").
+    LOAD_TOTAL_KEY: str = "total_sections"
     # Key holding each page's number and the range prefix in reference
     # filenames (pdf uses "page_number"/"p").
     NUMBER_KEY: str = "section_number"
     NUMBER_PREFIX: str = "s"
+    # Label before the number range in index.md category lines
+    # ("Sections 1-5"; pdf uses "Pages").
+    RANGE_LABEL: str = "Sections"
+    # Heading keywords recognized by _format_patterns_from_content.
+    PATTERN_KEYWORDS: tuple[str, ...] = (
+        "getting started",
+        "installation",
+        "configuration",
+        "usage",
+        "api",
+        "examples",
+        "tutorial",
+        "guide",
+        "best practices",
+        "troubleshooting",
+        "faq",
+    )
     # (metadata key, display label) pairs for SKILL.md "Document Information".
     SKILL_MD_METADATA_FIELDS: tuple[tuple[str, str], ...] = (
         ("title", "Title"),
@@ -71,7 +94,9 @@ class DocumentSkillBuilder(SkillConverter):
         print(f"\n📂 Loading extracted data from: {json_path}")
         with open(json_path, encoding="utf-8") as f:
             self.extracted_data = json.load(f)
-        total = self.extracted_data.get("total_sections", len(self.extracted_data.get("pages", [])))
+        total = self.extracted_data.get(
+            self.LOAD_TOTAL_KEY, len(self.extracted_data.get("pages", []))
+        )
         print(f"✅ Loaded {total} {self.UNIT_LABEL}")
         return True
 
@@ -81,14 +106,27 @@ class DocumentSkillBuilder(SkillConverter):
         safe = re.sub(r"[-\s]+", "_", safe)
         return safe
 
-    def _reference_filename(self, cat_data, section_num, total_sections):
+    def category_stem(self, cat_key):
+        """Stem used as the base of a category's reference filename.
+
+        Base: the source-file stem (all single-source document scrapers).
+        chat overrides this to name files by category key instead.
+        """
+        del cat_key  # unused in the base; hook parameter for subclasses
+        return self.source_stem
+
+    def _reference_filename(self, cat_data, section_num, total_sections, cat_key=""):
         """Basename of a category's reference file — single source of truth shared
-        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
+        by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07).
+
+        ``cat_key`` is trailing-and-defaulted for backward compatibility with
+        existing callers; only ``category_stem`` overrides consume it.
+        """
         return reference_filename(
             cat_data.get("pages") or [],
             section_num,
             total_sections,
-            self.source_stem,
+            self.category_stem(cat_key),
             number_key=self.NUMBER_KEY,
             prefix=self.NUMBER_PREFIX,
         )
@@ -204,7 +242,7 @@ class DocumentSkillBuilder(SkillConverter):
         """Generate a reference markdown file for a category."""
         filename = (
             f"{self.skill_dir}/references/"
-            f"{self._reference_filename(cat_data, section_num, total_sections)}"
+            f"{self._reference_filename(cat_data, section_num, total_sections, _cat_key)}"
         )
         sections = cat_data.get("pages") or []
 
@@ -299,7 +337,7 @@ class DocumentSkillBuilder(SkillConverter):
         total_sections = len(categorized)
 
         with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# {self.name.title()} Documentation Reference\n\n")
+            f.write(f"# {self.name.title()} {self.DOC_NOUN.title()} Reference\n\n")
             f.write("## Categories\n\n")
 
             section_num = 1
@@ -307,10 +345,12 @@ class DocumentSkillBuilder(SkillConverter):
                 sections = cat_data["pages"]
                 section_count = len(sections)
 
-                link_filename = self._reference_filename(cat_data, section_num, total_sections)
+                link_filename = self._reference_filename(
+                    cat_data, section_num, total_sections, _cat_key
+                )
                 if sections:
                     section_nums = [s.get(self.NUMBER_KEY, i + 1) for i, s in enumerate(sections)]
-                    sec_range_str = f"Sections {min(section_nums)}-{max(section_nums)}"
+                    sec_range_str = f"{self.RANGE_LABEL} {min(section_nums)}-{max(section_nums)}"
                 else:
                     sec_range_str = "N/A"
 
@@ -359,9 +399,7 @@ class DocumentSkillBuilder(SkillConverter):
             metadata = self.extracted_data.get("metadata", {})
             if any(v for v in metadata.values() if v):
                 f.write("## 📋 Document Information\n\n")
-                for key, label in self.SKILL_MD_METADATA_FIELDS:
-                    if metadata.get(key):
-                        f.write(f"**{label}:** {metadata[key]}\n\n")
+                self._write_skill_md_metadata(f, metadata)
 
             # When to Use
             f.write("## 💡 When to Use This Skill\n\n")
@@ -441,6 +479,7 @@ class DocumentSkillBuilder(SkillConverter):
             f.write(f"- **Code Blocks**: {self.extracted_data.get('total_code_blocks', 0)}\n")
             f.write(f"- **Images/Diagrams**: {self.extracted_data.get('total_images', 0)}\n")
             f.write(f"- **Tables**: {len(all_tables)}\n")
+            self._write_skill_md_extra_stats(f)
 
             langs = self.extracted_data.get("languages_detected", {})
             if langs:
@@ -455,7 +494,7 @@ class DocumentSkillBuilder(SkillConverter):
             f.write("**Reference Files:**\n\n")
             total_sections = len(categorized)
             for section_num, (_cat_key, cat_data) in enumerate(categorized.items(), 1):
-                cat_file = self._reference_filename(cat_data, section_num, total_sections)
+                cat_file = self._reference_filename(cat_data, section_num, total_sections, _cat_key)
                 f.write(f"- `references/{cat_file}` - {cat_data['title']}\n")
             f.write("\n")
             f.write("See `references/index.md` for complete documentation structure.\n\n")
@@ -467,6 +506,17 @@ class DocumentSkillBuilder(SkillConverter):
         with open(filename, encoding="utf-8") as f:
             line_count = len(f.read().split("\n"))
         print(f"   Generated: {filename} ({line_count} lines)")
+
+    def _write_skill_md_metadata(self, f, metadata):
+        """Body of the SKILL.md "Document Information" block (header and
+        any-metadata gate stay in the base). Override to append extra lines."""
+        for key, label in self.SKILL_MD_METADATA_FIELDS:
+            if metadata.get(key):
+                f.write(f"**{label}:** {metadata[key]}\n\n")
+
+    def _write_skill_md_extra_stats(self, f):
+        """Extra bullet lines inside SKILL.md "Documentation Statistics",
+        written after the Tables count (html adds its file count here)."""
 
     # ── SKILL.md content helpers ──────────────────────────────────────────
 
@@ -510,27 +560,15 @@ class DocumentSkillBuilder(SkillConverter):
         return content
 
     def _format_patterns_from_content(self) -> str:
-        """Extract common patterns from text content."""
+        """Extract common patterns from text content (keywords come from
+        the PATTERN_KEYWORDS class attribute)."""
         patterns = []
-        pattern_keywords = [
-            "getting started",
-            "installation",
-            "configuration",
-            "usage",
-            "api",
-            "examples",
-            "tutorial",
-            "guide",
-            "best practices",
-            "troubleshooting",
-            "faq",
-        ]
 
         for section in self.extracted_data.get("pages", []):
             heading_text = section.get("heading", "").lower()
             sec_num = section.get(self.NUMBER_KEY, 0)
 
-            for keyword in pattern_keywords:
+            for keyword in self.PATTERN_KEYWORDS:
                 if keyword in heading_text:
                     patterns.append(
                         {
@@ -544,7 +582,7 @@ class DocumentSkillBuilder(SkillConverter):
         if not patterns:
             return "*See reference files for detailed content*\n\n"
 
-        content = "*Common documentation patterns found:*\n\n"
+        content = f"*Common {self.DOC_NOUN} patterns found:*\n\n"
         by_type: dict[str, list] = {}
         for pattern in patterns:
             ptype = pattern["type"]
