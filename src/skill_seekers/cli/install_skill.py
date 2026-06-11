@@ -26,7 +26,6 @@ Examples:
     skill-seekers install --config react --dry-run
 """
 
-import argparse
 import asyncio
 import sys
 
@@ -60,9 +59,7 @@ def main(args=None):
         # Single source of flags: the central InstallParser.
         from skill_seekers.cli.parsers.install_parser import InstallParser
 
-        spec = InstallParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = InstallParser().build_standalone()
         args = parser.parse_args()
 
     # Auto-detect target platform if not specified

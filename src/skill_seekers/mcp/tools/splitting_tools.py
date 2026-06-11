@@ -7,7 +7,7 @@ focused skills and generating router/hub skills for managing split documentation
 
 import glob
 
-from skill_seekers.mcp.tools._common import TextContent, run_cli_main
+from skill_seekers.mcp.tools._common import TextContent, run_cli_tool
 
 
 async def split_config(args: dict) -> list[TextContent]:
@@ -66,14 +66,7 @@ async def split_config(args: dict) -> list[TextContent]:
     # its own parser — run_cli_main patches sys.argv for the call.
     from skill_seekers.cli import split_config as split_config_cli
 
-    stdout, stderr, returncode = run_cli_main(split_config_cli.main, argv)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(split_config_cli.main, argv, progress_msg)
 
 
 async def generate_router(args: dict) -> list[TextContent]:
@@ -123,11 +116,4 @@ async def generate_router(args: dict) -> list[TextContent]:
     # through its own parser — run_cli_main patches sys.argv for the call.
     from skill_seekers.cli import generate_router as generate_router_cli
 
-    stdout, stderr, returncode = run_cli_main(generate_router_cli.main, argv)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(generate_router_cli.main, argv, progress_msg)

@@ -13,21 +13,14 @@ This module contains all scraping-related MCP tool implementations:
 Extracted from server.py for better modularity and organization.
 """
 
-import contextvars
 import io
 import json
-import logging
 import os
 import tempfile
 from pathlib import Path
 
 # MCP types - with graceful fallback for testing
-from skill_seekers.mcp.tools._common import TextContent, run_cli_main
-
-
-# Per-call token so concurrent _run_converter calls (which all attach a handler
-# to the shared "skill_seekers" logger) only capture their OWN log records.
-_capture_token: contextvars.ContextVar = contextvars.ContextVar("ss_capture_token", default=None)
+from skill_seekers.mcp.tools._common import TextContent, capture_cli_logs, run_cli_tool
 
 
 def _run_converter(converter, progress_msg: str) -> list:
@@ -41,18 +34,9 @@ def _run_converter(converter, progress_msg: str) -> list:
         List[TextContent] with success/error message.
     """
     log_capture = io.StringIO()
-    token = object()
-    _capture_token.set(token)
-    handler = logging.StreamHandler(log_capture)
-    handler.setLevel(logging.INFO)
-    # Only capture records emitted within THIS call's context. The handler is
-    # attached to the shared "skill_seekers" logger, so without this filter a
-    # concurrent converter tool call's logs would leak into this StringIO.
-    handler.addFilter(lambda _record: _capture_token.get() is token)
-    sk_logger = logging.getLogger("skill_seekers")
-    sk_logger.addHandler(handler)
     try:
-        result = converter.run()
+        with capture_cli_logs(log_capture):
+            result = converter.run()
     except Exception as exc:
         captured = log_capture.getvalue()
         return [
@@ -61,8 +45,6 @@ def _run_converter(converter, progress_msg: str) -> list:
                 text=f"{progress_msg}{captured}\n\n❌ Converter raised an exception:\n{exc}",
             )
         ]
-    finally:
-        sk_logger.removeHandler(handler)
 
     captured = log_capture.getvalue()
     output = progress_msg + captured
@@ -120,14 +102,7 @@ async def estimate_pages_tool(args: dict) -> list[TextContent]:
 
     from skill_seekers.cli import estimate_pages
 
-    stdout, stderr, returncode = run_cli_main(estimate_pages.main, argv)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(estimate_pages.main, argv, progress_msg)
 
 
 async def scrape_docs_tool(args: dict) -> list[TextContent]:
@@ -669,14 +644,7 @@ async def detect_patterns_tool(args: dict) -> list[TextContent]:
     # through its own parser — run_cli_main patches sys.argv for the call.
     from skill_seekers.cli import pattern_recognizer
 
-    stdout, stderr, returncode = run_cli_main(pattern_recognizer.main, argv)
-
-    output_text = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output_text)]
-    else:
-        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(pattern_recognizer.main, argv, progress_msg)
 
 
 async def extract_test_examples_tool(args: dict) -> list[TextContent]:
@@ -762,14 +730,7 @@ async def extract_test_examples_tool(args: dict) -> list[TextContent]:
 
     from skill_seekers.cli import test_example_extractor
 
-    stdout, stderr, returncode = run_cli_main(test_example_extractor.main, argv)
-
-    output_text = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output_text)]
-    else:
-        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(test_example_extractor.main, argv, progress_msg)
 
 
 async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
@@ -848,14 +809,7 @@ async def build_how_to_guides_tool(args: dict) -> list[TextContent]:
     # through its own parser — run_cli_main patches sys.argv for the call.
     from skill_seekers.cli import how_to_guide_builder
 
-    stdout, stderr, returncode = run_cli_main(how_to_guide_builder.main, argv)
-
-    output_text = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output_text)]
-    else:
-        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(how_to_guide_builder.main, argv, progress_msg)
 
 
 async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
@@ -966,14 +920,7 @@ async def extract_config_patterns_tool(args: dict) -> list[TextContent]:
     # through its own parser — run_cli_main patches sys.argv for the call.
     from skill_seekers.cli import config_extractor
 
-    stdout, stderr, returncode = run_cli_main(config_extractor.main, argv)
-
-    output_text = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output_text)]
-    else:
-        return [TextContent(type="text", text=f"{output_text}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(config_extractor.main, argv, progress_msg)
 
 
 # Valid source types for the generic scraper

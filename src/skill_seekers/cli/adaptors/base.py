@@ -211,11 +211,6 @@ class SkillAdaptor(ABC):
         """
         return False
 
-    @staticmethod
-    def _save_skill_md_atomic(skill_md_path: Path, content: str, *, log_prefix: str = "  ") -> None:
-        """Atomically replace SKILL.md with a backup — see save_skill_md_atomic()."""
-        save_skill_md_atomic(skill_md_path, content, log_prefix=log_prefix)
-
     def _read_reference_files(
         self, references_dir: Path, max_chars: int = 200000
     ) -> dict[str, str]:
@@ -339,7 +334,7 @@ class SkillAdaptor(ABC):
 
         print(f"  ✓ Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
-        self._save_skill_md_atomic(skill_md_path, enhanced_content)
+        save_skill_md_atomic(skill_md_path, enhanced_content)
 
         return True
 

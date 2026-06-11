@@ -15,7 +15,13 @@ from pathlib import Path
 # which deliberately stay subprocess-based (they spawn a LOCAL coding agent).
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent, run_cli_main, text_response
+from skill_seekers.mcp.tools._common import (
+    CLI_DIR,
+    TextContent,
+    run_cli_main,
+    run_cli_tool,
+    text_response,
+)
 
 
 # Path to CLI tools
@@ -217,14 +223,7 @@ async def upload_skill_tool(args: dict) -> list[TextContent]:
 
     from skill_seekers.cli import upload_skill
 
-    stdout, stderr, returncode = run_cli_main(upload_skill.main, argv)
-
-    output = progress_msg + stdout
-
-    if returncode == 0:
-        return [TextContent(type="text", text=output)]
-    else:
-        return [TextContent(type="text", text=f"{output}\n\n❌ Error:\n{stderr}")]
+    return run_cli_tool(upload_skill.main, argv, progress_msg)
 
 
 async def enhance_skill_tool(args: dict) -> list[TextContent]:

@@ -469,6 +469,46 @@ class TestEnhanceCommandMain:
 
 
 # ---------------------------------------------------------------------------
+# _run_api_mode — API key selection
+# ---------------------------------------------------------------------------
+
+
+class TestRunApiModeKeySelection:
+    """_run_api_mode resolves the env key for the selected target via the
+    agent_client provider registry (no hand-maintained target→key map)."""
+
+    def _captured_argv(self, monkeypatch, tmp_path, target, env=None):
+        from skill_seekers.cli import enhance_skill
+        from skill_seekers.cli.agent_client import API_PROVIDERS
+        from skill_seekers.cli.enhance_command import _run_api_mode
+
+        for p in API_PROVIDERS:
+            for var in p["env_vars"]:
+                monkeypatch.delenv(var, raising=False)
+        for var, value in (env or {}).items():
+            monkeypatch.setenv(var, value)
+        captured = {}
+        monkeypatch.setattr(enhance_skill, "main", lambda: captured.update(argv=sys.argv.copy()))
+        args = _make_args(skill_directory=str(_make_skill_dir(tmp_path)))
+        assert _run_api_mode(args, target) == 0
+        return captured["argv"]
+
+    def test_registry_key_passed_for_target(self, monkeypatch, tmp_path):
+        env = {"MOONSHOT_API_KEY": "sk-moon-test"}
+        argv = self._captured_argv(monkeypatch, tmp_path, "kimi", env)
+        assert argv[argv.index("--api-key") + 1] == "sk-moon-test"
+
+    def test_aliased_env_var_passed_for_target(self, monkeypatch, tmp_path):
+        env = {"ANTHROPIC_AUTH_TOKEN": "sk-ant-alias"}
+        argv = self._captured_argv(monkeypatch, tmp_path, "claude", env)
+        assert argv[argv.index("--api-key") + 1] == "sk-ant-alias"
+
+    def test_no_key_omits_flag(self, monkeypatch, tmp_path):
+        argv = self._captured_argv(monkeypatch, tmp_path, "claude")
+        assert "--api-key" not in argv
+
+
+# ---------------------------------------------------------------------------
 # Config manager — get_default_agent
 # ---------------------------------------------------------------------------
 

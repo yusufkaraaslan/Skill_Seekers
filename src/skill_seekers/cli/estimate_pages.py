@@ -353,15 +353,12 @@ def list_all_configs():
 
 def main(args=None):
     """Main entry point"""
-    import argparse
 
     from skill_seekers.cli.parsers.estimate_parser import EstimateParser
 
     # Single source of flags: the central EstimateParser. Built even when args
     # is provided (unified-CLI dispatch) because parser.error() is used below.
-    spec = EstimateParser()
-    parser = argparse.ArgumentParser(description=spec.description)
-    spec.add_arguments(parser)
+    parser = EstimateParser().build_standalone()
 
     if args is None:
         args = parser.parse_args()

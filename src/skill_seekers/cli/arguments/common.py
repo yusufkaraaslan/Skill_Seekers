@@ -196,23 +196,6 @@ def add_all_standard_arguments(parser: argparse.ArgumentParser) -> None:
     add_workflow_arguments(parser)
 
 
-def backfill_parser_defaults(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
-    """Backfill defaults for args a module parser defines but ``args`` lacks.
-
-    The central dispatch passes one unified namespace to each command module's
-    ``main(args)``; any flag the module's own parser defines but the central
-    parser doesn't would otherwise raise AttributeError at read time. Single
-    home for the loop (it pokes argparse's private ``_actions``) — previously
-    copy-pasted verbatim across seven command modules.
-
-    NOTE: this only covers *absent* attributes. A dest both parsers define
-    with different defaults is NOT corrected here — fix the central parser.
-    """
-    for action in parser._actions:
-        if action.dest != "help" and not hasattr(args, action.dest):
-            setattr(args, action.dest, action.default)
-
-
 def get_common_argument_names() -> set:
     """Get the set of common argument destination names.
 

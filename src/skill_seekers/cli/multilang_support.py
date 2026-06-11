@@ -411,7 +411,6 @@ class MultiLanguageManager:
 
 def main(args=None):
     """CLI entry point for multi-language support."""
-    import argparse
     from pathlib import Path
 
     from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
@@ -420,9 +419,7 @@ def main(args=None):
         # Single source of flags: the central MultilangParser.
         from skill_seekers.cli.parsers.multilang_parser import MultilangParser
 
-        spec = MultilangParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = MultilangParser().build_standalone()
         args = parser.parse_args()
 
     skill_dir = Path(args.skill_dir)

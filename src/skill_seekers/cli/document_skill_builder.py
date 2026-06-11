@@ -378,6 +378,19 @@ class DocumentSkillBuilder(SkillConverter):
 
     # ── SKILL.md ──────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _frontmatter_value(value: str) -> str:
+        """Quote a YAML frontmatter scalar only when it needs it.
+
+        json.dumps yields a valid double-quoted YAML scalar. Quoting is
+        conditional so safe values keep their historical unquoted form
+        (golden outputs depend on the exact bytes) while a hostile value
+        like "godot: engine" can't corrupt the frontmatter.
+        """
+        if value != value.strip() or any(c in value for c in ":#\"'\n"):
+            return json.dumps(value)
+        return value
+
     def _generate_skill_md(self, categorized):
         """Generate main SKILL.md file."""
         filename = f"{self.skill_dir}/SKILL.md"
@@ -388,8 +401,8 @@ class DocumentSkillBuilder(SkillConverter):
         with open(filename, "w", encoding="utf-8") as f:
             # YAML frontmatter
             f.write("---\n")
-            f.write(f"name: {skill_name}\n")
-            f.write(f"description: {desc}\n")
+            f.write(f"name: {self._frontmatter_value(skill_name)}\n")
+            f.write(f"description: {self._frontmatter_value(desc)}\n")
             f.write("---\n\n")
 
             f.write(f"# {self.name.title()} Documentation Skill\n\n")

@@ -402,7 +402,6 @@ class IncrementalUpdater:
 
 def main(args=None):
     """CLI entry point for incremental updates."""
-    import argparse
     from pathlib import Path
 
     from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
@@ -411,9 +410,7 @@ def main(args=None):
         # Single source of flags: the central UpdateParser.
         from skill_seekers.cli.parsers.update_parser import UpdateParser
 
-        spec = UpdateParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = UpdateParser().build_standalone()
         args = parser.parse_args()
 
     skill_dir = Path(args.skill_dir)

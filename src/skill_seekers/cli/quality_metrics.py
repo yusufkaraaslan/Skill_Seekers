@@ -532,7 +532,6 @@ class QualityAnalyzer:
 
 def main(args=None):
     """CLI entry point for quality metrics."""
-    import argparse
     from pathlib import Path
 
     from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
@@ -541,9 +540,7 @@ def main(args=None):
         # Single source of flags: the central QualityParser.
         from skill_seekers.cli.parsers.quality_parser import QualityParser
 
-        spec = QualityParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = QualityParser().build_standalone()
         args = parser.parse_args()
 
     # Analyze skill

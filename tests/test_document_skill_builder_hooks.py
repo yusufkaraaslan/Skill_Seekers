@@ -9,6 +9,8 @@ to one hook fails with a precise message instead of a tree-wide diff:
   (chat names multi-category files by category key, single → main.md)
 - PATTERN_KEYWORDS / DOC_NOUN drive _format_patterns_from_content
 - DOC_NOUN / RANGE_LABEL drive the index.md title and category ranges
+- _frontmatter_value quotes SKILL.md frontmatter only for YAML-special
+  values (safe values stay unquoted so the golden trees hold)
 """
 
 import json
@@ -101,3 +103,57 @@ class TestDocNounIndexTitle:
         assert PDFToSkillConverter.RANGE_LABEL == "Pages"
         assert DocumentSkillBuilder.RANGE_LABEL == "Sections"
         assert DocumentSkillBuilder.DOC_NOUN == "documentation"
+
+
+class TestFrontmatterQuoting:
+    def test_safe_values_stay_unquoted(self):
+        # Byte-identity with the golden trees depends on this.
+        assert DocumentSkillBuilder._frontmatter_value("golden-word") == "golden-word"
+        assert (
+            DocumentSkillBuilder._frontmatter_value("Use when testing the word golden build")
+            == "Use when testing the word golden build"
+        )
+
+    def test_yaml_special_values_are_json_quoted(self):
+        assert DocumentSkillBuilder._frontmatter_value("godot: engine") == '"godot: engine"'
+        assert DocumentSkillBuilder._frontmatter_value("c# basics") == '"c# basics"'
+        assert DocumentSkillBuilder._frontmatter_value('say "hi"') == '"say \\"hi\\""'
+        assert DocumentSkillBuilder._frontmatter_value("rock'n'roll") == "\"rock'n'roll\""
+        assert DocumentSkillBuilder._frontmatter_value(" padded ") == '" padded "'
+        assert DocumentSkillBuilder._frontmatter_value("two\nlines") == '"two\\nlines"'
+
+    def test_skill_md_frontmatter_quotes_hostile_name(self, tmp_path):
+        converter = HtmlToSkillConverter(
+            {
+                "name": "godot: engine",
+                "html_path": "docs.html",
+                "description": "Engine docs: 3D and scripting",
+                "output_dir": str(tmp_path),
+            }
+        )
+        converter.skill_dir = str(tmp_path)
+        converter.extracted_data = {"pages": [], "metadata": {}}
+        converter._generate_skill_md({})
+
+        lines = (tmp_path / "SKILL.md").read_text(encoding="utf-8").splitlines()
+        assert lines[0] == "---"
+        assert lines[1] == 'name: "godot:-engine"'
+        assert lines[2] == 'description: "Engine docs: 3D and scripting"'
+        assert lines[3] == "---"
+
+    def test_skill_md_frontmatter_keeps_safe_name_unquoted(self, tmp_path):
+        converter = HtmlToSkillConverter(
+            {
+                "name": "godot engine",
+                "html_path": "docs.html",
+                "description": "Engine docs",
+                "output_dir": str(tmp_path),
+            }
+        )
+        converter.skill_dir = str(tmp_path)
+        converter.extracted_data = {"pages": [], "metadata": {}}
+        converter._generate_skill_md({})
+
+        lines = (tmp_path / "SKILL.md").read_text(encoding="utf-8").splitlines()
+        assert lines[1] == "name: godot-engine"
+        assert lines[2] == "description: Engine docs"

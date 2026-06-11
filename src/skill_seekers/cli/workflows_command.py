@@ -263,7 +263,6 @@ def main(argv=None, args=None) -> None:
     Both build their flags from the central WorkflowsParser, so the
     subcommand dest is ``workflows_action`` either way.
     """
-    import argparse
 
     parser = None
     if args is None:
@@ -271,12 +270,10 @@ def main(argv=None, args=None) -> None:
         # subparser dest is ``workflows_action`` in both call styles).
         from skill_seekers.cli.parsers.workflows_parser import WorkflowsParser
 
-        spec = WorkflowsParser()
-        parser = argparse.ArgumentParser(
+        parser = WorkflowsParser().build_standalone(
             prog="skill-seekers-workflows",
             description="Manage enhancement workflow presets",
         )
-        spec.add_arguments(parser)
         args = parser.parse_args(argv)
 
     action = getattr(args, "workflows_action", None)

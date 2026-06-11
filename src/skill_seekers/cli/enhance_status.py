@@ -128,15 +128,12 @@ def watch_status(skill_dir, interval=2):
 
 
 def main(args=None):
-    import argparse
 
     if args is None:
         # Single source of flags: the central EnhanceStatusParser.
         from skill_seekers.cli.parsers.enhance_status_parser import EnhanceStatusParser
 
-        spec = EnhanceStatusParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = EnhanceStatusParser().build_standalone()
         args = parser.parse_args()
 
     # Watch mode

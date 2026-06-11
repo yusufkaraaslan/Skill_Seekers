@@ -1549,17 +1549,18 @@ class DocToSkillConverter(SkillConverter):
 
         # Multi-threaded mode (parallel scraping)
         else:
-            import contextvars
             from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            from skill_seekers.cli.parallel_batches import context_propagating_submit
 
             logger.info("🚀 Starting parallel scraping with %d workers\n", self.workers)
 
-            # Worker threads don't inherit contextvars (unlike asyncio tasks).
-            # Propagate the caller's context so per-call state — e.g. the MCP
-            # server's log-capture token — survives into worker-thread logging.
-            _caller_ctx = contextvars.copy_context()
-
             with ThreadPoolExecutor(max_workers=self.workers) as executor:
+                # Worker threads don't inherit contextvars (unlike asyncio
+                # tasks). Propagate the caller's context so per-call state —
+                # e.g. the MCP server's log-capture token — survives into
+                # worker-thread logging.
+                submit = context_propagating_submit(executor)
                 futures = []
 
                 while self.pending_urls and (unlimited or len(self.visited_urls) < preview_limit):
@@ -1580,7 +1581,7 @@ class DocToSkillConverter(SkillConverter):
                     # Submit batch to executor
                     for url in batch:
                         if unlimited or len(self.visited_urls) <= preview_limit:
-                            future = executor.submit(_caller_ctx.copy().run, self.scrape_page, url)
+                            future = submit(self.scrape_page, url)
                             futures.append(future)
 
                     # Wait for some to complete before submitting more

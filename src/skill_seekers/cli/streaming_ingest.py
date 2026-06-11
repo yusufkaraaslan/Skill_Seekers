@@ -376,7 +376,6 @@ class StreamingIngester:
 
 def main(args=None):
     """CLI entry point for streaming ingestion."""
-    import argparse
 
     from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
 
@@ -384,9 +383,7 @@ def main(args=None):
         # Single source of flags: the central StreamParser.
         from skill_seekers.cli.parsers.stream_parser import StreamParser
 
-        spec = StreamParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = StreamParser().build_standalone()
         args = parser.parse_args()
 
     # Initialize ingester

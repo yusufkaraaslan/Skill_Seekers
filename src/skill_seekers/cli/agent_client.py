@@ -323,11 +323,11 @@ class AgentClient:
         # Explicit override wins. Moonshot/Kimi keys also start with "sk-", so a
         # directly-passed Moonshot key (without MOONSHOT_API_KEY also exported)
         # would otherwise be misclassified as OpenAI and hit the wrong endpoint.
+        # Accepts provider or target names from API_PROVIDERS ("kimi" → "moonshot").
         forced = os.environ.get("SKILL_SEEKER_PROVIDER", "").strip().lower()
-        if forced == "kimi":
-            forced = "moonshot"
-        if forced in ("anthropic", "moonshot", "openai", "google"):
-            return forced
+        for p in API_PROVIDERS:
+            if forced in (p["provider"], p["target"]):
+                return p["provider"]
         if api_key.startswith("sk-ant-"):
             return "anthropic"
         if api_key.startswith("sk-"):

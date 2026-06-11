@@ -16,9 +16,27 @@ hierarchies — their full merge is deferred.
 import contextvars
 import logging
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger(__name__)
+
+
+def context_propagating_submit(executor: ThreadPoolExecutor) -> Callable[..., Future]:
+    """Return a ``submit(fn, *args, **kwargs)`` wrapper for ``executor`` that
+    runs each task in a copy of the context captured at THIS call.
+
+    Worker threads don't inherit contextvars (unlike asyncio tasks), so
+    per-call state — e.g. the MCP server's log-capture token — would be lost
+    in worker-thread logging without this. Each task gets its own copy of the
+    captured context because a Context can only be entered by one thread at a
+    time.
+    """
+    caller_ctx = contextvars.copy_context()
+
+    def submit(fn: Callable, /, *args, **kwargs) -> Future:
+        return executor.submit(caller_ctx.copy().run, fn, *args, **kwargs)
+
+    return submit
 
 
 def run_batches_parallel(
@@ -46,15 +64,10 @@ def run_batches_parallel(
     """
     results: list[list[dict] | None] = [None] * len(batches)  # Preserve order
 
-    # Propagate contextvars into worker threads (threads don't inherit
-    # them), so per-call state like the MCP log-capture token survives.
-    _caller_ctx = contextvars.copy_context()
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all batches
-        future_to_idx = {
-            executor.submit(_caller_ctx.copy().run, worker_fn, batch): idx
-            for idx, batch in enumerate(batches)
-        }
+        # Submit all batches (with contextvars propagated into the workers)
+        submit = context_propagating_submit(executor)
+        future_to_idx = {submit(worker_fn, batch): idx for idx, batch in enumerate(batches)}
 
         # Collect results as they complete
         completed = 0

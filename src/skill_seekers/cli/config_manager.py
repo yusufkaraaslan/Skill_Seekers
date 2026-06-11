@@ -312,16 +312,13 @@ class ConfigManager:
         1. Environment variable
         2. Config file
         """
-        # Check environment first
-        env_map = {
-            "anthropic": "ANTHROPIC_API_KEY",
-            "google": "GOOGLE_API_KEY",
-            "openai": "OPENAI_API_KEY",
-            "moonshot": "MOONSHOT_API_KEY",
-        }
+        # Check environment first — env var names come from the agent_client
+        # provider registry, so key aliases (e.g. ANTHROPIC_AUTH_TOKEN) and
+        # newly registered providers are honored automatically.
+        from skill_seekers.cli.agent_client import API_PROVIDERS
 
-        env_var = env_map.get(provider)
-        if env_var:
+        env_vars = next((p["env_vars"] for p in API_PROVIDERS if p["provider"] == provider), ())
+        for env_var in env_vars:
             env_key = os.getenv(env_var)
             if env_key:
                 return env_key
@@ -507,14 +504,17 @@ class ConfigManager:
 
         print()
 
-        # API Keys
+        # API Keys (provider list and env var names from the agent_client registry)
+        from skill_seekers.cli.agent_client import API_PROVIDERS
+
         print("API Keys:")
-        for provider in ["anthropic", "google", "openai", "moonshot"]:
+        for entry in API_PROVIDERS:
+            provider = entry["provider"]
             key = self.get_api_key(provider)
             status = "✅ Set" if key else "❌ Not set"
             source = ""
             if key:
-                if os.getenv(provider.upper() + "_API_KEY"):
+                if any(os.getenv(var) for var in entry["env_vars"]):
                     source = " (from environment)"
                 else:
                     source = " (from config)"

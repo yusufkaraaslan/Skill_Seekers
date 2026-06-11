@@ -47,7 +47,7 @@ Use this skill when you need to:
 
 **Reference Files:**
 
-- `references/chat_content.md` - Chat Content
+- `references/section_01.md` - Chat Content
 
 See `references/index.md` for complete chat structure.
 

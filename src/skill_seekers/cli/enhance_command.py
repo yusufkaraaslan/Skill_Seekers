@@ -141,17 +141,11 @@ def _run_api_mode(args, target: str) -> int:
     """Delegate to enhance_skill.py (platform adaptor path)."""
     from skill_seekers.cli.enhance_skill import main as enhance_api_main
 
-    api_keys = _get_api_keys()
     api_key = getattr(args, "api_key", None)
     if not api_key:
-        # Explicit key > env var for the selected platform
-        env_map = {
-            "claude": api_keys["claude"],
-            "gemini": api_keys["gemini"],
-            "openai": api_keys["openai"],
-            "kimi": api_keys["kimi"],
-        }
-        api_key = env_map.get(target)
+        # Explicit key > env var for the selected platform (target → key map
+        # comes from the agent_client provider registry).
+        api_key = _get_api_keys().get(target)
 
     # Reconstruct sys.argv for enhance_skill.main()
     argv = [

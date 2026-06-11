@@ -606,6 +606,11 @@ class TestProviderOverride:
     def test_kimi_alias_maps_to_moonshot(self):
         assert AgentClient._detect_provider_from_key("sk-somekey") == "moonshot"
 
+    @patch.dict(os.environ, {"SKILL_SEEKER_PROVIDER": "gemini"}, clear=True)
+    def test_target_alias_maps_to_provider(self):
+        """Target names from API_PROVIDERS are accepted as override aliases."""
+        assert AgentClient._detect_provider_from_key("some-key") == "google"
+
     @patch.dict(os.environ, {}, clear=True)
     def test_sk_key_without_override_still_openai(self):
         assert AgentClient._detect_provider_from_key("sk-somekey") == "openai"

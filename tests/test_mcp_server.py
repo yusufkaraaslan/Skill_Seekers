@@ -208,7 +208,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_cli_main")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_success(self, mock_streaming):
         """Test successful page estimation"""
         # Mock successful in-process run (Phase 5d in-process dispatch)
@@ -225,7 +225,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         # Should also have progress message
         self.assertIn("Estimating page count", result[0].text)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_cli_main")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_with_max_discovery(self, mock_streaming):
         """Test page estimation with custom max_discovery"""
         # Mock successful in-process run (Phase 5d in-process dispatch)
@@ -241,7 +241,7 @@ class TestEstimatePagesTool(unittest.IsolatedAsyncioTestCase):
         self.assertIn("--max-discovery", argv)
         self.assertIn("500", argv)
 
-    @patch("skill_seekers.mcp.tools.scraping_tools.run_cli_main")
+    @patch("skill_seekers.mcp.tools._common.run_cli_main")
     async def test_estimate_pages_error(self, mock_streaming):
         """Test error handling in page estimation"""
         # Mock failed in-process run (Phase 5d in-process dispatch)

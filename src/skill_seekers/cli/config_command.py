@@ -524,15 +524,12 @@ def test_connections():
 
 def main(args=None):
     """Main entry point for config command."""
-    import argparse
 
     if args is None:
         # Single source of flags: the central ConfigParser.
         from skill_seekers.cli.parsers.config_parser import ConfigParser
 
-        spec = ConfigParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = ConfigParser().build_standalone()
         args = parser.parse_args()
 
     config = get_config_manager()

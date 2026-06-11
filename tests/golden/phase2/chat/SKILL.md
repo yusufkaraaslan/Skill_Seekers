@@ -155,8 +155,8 @@ kubectl get pods
 
 **Reference Files:**
 
-- `references/engineering.md` - #engineering
-- `references/random.md` - #random
+- `references/engineering_s1-s2.md` - #engineering
+- `references/random_s3-s3.md` - #random
 
 See `references/index.md` for complete chat structure.
 

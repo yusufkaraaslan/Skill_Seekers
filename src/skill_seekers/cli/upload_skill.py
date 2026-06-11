@@ -17,7 +17,6 @@ Usage:
     skill-seekers upload output/react-openai.zip --target openai
 """
 
-import argparse
 import os
 import sys
 from pathlib import Path
@@ -119,9 +118,7 @@ def main(args=None):
         # delegates to arguments.upload.add_upload_arguments).
         from skill_seekers.cli.parsers.upload_parser import UploadParser
 
-        spec = UploadParser()
-        parser = argparse.ArgumentParser(description=spec.description)
-        spec.add_arguments(parser)
+        parser = UploadParser().build_standalone()
         args = parser.parse_args()
 
     # Auto-detect target platform if not specified

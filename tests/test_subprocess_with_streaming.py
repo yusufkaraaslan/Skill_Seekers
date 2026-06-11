@@ -105,7 +105,8 @@ class TestSharedHelperIsDeduplicated(unittest.TestCase):
 
     def test_migrated_modules_do_not_shell_out(self):
         """Phase 5d: scraping/splitting tools must not import the subprocess
-        helper anymore — they dispatch in-process via _common.run_cli_main."""
+        helper anymore — they dispatch in-process via _common.run_cli_tool
+        (the shaping wrapper over _common.run_cli_main)."""
         from skill_seekers.mcp.tools import _common, scraping_tools, splitting_tools
 
         for module in (scraping_tools, splitting_tools):
@@ -113,7 +114,7 @@ class TestSharedHelperIsDeduplicated(unittest.TestCase):
                 hasattr(module, "run_subprocess_with_streaming"),
                 f"{module.__name__} should no longer use the subprocess helper",
             )
-            self.assertIs(module.run_cli_main, _common.run_cli_main)
+            self.assertIs(module.run_cli_tool, _common.run_cli_tool)
 
 
 if __name__ == "__main__":

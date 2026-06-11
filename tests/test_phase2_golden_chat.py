@@ -13,6 +13,9 @@ truncation), channel summaries, and the empty-export fallback.
 """
 
 import copy
+import re
+
+import pytest
 
 from tests.phase2_golden_utils import assert_matches_golden, build_snapshot
 
@@ -346,3 +349,26 @@ def test_chat_empty_matches_golden(tmp_path):
     """Empty export → 'content' fallback category and section_01.md filename."""
     converter = _make_converter(tmp_path, "golden_chat_empty", "slack", EMPTY_DATA)
     assert_matches_golden(build_snapshot(converter), "chat_empty")
+
+
+@pytest.mark.parametrize(
+    ("name", "platform", "data"),
+    [
+        ("golden_chat", "slack", MULTI_CHANNEL_DATA),
+        ("golden_chat_topics", "discord", TOPIC_DATA),
+        ("golden_chat_single", "slack", SINGLE_CATEGORY_DATA),
+        ("golden_chat_empty", "slack", EMPTY_DATA),
+    ],
+)
+def test_skill_md_reference_links_point_at_real_files(tmp_path, name, platform, data):
+    """Every `references/...` link in SKILL.md must name a file that was
+    actually written — the nav used to derive links from sanitized titles
+    while the writer named files via _reference_filename (DOC-07 drift)."""
+    converter = _make_converter(tmp_path, name, platform, data)
+    snapshot = build_snapshot(converter)
+
+    skill_md = snapshot["SKILL.md"].decode("utf-8")
+    links = re.findall(r"`(references/[^`]+)`", skill_md)
+    assert links, "SKILL.md should link at least references/index.md"
+    missing = [link for link in links if link not in snapshot]
+    assert not missing, f"SKILL.md links to nonexistent files: {missing}"

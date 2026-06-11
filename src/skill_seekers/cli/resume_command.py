@@ -4,7 +4,6 @@ Resume Command for Skill Seekers
 Allows users to resume interrupted scraping jobs from saved progress.
 """
 
-import argparse
 import sys
 
 from .config_manager import get_config_manager
@@ -137,9 +136,7 @@ def main(args=None):
 
     # Single source of flags: the central ResumeParser. Built even when args
     # is provided (unified-CLI dispatch) because print_help() is used below.
-    spec = ResumeParser()
-    parser = argparse.ArgumentParser(description=spec.description)
-    spec.add_arguments(parser)
+    parser = ResumeParser().build_standalone()
 
     if args is None:
         args = parser.parse_args()

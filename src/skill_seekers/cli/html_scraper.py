@@ -26,6 +26,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Comment, Tag
 
 from .document_skill_builder import DocumentSkillBuilder
+from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
 from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 
@@ -868,37 +869,7 @@ class HtmlToSkillConverter(DocumentSkillBuilder):
             Dict with 'headers' (list[str]) and 'rows' (list[list[str]]),
             or None if the table has no meaningful content.
         """
-        headers: list[str] = []
-        rows: list[list[str]] = []
-
-        # Try <thead> first for headers
-        thead = table_elem.find("thead")
-        if thead:
-            header_row = thead.find("tr")
-            if header_row:
-                headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
-
-        # Body rows. Prefer an explicit <tbody>; otherwise take rows directly
-        # under the table but skip <thead> rows STRUCTURALLY (not by value) so a
-        # legitimate body row that duplicates the header text isn't dropped.
-        tbody = table_elem.find("tbody")
-        if tbody is not None:
-            body_rows = tbody.find_all("tr")
-        else:
-            body_rows = [r for r in table_elem.find_all("tr") if r.find_parent("thead") is None]
-        for row in body_rows:
-            cells = [td.get_text(strip=True) for td in row.find_all(["td", "th"])]
-            if cells:
-                rows.append(cells)
-
-        # If no explicit thead, use first row as header
-        if not headers and rows:
-            headers = rows.pop(0)
-
-        if not headers and not rows:
-            return None
-
-        return {"headers": headers, "rows": rows}
+        return _extract_table_from_html(table_elem)
 
     # ------------------------------------------------------------------
     # Image and link extraction

@@ -27,7 +27,6 @@ Example usage:
     python test_example_extractor.py tests/ --min-confidence 0.7
 """
 
-import argparse
 import ast
 import hashlib
 import json
@@ -1134,9 +1133,7 @@ def main(args=None):
     # Single source of flags: the central TestExamplesParser. Built even when
     # args is provided (unified-CLI dispatch) because parser.error() is used
     # below.
-    spec = TestExamplesParser()
-    parser = argparse.ArgumentParser(description=spec.description)
-    spec.add_arguments(parser)
+    parser = TestExamplesParser().build_standalone()
 
     if args is None:
         args = parser.parse_args()

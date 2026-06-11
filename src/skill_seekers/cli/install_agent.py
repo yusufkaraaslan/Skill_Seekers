@@ -23,7 +23,6 @@ Examples:
     skill-seekers install-agent output/react/ --agent cursor --dry-run
 """
 
-import argparse
 import shutil
 import sys
 from difflib import get_close_matches
@@ -357,11 +356,7 @@ def main(args=None) -> int:
         # Single source of flags: the central InstallAgentParser.
         from skill_seekers.cli.parsers.install_agent_parser import InstallAgentParser
 
-        spec = InstallAgentParser()
-        parser = argparse.ArgumentParser(
-            prog="skill-seekers-install-agent", description=spec.description
-        )
-        spec.add_arguments(parser)
+        parser = InstallAgentParser().build_standalone(prog="skill-seekers-install-agent")
         args = parser.parse_args()
 
     # Convert skill directory to Path

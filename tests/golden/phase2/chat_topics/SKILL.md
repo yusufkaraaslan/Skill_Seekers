@@ -62,9 +62,9 @@ Use this skill when you need to:
 
 **Reference Files:**
 
-- `references/setup.md` - Setup
-- `references/troubleshooting.md` - Troubleshooting
-- `references/general_discussion.md` - General Discussion
+- `references/setup_s2-s2.md` - Setup
+- `references/troubleshooting_s1-s1.md` - Troubleshooting
+- `references/general_s3-s3.md` - General Discussion
 
 See `references/index.md` for complete chat structure.
 

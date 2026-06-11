@@ -52,3 +52,24 @@ class SubcommandParser(ABC):
         parser = subparsers.add_parser(self.name, help=self.help, description=self.description)
         self.add_arguments(parser)
         return parser
+
+    def build_standalone(
+        self, prog: str | None = None, description: str | None = None
+    ) -> argparse.ArgumentParser:
+        """Build a standalone top-level parser for a module's ``main()`` path.
+
+        Same single-source flags as create_parser(), without the unified CLI's
+        subparsers machinery.
+
+        Args:
+            prog: Program name override (defaults to argparse's sys.argv[0])
+            description: Description override (defaults to ``self.description``)
+
+        Returns:
+            Configured standalone ArgumentParser
+        """
+        if description is None:
+            description = self.description
+        parser = argparse.ArgumentParser(prog=prog, description=description)
+        self.add_arguments(parser)
+        return parser

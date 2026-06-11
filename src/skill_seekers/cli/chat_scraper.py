@@ -1636,16 +1636,14 @@ class ChatToSkillConverter(DocumentSkillBuilder):
                 f.write("\n")
 
             # Navigation
-            # NOTE: these links are derived from sanitized TITLES, while the
-            # actual reference files are named by category key/range via
-            # _reference_filename — so they can drift from the real filenames
-            # (e.g. "#channel" titles). Preserved as-is: golden trees require
-            # byte-identical output. Fix tracked for a goldens-refresh cycle.
             f.write("## 🗺️ Navigation\n\n")
             f.write("**Reference Files:**\n\n")
-            for cd in categorized.values():
-                cat_file = self._sanitize_filename(cd["title"])
-                f.write(f"- `references/{cat_file}.md` - {cd['title']}\n")
+            # Link via the shared filename helper so the nav always matches
+            # the reference file the writer creates (DOC-07).
+            total_cats = len(categorized)
+            for section_num, (cat_key, cd) in enumerate(categorized.items(), 1):
+                cat_file = self._reference_filename(cd, section_num, total_cats, cat_key)
+                f.write(f"- `references/{cat_file}` - {cd['title']}\n")
             f.write("\nSee `references/index.md` for complete chat structure.\n\n")
 
             # Footer

@@ -567,9 +567,9 @@ def generate_config_with_ai(
         except Exception as e:
             logger.warning("AI-generated config failed validation: %s", e)
             continue
-        # The community submission flow (submit_config_tool) additionally
-        # requires the name to match ^[a-zA-Z0-9_-]+$. Reject here so we
-        # don't silently write a config that can't be published.
+        # The community submission flow (services.source_manager.submit_config)
+        # additionally requires the name to match ^[a-zA-Z0-9_-]+$. Reject here
+        # so we don't silently write a config that can't be published.
         name = str(data.get("name", ""))
         if not re.match(r"^[a-zA-Z0-9_-]+$", name):
             logger.warning(
@@ -621,6 +621,14 @@ def generate_config_with_ai(
 # Re-imported at module level so tests can monkeypatch
 # ``skill_seekers.cli.scan_command.resolve_config_path``.
 from skill_seekers.cli.config_fetcher import resolve_config_path  # noqa: E402
+
+# Community-registry submission engine — shared with the MCP submit_config
+# tool via the services layer (CLI must not import skill_seekers.mcp).
+from skill_seekers.services.source_manager import (  # noqa: E402
+    REGISTRY_REPO,
+    find_existing_submission,
+    submit_config,
+)
 
 
 def _config_filename_for(detection: Detection) -> str:
@@ -881,7 +889,6 @@ def resolve_or_generate(
 
 _SUBMIT_TIMEOUT_SECONDS = 30
 _SUBMIT_RETRY_DELAYS = (5, 15)  # seconds between retries
-_REGISTRY_REPO = "yusufkaraaslan/skill-seekers-configs"
 
 
 async def _find_existing_issue(config_name: str, github_token: str | None) -> str | None:
@@ -890,14 +897,10 @@ async def _find_existing_issue(config_name: str, github_token: str | None) -> st
     Returns the issue URL if found; None on no match, no token, or any error.
     Idempotency guard — prevents opening duplicate submission issues when the
     user runs scan repeatedly. Delegates to the shared (exact-title, bounded)
-    check in mcp.tools.source_tools so this and the MCP submit tool can't
+    check in services.source_manager so this and the MCP submit tool can't
     disagree on what counts as a duplicate.
     """
     if not github_token:
-        return None
-    try:
-        from skill_seekers.mcp.tools.source_tools import find_existing_submission
-    except Exception:
         return None
 
     import asyncio
@@ -907,22 +910,13 @@ async def _find_existing_issue(config_name: str, github_token: str | None) -> st
 
 
 async def _submit_config(config_path: Path) -> dict:
-    """Async wrapper around the MCP `submit_config_tool` with timeout + retry.
+    """Async wrapper around the shared ``submit_config`` service with timeout + retry.
 
     Retries on transient failures (rate-limit / 5xx) with backoff per
     ``_SUBMIT_RETRY_DELAYS``. Per-attempt timeout from ``_SUBMIT_TIMEOUT_SECONDS``.
-    Returns a dict ``{ok, message, url?}``. Raises ``RuntimeError`` with an
-    actionable message on import failure.
+    Returns a dict ``{ok, message}``.
     """
     import asyncio
-
-    try:
-        from skill_seekers.mcp.tools.source_tools import submit_config_tool
-    except Exception as e:
-        raise RuntimeError(
-            "MCP extras unavailable — `pip install -e .[mcp]` to enable "
-            f"community submission ({type(e).__name__}: {e})"
-        ) from e
 
     last_error: Exception | None = None
     delays = (0,) + _SUBMIT_RETRY_DELAYS  # first attempt fires immediately
@@ -930,8 +924,10 @@ async def _submit_config(config_path: Path) -> dict:
         if delay:
             await asyncio.sleep(delay)
         try:
+            # The service is sync (PyGithub) — run in a thread so the
+            # per-attempt timeout can actually fire.
             result = await asyncio.wait_for(
-                submit_config_tool({"config_path": str(config_path)}),
+                asyncio.to_thread(submit_config, config_path=str(config_path)),
                 timeout=_SUBMIT_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:
@@ -950,15 +946,12 @@ async def _submit_config(config_path: Path) -> dict:
             )
             continue
 
-        if result and hasattr(result[0], "text"):
-            text = result[0].text
-            ok = not text.lstrip().startswith("❌")
-            # Transient failure? Retry. Permanent failure? Return immediately.
-            transient = any(s in text.lower() for s in ("rate limit", "503", "502", "504"))
-            if not ok and transient and attempt < len(delays) - 1:
-                continue
-            return {"ok": ok, "message": text}
-        last_error = RuntimeError("Empty response from submit_config_tool")
+        # Transient failure? Retry. Permanent failure? Return immediately.
+        text = result["message"]
+        transient = any(s in text.lower() for s in ("rate limit", "503", "502", "504"))
+        if not result["ok"] and transient and attempt < len(delays) - 1:
+            continue
+        return result
 
     # All retries exhausted.
     raise RuntimeError(
@@ -1017,7 +1010,7 @@ async def maybe_publish(generated_paths: list[Path], *, skip_prompt: bool = Fals
 
         print()
         print(f"📤 Submit '{name}' to the community config registry?")
-        print(f"   ({path.name} — opens an issue at {_REGISTRY_REPO})")
+        print(f"   ({path.name} — opens an issue at {REGISTRY_REPO})")
         try:
             answer = (await _prompt_async("   [y/N] ")).strip().lower()
         except (EOFError, KeyboardInterrupt):

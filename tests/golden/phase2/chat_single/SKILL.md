@@ -53,7 +53,7 @@ Use this skill when you need to:
 
 **Reference Files:**
 
-- `references/general_discussion.md` - General Discussion
+- `references/main.md` - General Discussion
 
 See `references/index.md` for complete chat structure.
 
