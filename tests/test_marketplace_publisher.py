@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skill_seekers.mcp.marketplace_publisher import MarketplacePublisher
+from skill_seekers.services.marketplace_publisher import MarketplacePublisher
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ class TestPublishErrors:
 
     @patch.dict(os.environ, {}, clear=True)
     def test_publish_missing_token(self, skill_dir, temp_config_dir):
-        from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(temp_config_dir))
         manager.add_marketplace(
@@ -195,7 +195,8 @@ class TestPublishErrors:
         publisher.git_repo = MagicMock()
         with (
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager", return_value=manager
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
+                return_value=manager,
             ),
             pytest.raises(RuntimeError, match="Set NONEXISTENT_TOKEN"),
         ):
@@ -203,7 +204,7 @@ class TestPublishErrors:
 
     def test_publish_plugin_already_exists(self, skill_dir, tmp_path, temp_config_dir):
         import git as gitmodule
-        from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(temp_config_dir))
         manager.add_marketplace(
@@ -232,7 +233,7 @@ class TestPublishErrors:
         with (
             patch.dict(os.environ, {"TEST_TOKEN": "fake-token"}),
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager",
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
                 return_value=manager,
             ),
             patch.object(gitmodule.Repo, "clone_from", side_effect=fake_clone),
@@ -241,14 +242,15 @@ class TestPublishErrors:
             publisher.publish(skill_dir=skill_dir, marketplace_name="test")
 
     def test_publish_marketplace_not_found(self, skill_dir, temp_config_dir):
-        from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(temp_config_dir))
         publisher = MarketplacePublisher.__new__(MarketplacePublisher)
         publisher.git_repo = MagicMock()
         with (
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager", return_value=manager
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
+                return_value=manager,
             ),
             pytest.raises(KeyError, match="not found"),
         ):
@@ -324,7 +326,7 @@ class TestPublishSuccess:
         # Register marketplace with file:// URL
         config_dir = tmp_path / "config"
         config_dir.mkdir()
-        from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(config_dir))
         manager.add_marketplace(
@@ -340,7 +342,7 @@ class TestPublishSuccess:
         cache_dir.mkdir()
 
         publisher = MarketplacePublisher.__new__(MarketplacePublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
@@ -348,7 +350,7 @@ class TestPublishSuccess:
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "not-needed-for-file-protocol"}),
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager",
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
                 return_value=manager,
             ),
         ):
@@ -402,7 +404,7 @@ class TestPublishSuccess:
 
         config_dir = tmp_path / "config"
         config_dir.mkdir()
-        from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         manager = MarketplaceManager(config_dir=str(config_dir))
         manager.add_marketplace(
@@ -416,14 +418,14 @@ class TestPublishSuccess:
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
         publisher = MarketplacePublisher.__new__(MarketplacePublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
             patch(
-                "skill_seekers.mcp.marketplace_publisher.MarketplaceManager",
+                "skill_seekers.services.marketplace_publisher.MarketplaceManager",
                 return_value=manager,
             ),
         ):

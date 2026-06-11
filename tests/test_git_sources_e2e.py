@@ -21,8 +21,8 @@ from pathlib import Path
 import git
 import pytest
 
-from skill_seekers.mcp.git_repo import GitConfigRepo
-from skill_seekers.mcp.source_manager import SourceManager
+from skill_seekers.services.git_repo import GitConfigRepo
+from skill_seekers.services.source_manager import SourceManager
 
 # Check if MCP is available
 try:

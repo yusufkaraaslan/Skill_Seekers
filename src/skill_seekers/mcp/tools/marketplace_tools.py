@@ -14,7 +14,7 @@ from skill_seekers.mcp.tools._common import TextContent
 
 async def add_marketplace_tool(args: dict) -> list[TextContent]:
     """Register a plugin marketplace repository."""
-    from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+    from skill_seekers.services.marketplace_manager import MarketplaceManager
 
     name = args.get("name")
     git_url = args.get("git_url")
@@ -73,7 +73,7 @@ Usage:
 
 async def list_marketplaces_tool(args: dict) -> list[TextContent]:
     """List all registered plugin marketplace repositories."""
-    from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+    from skill_seekers.services.marketplace_manager import MarketplaceManager
 
     enabled_only = args.get("enabled_only", False)
 
@@ -130,7 +130,7 @@ To add a marketplace:
 
 async def remove_marketplace_tool(args: dict) -> list[TextContent]:
     """Remove a registered plugin marketplace."""
-    from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+    from skill_seekers.services.marketplace_manager import MarketplaceManager
 
     name = args.get("name")
 
@@ -165,7 +165,7 @@ Available marketplaces: {", ".join(available) if available else "none"}
 
 async def publish_to_marketplace_tool(args: dict) -> list[TextContent]:
     """Publish a packaged skill to a plugin marketplace repository."""
-    from skill_seekers.mcp.marketplace_publisher import MarketplacePublisher
+    from skill_seekers.services.marketplace_publisher import MarketplacePublisher
 
     skill_dir = args.get("skill_dir")
     marketplace = args.get("marketplace")

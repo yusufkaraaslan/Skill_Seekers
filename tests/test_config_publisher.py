@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from skill_seekers.mcp.config_publisher import ConfigPublisher, detect_category
+from skill_seekers.services.config_publisher import ConfigPublisher, detect_category
 
 
 def _get_default_branch(repo_path):
@@ -147,7 +147,7 @@ class TestPublishErrors:
         publisher.git_repo = MagicMock()
 
         with (
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
             pytest.raises(RuntimeError, match="NONEXISTENT_TOKEN"),
         ):
@@ -167,7 +167,7 @@ class TestPublishErrors:
         publisher.git_repo = MagicMock()
 
         with (
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
             pytest.raises(ValueError, match="not found"),
         ):
@@ -211,13 +211,13 @@ class TestPublishErrors:
         cache_dir.mkdir()
 
         publisher = ConfigPublisher.__new__(ConfigPublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "fake-token"}),
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
             pytest.raises(ValueError, match="already exists"),
         ):
@@ -263,13 +263,13 @@ class TestPublishSuccess:
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
         publisher = ConfigPublisher.__new__(ConfigPublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "not-needed-for-file-protocol"}),
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
         ):
             result = publisher.publish(
@@ -335,13 +335,13 @@ class TestPublishSuccess:
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
         publisher = ConfigPublisher.__new__(ConfigPublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
         ):
             result = publisher.publish(
@@ -389,13 +389,13 @@ class TestPublishSuccess:
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
         publisher = ConfigPublisher.__new__(ConfigPublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
         with (
             patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
-            patch("skill_seekers.mcp.source_manager.SourceManager", return_value=mock_manager),
+            patch("skill_seekers.services.source_manager.SourceManager", return_value=mock_manager),
             patch("skill_seekers.cli.config_validator.validate_config", return_value=None),
         ):
             result = publisher.publish(
@@ -430,7 +430,7 @@ class TestPublishSuccess:
         cache_dir = tmp_path / "cache"
         cache_dir.mkdir()
         publisher = ConfigPublisher.__new__(ConfigPublisher)
-        from skill_seekers.mcp.git_repo import GitConfigRepo
+        from skill_seekers.services.git_repo import GitConfigRepo
 
         publisher.git_repo = GitConfigRepo(cache_dir=str(cache_dir))
 
@@ -440,7 +440,7 @@ class TestPublishSuccess:
             with (
                 patch.dict(os.environ, {"DUMMY_TOKEN": "x"}),
                 patch(
-                    "skill_seekers.mcp.source_manager.SourceManager",
+                    "skill_seekers.services.source_manager.SourceManager",
                     return_value=mock_manager,
                 ),
                 patch("skill_seekers.cli.config_validator.validate_config", return_value=None),

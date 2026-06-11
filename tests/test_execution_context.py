@@ -5,9 +5,11 @@ of truth for all configuration in Skill Seekers.
 """
 
 import argparse
+import contextvars
 import json
 import os
 import tempfile
+import threading
 
 import pytest
 
@@ -466,6 +468,115 @@ class TestExecutionContextOverride:
 
         # Should still be restored
         assert ExecutionContext.get().enhancement.level == 2
+
+    def test_override_does_not_change_is_initialized(self):
+        """An active override must not affect is_initialized() semantics."""
+        ctx = ExecutionContext.get()  # auto-init, not explicit initialize()
+        assert ExecutionContext.is_initialized() is False
+
+        with ctx.override(enhancement__level=3):
+            assert ExecutionContext.is_initialized() is False
+
+        ExecutionContext.reset()
+        ExecutionContext.initialize(args=argparse.Namespace(name="explicit"))
+        with ExecutionContext.get().override(enhancement__level=3):
+            assert ExecutionContext.is_initialized() is True
+
+    def test_nested_overrides_stack_and_unwind(self):
+        """Inner override builds on the outer one and unwinds cleanly."""
+        args = argparse.Namespace(name="base", enhance_level=2)
+        ExecutionContext.initialize(args=args)
+
+        with ExecutionContext.get().override(enhancement__level=3, output__name="outer"):
+            assert ExecutionContext.get().enhancement.level == 3
+            assert ExecutionContext.get().output.name == "outer"
+
+            # Inner override built from the currently-visible context (get()),
+            # so it sees and inherits the outer override's values.
+            with ExecutionContext.get().override(enhancement__level=1):
+                inner = ExecutionContext.get()
+                assert inner.enhancement.level == 1
+                assert inner.output.name == "outer"  # inherited from outer
+
+            # Unwinding the inner override restores the outer one
+            assert ExecutionContext.get().enhancement.level == 3
+            assert ExecutionContext.get().output.name == "outer"
+
+        # Unwinding the outer override restores the base singleton
+        assert ExecutionContext.get().enhancement.level == 2
+        assert ExecutionContext.get().output.name == "base"
+
+    def test_concurrent_thread_overrides_are_isolated(self):
+        """Two threads holding different overrides each read their OWN values.
+
+        Overrides are context-local (contextvars), so concurrent overrides no
+        longer clobber each other through the global singleton. Threads must
+        be launched via copy_context().run() to carry their override in.
+        """
+        args = argparse.Namespace(name="base", enhance_level=2)
+        ExecutionContext.initialize(args=args)
+
+        barrier = threading.Barrier(2, timeout=10)
+        results: dict[str, int] = {}
+        errors: list[BaseException] = []
+
+        def worker(key: str, level: int) -> None:
+            try:
+                with ExecutionContext.get().override(enhancement__level=level):
+                    barrier.wait()  # force both overrides to be active at once
+                    results[key] = ExecutionContext.get().enhancement.level
+                    barrier.wait()  # hold the override until both have read
+            except BaseException as e:  # noqa: BLE001 - surface to main thread
+                errors.append(e)
+
+        threads = [
+            threading.Thread(target=contextvars.copy_context().run, args=(worker, "a", 3)),
+            threading.Thread(target=contextvars.copy_context().run, args=(worker, "b", 0)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=15)
+
+        assert not errors, f"Worker errors: {errors}"
+        assert results == {"a": 3, "b": 0}
+        # Base singleton untouched after both overrides exit
+        assert ExecutionContext.get().enhancement.level == 2
+
+    def test_override_invisible_without_copy_context(self):
+        """A thread started WITHOUT copy_context() sees the base singleton.
+
+        This documents the propagation contract: contextvars flow into asyncio
+        tasks automatically, but into threads only via copy_context().run().
+        Under the old global-mutation implementation the override leaked into
+        every thread; that visibility was the cross-talk bug. The override now
+        deliberately stays invisible to plainly-started threads.
+        """
+        args = argparse.Namespace(name="base", enhance_level=2)
+        ExecutionContext.initialize(args=args)
+
+        result: dict[str, int] = {}
+
+        with ExecutionContext.get().override(enhancement__level=3):
+
+            def plain_worker() -> None:
+                result["level"] = ExecutionContext.get().enhancement.level
+
+            t = threading.Thread(target=plain_worker)  # no copy_context()
+            t.start()
+            t.join(timeout=15)
+
+        assert result["level"] == 2  # base value, not the override's 3
+
+    def test_override_returns_reusable_context_manager_shape(self):
+        """Callers (unified_scraper) assign override() to a var, then `with`."""
+        ExecutionContext.initialize(args=argparse.Namespace(name="base", enhance_level=2))
+
+        doc_ctx = ExecutionContext.get().override(output__name="sub_docs")
+        with doc_ctx as temp:
+            assert temp.output.name == "sub_docs"
+            assert ExecutionContext.get() is temp
+        assert ExecutionContext.get().output.name == "base"
 
 
 class TestExecutionContextValidation:

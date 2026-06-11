@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from skill_seekers.mcp.marketplace_manager import MarketplaceManager
+from skill_seekers.services.marketplace_manager import MarketplaceManager
 
 
 @pytest.fixture

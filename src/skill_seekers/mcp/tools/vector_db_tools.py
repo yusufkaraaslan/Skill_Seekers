@@ -10,17 +10,13 @@ Provides MCP tools for exporting skills to 4 vector databases:
 Each tool provides a direct interface to its respective vector database adaptor.
 """
 
-import sys
 from pathlib import Path
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import TextContent
 
-
-# Path to CLI adaptors
-sys.path.insert(0, str(CLI_DIR))
 
 try:
-    from adaptors import get_adaptor
+    from skill_seekers.cli.adaptors import get_adaptor
 except ImportError:
     get_adaptor = None  # Will handle gracefully below
 

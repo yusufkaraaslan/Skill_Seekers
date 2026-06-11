@@ -22,13 +22,12 @@ _TEXTCONTENT_MODULES = [
     "source_tools",
 ]
 
-# Modules that actually use CLI_DIR (marketplace_tools and scraping_tools do not).
+# Modules that actually use CLI_DIR — only the ones that still invoke CLI
+# scripts via subprocess. config_tools/vector_db_tools/source_tools switched
+# to absolute `skill_seekers.cli.*` imports (Phase 5a) and no longer need it.
 _CLI_DIR_MODULES = [
     "packaging_tools",
     "splitting_tools",
-    "config_tools",
-    "vector_db_tools",
-    "source_tools",
 ]
 
 

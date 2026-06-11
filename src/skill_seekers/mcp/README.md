@@ -422,12 +422,12 @@ mcp/
 ├── server_fastmcp.py       # Main MCP server (FastMCP, 40 tools)
 ├── server.py               # Server entry point
 ├── server_legacy.py        # Legacy server
-├── source_manager.py       # Config source CRUD
 ├── agent_detector.py       # Environment/agent detection
-├── git_repo.py             # Community config git repos
-├── marketplace_publisher.py # Publish skills to marketplace repos
-├── marketplace_manager.py  # Marketplace registry management
-├── config_publisher.py     # Push configs to source repos
+├── source_manager.py       # Back-compat shim → skill_seekers.services.source_manager
+├── git_repo.py             # Back-compat shim → skill_seekers.services.git_repo
+├── marketplace_publisher.py # Back-compat shim → skill_seekers.services.marketplace_publisher
+├── marketplace_manager.py  # Back-compat shim → skill_seekers.services.marketplace_manager
+├── config_publisher.py     # Back-compat shim → skill_seekers.services.config_publisher
 ├── tools/                  # Tool implementations by category
 │   ├── config_tools.py
 │   ├── marketplace_tools.py

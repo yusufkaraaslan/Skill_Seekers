@@ -13,7 +13,7 @@
 | 2 — DocumentSkillBuilder | **done** (2026-06-11) | `refactor/phase-2-document-skill-builder` |
 | 3 — Enhancement consolidation | **done** (2026-06-11; 3.1 deferred) | `refactor/phase-3-enhancement-consolidation` |
 | 4 — UnifiedScraper conformance | **done** (2026-06-11; 4.1 deferred) | `refactor/phase-3-enhancement-consolidation` (same branch) |
-| 5 — Config / dispatch / MCP platform | pending | |
+| 5 — Config / dispatch / MCP platform | **5a+5b done** (2026-06-11); 5c/5d remaining | `refactor/phase-3-enhancement-consolidation` (same branch) |
 
 Phase 1 notes: all 5 parser drifts fixed + a programmatic drift-guard test
 (`tests/test_cli_parsers.py::TestCentralModuleParserSync`) that fails if any
@@ -178,6 +178,36 @@ Deferred to **Phase 4.1**:
 4. Bring GitHubToSkillConverter and UnifiedSkillBuilder into the
    SkillConverter hierarchy (or make them explicit builder strategies the
    base invokes).
+
+### Phase 5 results so far (2026-06-11)
+
+**5a — MCP services layer + import hygiene (done):**
+- New `src/skill_seekers/services/` package: marketplace_manager,
+  marketplace_publisher, config_publisher (the ONLY category-detection
+  logic), source_manager, git_repo — importable by CLI and MCP alike;
+  a regression test proves importing services never loads skill_seekers.mcp.
+- Back-compat shims at the old mcp/ paths (named re-exports, identity
+  tests); 29 import sites updated; patch targets retargeted.
+- All 7 sys.path.insert hacks in mcp/ removed (incl. server_legacy);
+  server_fastmcp's 100-line import fallback collapsed to one absolute
+  import block. CLI_DIR remains only where subprocess tools still need
+  script paths (goes away with 5d).
+
+**5b — contextvars ExecutionContext.override (done):**
+- override() activates via a ContextVar layered over the unchanged base
+  singleton — concurrent threads/asyncio tasks no longer clobber each
+  other's overrides; nesting stacks; exceptions restore; is_initialized()
+  semantics unchanged. Thread propagation contract documented
+  (copy_context, same pattern as the MCP log capture). +6 tests.
+
+**Remaining (5c/5d — the two big migrations):**
+- 5c: finish COMMAND_CLASSES migration for the ~14 legacy commands with a
+  single argument registry (kills the Phase-1 drift class permanently);
+  standardize exit codes.
+- 5d: MCP entry-point ExecutionContext initialization (request params →
+  config file → ConfigManager → defaults), replace the 11 subprocess tools
+  with in-process dispatch, declarative per-source-type config models
+  replacing create_command._build_config's if/elif chain.
 
 ## Phase 5 — Platform unification: config, dispatch, MCP (medium)
 

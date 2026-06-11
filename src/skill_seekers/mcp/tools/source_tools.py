@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 
 # MCP types (imported conditionally)
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent, text_response
+from skill_seekers.mcp.tools._common import TextContent, text_response
 
 
 import httpx
@@ -85,8 +85,8 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with fetch results or config list
     """
-    from skill_seekers.mcp.git_repo import GitConfigRepo
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.git_repo import GitConfigRepo
+    from skill_seekers.services.source_manager import SourceManager
 
     config_name = args.get("config_name")
     destination = args.get("destination", "configs")
@@ -401,11 +401,7 @@ async def submit_config_tool(args: dict) -> list[TextContent]:
 
     # Import config validator
     try:
-        import sys
-        from pathlib import Path
-
-        sys.path.insert(0, str(CLI_DIR))
-        from config_validator import ConfigValidator
+        from skill_seekers.cli.config_validator import ConfigValidator
     except ImportError:
         ConfigValidator = None
 
@@ -675,7 +671,7 @@ async def add_config_source_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with registration results
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
     git_url = args.get("git_url")
@@ -752,7 +748,7 @@ async def list_config_sources_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with source list
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     enabled_only = args.get("enabled_only", False)
 
@@ -818,7 +814,7 @@ async def remove_config_source_tool(args: dict) -> list[TextContent]:
     Returns:
         List of TextContent with removal results
     """
-    from skill_seekers.mcp.source_manager import SourceManager
+    from skill_seekers.services.source_manager import SourceManager
 
     name = args.get("name")
 
@@ -895,7 +891,7 @@ async def push_config_tool(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text="❌ Missing required parameter: source_name")]
 
     try:
-        from skill_seekers.mcp.config_publisher import ConfigPublisher
+        from skill_seekers.services.config_publisher import ConfigPublisher
 
         publisher = ConfigPublisher()
         result = publisher.publish(
