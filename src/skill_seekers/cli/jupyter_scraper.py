@@ -30,6 +30,7 @@ except ImportError:
 
 from .skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality
+from skill_seekers.cli.scraper_utils import reference_filename
 
 logger = logging.getLogger(__name__)
 
@@ -213,8 +214,8 @@ class JupyterToSkillConverter(SkillConverter):
         self.description = (
             config.get("description") or f"Use when referencing {self.name} notebook documentation"
         )
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
         self.categories = config.get("categories", {})
         self.extracted_data: dict | None = None
 
@@ -751,16 +752,8 @@ class JupyterToSkillConverter(SkillConverter):
 
     def _ref_filename(self, sections: list[dict], section_num: int, total_sections: int) -> str:
         """Determine the reference file path for a category."""
-        nb_base = self._nb_basename()
-        if sections:
-            sec_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
-            if total_sections == 1:
-                name = nb_base if nb_base else "main"
-                return f"{self.skill_dir}/references/{name}.md"
-            sec_range = f"s{min(sec_nums)}-s{max(sec_nums)}"
-            base = nb_base or "section"
-            return f"{self.skill_dir}/references/{base}_{sec_range}.md"
-        return f"{self.skill_dir}/references/section_{section_num:02d}.md"
+        basename = reference_filename(sections, section_num, total_sections, self._nb_basename())
+        return f"{self.skill_dir}/references/{basename}"
 
     def _generate_reference_file(
         self, _cat_key: str, cat_data: dict, section_num: int, total_sections: int

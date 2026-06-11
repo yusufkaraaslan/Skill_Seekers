@@ -243,8 +243,7 @@ class DocToSkillConverter(SkillConverter):
         self.dry_run = dry_run or bool(config.get("dry_run", False))
         self.resume = resume or bool(config.get("resume", False))
 
-        # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        # Paths — skill_dir is resolved once in SkillConverter.__init__
         self.data_dir = f"{self.skill_dir}_data"
         self.checkpoint_file = f"{self.data_dir}/checkpoint.json"
 
@@ -322,8 +321,12 @@ class DocToSkillConverter(SkillConverter):
 
         Applies :func:`sanitize_url` to percent-encode square brackets before
         enqueueing, preventing ``Invalid IPv6 URL`` errors on fetch (see #284).
+        Also applies :func:`_normalize_url` so every discovery path — including
+        dry-run, which bypasses extract_content's normalization — dedupes
+        tracking-param variants (?utm_*, fbclid, …) the same way the real
+        crawl does.
         """
-        url = sanitize_url(url)
+        url = _normalize_url(sanitize_url(url))
         if url not in self.visited_urls and url not in self._enqueued_urls:
             self._enqueued_urls.add(url)
             self.pending_urls.append(url)
@@ -1546,9 +1549,15 @@ class DocToSkillConverter(SkillConverter):
 
         # Multi-threaded mode (parallel scraping)
         else:
+            import contextvars
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
             logger.info("🚀 Starting parallel scraping with %d workers\n", self.workers)
+
+            # Worker threads don't inherit contextvars (unlike asyncio tasks).
+            # Propagate the caller's context so per-call state — e.g. the MCP
+            # server's log-capture token — survives into worker-thread logging.
+            _caller_ctx = contextvars.copy_context()
 
             with ThreadPoolExecutor(max_workers=self.workers) as executor:
                 futures = []
@@ -1571,7 +1580,7 @@ class DocToSkillConverter(SkillConverter):
                     # Submit batch to executor
                     for url in batch:
                         if unlimited or len(self.visited_urls) <= preview_limit:
-                            future = executor.submit(self.scrape_page, url)
+                            future = executor.submit(_caller_ctx.copy().run, self.scrape_page, url)
                             futures.append(future)
 
                     # Wait for some to complete before submitting more
@@ -1876,8 +1885,6 @@ class DocToSkillConverter(SkillConverter):
                 :CONTENT_PREVIEW_LENGTH
             ]  # Check first N chars for categorization
 
-            categorized = False
-
             # Score every category, then assign to the HIGHEST-scoring one (not
             # the first to cross the threshold — that made categorization depend
             # on config dict order and frequently filed pages under a weak match).
@@ -1897,9 +1904,7 @@ class DocToSkillConverter(SkillConverter):
             if scores:
                 best_cat = max(scores, key=lambda c: scores[c])
                 categories[best_cat].append(page)
-                categorized = True
-
-            if not categorized:
+            else:
                 categories["other"].append(page)
 
         # Remove empty categories
@@ -2548,7 +2553,7 @@ def _run_enhancement(
     """Run enhancement using context settings."""
     from pathlib import Path
 
-    skill_dir = config.get("output_dir") or f"output/{config['name']}"
+    skill_dir = SkillConverter.resolve_skill_dir(config, config["name"])
 
     logger.info("\n" + "=" * 60)
     logger.info(f"🤖 Enhancing SKILL.md (level {ctx.enhancement.level})")

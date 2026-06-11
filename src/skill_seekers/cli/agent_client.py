@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -80,14 +81,46 @@ DEFAULT_MODELS = {
     "openai": "gpt-4o",
 }
 
-# API key env var → provider mapping
-API_KEY_MAP = {
-    "ANTHROPIC_API_KEY": "anthropic",
-    "ANTHROPIC_AUTH_TOKEN": "anthropic",
-    "MOONSHOT_API_KEY": "moonshot",
-    "GOOGLE_API_KEY": "google",
-    "OPENAI_API_KEY": "openai",
-}
+# Ordered provider registry — THE single home for which API providers exist,
+# which env vars hold their keys, and their auto-detection priority. Consumed
+# by enhance_command (mode picking) and enhance_skill_local (target detection);
+# a provider forgotten at a call site was exactly the ENH-12 bug. Add new
+# providers HERE (plus an _init_api_client branch), not at call sites.
+# "target" is the platform name the enhance CLI / adaptors use.
+API_PROVIDERS: tuple[dict[str, Any], ...] = (
+    {
+        "provider": "anthropic",
+        "target": "claude",
+        "env_vars": ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"),
+    },
+    {"provider": "google", "target": "gemini", "env_vars": ("GOOGLE_API_KEY",)},
+    {"provider": "openai", "target": "openai", "env_vars": ("OPENAI_API_KEY",)},
+    {"provider": "moonshot", "target": "kimi", "env_vars": ("MOONSHOT_API_KEY",)},
+)
+
+# API key env var → provider mapping (derived from the registry)
+API_KEY_MAP = {var: p["provider"] for p in API_PROVIDERS for var in p["env_vars"]}
+
+
+def get_provider_api_keys() -> dict[str, str | None]:
+    """Map target name → API key from env, in registry order."""
+    return {
+        p["target"]: next(
+            (os.environ.get(var) for var in p["env_vars"] if os.environ.get(var)), None
+        )
+        for p in API_PROVIDERS
+    }
+
+
+def detect_api_target() -> tuple[str, str] | None:
+    """First provider (in registry priority order) with a key set → (target, key)."""
+    for p in API_PROVIDERS:
+        for var in p["env_vars"]:
+            key = os.environ.get(var)
+            if key:
+                return p["target"], key
+    return None
+
 
 DEFAULT_ENHANCE_TIMEOUT = 2700  # 45 minutes
 UNLIMITED_TIMEOUT = 86400  # 24 hours (subprocess requires a finite number)
@@ -287,9 +320,9 @@ class AgentClient:
         Returns:
             Response text, or None on failure
         """
-        if timeout is None:
-            timeout = get_default_timeout()
-
+        # No defaulting here: _call_api and _call_local each resolve a None
+        # timeout via get_default_timeout(), so defaulting in call() too left
+        # two places to update when the policy changes.
         if self.mode == "api":
             return self._call_api(prompt, max_tokens, timeout)
         elif self.mode == "local":
@@ -543,10 +576,12 @@ class AgentClient:
 
         # DOTALL so multi-line SKILL.md content matches; anchor the closing
         # "')" to the next record boundary (or end) so an apostrophe inside the
-        # text doesn't truncate the capture.
+        # text doesn't truncate the capture. The boundary is ANY CamelCase
+        # record constructor — kimi's record list isn't exhaustive (ToolCallPart
+        # etc.), and enumerating known types swallowed unknown records' internals
+        # into the captured text.
         text_parts = re.findall(
-            r"TextPart\(type='text', text='(.*?)'\)\s*"
-            r"(?=TextPart\(|ThinkPart\(|StepEnd\(|StepBegin\(|TurnEnd\(|TurnBegin\(|\Z)",
+            r"TextPart\(type='text', text='(.*?)'\)\s*(?=[A-Z][A-Za-z_]*\(|\Z)",
             raw_output,
             re.DOTALL,
         )

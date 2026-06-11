@@ -720,3 +720,41 @@ class TestUnifiedCacheFlow:
         assert not docs[0]["data_file"].startswith("output/")
         # The flow must not create a stray ./output/<name>_docs staging dir.
         assert not (Path.cwd() / "output" / f"{scraper.name}_docs").exists()
+
+
+class TestUnifiedDryRunAndOutput:
+    """MCP-03 follow-up: dry_run must actually be honored by UnifiedScraper,
+    and --output (CLI) must win over the config file."""
+
+    def _write_config(self, tmp_path):
+        config = {
+            "name": "uni",
+            "description": "d",
+            "merge_mode": "rule-based",
+            "sources": [
+                {"type": "documentation", "base_url": "https://example.com/docs/"},
+            ],
+        }
+        path = tmp_path / "uni.json"
+        path.write_text(json.dumps(config))
+        return path
+
+    def test_dry_run_previews_without_scraping_or_writing(self, tmp_path, monkeypatch):
+        cfg = self._write_config(tmp_path)
+        out_dir = tmp_path / "out"
+        monkeypatch.chdir(tmp_path)
+        scraper = UnifiedScraper(str(cfg), dry_run=True, output_dir=str(out_dir))
+        with patch.object(scraper, "scrape_all_sources") as scrape:
+            result = scraper.run()
+        scrape.assert_not_called()
+        assert result == 0
+        # Dry run must not create the output or cache directories.
+        assert not out_dir.exists()
+        assert not (tmp_path / ".skillseeker-cache").exists()
+
+    def test_output_dir_param_wins_over_config(self, tmp_path, monkeypatch):
+        cfg = self._write_config(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        # Trailing slash is normalized by the shared resolver.
+        scraper = UnifiedScraper(str(cfg), output_dir=str(tmp_path / "custom") + "/", dry_run=True)
+        assert scraper.output_dir == str(tmp_path / "custom")

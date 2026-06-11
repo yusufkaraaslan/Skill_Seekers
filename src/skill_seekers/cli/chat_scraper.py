@@ -257,8 +257,8 @@ class ChatToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
-        self.data_file: str = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file: str = self.data_file_for()
 
         # Extracted data (populated by extract_chat or load_extracted_data)
         self.extracted_data: dict | None = None
@@ -734,6 +734,14 @@ class ChatToSkillConverter(SkillConverter):
                         continue
                     raise
             if result is None:
+                # Match the Discord path: never truncate silently — the run
+                # would otherwise report success on incomplete channel history.
+                logger.warning(
+                    "Slack rate limit (429) persisted after 3 retries for #%s; "
+                    "stopping with %d message(s) collected.",
+                    channel_name,
+                    len(messages),
+                )
                 break
             batch = result.get("messages", [])
             if not batch:

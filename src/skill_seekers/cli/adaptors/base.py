@@ -6,12 +6,39 @@ Defines the abstract interface that all platform-specific adaptors must implemen
 This enables Skill Seekers to generate skills for multiple LLM platforms (Claude, Gemini, ChatGPT).
 """
 
+import os
+import shutil
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
+
+
+def save_skill_md_atomic(skill_md_path: Path, content: str, *, log_prefix: str = "  ") -> None:
+    """Atomically replace SKILL.md, keeping a backup of the original.
+
+    Write to a temp file, back up the original by COPY (not rename — so the
+    original survives if anything here fails), then os.replace() the temp into
+    place. The old rename-then-write left only SKILL.md.backup (no SKILL.md)
+    if the write failed after the rename. Single home for the dance — callers
+    must not hand-roll their own variants.
+    """
+    skill_md_path = Path(skill_md_path)
+    tmp_path = skill_md_path.with_suffix(".md.tmp")
+    try:
+        tmp_path.write_text(content, encoding="utf-8")
+        if skill_md_path.exists():
+            backup_path = skill_md_path.with_suffix(".md.backup")
+            shutil.copy2(skill_md_path, backup_path)
+            print(f"{log_prefix}💾 Backed up original to: {backup_path.name}")
+        os.replace(tmp_path, skill_md_path)
+    finally:
+        # Don't leave an orphaned .md.tmp behind if the backup/replace failed.
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+    print(f"{log_prefix}✅ Saved enhanced SKILL.md")
 
 
 @dataclass
@@ -183,6 +210,11 @@ class SkillAdaptor(ABC):
             True if enhancement succeeded
         """
         return False
+
+    @staticmethod
+    def _save_skill_md_atomic(skill_md_path: Path, content: str, *, log_prefix: str = "  ") -> None:
+        """Atomically replace SKILL.md with a backup — see save_skill_md_atomic()."""
+        save_skill_md_atomic(skill_md_path, content, log_prefix=log_prefix)
 
     def _read_existing_content(self, skill_dir: Path) -> str:
         """

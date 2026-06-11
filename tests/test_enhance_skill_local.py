@@ -834,3 +834,50 @@ class TestHeadlessSuccessGate:
         prompt_file.write_text("enhance", encoding="utf-8")
 
         assert enhancer._run_headless(prompt_file, timeout=60) is True
+
+
+class TestRecursionGuard:
+    """LocalSkillEnhancer must participate in the SKILL_SEEKER_ENHANCE_ACTIVE
+    fork-bomb guard: a spawned enhance agent that runs tests invoking
+    `skill-seekers create` must not spawn another real agent."""
+
+    def test_run_refuses_when_marker_set(self, tmp_path, monkeypatch):
+        from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# x")
+        monkeypatch.setenv("SKILL_SEEKER_ENHANCE_ACTIVE", "1")
+        enhancer = LocalSkillEnhancer(str(skill_dir), force=True)
+        assert enhancer.run(headless=True) is False
+
+    def test_run_agent_command_marks_child_env(self, tmp_path, monkeypatch):
+        from skill_seekers.cli import enhance_skill_local as mod
+
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# x")
+        prompt_file = tmp_path / "prompt.md"
+        prompt_file.write_text("prompt")
+
+        captured = {}
+
+        def fake_run(_cmd, **kwargs):
+            captured["env"] = kwargs.get("env")
+
+            class R:
+                returncode = 0
+                stdout = ""
+                stderr = ""
+
+            return R()
+
+        monkeypatch.delenv("SKILL_SEEKER_ENHANCE_ACTIVE", raising=False)
+        monkeypatch.setattr(mod.subprocess, "run", fake_run)
+        enhancer = mod.LocalSkillEnhancer(str(skill_dir), force=True)
+        result, error = enhancer._run_agent_command(
+            str(prompt_file), timeout=5, include_permissions_flag=True, quiet=True
+        )
+        assert error is None
+        assert captured["env"] is not None
+        assert captured["env"].get("SKILL_SEEKER_ENHANCE_ACTIVE") == "1"

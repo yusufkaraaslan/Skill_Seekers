@@ -360,17 +360,7 @@ Always prioritize accuracy by consulting the attached documentation files before
 
             print(f"  Generated enhanced SKILL.md ({len(enhanced_content)} chars)\n")
 
-            # Atomic save: write a temp file, copy the backup, then replace the
-            # original. The old rename-then-write left only SKILL.md.backup (no
-            # SKILL.md) if the write failed after the rename.
-            tmp_path = skill_md_path.with_suffix(".md.tmp")
-            tmp_path.write_text(enhanced_content, encoding="utf-8")
-            if skill_md_path.exists():
-                backup_path = skill_md_path.with_suffix(".md.backup")
-                backup_path.write_bytes(skill_md_path.read_bytes())
-                print(f"  Backed up original to: {backup_path.name}")
-            tmp_path.replace(skill_md_path)
-            print("  Saved enhanced SKILL.md")
+            self._save_skill_md_atomic(skill_md_path, enhanced_content)
 
             return True
 

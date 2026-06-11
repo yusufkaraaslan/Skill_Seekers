@@ -142,8 +142,8 @@ class RssToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir: str = config.get("output_dir") or f"output/{self.name}"
-        self.data_file: str = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file: str = self.data_file_for()
 
         # Internal state
         self.extracted_data: dict[str, Any] | None = None

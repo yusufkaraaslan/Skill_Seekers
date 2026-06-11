@@ -539,3 +539,68 @@ class TestCallLocalStrayJson:
         with patch("subprocess.run", side_effect=fake_run):
             out = client.call("hello")  # local mode, output_file=None
         assert out == "REAL STDOUT RESPONSE"
+
+
+class TestParseKimiOutputUnknownRecords:
+    """Unknown record types must not leak into the extracted text.
+
+    The boundary lookahead is a generic CamelCase-constructor match: kimi's
+    record list isn't exhaustive (e.g. ToolCallPart), and enumerating known
+    types swallowed unknown records' internals into the captured text.
+    """
+
+    def test_toolcallpart_between_textparts(self):
+        raw = (
+            "TextPart(type='text', text='A')\n"
+            "ToolCallPart(type='tool', name='x')\n"
+            "TextPart(type='text', text='B')\n"
+            "TurnEnd()"
+        )
+        assert AgentClient._parse_kimi_output(raw) == "A\nB"
+
+    def test_unknown_record_at_end(self):
+        raw = "TextPart(type='text', text='only')\nSomeNewRecord(foo=1)"
+        assert AgentClient._parse_kimi_output(raw) == "only"
+
+
+class TestProviderRegistry:
+    """API_PROVIDERS is the single source for provider detection priority."""
+
+    def _clear_keys(self, monkeypatch):
+        for var in (
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            "GOOGLE_API_KEY",
+            "OPENAI_API_KEY",
+            "MOONSHOT_API_KEY",
+        ):
+            monkeypatch.delenv(var, raising=False)
+
+    def test_moonshot_only_detected(self, monkeypatch):
+        from skill_seekers.cli.agent_client import detect_api_target
+
+        self._clear_keys(monkeypatch)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moon")
+        assert detect_api_target() == ("kimi", "sk-moon")
+
+    def test_anthropic_outranks_moonshot(self, monkeypatch):
+        from skill_seekers.cli.agent_client import detect_api_target
+
+        self._clear_keys(monkeypatch)
+        monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moon")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-x")
+        assert detect_api_target() == ("claude", "sk-ant-x")
+
+    def test_no_keys_returns_none(self, monkeypatch):
+        from skill_seekers.cli.agent_client import detect_api_target, get_provider_api_keys
+
+        self._clear_keys(monkeypatch)
+        assert detect_api_target() is None
+        assert all(v is None for v in get_provider_api_keys().values())
+
+    def test_api_key_map_derived_from_registry(self):
+        from skill_seekers.cli.agent_client import API_KEY_MAP, API_PROVIDERS
+
+        for p in API_PROVIDERS:
+            for var in p["env_vars"]:
+                assert API_KEY_MAP[var] == p["provider"]

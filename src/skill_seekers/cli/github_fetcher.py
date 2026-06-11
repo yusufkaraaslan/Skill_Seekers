@@ -320,7 +320,10 @@ class GitHubThreeStreamFetcher:
 
         params = {
             "state": state,
-            "per_page": 100,  # GitHub API max page size
+            # Don't over-fetch: with a small remaining quota (e.g. 5 after the
+            # open/closed split) a full 100-issue page is ~20x the payload.
+            # 100 is the GitHub API max page size.
+            "per_page": min(max_count, 100),
             "sort": "comments",
             "direction": "desc",
         }

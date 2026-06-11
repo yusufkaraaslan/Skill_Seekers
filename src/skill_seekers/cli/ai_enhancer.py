@@ -22,6 +22,7 @@ Uses AgentClient for all AI invocations — fully agent-agnostic.
 
 import json
 import logging
+import contextvars
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
@@ -156,10 +157,13 @@ class PatternEnhancer(AIEnhancer):
         """Process pattern batches in parallel using ThreadPoolExecutor."""
         results = [None] * len(batches)  # Preserve order
 
+        # Propagate contextvars into worker threads (threads don't inherit
+        # them), so per-call state like the MCP log-capture token survives.
+        _caller_ctx = contextvars.copy_context()
         with ThreadPoolExecutor(max_workers=workers) as executor:
             # Submit all batches
             future_to_idx = {
-                executor.submit(self._enhance_pattern_batch, batch): idx
+                executor.submit(_caller_ctx.copy().run, self._enhance_pattern_batch, batch): idx
                 for idx, batch in enumerate(batches)
             }
 
@@ -294,10 +298,12 @@ class TestExampleEnhancer(AIEnhancer):
         """Process example batches in parallel using ThreadPoolExecutor."""
         results = [None] * len(batches)  # Preserve order
 
+        # See _enhance_patterns_parallel: keep contextvars across threads.
+        _caller_ctx = contextvars.copy_context()
         with ThreadPoolExecutor(max_workers=workers) as executor:
             # Submit all batches
             future_to_idx = {
-                executor.submit(self._enhance_example_batch, batch): idx
+                executor.submit(_caller_ctx.copy().run, self._enhance_example_batch, batch): idx
                 for idx, batch in enumerate(batches)
             }
 

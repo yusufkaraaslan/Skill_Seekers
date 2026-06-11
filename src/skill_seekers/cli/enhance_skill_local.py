@@ -279,6 +279,11 @@ class LocalSkillEnhancer:
             cmd_display = self._format_agent_command(prompt_file, include_permissions_flag)
             print(f"   Command: {cmd_display}")
 
+        # Mark the child environment so a nested ``skill-seekers create``
+        # (e.g. if the spawned agent runs the test suite) won't spawn another
+        # enhance agent — same recursion guard as AgentClient._call_local.
+        child_env = {**os.environ, "SKILL_SEEKER_ENHANCE_ACTIVE": "1"}
+
         try:
             if uses_prompt_file:
                 return (
@@ -288,6 +293,7 @@ class LocalSkillEnhancer:
                         text=True,
                         timeout=timeout,
                         cwd=str(self.skill_dir),
+                        env=child_env,
                     ),
                     None,
                 )
@@ -301,6 +307,7 @@ class LocalSkillEnhancer:
                     timeout=timeout,
                     cwd=str(self.skill_dir),
                     input=prompt_text,
+                    env=child_env,
                 ),
                 None,
             )
@@ -693,6 +700,19 @@ After writing, the file SKILL.md should:
         Returns:
             bool: True if enhancement process started successfully, False otherwise
         """
+        # Recursion guard. A spawned LOCAL agent may itself run the test suite,
+        # and a test that shells out to ``skill-seekers create`` would spawn yet
+        # another enhance agent — a fork-bomb of real LLM processes. The child
+        # environment is marked in ``_run_agent_command`` (and the terminal-mode
+        # shell script); refuse to spawn a nested one here.
+        if os.environ.get("SKILL_SEEKER_ENHANCE_ACTIVE") == "1":
+            print(
+                "⚠️  Skipping LOCAL enhancement: already running inside a Skill "
+                "Seekers enhance agent (SKILL_SEEKER_ENHANCE_ACTIVE=1); refusing "
+                "to spawn a nested agent to avoid recursion."
+            )
+            return False
+
         # Background mode: Run in background thread, return immediately
         if background:
             return self._run_background(headless, timeout)
@@ -782,6 +802,7 @@ After writing, the file SKILL.md should:
         # Create a shell script to run in the terminal
         command_line = self._format_agent_command(prompt_file, include_permissions_flag=False)
         shell_script = f"""#!/bin/bash
+export SKILL_SEEKER_ENHANCE_ACTIVE=1
 {command_line}
 echo ""
 echo "✅ Enhancement complete!"
@@ -1297,30 +1318,16 @@ def _detect_api_target() -> tuple[str, str] | None:
     """
     Auto-detect which API platform to use for enhancement based on env vars.
 
-    Priority: ANTHROPIC_API_KEY > GOOGLE_API_KEY > OPENAI_API_KEY > MOONSHOT_API_KEY
+    Delegates to agent_client.detect_api_target() — the single provider
+    registry. (A provider hand-listed here and forgotten was the ENH-12 bug:
+    a Moonshot-only user silently fell through to LOCAL mode.)
 
     Returns:
         (target, api_key) tuple if an API key is found, else None.
     """
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-    if anthropic_key:
-        return ("claude", anthropic_key)
+    from skill_seekers.cli.agent_client import detect_api_target
 
-    google_key = os.environ.get("GOOGLE_API_KEY")
-    if google_key:
-        return ("gemini", google_key)
-
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    if openai_key:
-        return ("openai", openai_key)
-
-    # Moonshot/Kimi was previously dropped here, so a Moonshot-only user fell
-    # through to LOCAL mode despite having a valid API key.
-    moonshot_key = os.environ.get("MOONSHOT_API_KEY")
-    if moonshot_key:
-        return ("kimi", moonshot_key)
-
-    return None
+    return detect_api_target()
 
 
 def _run_api_enhance(target: str, api_key: str) -> None:

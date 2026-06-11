@@ -24,7 +24,11 @@ import os
 import sys
 from pathlib import Path
 
-from skill_seekers.cli.agent_client import get_default_timeout
+from skill_seekers.cli.agent_client import (
+    detect_api_target,
+    get_default_timeout,
+    get_provider_api_keys,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -41,13 +45,8 @@ def _is_root() -> bool:
 
 
 def _get_api_keys() -> dict[str, str | None]:
-    """Collect API keys from environment."""
-    return {
-        "claude": (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")),
-        "gemini": os.environ.get("GOOGLE_API_KEY"),
-        "openai": os.environ.get("OPENAI_API_KEY"),
-        "kimi": os.environ.get("MOONSHOT_API_KEY"),
-    }
+    """Collect API keys from environment (single source: agent_client registry)."""
+    return get_provider_api_keys()
 
 
 def _get_config_default_agent() -> str | None:
@@ -82,16 +81,11 @@ def _pick_mode(args) -> tuple[str, str | None]:
     if config_agent in get_enhancement_platforms() and api_keys.get(config_agent):
         return "api", config_agent
 
-    # 3. Auto-detect from environment variables.
-    #    Priority: Anthropic > Gemini > OpenAI > Moonshot/Kimi.
-    if api_keys["claude"]:
-        return "api", "claude"
-    if api_keys["gemini"]:
-        return "api", "gemini"
-    if api_keys["openai"]:
-        return "api", "openai"
-    if api_keys["kimi"]:
-        return "api", "kimi"
+    # 3. Auto-detect from environment variables, in the priority order defined
+    #    by agent_client.API_PROVIDERS (the single provider registry).
+    detected = detect_api_target()
+    if detected:
+        return "api", detected[0]
 
     # 4. No API keys found → LOCAL mode.
     return "local", None

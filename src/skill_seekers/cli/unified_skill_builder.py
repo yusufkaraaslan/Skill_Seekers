@@ -55,7 +55,9 @@ class UnifiedSkillBuilder:
         self.name = config["name"]
         self.description = config["description"]
         # Honor --output (config["output_dir"]) for the final skill.
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        from skill_seekers.cli.skill_converter import SkillConverter
+
+        self.skill_dir = SkillConverter.resolve_skill_dir(config, self.name)
 
         # Create directories
         os.makedirs(self.skill_dir, exist_ok=True)
@@ -265,6 +267,12 @@ class UnifiedSkillBuilder:
         skill_name = self.name.lower().replace("_", "-").replace(" ", "-")[:64]
         desc = self.description[:1024] if len(self.description) > 1024 else self.description
 
+        sources = self.config.get("sources", [])
+        doc_src = next((s for s in sources if s.get("type") == "documentation"), None)
+        gh_src = next((s for s in sources if s.get("type") == "github"), None)
+        doc_url = doc_src.get("base_url", "N/A") if doc_src else "N/A"
+        gh_repo = gh_src.get("repo", "N/A") if gh_src else "N/A"
+
         content = f"""---
 name: {skill_name}
 description: {desc}
@@ -278,8 +286,8 @@ description: {desc}
 
 This skill synthesizes knowledge from multiple sources:
 
-- ✅ **Official Documentation**: {[s for s in self.config.get("sources", []) if s.get("type") == "documentation"][0].get("base_url", "N/A") if [s for s in self.config.get("sources", []) if s.get("type") == "documentation"] else "N/A"}
-- ✅ **GitHub Repository**: {[s for s in self.config.get("sources", []) if s.get("type") == "github"][0].get("repo", "N/A") if [s for s in self.config.get("sources", []) if s.get("type") == "github"] else "N/A"}
+- ✅ **Official Documentation**: {doc_url}
+- ✅ **GitHub Repository**: {gh_repo}
 
 """
 

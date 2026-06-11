@@ -52,16 +52,27 @@ class UnifiedScraper(SkillConverter):
 
     SOURCE_TYPE = "config"
 
-    def __init__(self, config_path: str, merge_mode: str | None = None):
+    def __init__(
+        self,
+        config_path: str,
+        merge_mode: str | None = None,
+        output_dir: str | None = None,
+        dry_run: bool = False,
+    ):
         """
         Initialize unified scraper.
 
         Args:
             config_path: Path to unified config JSON
             merge_mode: Override config merge_mode ('rule-based' or 'claude-enhanced')
+            output_dir: Override output directory (CLI --output); wins over the
+                config file's "output_dir"
+            dry_run: Preview the sources that would be scraped without scraping,
+                writing output, or creating directories
         """
         super().__init__({"name": "unified", "config_path": config_path})
         self.config_path = config_path
+        self.dry_run = dry_run
 
         # Validate and load config
         logger.info(f"Loading config: {config_path}")
@@ -117,8 +128,10 @@ class UnifiedScraper(SkillConverter):
 
         # Output paths - cleaner organization
         self.name = self.config["name"]
-        # Honor --output (config["output_dir"]) for the final skill.
-        self.output_dir = self.config.get("output_dir") or f"output/{self.name}"
+        # Honor --output: explicit CLI value wins over config["output_dir"].
+        self.output_dir = self.resolve_skill_dir(
+            {"output_dir": output_dir or self.config.get("output_dir")}, self.name
+        )
 
         # Use hidden cache directory for intermediate files
         self.cache_dir = f".skillseeker-cache/{self.name}"
@@ -127,15 +140,17 @@ class UnifiedScraper(SkillConverter):
         self.repos_dir = f"{self.cache_dir}/repos"
         self.logs_dir = f"{self.cache_dir}/logs"
 
-        # Create directories
-        os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(self.sources_dir, exist_ok=True)
-        os.makedirs(self.data_dir, exist_ok=True)
-        os.makedirs(self.repos_dir, exist_ok=True)
-        os.makedirs(self.logs_dir, exist_ok=True)
+        # A dry run must not touch the filesystem.
+        if not self.dry_run:
+            # Create directories
+            os.makedirs(self.output_dir, exist_ok=True)
+            os.makedirs(self.sources_dir, exist_ok=True)
+            os.makedirs(self.data_dir, exist_ok=True)
+            os.makedirs(self.repos_dir, exist_ok=True)
+            os.makedirs(self.logs_dir, exist_ok=True)
 
-        # Setup file logging
-        self._setup_logging()
+            # Setup file logging
+            self._setup_logging()
 
     def _setup_logging(self):
         """Setup file logging for this scraping session."""
@@ -1877,6 +1892,23 @@ class UnifiedScraper(SkillConverter):
         logger.info(f"Unified Scraper: {self.config['name']}")
         logger.info("🚀 " * 20 + "\n")
 
+        # Dry run: preview the sources without scraping or writing anything.
+        if getattr(self, "dry_run", False):
+            sources = self.config.get("sources", [])
+            logger.info("DRY RUN — no scraping or writes will be performed.")
+            logger.info(f"Would scrape {len(sources)} source(s):")
+            for i, source in enumerate(sources, 1):
+                location = (
+                    source.get("base_url")
+                    or source.get("repo")
+                    or source.get("path")
+                    or source.get("file")
+                    or ""
+                )
+                logger.info(f"  [{i}] {source.get('type', 'unknown')} {location}".rstrip())
+            logger.info(f"Would write skill to: {self.output_dir}/")
+            return 0
+
         try:
             # Phase 1: Scrape all sources
             scraped_count = self.scrape_all_sources()
@@ -1948,15 +1980,19 @@ class UnifiedScraper(SkillConverter):
             # Read from ExecutionContext first (has correct priority resolution),
             # fall back to raw config dict for backward compatibility.
             enhancement_config = self.config.get("enhancement", {})
-            try:
-                from skill_seekers.cli.execution_context import ExecutionContext
+            from skill_seekers.cli.execution_context import ExecutionContext
 
+            # ExecutionContext.get() never raises (it auto-creates a default
+            # context), so "context vs raw config" must be decided explicitly:
+            # only trust the context when the CLI actually initialized it.
+            ctx_initialized = ExecutionContext.is_initialized()
+            if ctx_initialized:
                 ctx = ExecutionContext.get()
                 enhancement_enabled = ctx.enhancement.enabled
                 enhancement_level = ctx.enhancement.level
                 enhancement_mode = ctx.enhancement.mode.upper()
-            except (RuntimeError, Exception):
-                # Fallback to raw config + args
+            else:
+                # Standalone/MCP use: honor the config file's enhancement block + args
                 enhancement_enabled = enhancement_config.get("enabled", False)
                 enhancement_level = enhancement_config.get("level", 0)
                 enhancement_mode = enhancement_config.get("mode", "AUTO").upper()
@@ -1982,12 +2018,14 @@ class UnifiedScraper(SkillConverter):
                     try:
                         from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
-                        # Get agent from ExecutionContext (already resolved with correct priority)
-                        try:
+                        # Get agent from ExecutionContext when the CLI initialized
+                        # it (already resolved with correct priority); otherwise
+                        # fall back to args/env.
+                        if ctx_initialized:
                             ctx = ExecutionContext.get()
                             agent = ctx.enhancement.agent
                             agent_cmd = ctx.enhancement.agent_cmd
-                        except (RuntimeError, Exception):
+                        else:
                             agent = None
                             agent_cmd = None
                             if args is not None:
@@ -1997,11 +2035,11 @@ class UnifiedScraper(SkillConverter):
                                 agent = os.environ.get("SKILL_SEEKER_AGENT", "").strip() or None
 
                         # Prefer the context's resolved timeout (CLI/env/config
-                        # already merged); fall back to the raw config block only
-                        # if the context is unavailable.
-                        try:
+                        # already merged) when explicitly initialized; otherwise
+                        # honor the raw config block (incl. "unlimited").
+                        if ctx_initialized:
                             timeout_val = ExecutionContext.get().enhancement.timeout
-                        except Exception:
+                        else:
                             timeout_val = enhancement_config.get("timeout")
                             if timeout_val is not None:
                                 if isinstance(timeout_val, str) and timeout_val.lower() in (
@@ -2045,10 +2083,8 @@ class UnifiedScraper(SkillConverter):
 
                         # Forward the context's api_key so a CLI --api-key isn't
                         # dropped (AgentClient would otherwise env-detect only).
-                        try:
-                            _api_key = ExecutionContext.get().enhancement.api_key
-                        except Exception:
-                            _api_key = None
+                        # get() never raises; a default context just has no key.
+                        _api_key = ExecutionContext.get().enhancement.api_key
                         client = AgentClient(mode="api", api_key=_api_key)
                         if client.client:
                             # Read references and current SKILL.md

@@ -358,8 +358,12 @@ class VideoToSkillConverter(SkillConverter):
         self.end_time: float | None = config.get("end_time")
 
         # Paths
-        self.skill_dir = config.get("output_dir") or config.get("output") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_video_extracted.json"
+        # Same resolution as the base class, with video's legacy "output" key
+        # as a fallback; resolve_skill_dir also strips trailing slashes.
+        self.skill_dir = self.resolve_skill_dir(
+            {"output_dir": config.get("output_dir") or config.get("output")}, self.name
+        )
+        self.data_file = self.data_file_for("_video_extracted.json")
 
         # Results
         self.result: VideoScraperResult | None = None

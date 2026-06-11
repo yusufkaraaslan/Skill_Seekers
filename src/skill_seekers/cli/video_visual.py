@@ -2183,12 +2183,18 @@ def extract_visual_data(
             full_area = frame_h * frame_w
 
             if len(code_panels) > 1:
-                # Parallel OCR — each panel is independent
+                import contextvars
+
+                # Parallel OCR — each panel is independent. Propagate
+                # contextvars into worker threads (threads don't inherit them),
+                # so per-call state like the MCP log-capture token survives.
+                _caller_ctx = contextvars.copy_context()
                 with concurrent.futures.ThreadPoolExecutor(
                     max_workers=min(2, len(code_panels))
                 ) as pool:
                     futures = {
                         pool.submit(
+                            _caller_ctx.copy().run,
                             _ocr_single_panel,
                             frame_path,
                             pb,

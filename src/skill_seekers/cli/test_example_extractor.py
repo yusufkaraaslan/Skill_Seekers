@@ -1176,11 +1176,9 @@ Examples:
     if args is None:
         args = parser.parse_args()
     else:
-        # Central dispatch passes the unified namespace; backfill any args this
-        # parser defines but the central one doesn't.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
+        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+
+        backfill_parser_defaults(parser, args)
 
     # Validate arguments
     if not args.directory and not args.file:

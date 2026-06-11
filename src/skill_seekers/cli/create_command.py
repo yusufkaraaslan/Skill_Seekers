@@ -208,7 +208,14 @@ class CreateCommand:
 
             config_path = self.source_info.parsed["config_path"]
             merge_mode = getattr(self.args, "merge_mode", None)
-            converter = UnifiedScraper(config_path, merge_mode=merge_mode)
+            converter = UnifiedScraper(
+                config_path,
+                merge_mode=merge_mode,
+                # Same contract as every other source type: --output and
+                # --dry-run must reach the converter.
+                output_dir=ctx.output.output_dir,
+                dry_run=bool(ctx.output.dry_run),
+            )
             return converter.run()
 
         config = self._build_config(source_type, ctx)

@@ -32,6 +32,7 @@ from .skill_converter import SkillConverter
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
 from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
+from skill_seekers.cli.scraper_utils import reference_filename
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +87,8 @@ class EpubToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Categories config
         self.categories = config.get("categories", {})
@@ -524,15 +525,8 @@ class EpubToSkillConverter(SkillConverter):
     def _reference_filename(self, cat_data, section_num, total_sections):
         """Basename of a category's reference file — single source of truth shared
         by the writer, index.md, and the SKILL.md nav so links can't drift (DOC-07)."""
-        sections = cat_data.get("pages") or []
-        if not sections:
-            return f"section_{section_num:02d}.md"
-        section_nums = [s.get("section_number", i + 1) for i, s in enumerate(sections)]
         base = Path(self.epub_path).stem if self.epub_path else ""
-        if total_sections == 1:
-            return f"{base}.md" if base else "main.md"
-        base_name = base if base else "section"
-        return f"{base_name}_s{min(section_nums)}-s{max(section_nums)}.md"
+        return reference_filename(cat_data.get("pages") or [], section_num, total_sections, base)
 
     def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
         """Generate a reference markdown file for a category."""

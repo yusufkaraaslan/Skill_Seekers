@@ -13,7 +13,7 @@ from pathlib import Path
 
 from skill_seekers.mcp.tools.subprocess_utils import run_subprocess_with_streaming
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import CLI_DIR, TextContent, text_response
 
 
 # Path to CLI tools
@@ -607,7 +607,7 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
             # zip_path below and the workflow marched on to upload a missing file.
             if "❌ Error:" in package_output:
                 output_lines.append("❌ Packaging failed; aborting before upload.")
-                return [TextContent(type="text", text="\n".join(output_lines))]
+                return text_response("\n".join(output_lines))
 
             # Extract package path from output (supports .zip and .tar.gz).
             # package_skill.py prints "   Output: <path>" and

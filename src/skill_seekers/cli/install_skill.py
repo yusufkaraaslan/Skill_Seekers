@@ -133,12 +133,9 @@ Phases:
     if args is None:
         args = parser.parse_args()
     else:
-        # Central dispatch passes the unified namespace; backfill any args
-        # this module's parser defines but the central one doesn't, so the
-        # reads below never hit a missing attribute.
-        for _a in parser._actions:
-            if _a.dest != "help" and not hasattr(args, _a.dest):
-                setattr(args, _a.dest, _a.default)
+        from skill_seekers.cli.arguments.common import backfill_parser_defaults
+
+        backfill_parser_defaults(parser, args)
 
     # Auto-detect target platform if not specified
     if args.target is None:

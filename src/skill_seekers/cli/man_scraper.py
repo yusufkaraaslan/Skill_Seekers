@@ -150,8 +150,8 @@ class ManPageToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Categories config
         self.categories: dict = config.get("categories", {})

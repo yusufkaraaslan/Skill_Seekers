@@ -819,6 +819,16 @@ def resolve_or_generate_with_status(
             return None, False
         _set_detected_version(data, detection.version)
         _atomic_write_json(target, data)
+        # An API fetch may have landed a canonical-named file inside out_dir
+        # (e.g. godot.json next to our godot-engine.json target). Remove that
+        # intermediate: scan's diff is keyed by filename slug, so a leftover
+        # canonical file shows up as a phantom "removed" config on the next
+        # scan and gets archived — churn on every re-scan.
+        try:
+            if resolved != target and resolved.parent.resolve() == out_dir.resolve():
+                resolved.unlink()
+        except OSError as e:
+            logger.debug("Could not remove fetched intermediate %s: %s", resolved, e)
         return target, False
 
     if not allow_generate:
@@ -862,35 +872,25 @@ _REGISTRY_REPO = "yusufkaraaslan/skill-seekers-configs"
 
 
 async def _find_existing_issue(config_name: str, github_token: str | None) -> str | None:
-    """Search the community registry for an open issue mentioning ``config_name``.
+    """Search the community registry for an open submission of ``config_name``.
 
     Returns the issue URL if found; None on no match, no token, or any error.
     Idempotency guard — prevents opening duplicate submission issues when the
-    user runs scan repeatedly.
+    user runs scan repeatedly. Delegates to the shared (exact-title, bounded)
+    check in mcp.tools.source_tools so this and the MCP submit tool can't
+    disagree on what counts as a duplicate.
     """
     if not github_token:
         return None
     try:
-        from github import Github
-    except ImportError:
+        from skill_seekers.mcp.tools.source_tools import find_existing_submission
+    except Exception:
         return None
 
     import asyncio
 
-    def _query() -> str | None:
-        try:
-            gh = Github(github_token)
-            # Search open issues in the registry repo with the config name in title.
-            query = f'repo:{_REGISTRY_REPO} is:issue is:open in:title "{config_name}"'
-            issues = gh.search_issues(query=query)
-            for issue in issues:
-                return issue.html_url
-        except Exception as e:
-            logger.debug("Existing-issue search failed for %s: %s", config_name, e)
-        return None
-
     # PyGithub is sync — run in a thread so we don't block the loop.
-    return await asyncio.to_thread(_query)
+    return await asyncio.to_thread(find_existing_submission, config_name, github_token)
 
 
 async def _submit_config(config_path: Path) -> dict:

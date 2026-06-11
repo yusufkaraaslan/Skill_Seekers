@@ -18,6 +18,7 @@ from pathlib import Path
 
 # Import the PDF extractor
 from .pdf_extractor_poc import PDFExtractor
+from .scraper_utils import reference_filename
 from .skill_converter import SkillConverter
 
 
@@ -76,8 +77,8 @@ class PDFToSkillConverter(SkillConverter):
         )
 
         # Paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Extraction options
         self.extract_options = config.get("extract_options", {})
@@ -277,16 +278,15 @@ class PDFToSkillConverter(SkillConverter):
         """Basename of a category's reference file — the single source of truth
         shared by the file writer, index.md, and the SKILL.md nav, so the links
         can't drift from the actual filenames (DOC-07)."""
-        pages = cat_data.get("pages") or []
-        if not pages:
-            return f"section_{section_num:02d}.md"
-        page_nums = [p["page_number"] for p in pages]
-        page_range = f"p{min(page_nums)}-p{max(page_nums)}"
-        pdf_basename = Path(self.pdf_path).stem if self.pdf_path else ""
-        if total_sections == 1:
-            return f"{pdf_basename}.md" if pdf_basename else "main.md"
-        base_name = pdf_basename if pdf_basename else "section"
-        return f"{base_name}_{page_range}.md"
+        base = Path(self.pdf_path).stem if self.pdf_path else ""
+        return reference_filename(
+            cat_data.get("pages") or [],
+            section_num,
+            total_sections,
+            base,
+            number_key="page_number",
+            prefix="p",
+        )
 
     def _generate_reference_file(self, _cat_key, cat_data, section_num, total_sections):
         """Generate a reference markdown file for a category"""

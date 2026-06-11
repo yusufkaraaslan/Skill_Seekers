@@ -15,10 +15,50 @@ import re
 from pathlib import Path
 
 # MCP types (imported conditionally)
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import CLI_DIR, TextContent, text_response
 
 
 import httpx
+
+# Community registry repo for config submissions — shared with
+# scan_command's publish flow.
+REGISTRY_REPO = "yusufkaraaslan/skill-seekers-configs"
+
+
+def find_existing_submission(
+    config_name: str, github_token: str | None, *, max_scan: int = 30
+) -> str | None:
+    """Return the URL of an open ``[CONFIG] {name}`` submission issue, if any.
+
+    Idempotency guard shared by ``submit_config_tool`` and scan's publish
+    flow. Requires an exact title match: GitHub title search is fuzzy
+    substring matching, so "[CONFIG] react" also matches "[CONFIG]
+    react-native" and a fuzzy hit would suppress a legitimate distinct
+    config. Scans at most ``max_scan`` results — each further page is
+    another rate-limited Search API call, and an exact-title duplicate
+    will be in the top results.
+
+    Returns None on no match, no token, or any error (a search hiccup
+    shouldn't block submission).
+    """
+    if not github_token:
+        return None
+    try:
+        from github import Github
+
+        gh = Github(github_token)
+        expected_title = f"[CONFIG] {config_name}"
+        results = gh.search_issues(
+            f'repo:{REGISTRY_REPO} is:issue is:open in:title "{expected_title}"'
+        )
+        for i, found in enumerate(results):
+            if i >= max_scan:
+                break
+            if found.title.strip() == expected_title:
+                return found.html_url
+    except Exception:
+        pass
+    return None
 
 
 async def fetch_config_tool(args: dict) -> list[TextContent]:
@@ -529,7 +569,7 @@ Please fix these issues and try again.
         # Create GitHub issue
         try:
             gh = Github(github_token)
-            repo = gh.get_repo("yusufkaraaslan/skill-seekers-configs")
+            repo = gh.get_repo(REGISTRY_REPO)
 
             # Build issue body
             issue_body = f"""## Config Submission
@@ -569,31 +609,12 @@ Please fix these issues and try again.
             # Idempotency guard: if an open submission already exists for this
             # config (e.g. a retry after a transient failure), return it instead
             # of opening a duplicate.
-            try:
-                expected_title = f"[CONFIG] {config_name}"
-                existing = gh.search_issues(
-                    f"repo:yusufkaraaslan/skill-seekers-configs is:issue is:open "
-                    f'in:title "{expected_title}"'
+            existing_url = find_existing_submission(config_name, github_token)
+            if existing_url:
+                return text_response(
+                    f"ℹ️ A submission for '{config_name}' is already open:\n"
+                    f"{existing_url}\n\nNo duplicate issue was created."
                 )
-                for found in existing:
-                    # GitHub title search is fuzzy substring matching, so
-                    # "[CONFIG] react" also matches "[CONFIG] react-native".
-                    # Require an exact title match before treating it as a
-                    # duplicate, or we'd suppress a legitimate distinct config.
-                    if found.title.strip() != expected_title:
-                        continue
-                    return [
-                        TextContent(
-                            type="text",
-                            text=(
-                                f"ℹ️ A submission for '{config_name}' is already open:\n"
-                                f"{found.html_url}\n\nNo duplicate issue was created."
-                            ),
-                        )
-                    ]
-            except Exception:
-                # A search hiccup shouldn't block submission — fall through.
-                pass
 
             # Create issue
             issue = repo.create_issue(

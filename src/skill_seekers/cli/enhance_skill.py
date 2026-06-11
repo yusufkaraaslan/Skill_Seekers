@@ -436,16 +436,14 @@ Return ONLY the complete SKILL.md content, starting with the frontmatter (---).
         return prompt
 
     def save_enhanced_skill_md(self, content):
-        """Save the enhanced SKILL.md"""
-        # Backup original
-        if self.skill_md_path.exists():
-            backup_path = self.skill_md_path.with_suffix(".md.backup")
-            self.skill_md_path.rename(backup_path)
-            print(f"  💾 Backed up original to: {backup_path.name}")
+        """Save the enhanced SKILL.md (atomic, with a copy backup).
 
-        # Save enhanced version
-        self.skill_md_path.write_text(content, encoding="utf-8")
-        print("  ✅ Saved enhanced SKILL.md")
+        The previous rename-then-write left only SKILL.md.backup (no SKILL.md)
+        if the write failed after the rename.
+        """
+        from skill_seekers.cli.adaptors.base import save_skill_md_atomic
+
+        save_skill_md_atomic(self.skill_md_path, content)
 
     def run(self):
         """Main enhancement workflow"""

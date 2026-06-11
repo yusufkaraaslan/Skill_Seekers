@@ -9,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-from skill_seekers.mcp.tools._common import CLI_DIR, TextContent
+from skill_seekers.mcp.tools._common import CLI_DIR, TextContent, text_response
 
 
 # Path to CLI tools
@@ -83,16 +83,11 @@ async def generate_config(args: dict) -> list[TextContent]:
 
     # Don't silently clobber an existing (possibly hand-edited) config.
     if config_path.exists() and not force:
-        return [
-            TextContent(
-                type="text",
-                text=(
-                    f"⚠️ Config already exists: {config_path}\n\n"
-                    "Not overwriting. Pass force=true to replace it "
-                    "(this discards any manual edits)."
-                ),
-            )
-        ]
+        return text_response(
+            f"⚠️ Config already exists: {config_path}\n\n"
+            "Not overwriting. Pass force=true to replace it "
+            "(this discards any manual edits)."
+        )
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)

@@ -204,13 +204,14 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
         if is_unified:
             from skill_seekers.cli.unified_scraper import UnifiedScraper
 
-            converter = UnifiedScraper(config_to_use, merge_mode=merge_mode)
-            # dry_run is honored by UnifiedScraper. skip_scrape is NOT yet
-            # honored on the unified multi-source path (it would need to reload
-            # each source's cached data from .skillseeker-cache before building);
-            # the attribute is set for forward-compat but currently has no effect
-            # here. Single-source configs DO honor skip_scrape (SkillConverter.run).
-            converter.dry_run = dry_run
+            # dry_run must go through the constructor: UnifiedScraper.run()
+            # previews-and-returns and __init__ skips directory creation.
+            # skip_scrape is NOT yet honored on the unified multi-source path
+            # (it would need to reload each source's cached data from
+            # .skillseeker-cache before building); the attribute is set for
+            # forward-compat but currently has no effect here. Single-source
+            # configs DO honor skip_scrape (SkillConverter.run).
+            converter = UnifiedScraper(config_to_use, merge_mode=merge_mode, dry_run=dry_run)
             converter.skip_scrape = skip_scrape
         else:
             from skill_seekers.cli.skill_converter import get_converter
@@ -231,8 +232,11 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             else:
                 source_type = "web"  # default fallback
 
+            # Inject dry_run into the config BEFORE construction — converters
+            # resolve it (and skip directory creation) in __init__; setting the
+            # attribute afterwards would be too late for the mkdir guard.
+            config_to_pass["dry_run"] = dry_run
             converter = get_converter(source_type, config_to_pass)
-            converter.dry_run = dry_run
             converter.skip_scrape = skip_scrape
 
         result = _run_converter(converter, progress_msg)

@@ -136,8 +136,8 @@ class OpenAPIToSkillConverter(SkillConverter):
         )
 
         # Output paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Internal state
         self.spec_data: dict[str, Any] = {}

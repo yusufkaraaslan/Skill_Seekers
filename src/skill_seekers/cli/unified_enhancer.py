@@ -19,6 +19,7 @@ Benefits:
 
 import json
 import logging
+import contextvars
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Literal
@@ -158,9 +159,14 @@ class UnifiedEnhancer:
         """Process batches in parallel using ThreadPoolExecutor."""
         results = [None] * len(batches)  # Preserve order
 
+        # Propagate contextvars into worker threads (threads don't inherit
+        # them), so per-call state like the MCP log-capture token survives.
+        _caller_ctx = contextvars.copy_context()
         with ThreadPoolExecutor(max_workers=self.config.parallel_workers) as executor:
             future_to_idx = {
-                executor.submit(self._enhance_batch, batch, prompt_template): idx
+                executor.submit(
+                    _caller_ctx.copy().run, self._enhance_batch, batch, prompt_template
+                ): idx
                 for idx, batch in enumerate(batches)
             }
 

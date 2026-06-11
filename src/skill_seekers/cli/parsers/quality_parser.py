@@ -24,4 +24,10 @@ class QualityParser(SubcommandParser):
         # metavar keeps the help display as "skill_directory".
         parser.add_argument("skill_dir", metavar="skill_directory", help="Skill directory path")
         parser.add_argument("--report", action="store_true", help="Generate detailed report")
-        parser.add_argument("--threshold", type=float, default=7.0, help="Quality threshold (0-10)")
+        parser.add_argument(
+            "--threshold",
+            type=float,
+            default=None,
+            help="Quality gate threshold (0-10). When set, exit non-zero if the "
+            "skill scores below it; without it the command only reports.",
+        )

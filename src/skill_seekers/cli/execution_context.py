@@ -216,6 +216,17 @@ class ExecutionContext(BaseModel):
             return cls._instance
 
     @classmethod
+    def is_initialized(cls) -> bool:
+        """True when initialize() was explicitly called.
+
+        ``get()`` never raises — it auto-creates a default context — so callers
+        that want "context if the CLI set one up, else my own config fallback"
+        must check this instead of wrapping ``get()`` in try/except.
+        """
+        with cls._lock:
+            return cls._initialized
+
+    @classmethod
     def reset(cls) -> None:
         """Reset the singleton (mainly for testing)."""
         with cls._lock:

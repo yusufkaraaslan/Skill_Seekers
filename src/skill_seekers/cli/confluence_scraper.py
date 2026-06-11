@@ -243,8 +243,8 @@ class ConfluenceToSkillConverter(SkillConverter):
         self.max_pages: int = int(_raw_max) if not self._unlimited else float("inf")
 
         # Output paths
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
-        self.data_file = f"{self.skill_dir}_extracted.json"
+        # skill_dir is resolved once in SkillConverter.__init__
+        self.data_file = self.data_file_for()
 
         # Extracted data storage
         self.extracted_data: dict[str, Any] | None = None

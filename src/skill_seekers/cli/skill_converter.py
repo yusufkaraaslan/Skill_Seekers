@@ -29,9 +29,24 @@ class SkillConverter:
         self.config = config
         self.name = config.get("name", "unnamed")
         # Honor an explicit output dir (from --output) when provided; otherwise
-        # default to output/<name>. Subclasses that re-assign skill_dir do the
-        # same so --output is respected for every source type.
-        self.skill_dir = config.get("output_dir") or f"output/{self.name}"
+        # default to output/<name>. This is the single resolution point —
+        # subclasses must consume self.skill_dir rather than re-deriving it.
+        self.skill_dir = self.resolve_skill_dir(config, self.name)
+
+    @staticmethod
+    def resolve_skill_dir(config: dict[str, Any], name: str) -> str:
+        """Resolve the skill output directory from config.
+
+        Strips trailing path separators: derived paths like
+        ``f"{skill_dir}_extracted.json"`` would otherwise land INSIDE the
+        skill directory (and get packaged) when --output ends with '/'.
+        """
+        raw = config.get("output_dir") or f"output/{name}"
+        return str(raw).rstrip("/").rstrip("\\") or raw
+
+    def data_file_for(self, suffix: str = "_extracted.json") -> str:
+        """Path for intermediate extraction data, derived from skill_dir."""
+        return f"{self.skill_dir}{suffix}"
 
     def run(self) -> int:
         """Main entry point — extract source and build skill.
