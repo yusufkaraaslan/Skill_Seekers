@@ -37,10 +37,27 @@ except ImportError:
     )
 
 
+def _confirm_packaging(report, assume_yes=False):
+    """Decide whether to proceed past the quality-warning gate.
+
+    Packaging only writes a zip, so a non-interactive run (CI, pipes) should
+    proceed rather than crash on ``EOFError`` from ``input()``. ``--yes`` forces
+    the same. An interactive TTY still gets the y/n prompt.
+    """
+    print("=" * 60)
+    if not (report.has_errors or report.has_warnings):
+        return True
+    if assume_yes or not sys.stdin.isatty():
+        print("\n⚠️  Proceeding with packaging (non-interactive or --yes).")
+        return True
+    return input("\nContinue with packaging? (y/n): ").strip().lower() == "y"
+
+
 def package_skill(
     skill_dir,
     open_folder_after=True,
     skip_quality_check=False,
+    assume_yes=False,
     target="claude",
     model=None,
     streaming=False,
@@ -92,17 +109,12 @@ def package_skill(
         # Print report
         print_report(report, verbose=False)
 
-        # If there are errors or warnings, ask user to confirm
-        if report.has_errors or report.has_warnings:
-            print("=" * 60)
-            response = input("\nContinue with packaging? (y/n): ").strip().lower()
-            if response != "y":
-                print("\n❌ Packaging cancelled by user")
-                return False, None
-            print()
-        else:
-            print("=" * 60)
-            print()
+        # Confirm past the quality gate (auto-proceeds when non-interactive
+        # or --yes; only an interactive TTY with issues gets the prompt).
+        if not _confirm_packaging(report, assume_yes=assume_yes):
+            print("\n❌ Packaging cancelled by user")
+            return False, None
+        print()
 
     # Get platform-specific adaptor
     try:
@@ -233,6 +245,7 @@ Examples:
         args.skill_directory,
         open_folder_after=not args.no_open,
         skip_quality_check=args.skip_quality_check,
+        assume_yes=args.yes,
         target=args.target,
         model=args.model,
         streaming=args.streaming,

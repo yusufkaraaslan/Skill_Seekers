@@ -12,6 +12,7 @@ Validates:
 """
 
 import argparse
+import json
 
 import pytest
 from pathlib import Path
@@ -378,3 +379,35 @@ def test_main_explicit_threshold_gates(minimal_skill_dir):
 
     assert main(_quality_args(minimal_skill_dir, threshold=10.0)) == 1
     assert main(_quality_args(minimal_skill_dir, threshold=0.0)) == 0
+
+
+def test_main_prints_score_summary(minimal_skill_dir, capsys):
+    """`quality` must show the score on stdout even without --report; a bare
+    'Report saved' left users having to open the JSON to learn the score."""
+    from skill_seekers.cli.quality_metrics import main
+
+    main(_quality_args(minimal_skill_dir))
+    out = capsys.readouterr().out
+    assert "Quality Score" in out
+    assert "Grade" in out
+
+
+def test_report_json_uses_plain_enum_values(minimal_skill_dir, tmp_path):
+    """Saved JSON must record metric levels as 'info'/'warning', not the enum
+    repr 'MetricLevel.INFO' (which leaked via json.dumps(default=str))."""
+    from skill_seekers.cli.quality_metrics import main
+
+    out_file = tmp_path / "q.json"
+    main(_quality_args(minimal_skill_dir, output=str(out_file)))
+    text = out_file.read_text()
+    assert "MetricLevel." not in text
+    data = json.loads(text)
+    levels = {m["level"] for m in data["metrics"]}
+    assert levels <= {"info", "warning", "error", "critical"}
+
+
+def test_json_default_serializes_enum_value():
+    from skill_seekers.cli.quality_metrics import _json_default
+
+    assert _json_default(MetricLevel.INFO) == "info"
+    assert _json_default(MetricLevel.WARNING) == "warning"

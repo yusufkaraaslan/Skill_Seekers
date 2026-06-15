@@ -1431,6 +1431,8 @@ This skill combines knowledge from multiple sources:
             "how_to_guides",
             "config_patterns",
             "architecture",
+            "api_reference",
+            "dependency_graph",
         )
         for local_source in local_list:
             if not any(local_source.get(k) for k in c3_keys):
@@ -1480,6 +1482,8 @@ This skill combines knowledge from multiple sources:
             ("examples", "Usage examples"),
             ("guides", "How-to guides"),
             ("configuration", "Configuration"),
+            ("api_reference", "API reference"),
+            ("dependencies", "Dependencies"),
         )
 
         with open(index_path, "w", encoding="utf-8") as f:
@@ -1521,6 +1525,8 @@ This skill combines knowledge from multiple sources:
         self._generate_guide_references(c3_dir, c3_data.get("how_to_guides"))
         self._generate_config_references(c3_dir, c3_data.get("config_patterns"))
         self._copy_architecture_details(c3_dir, c3_data.get("architecture"))
+        self._generate_api_reference_references(c3_dir, c3_data.get("api_reference"))
+        self._generate_dependency_references(c3_dir, c3_data.get("dependency_graph"))
 
         logger.info("✅ Created codebase analysis references")
 
@@ -1971,6 +1977,52 @@ This skill combines knowledge from multiple sources:
                     f.write("\n")
 
         logger.info(f"   ✓ Architectural details: {len(patterns)} patterns")
+
+    def _generate_api_reference_references(self, c3_dir: str, api_data: dict):
+        """Write per-module API reference markdown (C2.5).
+
+        ``api_data`` maps module name -> markdown content (as loaded by
+        ``UnifiedScraper._load_api_reference``). Previously this payload was
+        carried on the source dict but never written out, so the packaged skill
+        lost its API reference entirely.
+        """
+        if not api_data:
+            return
+
+        api_dir = os.path.join(c3_dir, "api_reference")
+        os.makedirs(api_dir, exist_ok=True)
+
+        for module_name, content in api_data.items():
+            # basename() guards against any path separators in the module key.
+            stem = os.path.basename(str(module_name)) or "module"
+            with open(os.path.join(api_dir, f"{stem}.md"), "w", encoding="utf-8") as f:
+                f.write(content)
+
+        logger.info(f"   ✓ API reference: {len(api_data)} module(s)")
+
+    def _generate_dependency_references(self, c3_dir: str, dep_data: dict):
+        """Write the dependency graph (C2.6) JSON plus a short summary index."""
+        if not dep_data:
+            return
+
+        dep_dir = os.path.join(c3_dir, "dependencies")
+        os.makedirs(dep_dir, exist_ok=True)
+
+        json_path = os.path.join(dep_dir, "dependency_graph.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(dep_data, f, indent=2, ensure_ascii=False)
+
+        nodes = dep_data.get("nodes") or []
+        edges = dep_data.get("edges") or []
+        md_path = os.path.join(dep_dir, "index.md")
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write("# Dependency Graph\n\n")
+            f.write("*Module dependency graph from codebase analysis (C2.6)*\n\n")
+            f.write(f"- **Modules**: {len(nodes)}\n")
+            f.write(f"- **Dependencies**: {len(edges)}\n\n")
+            f.write("See `dependency_graph.json` for the full graph.\n")
+
+        logger.info(f"   ✓ Dependency graph: {len(nodes)} module(s), {len(edges)} edge(s)")
 
     def _collect_c3_payloads(self) -> list[dict]:
         """Gather C3.x analysis payloads across GitHub and local sources (#363).

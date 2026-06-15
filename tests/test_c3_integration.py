@@ -403,5 +403,122 @@ class TestC3AnalyzeCodebaseSignature:
         assert captured_kwargs["enhance_level"] == 0  # ai_mode "none" → enhance_level 0
 
 
+class TestLocalCodebaseApiAndDependencyReferences:
+    """Local codebase create must surface api_reference + dependency graph.
+
+    Regression: ``_write_codebase_analysis_references`` emitted patterns/
+    examples/guides/configuration/architecture but silently dropped the
+    ``api_reference`` and dependency graph the local scraper had already
+    produced. They were stranded in the scrape cache and never reached the
+    packaged skill, so a skill built from a scan-emitted ``*-codebase.json``
+    config shipped without its API reference.
+    """
+
+    @pytest.fixture
+    def temp_dir(self):
+        temp = tempfile.mkdtemp()
+        yield temp
+        shutil.rmtree(temp, ignore_errors=True)
+
+    @pytest.fixture
+    def config(self):
+        return {
+            "name": "acme",
+            "description": "Acme local codebase",
+            "sources": [{"type": "local", "path": "/tmp/acme"}],
+        }
+
+    @pytest.fixture
+    def scraped_data(self):
+        return {
+            "local": [
+                {
+                    "source_id": "acme_local_0_acme",
+                    "name": "acme",
+                    "architecture": {"patterns": [], "languages": {"Python": 2}},
+                    "api_reference": {
+                        "arithmetic": "# API Reference: arithmetic.py\n\n## add(a, b)\n",
+                        "stats": "# API Reference: stats.py\n\n## mean(values)\n",
+                    },
+                    "dependency_graph": {
+                        "nodes": ["arithmetic", "stats"],
+                        "edges": [["__init__", "arithmetic"]],
+                    },
+                }
+            ]
+        }
+
+    def test_api_reference_promoted_into_skill(self, config, scraped_data, temp_dir):
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = temp_dir
+        builder._generate_local_codebase_analysis_references()
+
+        api_dir = os.path.join(
+            temp_dir,
+            "references",
+            "codebase_analysis",
+            "acme_local_0_acme",
+            "api_reference",
+        )
+        assert os.path.isfile(os.path.join(api_dir, "arithmetic.md"))
+        assert os.path.isfile(os.path.join(api_dir, "stats.md"))
+        with open(os.path.join(api_dir, "arithmetic.md")) as f:
+            assert "## add(a, b)" in f.read()
+
+    def test_dependency_graph_promoted_into_skill(self, config, scraped_data, temp_dir):
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = temp_dir
+        builder._generate_local_codebase_analysis_references()
+
+        dep_file = os.path.join(
+            temp_dir,
+            "references",
+            "codebase_analysis",
+            "acme_local_0_acme",
+            "dependencies",
+            "dependency_graph.json",
+        )
+        assert os.path.isfile(dep_file)
+        with open(dep_file) as f:
+            assert json.load(f)["nodes"] == ["arithmetic", "stats"]
+
+    def test_index_links_api_reference_and_dependencies(self, config, scraped_data, temp_dir):
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = temp_dir
+        builder._generate_local_codebase_analysis_references()
+        builder._generate_codebase_analysis_index()
+
+        index_path = os.path.join(temp_dir, "references", "codebase_analysis", "index.md")
+        with open(index_path) as f:
+            index = f.read()
+        assert "api_reference/" in index
+        assert "dependencies/" in index
+
+    def test_api_reference_only_source_is_not_skipped(self, config, temp_dir):
+        """A source that produced only an API reference must still be written."""
+        scraped_data = {
+            "local": [
+                {
+                    "source_id": "lib_local_0_lib",
+                    "name": "lib",
+                    "api_reference": {"core": "# API Reference: core.py\n"},
+                }
+            ]
+        }
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder.skill_dir = temp_dir
+        builder._generate_local_codebase_analysis_references()
+
+        api_md = os.path.join(
+            temp_dir,
+            "references",
+            "codebase_analysis",
+            "lib_local_0_lib",
+            "api_reference",
+            "core.md",
+        )
+        assert os.path.isfile(api_md)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

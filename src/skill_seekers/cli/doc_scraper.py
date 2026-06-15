@@ -65,6 +65,12 @@ FALLBACK_MAIN_SELECTORS = [
     "#main-content",
 ]
 
+# (connect, read) timeout for the best-effort sitemap probes that run before the
+# crawl. A tight connect bound fails fast on an unreachable host (so `create
+# <url>` doesn't look hung) while the read bound still allows a slow but real
+# sitemap to download.
+SITEMAP_PROBE_TIMEOUT = (5, 10)
+
 # Pre-compiled regex patterns for frequently called methods
 _WHITESPACE_RE = re.compile(r"\s+")
 _SAFE_TITLE_RE = re.compile(r"[^\w\s-]")
@@ -1342,7 +1348,9 @@ class DocToSkillConverter(SkillConverter):
         for sitemap_url in sitemap_urls_to_try:
             try:
                 response = requests.get(
-                    sitemap_url, timeout=10, headers={"User-Agent": "SkillSeekers/3.4"}
+                    sitemap_url,
+                    timeout=SITEMAP_PROBE_TIMEOUT,
+                    headers={"User-Agent": "SkillSeekers/3.4"},
                 )
                 if response.status_code != 200:
                     continue
@@ -1361,7 +1369,7 @@ class DocToSkillConverter(SkillConverter):
                             continue
                         sub_resp = requests.get(
                             sitemap_text,
-                            timeout=10,
+                            timeout=SITEMAP_PROBE_TIMEOUT,
                             headers={"User-Agent": "SkillSeekers/3.4"},
                         )
                         if sub_resp.status_code == 200:

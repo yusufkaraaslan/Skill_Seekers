@@ -196,10 +196,15 @@ def check_api_keys() -> CheckResult:
             verbose_detail="\n".join(details),
         )
     if set_keys:
+        # Name the keys that ARE set so a bare GITHUB_TOKEN (a rate-limit token,
+        # not an AI enhancement provider) isn't misread as a provider key being
+        # configured. Previously the summary only listed the missing keys, so
+        # "1 set" looked like enhancement was ready when only GITHUB_TOKEN was set.
         return CheckResult(
             "API keys",
             "warn",
-            f"{len(set_keys)} set ({', '.join(missing_keys)} not set)",
+            f"{len(set_keys)} set ({', '.join(set_keys)}); "
+            f"{len(missing_keys)} not set ({', '.join(missing_keys)})",
             verbose_detail="\n".join(details),
         )
     return CheckResult(

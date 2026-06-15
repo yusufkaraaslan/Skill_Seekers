@@ -328,7 +328,12 @@ class CreateCommand:
             config.update(
                 {
                     "directory": directory,
-                    "depth": ctx.analysis.depth,
+                    # Default a bare `create ./path` to deep analysis so it
+                    # actually extracts an API reference (matching the scraper's
+                    # own default and the scan-emitted config path). `surface`
+                    # only walks the file tree and produced an empty
+                    # code_analysis.json. An explicit --depth still wins.
+                    "depth": getattr(self.args, "depth", None) or "deep",
                     "output_dir": ctx.output.output_dir or f"output/{name}",
                     "languages": ctx.scraping.languages or None,
                     "file_patterns": ctx.analysis.file_patterns,

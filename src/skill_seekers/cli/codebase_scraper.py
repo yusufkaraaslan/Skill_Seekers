@@ -1101,6 +1101,13 @@ def analyze_codebase(
             continue
 
     logger.info(f"✅ Successfully analyzed {analyzed_count} files")
+    if analyzed_count == 0 and depth == "surface" and files:
+        # surface depth intentionally skips per-file analysis; say so instead of
+        # leaving a bare "analyzed 0 files" that reads like a failure.
+        logger.info(
+            "   (surface depth only maps the file tree — pass --depth deep to "
+            "extract signatures / API reference)"
+        )
 
     # Save results
     output_json = output_dir / "code_analysis.json"

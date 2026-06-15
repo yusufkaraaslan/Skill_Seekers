@@ -24,6 +24,17 @@ class MetricLevel(Enum):
     CRITICAL = "critical"
 
 
+def _json_default(obj):
+    """JSON serializer for report dataclasses.
+
+    Serializes Enums by their value ('info') so the saved report doesn't leak
+    the Python repr ('MetricLevel.INFO'); falls back to str() for anything else.
+    """
+    if isinstance(obj, Enum):
+        return obj.value
+    return str(obj)
+
+
 @dataclass
 class QualityMetric:
     """Individual quality metric."""
@@ -554,15 +565,19 @@ def main(args=None):
     # Generate report
     report = analyzer.generate_report()
 
-    # Display report
+    # Display report. --report prints the full breakdown; otherwise still show a
+    # one-line score summary so the user doesn't have to open the JSON to learn it.
     if args.report:
         formatted = analyzer.format_report(report)
         print(formatted)
+    else:
+        score = report.overall_score
+        print(f"\n📊 Quality Score: {score.total_score:.1f}/100 (Grade: {score.grade})")
 
     # Save report
     report_path = Path(args.output) if args.output else skill_dir / "quality_report.json"
 
-    report_path.write_text(json.dumps(asdict(report), indent=2, default=str))
+    report_path.write_text(json.dumps(asdict(report), indent=2, default=_json_default))
     print(f"\n✅ Report saved: {report_path}")
 
     # Quality gating: only when --threshold is explicitly given. Report-only
