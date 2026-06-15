@@ -34,6 +34,13 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Skip quality checks before packaging",
         },
     },
+    "yes": {
+        "flags": ("--yes", "-y"),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Proceed past quality warnings without prompting (for CI/non-interactive use)",
+        },
+    },
     # Target platform
     "target": {
         "flags": ("--target",),

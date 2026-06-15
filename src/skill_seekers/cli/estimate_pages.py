@@ -223,6 +223,15 @@ def print_results(results, config):
 
 def load_config(config_path):
     """Load configuration from JSON file"""
+    # `estimate` needs a config file, but `create` accepts URLs — so users
+    # naturally try `estimate <url>`. Catch that early with an actionable hint
+    # instead of a bare "Config file not found: <url>".
+    if isinstance(config_path, str) and config_path.startswith(("http://", "https://")):
+        print(f"❌ Error: estimate expects a config file, not a URL: {config_path}")
+        print("   Generate one first, then estimate it:")
+        print(f"     skill-seekers create {config_path} --dry-run   # writes a config")
+        print("     skill-seekers estimate <config.json>")
+        sys.exit(EXIT_ERROR)
     try:
         with open(config_path) as f:
             config = json.load(f)

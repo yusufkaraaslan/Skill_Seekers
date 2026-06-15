@@ -101,6 +101,16 @@ class TestCheckApiKeys:
             assert result.status == "warn"
             assert "1 set" in result.detail
 
+    def test_set_keys_are_named(self):
+        """The summary must name which keys are set, so a bare GITHUB_TOKEN
+        isn't misread as an AI provider key being configured."""
+        env = {"GITHUB_TOKEN": "ghp_test123456789"}
+        with patch.dict(os.environ, env, clear=True):
+            result = check_api_keys()
+            assert result.status == "warn"
+            assert "1 set" in result.detail
+            assert "GITHUB_TOKEN" in result.detail
+
 
 class TestCheckMcpServer:
     def test_returns_result(self):
