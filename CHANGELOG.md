@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.8.0.dev0_
+## [3.8.0] - 2026-06-15
 
-**Theme:** The Grand Unification refactor (one build pipeline, one AI transport, one parser definition, in-process MCP tools — see `docs/UNIFICATION_PLAN.md`) with a 13-bug audit fix-up — plus MiniMax-M3, model selection, registry-driven platform targets, a Windows subprocess fix, and codebase de-duplication.
+**Theme:** The Grand Unification refactor (one build pipeline, one AI transport, one parser definition, in-process MCP tools — see `docs/UNIFICATION_PLAN.md`) with a 13-bug audit fix-up and a real-world end-to-end CLI testing pass — plus MiniMax-M3, model selection, registry-driven platform targets, a Windows subprocess fix, and codebase de-duplication.
 
 ### Fixed
+- **Codebase skills built from a config no longer drop the API reference + dependency graph** — the local source carried `api_reference` and `dependency_graph`, but the unified builder never wrote them out, so a skill built from a scan-emitted `*-codebase.json` shipped without its API reference (it was stranded in the scrape cache). Both are now promoted into `references/codebase_analysis/<source>/` and linked from the index.
+- **`create ./path` defaults to deep analysis** — local codebase create defaulted to `surface` depth, producing an empty `code_analysis.json` and a misleading "analyzed 0 files" log; it now defaults to `deep` (matching the scraper default and the scan-config path), with an explicit `--depth` still taking precedence.
+- **`package` works non-interactively** — the quality-gate prompt raised `EOFError` when stdin wasn't a TTY (CI/pipes); it now auto-proceeds on a non-TTY or with the new `--yes`/`-y` flag, while an interactive terminal still prompts.
+- **`quality` prints the score** — the standalone command saved `quality_report.json` but printed nothing; it now shows the score/grade summary, and the report serializes metric levels as `"info"`/`"warning"` instead of the Python enum repr `"MetricLevel.INFO"`.
+- **`doctor` no longer miscounts `GITHUB_TOKEN` as an AI provider key** — the API-keys check now names which keys are set, so a bare GitHub token isn't misread as a provider key being configured.
+- **`estimate <url>` gives an actionable error** — passing a URL (which `create` accepts) printed a bare "Config file not found"; it now explains that `estimate` takes a config file and points at `create --dry-run`, and exits non-zero.
+- **Web sitemap discovery fails fast on unreachable hosts** — the pre-crawl sitemap probes used a single scalar timeout; they now use a `(connect, read)` timeout so an unreachable host doesn't block the full window before the crawl starts.
 - **Fork-bomb guard covers the primary LOCAL enhance path** — `_run_agent_command` now marks `SKILL_SEEKER_ENHANCE_ACTIVE` in the spawned agent's environment (including terminal-mode scripts) and `run()` refuses nested spawns, so a local agent enhancing a skill can no longer recursively launch enhancement.
 - **`--dry-run` and `--output` honored for unified configs** — `create` skipped injecting both into `UnifiedScraper` (every other source type got them); dry-run now previews and returns without creating directories, for legacy and unified configs alike.
 - **Trailing-slash `--output` no longer leaks intermediates into the packaged skill** — `SkillConverter` resolves `skill_dir` once and strips trailing separators, so `--output out/x/` can't place `_extracted.json` inside the skill directory.
