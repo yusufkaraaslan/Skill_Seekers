@@ -219,8 +219,8 @@ See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) for detailed instructions.
 **Quick Start:**
 
 ```bash
-# Build image
-docker build -t skillseekers:latest .
+# Pull pre-built MCP image
+docker pull yusyuss/skill-seekers-mcp:3.8.0
 
 # Run container
 docker run -d \
@@ -230,7 +230,7 @@ docker run -d \
   -e GITHUB_TOKEN=$GITHUB_TOKEN \
   -v /opt/skillseekers/data:/app/data \
   --restart unless-stopped \
-  skillseekers:latest
+  yusyuss/skill-seekers-mcp:3.8.0
 ```
 
 ### Option 3: Kubernetes Deployment
@@ -646,7 +646,7 @@ ps aux --sort=-%mem | head -10
 skill-seekers create --config config.json --workers 2
 
 # Enable memory limits
-docker run --memory=4g skillseekers:latest
+docker run --memory=4g yusyuss/skill-seekers:3.8.0
 ```
 
 #### 2. GitHub Rate Limits

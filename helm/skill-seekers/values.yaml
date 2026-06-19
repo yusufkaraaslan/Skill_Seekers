@@ -59,9 +59,9 @@ mcpServer:
   replicaCount: 2
 
   image:
-    repository: skill-seekers-mcp
+    repository: yusyuss/skill-seekers-mcp
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "3.8.0"
 
   service:
     type: ClusterIP

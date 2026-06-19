@@ -19,11 +19,11 @@ Complete guide for deploying Skill Seekers using Docker.
 ### Single Container Deployment
 
 ```bash
-# Pull pre-built image (when available)
-docker pull skillseekers/skillseekers:latest
+# Pull pre-built MCP image
+docker pull yusyuss/skill-seekers-mcp:3.8.0
 
-# Or build locally
-docker build -t skillseekers:latest .
+# Or build the MCP image locally
+docker build -t skill-seekers-mcp:local -f Dockerfile.mcp .
 
 # Run MCP server
 docker run -d \
@@ -33,7 +33,7 @@ docker run -d \
   -e GITHUB_TOKEN=$GITHUB_TOKEN \
   -v skillseekers-data:/app/data \
   --restart unless-stopped \
-  skillseekers:latest
+  yusyuss/skill-seekers-mcp:3.8.0
 ```
 
 ### Multi-Service Deployment
@@ -48,6 +48,20 @@ docker-compose ps
 # View logs
 docker-compose logs -f
 ```
+
+## Pre-built Images
+
+Official images are published to Docker Hub under `yusyuss`:
+
+```bash
+# CLI image
+docker pull yusyuss/skill-seekers:3.8.0
+
+# MCP server image
+docker pull yusyuss/skill-seekers-mcp:3.8.0
+```
+
+`latest`, `3.8`, `3`, and `3.8.0` tags are available for both images. The examples below use the pinned `3.8.0` tag.
 
 ## Building Images
 
@@ -75,18 +89,18 @@ CMD ["python", "-m", "skill_seekers.mcp.server_fastmcp"]
 
 ```bash
 # Standard build
-docker build -t skillseekers:latest .
+docker build -t skill-seekers:local .
 
 # Build with specific features
 docker build \
   --build-arg INSTALL_EXTRAS="all-llms,embedding" \
-  -t skillseekers:full \
+  -t skill-seekers:full \
   .
 
 # Build with cache
 docker build \
-  --cache-from skillseekers:latest \
-  -t skillseekers:v3.6.0 \
+  --cache-from skill-seekers:local \
+  -t skill-seekers:v3.6.0 \
   .
 ```
 
@@ -104,13 +118,13 @@ CMD ["python", "-m", "skill_seekers.mcp.server_fastmcp", "--reload"]
 **Build and run:**
 
 ```bash
-docker build -f Dockerfile.dev -t skillseekers:dev .
+docker build -f Dockerfile.dev -t skill-seekers:dev .
 
 docker run -it \
   --name skillseekers-dev \
   -p 8765:8765 \
   -v $(pwd):/app \
-  skillseekers:dev
+  skill-seekers:dev
 ```
 
 ### 3. Image Optimization
@@ -158,13 +172,13 @@ docker run -d \
   -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
   -v skillseekers-data:/app/data \
   --restart unless-stopped \
-  skillseekers:latest
+  yusyuss/skill-seekers-mcp:3.8.0
 
 # stdio transport (for local tools)
 docker run -it \
   --name skillseekers-stdio \
   -e MCP_TRANSPORT=stdio \
-  skillseekers:latest
+  yusyuss/skill-seekers-mcp:3.8.0
 ```
 
 ### 2. Embedding Server
@@ -177,7 +191,7 @@ docker run -d \
   -e VOYAGE_API_KEY=$VOYAGE_API_KEY \
   -v skillseekers-cache:/app/cache \
   --restart unless-stopped \
-  skillseekers:latest \
+  yusyuss/skill-seekers:3.8.0 \
   python -m skill_seekers.embedding.server --host 0.0.0.0 --port 8000
 ```
 
@@ -189,7 +203,7 @@ docker run -d \
   -e SYNC_WEBHOOK_URL=$SYNC_WEBHOOK_URL \
   -v skillseekers-configs:/app/configs \
   --restart unless-stopped \
-  skillseekers:latest \
+  yusyuss/skill-seekers:3.8.0 \
   skill-seekers-sync start --config configs/react.json
 ```
 
@@ -200,18 +214,18 @@ docker run -d \
 docker run --rm \
   -e GITHUB_TOKEN=$GITHUB_TOKEN \
   -v $(pwd)/output:/app/output \
-  skillseekers:latest \
+  yusyuss/skill-seekers:3.8.0 \
   skill-seekers create --config configs/react.json
 
 # Generate skill
 docker run --rm \
   -v $(pwd)/output:/app/output \
-  skillseekers:latest \
+  yusyuss/skill-seekers:3.8.0 \
   skill-seekers package output/react/
 
 # Interactive shell
 docker run --rm -it \
-  skillseekers:latest \
+  yusyuss/skill-seekers:3.8.0 \
   /bin/bash
 ```
 
@@ -226,7 +240,7 @@ version: '3.8'
 
 services:
   mcp-server:
-    image: skillseekers:latest
+    image: yusyuss/skill-seekers-mcp:3.8.0
     container_name: skillseekers-mcp
     ports:
       - "8765:8765"
@@ -248,7 +262,7 @@ services:
       start_period: 40s
 
   embedding-server:
-    image: skillseekers:latest
+    image: yusyuss/skill-seekers:3.8.0
     container_name: skillseekers-embed
     ports:
       - "8000:8000"
@@ -390,7 +404,7 @@ services:
 ```bash
 docker run -d \
   -v $(pwd)/configs:/app/configs:ro \
-  skillseekers:latest
+  yusyuss/skill-seekers:3.8.0
 ```
 
 **docker-compose.yml:**
@@ -416,7 +430,7 @@ docker service create \
   --name skillseekers-mcp \
   --secret anthropic_key \
   --secret github_token \
-  skillseekers:latest
+  yusyuss/skill-seekers-mcp:3.8.0
 ```
 
 **docker-compose.yml (Swarm):**
@@ -448,7 +462,7 @@ services:
 docker volume create skillseekers-data
 
 # Use in container
-docker run -v skillseekers-data:/app/data skillseekers:latest
+docker run -v skillseekers-data:/app/data yusyuss/skill-seekers:3.8.0
 
 # Backup volume
 docker run --rm \
@@ -469,10 +483,10 @@ docker run --rm \
 
 ```bash
 # Mount host directory
-docker run -v /opt/skillseekers/output:/app/output skillseekers:latest
+docker run -v /opt/skillseekers/output:/app/output yusyuss/skill-seekers:3.8.0
 
 # Read-only mount
-docker run -v $(pwd)/configs:/app/configs:ro skillseekers:latest
+docker run -v $(pwd)/configs:/app/configs:ro yusyuss/skill-seekers:3.8.0
 ```
 
 ### 3. Data Migration
@@ -493,14 +507,14 @@ docker cp ./data-backup new-container:/app/data
 # Containers can communicate by name
 docker network create skillseekers-net
 
-docker run --network skillseekers-net skillseekers:latest
+docker run --network skillseekers-net yusyuss/skill-seekers:3.8.0
 ```
 
 ### 2. Host Network
 
 ```bash
 # Use host network stack
-docker run --network host skillseekers:latest
+docker run --network host yusyuss/skill-seekers:3.8.0
 ```
 
 ### 3. Custom Network
@@ -610,7 +624,7 @@ docker logs skillseekers-mcp
 docker inspect skillseekers-mcp
 
 # Run with interactive shell
-docker run -it --entrypoint /bin/bash skillseekers:latest
+docker run -it --entrypoint /bin/bash yusyuss/skill-seekers:3.8.0
 ```
 
 #### 2. Port Already in Use
@@ -623,14 +637,14 @@ sudo lsof -i :8765
 kill -9 <PID>
 
 # Or use different port
-docker run -p 8766:8765 skillseekers:latest
+docker run -p 8766:8765 yusyuss/skill-seekers:3.8.0
 ```
 
 #### 3. Volume Permission Issues
 
 ```bash
 # Run as specific user
-docker run --user $(id -u):$(id -g) skillseekers:latest
+docker run --user $(id -u):$(id -g) yusyuss/skill-seekers:3.8.0
 
 # Fix permissions
 docker run --rm \
@@ -648,20 +662,20 @@ docker exec skillseekers-mcp ping google.com
 docker exec skillseekers-mcp cat /etc/resolv.conf
 
 # Use custom DNS
-docker run --dns 8.8.8.8 skillseekers:latest
+docker run --dns 8.8.8.8 yusyuss/skill-seekers:3.8.0
 ```
 
 #### 5. High Memory Usage
 
 ```bash
 # Set memory limit
-docker run --memory=4g skillseekers:latest
+docker run --memory=4g yusyuss/skill-seekers:3.8.0
 
 # Check memory usage
 docker stats skillseekers-mcp
 
 # Enable memory swappiness
-docker run --memory=4g --memory-swap=8g skillseekers:latest
+docker run --memory=4g --memory-swap=8g yusyuss/skill-seekers:3.8.0
 ```
 
 ### Debug Commands
@@ -692,15 +706,19 @@ docker export skillseekers-mcp > container.tar
 
 ```bash
 # Tag images with versions
-docker build -t skillseekers:2.9.0 .
-docker tag skillseekers:2.9.0 skillseekers:latest
+docker build -t skill-seekers:3.8.0 .
+docker tag skill-seekers:3.8.0 yusyuss/skill-seekers:3.8.0
 
-# Use private registry
-docker tag skillseekers:latest registry.example.com/skillseekers:latest
-docker push registry.example.com/skillseekers:latest
+# Tag the MCP image the same way
+docker build -t skill-seekers-mcp:3.8.0 -f Dockerfile.mcp .
+docker tag skill-seekers-mcp:3.8.0 yusyuss/skill-seekers-mcp:3.8.0
+
+# Use a private registry
+docker tag yusyuss/skill-seekers:3.8.0 registry.example.com/skill-seekers:3.8.0
+docker push registry.example.com/skill-seekers:3.8.0
 
 # Scan for vulnerabilities
-docker scan skillseekers:latest
+docker scan yusyuss/skill-seekers:3.8.0
 ```
 
 ### 2. Security
@@ -711,13 +729,13 @@ RUN useradd -m -s /bin/bash skillseekers
 USER skillseekers
 
 # Read-only root filesystem
-docker run --read-only --tmpfs /tmp skillseekers:latest
+docker run --read-only --tmpfs /tmp yusyuss/skill-seekers:3.8.0
 
 # Drop capabilities
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE skillseekers:latest
+docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE yusyuss/skill-seekers:3.8.0
 
 # Use security scanning
-trivy image skillseekers:latest
+trivy image yusyuss/skill-seekers:3.8.0
 ```
 
 ### 3. Resource Management
