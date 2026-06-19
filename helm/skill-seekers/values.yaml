@@ -61,7 +61,7 @@ mcpServer:
   image:
     repository: yusyuss/skill-seekers-mcp
     pullPolicy: IfNotPresent
-    tag: "3.8.0"
+    tag: "latest"
 
   service:
     type: ClusterIP

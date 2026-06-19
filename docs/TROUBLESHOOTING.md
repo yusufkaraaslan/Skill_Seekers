@@ -522,7 +522,7 @@ docker run -p 8766:8765 ...
 docker run --user $(id -u):$(id -g) ...
 
 # Run interactively to debug
-docker run -it --entrypoint /bin/bash yusyuss/skill-seekers:3.8.0
+docker run -it --entrypoint /bin/bash yusyuss/skill-seekers:latest
 ```
 
 ### Issue: Kubernetes Pod CrashLoopBackOff
@@ -570,7 +570,7 @@ Failed to pull image
 
 ```bash
 # Check image exists
-docker pull yusyuss/skill-seekers-mcp:3.8.0
+docker pull yusyuss/skill-seekers-mcp:latest
 
 # Create image pull secret
 kubectl create secret docker-registry regcred \
@@ -585,7 +585,7 @@ spec:
   - name: regcred
 
 # Use public image (if available)
-image: docker.io/yusyuss/skill-seekers-mcp:3.8.0
+image: docker.io/yusyuss/skill-seekers-mcp:latest
 ```
 
 ## Performance Issues
@@ -611,7 +611,7 @@ skill-seekers create --config config.json --workers 2
 
 # Enable memory limits
 # Docker:
-docker run --memory=4g yusyuss/skill-seekers:3.8.0
+docker run --memory=4g yusyuss/skill-seekers:latest
 
 # Kubernetes:
 resources:
