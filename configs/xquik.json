@@ -1,0 +1,114 @@
+{
+  "name": "xquik",
+  "description": "Xquik REST, webhook, MCP, and X data automation knowledge base.",
+  "version": "1.0.0",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.xquik.com/",
+      "start_urls": [
+        "https://docs.xquik.com/api-reference/overview",
+        "https://docs.xquik.com/api-reference/authentication",
+        "https://docs.xquik.com/api-reference/errors",
+        "https://docs.xquik.com/mcp",
+        "https://docs.xquik.com/webhooks",
+        "https://docs.xquik.com/monitors",
+        "https://docs.xquik.com/extractions",
+        "https://docs.xquik.com/alternatives/x-api"
+      ],
+      "selectors": {
+        "main_content": "main, article, #content-area, #content-container",
+        "title": "h1",
+        "code_blocks": "pre code"
+      },
+      "url_patterns": {
+        "include": [
+          "/api-reference/",
+          "/mcp",
+          "/webhooks",
+          "/monitors",
+          "/extractions",
+          "/alternatives/"
+        ],
+        "exclude": [
+          "/blog/",
+          "/changelog/",
+          "/legal/"
+        ]
+      },
+      "categories": {
+        "getting_started": [
+          "overview",
+          "quickstart",
+          "authentication"
+        ],
+        "rest_api": [
+          "api-reference",
+          "endpoint",
+          "pagination",
+          "errors"
+        ],
+        "mcp": [
+          "mcp",
+          "model-context-protocol",
+          "agent"
+        ],
+        "webhooks": [
+          "webhook",
+          "hmac",
+          "events"
+        ],
+        "monitoring": [
+          "monitor",
+          "keyword",
+          "account"
+        ],
+        "extractions": [
+          "extraction",
+          "tweets",
+          "users",
+          "followers"
+        ]
+      },
+      "rate_limit": 0.5,
+      "max_pages": 120
+    },
+    {
+      "type": "openapi",
+      "url": "https://docs.xquik.com/openapi.yaml",
+      "name": "xquik-openapi"
+    },
+    {
+      "type": "github",
+      "repo": "Xquik-dev/x-twitter-scraper",
+      "enable_codebase_analysis": true,
+      "code_analysis_depth": "surface",
+      "fetch_changelog": true,
+      "fetch_releases": true,
+      "fetch_issues": false,
+      "file_patterns": [
+        "README.md",
+        "package.json",
+        "src/**/*.ts",
+        "sdks/typescript/**/*.ts"
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "Xquik-dev",
+    "language": "TypeScript",
+    "framework_type": "X Data API Platform",
+    "use_cases": [
+      "Build X data integrations",
+      "Connect MCP clients to X data",
+      "Receive webhook events",
+      "Run account and keyword monitors"
+    ],
+    "related_skills": [
+      "mcp",
+      "rest-api",
+      "webhooks"
+    ]
+  }
+}
