@@ -117,6 +117,15 @@ class TestLlamaIndexAdaptor:
         assert result["skill_id"] is None
         assert "message" in result
         assert "from llama_index" in result["message"]
+        assert 'raw_package["nodes"] if isinstance(raw_package, dict)' in result["message"]
+
+    def test_upload_snippet_selector_supports_streaming_and_standard_packages(self):
+        """The copy-paste upload snippet must handle both package shapes."""
+        nodes = [{"text": "content", "metadata": {"source": "test"}, "id_": "node-1"}]
+
+        for raw_package in (nodes, {"nodes": nodes, "streaming": True}):
+            nodes_data = raw_package["nodes"] if isinstance(raw_package, dict) else raw_package
+            assert nodes_data == nodes
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""

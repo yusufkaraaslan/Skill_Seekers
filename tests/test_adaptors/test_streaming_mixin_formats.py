@@ -20,6 +20,7 @@ import re
 
 import pytest
 
+import skill_seekers.cli.adaptors.streaming_adaptor as streaming_adaptor
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.streaming_adaptor import StreamingAdaptorMixin
 
@@ -74,6 +75,13 @@ def test_all_rag_adaptors_override_chunk_converter():
             type(adaptor)._convert_chunks_to_platform_format
             is not StreamingAdaptorMixin._convert_chunks_to_platform_format
         ), platform
+
+
+def test_streaming_mixin_does_not_export_dead_example_adaptors():
+    """The real adaptors own platform conversion; the old standalone examples
+    should not remain as unused module-level classes."""
+    assert not hasattr(streaming_adaptor, "StreamingLangChainAdaptor")
+    assert not hasattr(streaming_adaptor, "StreamingChromaAdaptor")
 
 
 class TestWeaviateStreamingFormat:
