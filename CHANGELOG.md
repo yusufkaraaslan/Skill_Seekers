@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.9.0.dev0_
 
+### Fixed
+- **Unified multi-source `skip_scrape` now rebuilds from cache** — `UnifiedScraper` reloads each configured source from `.skillseeker-cache`/cached extraction files before conflict detection and build, so cached unified configs no longer re-scrape the network (#405).
+
 ## [3.8.0] - 2026-06-15
 
 **Theme:** The Grand Unification refactor (one build pipeline, one AI transport, one parser definition, in-process MCP tools — see `docs/UNIFICATION_PLAN.md`) with a 13-bug audit fix-up and a real-world end-to-end CLI testing pass — plus MiniMax-M3, model selection, registry-driven platform targets, a Windows subprocess fix, and codebase de-duplication.

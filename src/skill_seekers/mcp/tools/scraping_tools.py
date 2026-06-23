@@ -119,9 +119,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             - unlimited (bool, optional): Remove page limit (default: False)
             - enhance_local (bool, optional): Open terminal for local enhancement (default: False)
             - skip_scrape (bool, optional): Skip scraping, use cached data (default: False).
-              Single-source configs only — not yet supported for unified
-              multi-source configs (a warning is emitted and all sources are
-              re-scraped).
+              Legacy configs rebuild from each converter's cached extraction file;
+              unified configs rebuild from .skillseeker-cache per-source data.
             - dry_run (bool, optional): Preview without saving (default: False)
             - merge_mode (str, optional): Override merge mode for unified configs
 
@@ -184,16 +183,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             # merge_mode/dry_run overrides). dry_run must go through the
             # constructor: UnifiedScraper.run() previews-and-returns and
             # __init__ skips directory creation.
-            # skip_scrape is NOT yet honored on the unified multi-source path
-            # (it would need to reload each source's cached data from
-            # .skillseeker-cache before building); the attribute is set for
-            # forward-compat but currently has no effect here. Single-source
-            # configs DO honor skip_scrape (SkillConverter.run).
-            if skip_scrape:
-                progress_msg += (
-                    "⚠️ skip_scrape is not yet supported for unified multi-source "
-                    "configs — all sources will be re-scraped\n\n"
-                )
+            # skip_scrape is honored by UnifiedScraper.run(), which reloads
+            # cached per-source data from .skillseeker-cache before building.
             converter = get_converter(
                 "config",
                 {"config_path": config_to_use, "merge_mode": merge_mode, "dry_run": dry_run},

@@ -222,6 +222,8 @@ class CreateCommand:
                     "dry_run": bool(ctx.output.dry_run),
                 },
             )
+            if ctx.scraping.skip_scrape:
+                converter.skip_scrape = True
             return converter.run()
 
         config = self._build_config(source_type, ctx)

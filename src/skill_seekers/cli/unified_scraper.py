@@ -253,6 +253,26 @@ class UnifiedScraper(SkillConverter):
 
         return docs_json
 
+    @staticmethod
+    def _cache_slug(value: Any, fallback: str) -> str:
+        """Create a stable path-safe slug for cache directory names."""
+        raw = str(value or fallback).strip().lower()
+        slug = "".join(ch if ch.isalnum() else "_" for ch in raw).strip("_")
+        while "__" in slug:
+            slug = slug.replace("__", "_")
+        return slug[:80] or fallback
+
+    def _documentation_source_name(self, idx: int, source: dict[str, Any]) -> str:
+        """Return the cache/source name for a documentation source."""
+        docs_count = sum(
+            1 for item in self.config.get("sources", []) if item["type"] == "documentation"
+        )
+        if docs_count <= 1:
+            return f"{self.name}_docs"
+
+        slug = self._cache_slug(source.get("name") or source.get("base_url"), f"source_{idx}")
+        return f"{self.name}_docs_{idx}_{slug}"
+
     def scrape_all_sources(self):
         """
         Scrape all configured sources.
@@ -291,6 +311,10 @@ class UnifiedScraper(SkillConverter):
     # not the converter-instance extract()/build_skill() flow.
     def _scrape_documentation(self, source: dict[str, Any]):
         """Scrape documentation website."""
+        idx = self._source_counters["documentation"]
+        self._source_counters["documentation"] += 1
+        source_name = self._documentation_source_name(idx, source)
+
         # Create temporary config for doc scraper in unified format
         # (doc_scraper's ConfigValidator requires "sources" key)
         doc_source = {
@@ -335,7 +359,7 @@ class UnifiedScraper(SkillConverter):
             doc_source["browser_extra_wait"] = source["browser_extra_wait"]
 
         doc_config = {
-            "name": f"{self.name}_docs",
+            "name": source_name,
             "display_name": self.name,
             "description": source.get(
                 "description", self.config.get("description", f"Documentation for {self.name}")
@@ -382,7 +406,7 @@ class UnifiedScraper(SkillConverter):
 
             # Create child context with doc-specific overrides
             doc_ctx = ExecutionContext.get().override(
-                output__name=f"{self.name}_docs",
+                output__name=doc_config["name"],
                 scraping__max_pages=source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
             )
 
@@ -657,6 +681,10 @@ class UnifiedScraper(SkillConverter):
         """
         from skill_seekers.cli.skill_converter import get_converter
 
+        source_skill_dir = os.path.join(self.sources_dir, config["name"])
+        if os.path.isdir(source_skill_dir):
+            shutil.rmtree(source_skill_dir)
+        config = {**config, "output_dir": source_skill_dir}
         converter = get_converter(converter_type, config)
 
         # Extract content (each converter's extract() delegates to its
@@ -776,6 +804,11 @@ class UnifiedScraper(SkillConverter):
             "whisper_model": source.get("whisper_model", "base"),
         }
 
+        video_skill_dir = os.path.join(self.sources_dir, video_config["name"])
+        if os.path.isdir(video_skill_dir):
+            shutil.rmtree(video_skill_dir)
+        video_config["output_dir"] = video_skill_dir
+
         # Process video
         logger.info(f"Scraping video: {video_id}")
         converter = VideoToSkillConverter(video_config)
@@ -787,13 +820,16 @@ class UnifiedScraper(SkillConverter):
             result = converter.result
             converter.save_extracted_data()
 
+            cache_data_file = os.path.join(self.data_dir, f"video_data_{idx}.json")
+            shutil.copy(converter.data_file, cache_data_file)
+
             # Append to list
             self.scraped_data["video"].append(
                 {
                     "video_id": video_id,
                     "idx": idx,
                     "data": result.to_dict(),
-                    "data_file": converter.data_file,
+                    "data_file": cache_data_file,
                 }
             )
 
@@ -1260,6 +1296,296 @@ class UnifiedScraper(SkillConverter):
             summary_noun="messages",
         )
 
+    def _reset_cached_source_state(self) -> None:
+        """Reset per-source state before rebuilding it from cached files."""
+        self.scraped_data = {source_type: [] for source_type in self.SOURCE_DISPATCH}
+        self._source_counters = dict.fromkeys(self.SOURCE_DISPATCH, 0)
+
+    def _next_source_index(self, source_type: str) -> int:
+        """Return and increment the cached source index for a source type."""
+        idx = self._source_counters[source_type]
+        self._source_counters[source_type] = idx + 1
+        return idx
+
+    @staticmethod
+    def _read_required_json(file_path: str) -> Any:
+        """Read a required cached JSON file, raising a clear error if absent."""
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(
+                "skip_scrape is set but cached data is missing at "
+                f"{file_path}. Run once without skip_scrape to populate the cache."
+            )
+        with open(file_path, encoding="utf-8") as f:
+            return json.load(f)
+
+    def _append_cached_data_source(
+        self, bucket: str, cache_stem: str, record: dict[str, Any]
+    ) -> None:
+        """Load a cached data/<cache_stem>.json payload into scraped_data."""
+        data_file = os.path.join(self.data_dir, f"{cache_stem}.json")
+        data = self._read_required_json(data_file)
+        self.scraped_data[bucket].append({**record, "data": data, "data_file": data_file})
+
+    def _load_cached_sources(self) -> int:
+        """Reload unified scraped_data from prior .skillseeker-cache outputs."""
+        logger.info("=" * 60)
+        logger.info("PHASE 1: Loading cached source data (skip_scrape)")
+        logger.info("=" * 60)
+
+        self._reset_cached_source_state()
+        sources = self.config.get("sources", [])
+        loader_names = {
+            "documentation": "_load_cached_documentation",
+            "github": "_load_cached_github",
+            "pdf": "_load_cached_pdf",
+            "word": "_load_cached_word",
+            "video": "_load_cached_video",
+            "local": "_load_cached_local",
+            "epub": "_load_cached_epub",
+            "jupyter": "_load_cached_jupyter",
+            "html": "_load_cached_html",
+            "openapi": "_load_cached_openapi",
+            "asciidoc": "_load_cached_asciidoc",
+            "pptx": "_load_cached_pptx",
+            "confluence": "_load_cached_confluence",
+            "notion": "_load_cached_notion",
+            "rss": "_load_cached_rss",
+            "manpage": "_load_cached_manpage",
+            "chat": "_load_cached_chat",
+        }
+
+        for i, source in enumerate(sources):
+            source_type = source["type"]
+            logger.info(f"\n[{i + 1}/{len(sources)}] Loading cached {source_type} source...")
+            loader_name = loader_names.get(source_type)
+            if loader_name is None:
+                logger.warning(f"Unknown source type: {source_type}")
+                continue
+            getattr(self, loader_name)(source)
+
+        loaded_count = sum(len(v) for v in self.scraped_data.values())
+        logger.info(f"\n✅ Loaded {loaded_count} cached source item(s) successfully")
+        return loaded_count
+
+    def _load_cached_documentation(self, source: dict[str, Any]) -> None:
+        """Load cached documentation summary written by _scrape_documentation()."""
+        idx = self._next_source_index("documentation")
+        source_name = self._documentation_source_name(idx, source)
+        docs_skill_dir = os.path.join(self.sources_dir, source_name)
+        docs_data_file = f"{docs_skill_dir}_data/summary.json"
+        summary = self._read_required_json(docs_data_file)
+
+        self.scraped_data["documentation"].append(
+            {
+                "source_id": source_name,
+                "base_url": source["base_url"],
+                "pages": summary.get("pages", []),
+                "total_pages": summary.get("total_pages", 0),
+                "data_file": docs_data_file,
+                "refs_dir": os.path.join(docs_skill_dir, "references"),
+            }
+        )
+
+    def _load_cached_github(self, source: dict[str, Any]) -> None:
+        """Load cached GitHub scraper data."""
+        idx = self._next_source_index("github")
+        repo = source["repo"]
+        repo_id = repo.replace("/", "_")
+        self._append_cached_data_source(
+            "github",
+            f"github_data_{idx}_{repo_id}",
+            {"repo": repo, "repo_id": repo_id, "idx": idx},
+        )
+
+    def _load_cached_pdf(self, source: dict[str, Any]) -> None:
+        """Load cached PDF scraper data."""
+        idx = self._next_source_index("pdf")
+        pdf_path = source["path"]
+        pdf_id = os.path.splitext(os.path.basename(pdf_path))[0]
+        self._append_cached_data_source(
+            "pdf",
+            f"pdf_data_{idx}_{pdf_id}",
+            {"pdf_path": pdf_path, "pdf_id": pdf_id, "idx": idx},
+        )
+
+    def _load_cached_word(self, source: dict[str, Any]) -> None:
+        """Load cached Word scraper data."""
+        idx = self._next_source_index("word")
+        docx_path = source["path"]
+        docx_id = os.path.splitext(os.path.basename(docx_path))[0]
+        self._append_cached_data_source(
+            "word",
+            f"word_data_{idx}_{docx_id}",
+            {
+                "docx_path": docx_path,
+                "docx_id": docx_id,
+                "word_id": docx_id,
+                "idx": idx,
+            },
+        )
+
+    def _load_cached_video(self, source: dict[str, Any]) -> None:
+        """Load cached video data."""
+        idx = self._next_source_index("video")
+        video_url = source.get("url", "")
+        video_id = video_url or source.get("path", f"video_{idx}")
+        data_file = os.path.join(self.data_dir, f"video_data_{idx}.json")
+        data = self._read_required_json(data_file)
+        self.scraped_data["video"].append(
+            {"video_id": video_id, "idx": idx, "data": data, "data_file": data_file}
+        )
+
+    def _load_cached_local(self, source: dict[str, Any]) -> None:
+        """Load cached local codebase analysis data."""
+        idx = self._next_source_index("local")
+        local_path = source["path"]
+        path_id = os.path.basename(local_path.rstrip("/"))
+        source_name = source.get("name", path_id)
+        data_file = os.path.join(self.data_dir, f"local_data_{idx}_{path_id}.json")
+        local_data = self._read_required_json(data_file)
+        local_data.update(
+            {
+                "source_id": f"{self.name}_local_{idx}_{path_id}",
+                "path": local_path,
+                "name": source_name,
+                "description": source.get("description", f"Local analysis of {path_id}"),
+                "weight": source.get("weight", 1.0),
+            }
+        )
+
+        skill_md_path = Path(self.sources_dir) / f"local_{idx}_{path_id}" / "SKILL.md"
+        if skill_md_path.exists():
+            local_data["skill_md"] = skill_md_path.read_text(encoding="utf-8")
+
+        self.scraped_data["local"].append(local_data)
+
+    def _load_cached_epub(self, source: dict[str, Any]) -> None:
+        """Load cached EPUB scraper data."""
+        idx = self._next_source_index("epub")
+        epub_path = source["path"]
+        epub_id = os.path.splitext(os.path.basename(epub_path))[0]
+        self._append_cached_data_source(
+            "epub",
+            f"epub_data_{idx}_{epub_id}",
+            {"epub_path": epub_path, "epub_id": epub_id, "idx": idx},
+        )
+
+    def _load_cached_jupyter(self, source: dict[str, Any]) -> None:
+        """Load cached Jupyter scraper data."""
+        idx = self._next_source_index("jupyter")
+        nb_path = source["path"]
+        nb_id = os.path.splitext(os.path.basename(nb_path))[0]
+        self._append_cached_data_source(
+            "jupyter",
+            f"jupyter_data_{idx}_{nb_id}",
+            {"notebook_path": nb_path, "notebook_id": nb_id, "idx": idx},
+        )
+
+    def _load_cached_html(self, source: dict[str, Any]) -> None:
+        """Load cached local HTML scraper data."""
+        idx = self._next_source_index("html")
+        html_path = source["path"]
+        html_id = os.path.splitext(os.path.basename(html_path.rstrip("/")))[0]
+        self._append_cached_data_source(
+            "html",
+            f"html_data_{idx}_{html_id}",
+            {"html_path": html_path, "html_id": html_id, "idx": idx},
+        )
+
+    def _load_cached_openapi(self, source: dict[str, Any]) -> None:
+        """Load cached OpenAPI scraper data."""
+        idx = self._next_source_index("openapi")
+        spec_path = source.get("path", source.get("url", ""))
+        spec_id = os.path.splitext(os.path.basename(spec_path))[0] if spec_path else f"spec_{idx}"
+        self._append_cached_data_source(
+            "openapi",
+            f"openapi_data_{idx}_{spec_id}",
+            {"spec_path": spec_path, "spec_id": spec_id, "idx": idx},
+        )
+
+    def _load_cached_asciidoc(self, source: dict[str, Any]) -> None:
+        """Load cached AsciiDoc scraper data."""
+        idx = self._next_source_index("asciidoc")
+        adoc_path = source["path"]
+        adoc_id = os.path.splitext(os.path.basename(adoc_path.rstrip("/")))[0]
+        self._append_cached_data_source(
+            "asciidoc",
+            f"asciidoc_data_{idx}_{adoc_id}",
+            {"asciidoc_path": adoc_path, "asciidoc_id": adoc_id, "idx": idx},
+        )
+
+    def _load_cached_pptx(self, source: dict[str, Any]) -> None:
+        """Load cached PowerPoint scraper data."""
+        idx = self._next_source_index("pptx")
+        pptx_path = source["path"]
+        pptx_id = os.path.splitext(os.path.basename(pptx_path))[0]
+        self._append_cached_data_source(
+            "pptx",
+            f"pptx_data_{idx}_{pptx_id}",
+            {"pptx_path": pptx_path, "pptx_id": pptx_id, "idx": idx},
+        )
+
+    def _load_cached_confluence(self, source: dict[str, Any]) -> None:
+        """Load cached Confluence scraper data."""
+        idx = self._next_source_index("confluence")
+        source_id = source.get("space_key", source.get("path", f"confluence_{idx}"))
+        if isinstance(source_id, str) and "/" in source_id:
+            source_id = os.path.basename(source_id.rstrip("/"))
+        self._append_cached_data_source(
+            "confluence",
+            f"confluence_data_{idx}_{source_id}",
+            {"source_id": source_id, "idx": idx},
+        )
+
+    def _load_cached_notion(self, source: dict[str, Any]) -> None:
+        """Load cached Notion scraper data."""
+        idx = self._next_source_index("notion")
+        source_id = source.get(
+            "database_id", source.get("page_id", source.get("path", f"notion_{idx}"))
+        )
+        if isinstance(source_id, str) and "/" in source_id:
+            source_id = os.path.basename(source_id.rstrip("/"))
+        self._append_cached_data_source(
+            "notion",
+            f"notion_data_{idx}_{source_id}",
+            {"source_id": source_id, "idx": idx},
+        )
+
+    def _load_cached_rss(self, source: dict[str, Any]) -> None:
+        """Load cached RSS scraper data."""
+        idx = self._next_source_index("rss")
+        feed_url = source.get("url", source.get("path", ""))
+        feed_id = feed_url.split("/")[-1].split(".")[0] if feed_url else f"feed_{idx}"
+        self._append_cached_data_source(
+            "rss",
+            f"rss_data_{idx}_{feed_id}",
+            {"feed_url": feed_url, "feed_id": feed_id, "idx": idx},
+        )
+
+    def _load_cached_manpage(self, source: dict[str, Any]) -> None:
+        """Load cached manpage scraper data."""
+        idx = self._next_source_index("manpage")
+        man_names = source.get("names", [])
+        man_path = source.get("path", "")
+        man_id = man_names[0] if man_names else os.path.basename(man_path.rstrip("/"))
+        self._append_cached_data_source(
+            "manpage",
+            f"manpage_data_{idx}_{man_id}",
+            {"man_id": man_id, "idx": idx},
+        )
+
+    def _load_cached_chat(self, source: dict[str, Any]) -> None:
+        """Load cached chat scraper data."""
+        idx = self._next_source_index("chat")
+        export_path = source.get("path", "")
+        channel = source.get("channel", source.get("channel_id", ""))
+        chat_id = channel or os.path.basename(export_path.rstrip("/")) or f"chat_{idx}"
+        self._append_cached_data_source(
+            "chat",
+            f"chat_data_{idx}_{chat_id}",
+            {"chat_id": chat_id, "platform": source.get("platform", "slack"), "idx": idx},
+        )
+
     def _load_json_fallback(self, primary: Path, fallback: Path) -> dict:
         """Load JSON from primary path, falling back to secondary if not found."""
         if primary.exists():
@@ -1583,7 +1909,10 @@ class UnifiedScraper(SkillConverter):
 
     def extract(self):
         """SkillConverter interface — delegates to scrape_all_sources()."""
-        self.scrape_all_sources()
+        if getattr(self, "skip_scrape", False):
+            self._load_cached_sources()
+        else:
+            self.scrape_all_sources()
 
     def build_skill(self, merged_data: dict | None = None):
         """
@@ -1647,8 +1976,12 @@ class UnifiedScraper(SkillConverter):
             return 0
 
         try:
-            # Phase 1: Scrape all sources
-            scraped_count = self.scrape_all_sources()
+            # Phase 1: Scrape all sources, or rebuild in-memory source state
+            # from the previous .skillseeker-cache when skip_scrape is set.
+            if getattr(self, "skip_scrape", False):
+                scraped_count = self._load_cached_sources()
+            else:
+                scraped_count = self.scrape_all_sources()
 
             # Abort if every source failed — otherwise we'd build (and report
             # success for) an empty skill from no data.
