@@ -583,6 +583,200 @@ class CodeAnalyzer:
 
         return params
 
+    def _mask_c_style_non_code(
+        self,
+        content: str,
+        *,
+        mask_comments: bool,
+        mask_backticks: bool = True,
+        backtick_escapes: bool = True,
+        nested_block_comments: bool = False,
+    ) -> str:
+        """Mask string literals, and optionally comments, while preserving offsets."""
+        masked = list(content)
+        content_len = len(content)
+        i = 0
+
+        def mask_span(start: int, end: int) -> None:
+            for pos in range(start, end):
+                if masked[pos] not in "\r\n":
+                    masked[pos] = " "
+
+        while i < content_len:
+            if content.startswith('"""', i):
+                start = i
+                i += 3
+                while i < content_len and not content.startswith('"""', i):
+                    i += 1
+                i = min(i + 3, content_len)
+                mask_span(start, i)
+                continue
+
+            if content[i] == "`" and mask_backticks:
+                start = i
+                i += 1
+                escaped = False
+                while i < content_len:
+                    char = content[i]
+                    if backtick_escapes and escaped:
+                        escaped = False
+                    elif backtick_escapes and char == "\\":
+                        escaped = True
+                    elif char == "`":
+                        i += 1
+                        break
+                    i += 1
+                mask_span(start, i)
+                continue
+
+            if content[i] in ("'", '"'):
+                start = i
+                quote = content[i]
+                i += 1
+                escaped = False
+                while i < content_len:
+                    char = content[i]
+                    if escaped:
+                        escaped = False
+                    elif char == "\\":
+                        escaped = True
+                    elif char == quote:
+                        i += 1
+                        break
+                    i += 1
+                mask_span(start, i)
+                continue
+
+            if content.startswith("//", i):
+                start = i
+                i += 2
+                while i < content_len and content[i] not in "\r\n":
+                    i += 1
+                if mask_comments:
+                    mask_span(start, i)
+                continue
+
+            if content.startswith("/*", i):
+                start = i
+                i += 2
+                depth = 1
+                while i < content_len - 1 and depth > 0:
+                    if nested_block_comments and content.startswith("/*", i):
+                        depth += 1
+                        i += 2
+                    elif content.startswith("*/", i):
+                        depth -= 1
+                        i += 2
+                    else:
+                        i += 1
+                if mask_comments:
+                    mask_span(start, i)
+                continue
+
+            i += 1
+
+        return "".join(masked)
+
+    def _extract_c_style_comments(
+        self,
+        content: str,
+        *,
+        doc_blocks: bool,
+        backtick_escapes: bool = True,
+        nested_block_comments: bool = False,
+    ) -> list[dict]:
+        """Extract C-style comments without matching markers inside strings/comments."""
+        comments = []
+        content_len = len(content)
+        i = 0
+
+        while i < content_len:
+            if content.startswith('"""', i):
+                i += 3
+                while i < content_len and not content.startswith('"""', i):
+                    i += 1
+                i = min(i + 3, content_len)
+                continue
+
+            if content[i] == "`":
+                i += 1
+                escaped = False
+                while i < content_len:
+                    char = content[i]
+                    if backtick_escapes and escaped:
+                        escaped = False
+                    elif backtick_escapes and char == "\\":
+                        escaped = True
+                    elif char == "`":
+                        i += 1
+                        break
+                    i += 1
+                continue
+
+            if content[i] in ("'", '"'):
+                quote = content[i]
+                i += 1
+                escaped = False
+                while i < content_len:
+                    char = content[i]
+                    if escaped:
+                        escaped = False
+                    elif char == "\\":
+                        escaped = True
+                    elif char == quote:
+                        i += 1
+                        break
+                    i += 1
+                continue
+
+            if content.startswith("//", i):
+                start = i
+                text_start = i + 2
+                i = text_start
+                while i < content_len and content[i] not in "\r\n":
+                    i += 1
+                if i > text_start:
+                    comments.append(
+                        {
+                            "line": self._offset_to_line(start),
+                            "text": content[text_start:i].strip(),
+                            "type": "inline",
+                        }
+                    )
+                continue
+
+            if content.startswith("/*", i):
+                start = i
+                is_doc = content.startswith("/**", i)
+                text_start = i + 3 if is_doc else i + 2
+                i += 2
+                depth = 1
+                text_end = content_len
+                while i < content_len - 1 and depth > 0:
+                    if nested_block_comments and content.startswith("/*", i):
+                        depth += 1
+                        i += 2
+                    elif content.startswith("*/", i):
+                        depth -= 1
+                        if depth == 0:
+                            text_end = i
+                        i += 2
+                    else:
+                        i += 1
+
+                comments.append(
+                    {
+                        "line": self._offset_to_line(start),
+                        "text": content[text_start:text_end].strip(),
+                        "type": "doc" if doc_blocks and is_doc else "block",
+                    }
+                )
+                continue
+
+            i += 1
+
+        return comments
+
     def _extract_python_comments(self, content: str) -> list[dict]:
         """
         Extract Python comments (# style).
@@ -605,29 +799,18 @@ class CodeAnalyzer:
 
         return comments
 
-    def _extract_js_comments(self, content: str) -> list[dict]:
+    def _extract_js_comments(self, content: str, *, backtick_escapes: bool = True) -> list[dict]:
         """
         Extract JavaScript/TypeScript comments (// and /* */ styles).
 
         Returns list of comment dictionaries with line number, text, and type.
         """
-        comments = []
-
-        # Extract single-line comments (//)
-        for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = self._offset_to_line(match.start())
-            comment_text = match.group(1).strip()
-
-            comments.append({"line": line_num, "text": comment_text, "type": "inline"})
-
-        # Extract multi-line comments (/* */)
-        for match in re.finditer(r"/\*(.+?)\*/", content, re.DOTALL):
-            start_line = self._offset_to_line(match.start())
-            comment_text = match.group(1).strip()
-
-            comments.append({"line": start_line, "text": comment_text, "type": "block"})
-
-        return comments
+        comments = self._extract_c_style_comments(
+            content, doc_blocks=False, backtick_escapes=backtick_escapes
+        )
+        return [c for c in comments if c["type"] == "inline"] + [
+            c for c in comments if c["type"] == "block"
+        ]
 
     def _extract_cpp_comments(self, content: str) -> list[dict]:
         """
@@ -957,7 +1140,7 @@ class CodeAnalyzer:
     def _extract_go_comments(self, content: str) -> list[dict]:
         """Extract Go comments (// and /* */ styles)."""
         # Go uses C-style comments
-        return self._extract_js_comments(content)
+        return self._extract_js_comments(content, backtick_escapes=False)
 
     def _analyze_rust(self, content: str, _file_path: str) -> dict[str, Any]:
         """
@@ -1260,28 +1443,16 @@ class CodeAnalyzer:
 
         return params
 
-    def _extract_java_comments(self, content: str) -> list[dict]:
+    def _extract_java_comments(
+        self, content: str, *, nested_block_comments: bool = False
+    ) -> list[dict]:
         """Extract Java comments (// and /* */ and /** JavaDoc */)."""
-        comments = []
-
-        # Single-line comments (//)
-        for match in re.finditer(r"//(.+)$", content, re.MULTILINE):
-            line_num = self._offset_to_line(match.start())
-            comment_text = match.group(1).strip()
-
-            comments.append({"line": line_num, "text": comment_text, "type": "inline"})
-
-        # Multi-line and JavaDoc comments (/* */ and /** */)
-        for match in re.finditer(r"/\*\*?(.+?)\*/", content, re.DOTALL):
-            start_line = self._offset_to_line(match.start())
-            comment_text = match.group(1).strip()
-
-            # Distinguish JavaDoc (starts with **)
-            comment_type = "doc" if match.group(0).startswith("/**") else "block"
-
-            comments.append({"line": start_line, "text": comment_text, "type": comment_type})
-
-        return comments
+        comments = self._extract_c_style_comments(
+            content, doc_blocks=True, nested_block_comments=nested_block_comments
+        )
+        return [c for c in comments if c["type"] == "inline"] + [
+            c for c in comments if c["type"] in {"block", "doc"}
+        ]
 
     def _analyze_kotlin(self, content: str, _file_path: str) -> dict[str, Any]:
         """
@@ -1298,6 +1469,12 @@ class CodeAnalyzer:
         https://kotlinlang.org/spec/
         """
         self._newline_offsets = build_line_index(content)
+        structural_content = self._mask_c_style_non_code(
+            content,
+            mask_comments=True,
+            mask_backticks=False,
+            nested_block_comments=True,
+        )
         classes = []
         functions = []
 
@@ -1311,9 +1488,11 @@ class CodeAnalyzer:
             r"(?:\s*:\s*([\w\s,.<>()]+?))?"  # Superclass/interfaces
             r"\s*\{"
         )
-        for match in re.finditer(class_pattern, content):
+        for match in re.finditer(class_pattern, structural_content):
             class_name = match.group(1)
-            supertypes_str = match.group(2)
+            supertypes_str = (
+                content[match.start(2) : match.end(2)] if match.group(2) is not None else None
+            )
 
             base_classes = []
             if supertypes_str:
@@ -1331,8 +1510,8 @@ class CodeAnalyzer:
             class_block_end = class_block_start
             # Index-based scan — slicing content[class_block_start:] copied the
             # whole remainder of the file for every class match.
-            for i in range(class_block_start, len(content)):
-                char = content[i]
+            for i in range(class_block_start, len(structural_content)):
+                char = structural_content[i]
                 if char == "{":
                     brace_count += 1
                 elif char == "}":
@@ -1359,9 +1538,11 @@ class CodeAnalyzer:
 
         # Extract object declarations (Kotlin singletons)
         object_pattern = r"(?:(?:public|private|protected|internal)\s+)?object\s+(\w+)(?:\s*:\s*([\w\s,.<>()]+?))?\s*\{"
-        for match in re.finditer(object_pattern, content):
+        for match in re.finditer(object_pattern, structural_content):
             obj_name = match.group(1)
-            supertypes_str = match.group(2)
+            supertypes_str = (
+                content[match.start(2) : match.end(2)] if match.group(2) is not None else None
+            )
 
             base_classes = []
             if supertypes_str:
@@ -1374,7 +1555,7 @@ class CodeAnalyzer:
             block_start = match.end()
             brace_count = 1
             block_end = block_start
-            for i, char in enumerate(content[block_start:], block_start):
+            for i, char in enumerate(structural_content[block_start:], block_start):
                 if char == "{":
                     brace_count += 1
                 elif char == "}":
@@ -1415,11 +1596,13 @@ class CodeAnalyzer:
         # was O(n²) on large Kotlin files.)
         brace_depth = 0
         last_pos = 0
-        for match in re.finditer(func_pattern, content):
+        for match in re.finditer(func_pattern, structural_content):
             _receiver_type = match.group(1)
             func_name = match.group(2)
-            params_str = match.group(3)
-            return_type = match.group(4)
+            params_str = content[match.start(3) : match.end(3)]
+            return_type = (
+                content[match.start(4) : match.end(4)] if match.group(4) is not None else None
+            )
 
             if return_type:
                 return_type = return_type.strip()
@@ -1428,7 +1611,7 @@ class CodeAnalyzer:
             # by _extract_kotlin_methods). Brace-counting is more reliable than
             # the old indentation heuristic, which mis-handled tabs / 2-space
             # styles.
-            gap = content[last_pos : match.start()]
+            gap = structural_content[last_pos : match.start()]
             brace_depth += gap.count("{") - gap.count("}")
             last_pos = match.start()
             if brace_depth > 0:
@@ -1457,7 +1640,9 @@ class CodeAnalyzer:
             )
 
         # Extract comments (// and /* */ and /** KDoc */)
-        comments = self._extract_java_comments(content)  # Same syntax as Java
+        comments = self._extract_java_comments(
+            content, nested_block_comments=True
+        )  # Same syntax as Java, plus Kotlin nested block comments.
 
         # Extract imports
         imports = []
@@ -1479,6 +1664,12 @@ class CodeAnalyzer:
     def _extract_kotlin_methods(self, class_body: str) -> list[dict]:
         """Extract Kotlin method signatures from class body."""
         methods = []
+        method_source = self._mask_c_style_non_code(
+            class_body,
+            mask_comments=True,
+            mask_backticks=False,
+            nested_block_comments=True,
+        )
 
         method_pattern = (
             r"(?:(?:public|private|protected|internal|override)\s+)*"
@@ -1490,10 +1681,12 @@ class CodeAnalyzer:
             r"\(([^)]*)\)"
             r"(?:\s*:\s*([\w<>.,\s?*]+))?"
         )
-        for match in re.finditer(method_pattern, class_body):
+        for match in re.finditer(method_pattern, method_source):
             method_name = match.group(1)
-            params_str = match.group(2)
-            return_type = match.group(3)
+            params_str = class_body[match.start(2) : match.end(2)]
+            return_type = (
+                class_body[match.start(3) : match.end(3)] if match.group(3) is not None else None
+            )
 
             if return_type:
                 return_type = return_type.strip()

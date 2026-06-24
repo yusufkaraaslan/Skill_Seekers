@@ -351,6 +351,60 @@ class TestKotlinCodeAnalyzer:
         # filterByType uses <reified T> generics — may or may not be captured
         assert len(func_names) >= 2
 
+    def test_kotlin_brace_depth_ignores_strings_and_comments(self):
+        code = '''\
+package com.example
+
+val fakeOpen = "{"
+val raw = """
+class Ghost {
+    fun fake(): Int { return 99 }
+}
+"""
+/* outer { /* nested */ } */
+
+class Holder {
+    val fakeClose = "}"
+    val rawMethod = """fun fakeMethod(): Int { return 100 }"""
+
+    fun method(): Int {
+        return 1
+    }
+}
+
+fun topLevel(): Int {
+    return 2
+}
+'''
+        result = self.analyzer.analyze_file("Holder.kt", code, "Kotlin")
+        holder = next(c for c in result["classes"] if c["name"] == "Holder")
+        method_names = {m["name"] for m in holder["methods"]}
+        function_names = {f["name"] for f in result["functions"]}
+        class_names = {c["name"] for c in result["classes"]}
+
+        assert "Ghost" not in class_names
+        assert "fake" not in function_names
+        assert "fakeMethod" not in method_names
+        assert "method" in method_names
+        assert "topLevel" in function_names
+        assert "method" not in function_names
+
+    def test_kotlin_comments_ignore_markers_inside_strings(self):
+        code = '''\
+package com.example
+
+val url = "https://example.com/path"
+val block = "/* not a block comment */"
+val raw = """// not an inline comment either"""
+
+// Real inline
+/** Real KDoc */
+'''
+        result = self.analyzer.analyze_file("Comments.kt", code, "Kotlin")
+
+        comments = [(c["text"], c["type"]) for c in result["comments"]]
+        assert comments == [("Real inline", "inline"), ("Real KDoc", "doc")]
+
     def test_analyze_imports(self):
         result = self.analyzer.analyze_file("User.kt", KOTLIN_DATA_CLASS, "Kotlin")
         imports = result["imports"]
