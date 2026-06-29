@@ -583,150 +583,119 @@ class CodeAnalyzer:
 
         return params
 
-    def _mask_c_style_non_code(
+    def _iter_c_style_spans(
         self,
         content: str,
         *,
-        mask_comments: bool,
-        mask_backticks: bool = True,
         backtick_escapes: bool = True,
         nested_block_comments: bool = False,
-    ) -> str:
-        """Mask string literals, and optionally comments, while preserving offsets."""
-        masked = list(content)
+        string_templates: bool = False,
+    ):
+        """Yield the non-code spans (strings, backtick spans, comments) of C-style source.
+
+        Each yielded dict carries:
+          ``kind``       — "string" | "backtick" | "line_comment" | "block_comment"
+          ``start``/``end`` — span bounds (``end`` exclusive, covering the closing marker)
+          ``text_start``/``text_end`` — comment-text bounds with markers stripped
+                                        (both equal ``start`` for non-comments)
+          ``closed``     — whether a block comment terminated with ``*/`` (always True
+                           for other kinds)
+          ``is_doc``     — whether a block comment opened with ``/**``
+
+        This scanner is the single source of truth for "what is a string/comment".
+        ``_mask_c_style_non_code`` and ``_extract_c_style_comments`` both consume it, so a
+        scanning fix applies to masking and extraction at once. ``string_templates`` makes
+        double-quoted strings honour Kotlin ``${...}`` interpolation (so nested quotes/braces
+        inside an interpolation don't prematurely end the string).
+        """
         content_len = len(content)
-        i = 0
 
-        def mask_span(start: int, end: int) -> None:
-            for pos in range(start, end):
-                if masked[pos] not in "\r\n":
-                    masked[pos] = " "
-
-        while i < content_len:
-            if content.startswith('"""', i):
-                start = i
-                i += 3
-                while i < content_len and not content.startswith('"""', i):
-                    i += 1
-                i = min(i + 3, content_len)
-                mask_span(start, i)
-                continue
-
-            if content[i] == "`" and mask_backticks:
-                start = i
-                i += 1
-                escaped = False
-                while i < content_len:
-                    char = content[i]
-                    if backtick_escapes and escaped:
-                        escaped = False
-                    elif backtick_escapes and char == "\\":
-                        escaped = True
-                    elif char == "`":
-                        i += 1
-                        break
-                    i += 1
-                mask_span(start, i)
-                continue
-
-            if content[i] in ("'", '"'):
-                start = i
-                quote = content[i]
-                i += 1
-                escaped = False
-                while i < content_len:
-                    char = content[i]
+        def skip_string(j: int, *, triple: bool, escapes: bool, templates: bool) -> int:
+            """Return the index just past the end of a string starting at ``j``."""
+            if triple:
+                j += 3
+            else:
+                quote = content[j]
+                j += 1
+            escaped = False
+            while j < content_len:
+                if triple:
+                    if content.startswith('"""', j):
+                        return j + 3
+                else:
                     if escaped:
                         escaped = False
-                    elif char == "\\":
+                        j += 1
+                        continue
+                    if escapes and content[j] == "\\":
                         escaped = True
-                    elif char == quote:
-                        i += 1
-                        break
-                    i += 1
-                mask_span(start, i)
-                continue
+                        j += 1
+                        continue
+                    if content[j] == quote:
+                        return j + 1
+                if templates and content.startswith("${", j):
+                    j = skip_interpolation(j)
+                    continue
+                j += 1
+            return content_len  # unterminated
 
-            if content.startswith("//", i):
-                start = i
-                i += 2
-                while i < content_len and content[i] not in "\r\n":
-                    i += 1
-                if mask_comments:
-                    mask_span(start, i)
-                continue
+        def skip_interpolation(j: int) -> int:
+            """Return the index just past the closing ``}`` of a ``${...}`` block at ``j``."""
+            j += 2  # past "${"
+            depth = 1
+            while j < content_len and depth > 0:
+                ch = content[j]
+                if ch == "{":
+                    depth += 1
+                    j += 1
+                elif ch == "}":
+                    depth -= 1
+                    j += 1
+                elif ch == '"':
+                    j = skip_string(
+                        j, triple=content.startswith('"""', j), escapes=True, templates=True
+                    )
+                elif ch == "'":
+                    j = skip_string(j, triple=False, escapes=True, templates=False)
+                elif ch == "`":
+                    j = skip_string(j, triple=False, escapes=backtick_escapes, templates=False)
+                else:
+                    j += 1
+            return j
 
-            if content.startswith("/*", i):
-                start = i
-                i += 2
-                depth = 1
-                while i < content_len - 1 and depth > 0:
-                    if nested_block_comments and content.startswith("/*", i):
-                        depth += 1
-                        i += 2
-                    elif content.startswith("*/", i):
-                        depth -= 1
-                        i += 2
-                    else:
-                        i += 1
-                if mask_comments:
-                    mask_span(start, i)
-                continue
-
-            i += 1
-
-        return "".join(masked)
-
-    def _extract_c_style_comments(
-        self,
-        content: str,
-        *,
-        doc_blocks: bool,
-        backtick_escapes: bool = True,
-        nested_block_comments: bool = False,
-    ) -> list[dict]:
-        """Extract C-style comments without matching markers inside strings/comments."""
-        comments = []
-        content_len = len(content)
         i = 0
-
         while i < content_len:
             if content.startswith('"""', i):
-                i += 3
-                while i < content_len and not content.startswith('"""', i):
-                    i += 1
-                i = min(i + 3, content_len)
+                end = skip_string(i, triple=True, escapes=False, templates=string_templates)
+                yield {"kind": "string", "start": i, "end": end}
+                i = end
                 continue
 
+            # Backtick spans (JS template strings, Go raw strings, Kotlin escaped
+            # identifiers) are always consumed so a quote/marker inside them is never
+            # misread as the start of a string or comment.
             if content[i] == "`":
+                end = skip_string(i, triple=False, escapes=backtick_escapes, templates=False)
+                yield {"kind": "backtick", "start": i, "end": end}
+                i = end
+                continue
+
+            # A ``'`` flanked by alphanumerics is a digit separator (e.g. C++ ``1'000``)
+            # or stray apostrophe, not a char-literal delimiter.
+            if (
+                content[i] == "'"
+                and 0 < i < content_len - 1
+                and content[i - 1].isalnum()
+                and content[i + 1].isalnum()
+            ):
                 i += 1
-                escaped = False
-                while i < content_len:
-                    char = content[i]
-                    if backtick_escapes and escaped:
-                        escaped = False
-                    elif backtick_escapes and char == "\\":
-                        escaped = True
-                    elif char == "`":
-                        i += 1
-                        break
-                    i += 1
                 continue
 
             if content[i] in ("'", '"'):
-                quote = content[i]
-                i += 1
-                escaped = False
-                while i < content_len:
-                    char = content[i]
-                    if escaped:
-                        escaped = False
-                    elif char == "\\":
-                        escaped = True
-                    elif char == quote:
-                        i += 1
-                        break
-                    i += 1
+                templates = string_templates and content[i] == '"'
+                end = skip_string(i, triple=False, escapes=True, templates=templates)
+                yield {"kind": "string", "start": i, "end": end}
+                i = end
                 continue
 
             if content.startswith("//", i):
@@ -735,14 +704,14 @@ class CodeAnalyzer:
                 i = text_start
                 while i < content_len and content[i] not in "\r\n":
                     i += 1
-                if i > text_start:
-                    comments.append(
-                        {
-                            "line": self._offset_to_line(start),
-                            "text": content[text_start:i].strip(),
-                            "type": "inline",
-                        }
-                    )
+                yield {
+                    "kind": "line_comment",
+                    "start": start,
+                    "end": i,
+                    "text_start": text_start,
+                    "text_end": i,
+                    "closed": True,
+                }
                 continue
 
             if content.startswith("/*", i):
@@ -752,7 +721,7 @@ class CodeAnalyzer:
                 i += 2
                 depth = 1
                 text_end = content_len
-                while i < content_len - 1 and depth > 0:
+                while i < content_len and depth > 0:
                     if nested_block_comments and content.startswith("/*", i):
                         depth += 1
                         i += 2
@@ -763,17 +732,96 @@ class CodeAnalyzer:
                         i += 2
                     else:
                         i += 1
-
-                comments.append(
-                    {
-                        "line": self._offset_to_line(start),
-                        "text": content[text_start:text_end].strip(),
-                        "type": "doc" if doc_blocks and is_doc else "block",
-                    }
-                )
+                yield {
+                    "kind": "block_comment",
+                    "start": start,
+                    "end": i,
+                    "text_start": text_start,
+                    "text_end": text_end,
+                    "closed": depth == 0,
+                    "is_doc": is_doc,
+                }
                 continue
 
             i += 1
+
+    def _mask_c_style_non_code(
+        self,
+        content: str,
+        *,
+        mask_comments: bool,
+        mask_backticks: bool = True,
+        backtick_escapes: bool = True,
+        nested_block_comments: bool = False,
+        string_templates: bool = False,
+    ) -> str:
+        """Mask string literals, and optionally comments, while preserving offsets."""
+        masked = list(content)
+
+        def mask_span(start: int, end: int) -> None:
+            for pos in range(start, end):
+                if masked[pos] not in "\r\n":
+                    masked[pos] = " "
+
+        for span in self._iter_c_style_spans(
+            content,
+            backtick_escapes=backtick_escapes,
+            nested_block_comments=nested_block_comments,
+            string_templates=string_templates,
+        ):
+            kind = span["kind"]
+            if kind == "string":
+                mask_span(span["start"], span["end"])
+            elif kind == "backtick":
+                if mask_backticks:
+                    mask_span(span["start"], span["end"])
+            elif mask_comments:  # line_comment / block_comment
+                mask_span(span["start"], span["end"])
+
+        return "".join(masked)
+
+    def _extract_c_style_comments(
+        self,
+        content: str,
+        *,
+        doc_blocks: bool,
+        backtick_escapes: bool = True,
+        nested_block_comments: bool = False,
+        string_templates: bool = False,
+    ) -> list[dict]:
+        """Extract C-style comments without matching markers inside strings/comments."""
+        comments = []
+
+        for span in self._iter_c_style_spans(
+            content,
+            backtick_escapes=backtick_escapes,
+            nested_block_comments=nested_block_comments,
+            string_templates=string_templates,
+        ):
+            kind = span["kind"]
+            if kind not in ("line_comment", "block_comment"):
+                continue
+
+            # Skip unterminated block comments and empty comments — mirrors the prior
+            # regex behaviour, which required a closing marker plus at least one inner
+            # character (so a bare ``//``, ``/**/`` or a stray ``/*`` produced nothing).
+            if not span["closed"] or span["text_end"] <= span["text_start"]:
+                continue
+
+            if kind == "line_comment":
+                comment_type = "inline"
+            elif doc_blocks and span["is_doc"]:
+                comment_type = "doc"
+            else:
+                comment_type = "block"
+
+            comments.append(
+                {
+                    "line": self._offset_to_line(span["start"]),
+                    "text": content[span["text_start"] : span["text_end"]].strip(),
+                    "type": comment_type,
+                }
+            )
 
         return comments
 
@@ -1444,11 +1492,18 @@ class CodeAnalyzer:
         return params
 
     def _extract_java_comments(
-        self, content: str, *, nested_block_comments: bool = False
+        self,
+        content: str,
+        *,
+        nested_block_comments: bool = False,
+        string_templates: bool = False,
     ) -> list[dict]:
         """Extract Java comments (// and /* */ and /** JavaDoc */)."""
         comments = self._extract_c_style_comments(
-            content, doc_blocks=True, nested_block_comments=nested_block_comments
+            content,
+            doc_blocks=True,
+            nested_block_comments=nested_block_comments,
+            string_templates=string_templates,
         )
         return [c for c in comments if c["type"] == "inline"] + [
             c for c in comments if c["type"] in {"block", "doc"}
@@ -1474,6 +1529,7 @@ class CodeAnalyzer:
             mask_comments=True,
             mask_backticks=False,
             nested_block_comments=True,
+            string_templates=True,
         )
         classes = []
         functions = []
@@ -1641,8 +1697,8 @@ class CodeAnalyzer:
 
         # Extract comments (// and /* */ and /** KDoc */)
         comments = self._extract_java_comments(
-            content, nested_block_comments=True
-        )  # Same syntax as Java, plus Kotlin nested block comments.
+            content, nested_block_comments=True, string_templates=True
+        )  # Same syntax as Java, plus Kotlin nested block comments and ${...} templates.
 
         # Extract imports
         imports = []
@@ -1669,6 +1725,7 @@ class CodeAnalyzer:
             mask_comments=True,
             mask_backticks=False,
             nested_block_comments=True,
+            string_templates=True,
         )
 
         method_pattern = (

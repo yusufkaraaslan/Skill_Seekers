@@ -805,6 +805,33 @@ func main() {
         comment_texts = [c["text"] for c in result["comments"]]
         self.assertEqual(comment_texts, ["Real Go comment"])
 
+    def test_cpp_digit_separator_does_not_swallow_comments(self):
+        """A single ' digit separator (C++14, e.g. 1'000) is not a char-literal opener."""
+        code = """
+int main() {
+    int x = 1'000;  // comment one
+    int y = 5;      // comment two
+}
+"""
+        result = self.analyzer.analyze_file("a.cpp", code, "C++")
+
+        comment_texts = [c["text"] for c in result["comments"]]
+        self.assertEqual(comment_texts, ["comment one", "comment two"])
+
+    def test_unterminated_block_comment_emits_no_comment(self):
+        """An unterminated /* matches the prior regex behaviour and yields nothing."""
+        code = "var a = 1;\n/* never closed\nvar b = 2;"
+        result = self.analyzer.analyze_file("x.js", code, "JavaScript")
+
+        self.assertEqual(result["comments"], [])
+
+    def test_empty_block_comment_emits_no_comment(self):
+        """An empty /**/ has no inner text and is not reported (matches prior regex)."""
+        code = "public class Demo {\n    /**/\n    void run() {}\n}\n"
+        result = self.analyzer.analyze_file("Demo.java", code, "Java")
+
+        self.assertEqual(result["comments"], [])
+
     def test_cpp_comment_extraction(self):
         """Test C++ comment extraction (uses same logic as JavaScript)."""
         code = """
