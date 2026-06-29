@@ -351,6 +351,111 @@ class TestKotlinCodeAnalyzer:
         # filterByType uses <reified T> generics — may or may not be captured
         assert len(func_names) >= 2
 
+    def test_kotlin_brace_depth_ignores_strings_and_comments(self):
+        code = '''\
+package com.example
+
+val fakeOpen = "{"
+val raw = """
+class Ghost {
+    fun fake(): Int { return 99 }
+}
+"""
+/* outer { /* nested */ } */
+
+class Holder {
+    val fakeClose = "}"
+    val rawMethod = """fun fakeMethod(): Int { return 100 }"""
+
+    fun method(): Int {
+        return 1
+    }
+}
+
+fun topLevel(): Int {
+    return 2
+}
+'''
+        result = self.analyzer.analyze_file("Holder.kt", code, "Kotlin")
+        holder = next(c for c in result["classes"] if c["name"] == "Holder")
+        method_names = {m["name"] for m in holder["methods"]}
+        function_names = {f["name"] for f in result["functions"]}
+        class_names = {c["name"] for c in result["classes"]}
+
+        assert "Ghost" not in class_names
+        assert "fake" not in function_names
+        assert "fakeMethod" not in method_names
+        assert "method" in method_names
+        assert "topLevel" in function_names
+        assert "method" not in function_names
+
+    def test_kotlin_comments_ignore_markers_inside_strings(self):
+        code = '''\
+package com.example
+
+val url = "https://example.com/path"
+val block = "/* not a block comment */"
+val raw = """// not an inline comment either"""
+
+// Real inline
+/** Real KDoc */
+'''
+        result = self.analyzer.analyze_file("Comments.kt", code, "Kotlin")
+
+        comments = [(c["text"], c["type"]) for c in result["comments"]]
+        assert comments == [("Real inline", "inline"), ("Real KDoc", "doc")]
+
+    def test_kotlin_backtick_identifier_with_apostrophe_does_not_swallow_code(self):
+        """A ' inside a backtick-escaped identifier must not start a string literal."""
+        code = """\
+package com.example
+
+class Holder {
+    fun `user's profile loads`(): Int { return 1 }
+}
+
+fun topLevel(): Int { return 2 }
+"""
+        result = self.analyzer.analyze_file("Holder.kt", code, "Kotlin")
+
+        function_names = {f["name"] for f in result["functions"]}
+        class_names = {c["name"] for c in result["classes"]}
+        assert "Holder" in class_names
+        # Before the fix the apostrophe opened a string and masked the rest of the
+        # file, so topLevel disappeared entirely.
+        assert "topLevel" in function_names
+
+    def test_kotlin_string_template_with_nested_quotes_keeps_brace_depth(self):
+        """${...} interpolation braces/quotes must not leak into structural parsing."""
+        code = """\
+package com.example
+
+fun a(): Int { return 1 }
+val x = "open ${ if (true) "{" else "" } close"
+fun b(): Int { return 2 }
+fun cc(): Int { return 3 }
+"""
+        result = self.analyzer.analyze_file("Template.kt", code, "Kotlin")
+
+        function_names = {f["name"] for f in result["functions"]}
+        # The nested "{" used to leak a brace, pushing brace_depth positive so b and
+        # cc were misclassified as nested and dropped.
+        assert {"a", "b", "cc"} <= function_names
+
+    def test_kotlin_unterminated_block_comment_does_not_corrupt_braces(self):
+        """An unterminated /* at EOF must be fully masked, last char included."""
+        code = """\
+class C {
+    fun m(): Int { return 1 }
+}
+/* unterminated trailing comment with a } brace
+"""
+        result = self.analyzer.analyze_file("C.kt", code, "Kotlin")
+
+        holder = next(c for c in result["classes"] if c["name"] == "C")
+        method_names = {m["name"] for m in holder["methods"]}
+        assert "m" in method_names
+
     def test_analyze_imports(self):
         result = self.analyzer.analyze_file("User.kt", KOTLIN_DATA_CLASS, "Kotlin")
         imports = result["imports"]
