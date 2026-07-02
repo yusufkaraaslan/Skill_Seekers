@@ -372,6 +372,8 @@ class TestScrapePdf:
         mock_cls.assert_called_once()
         init_config = mock_cls.call_args[0][0]
         assert init_config["pdf_path"] == pdf_path
+        assert init_config["output_dir"].startswith(scraper.sources_dir)
+        assert init_config["output_dir"].endswith("test_unified_pdf_0_manual")
 
     def test_extract_called(self, tmp_path, monkeypatch):
         scraper = _make_scraper(tmp_path=tmp_path)
@@ -822,6 +824,47 @@ class TestUnifiedCacheFlow:
         # The flow must not create a stray ./output/<name>_docs staging dir.
         assert not (Path.cwd() / "output" / f"{scraper.name}_docs").exists()
 
+    def test_multiple_documentation_sources_use_distinct_cache_dirs(self, tmp_path, monkeypatch):
+        import os
+
+        monkeypatch.chdir(tmp_path)
+
+        sources = [
+            {"base_url": "https://docs.example.com/a/", "type": "documentation"},
+            {"base_url": "https://docs.example.com/b/", "type": "documentation"},
+        ]
+        scraper = _make_scraper({"sources": sources}, tmp_path=tmp_path)
+        Path(scraper.sources_dir).mkdir(parents=True, exist_ok=True)
+
+        captured = []
+
+        def fake_scrape(config, **_kwargs):
+            out = config["output_dir"]
+            captured.append(out)
+            os.makedirs(f"{out}_data", exist_ok=True)
+            os.makedirs(os.path.join(out, "references"), exist_ok=True)
+            with open(os.path.join(f"{out}_data", "summary.json"), "w") as f:
+                json.dump({"pages": [{"url": f"{out}/page"}], "total_pages": 1}, f)
+            return 0
+
+        with patch("skill_seekers.cli.doc_scraper.scrape_documentation", side_effect=fake_scrape):
+            for source in sources:
+                scraper._scrape_documentation(source)
+
+        assert len(captured) == 2
+        assert captured[0] != captured[1]
+        assert all(path.startswith(scraper.sources_dir) for path in captured)
+        assert (
+            scraper.scraped_data["documentation"][0]["data_file"]
+            != (scraper.scraped_data["documentation"][1]["data_file"])
+        )
+
+        reloaded = _make_scraper({"sources": sources}, tmp_path=tmp_path)
+        assert reloaded._load_cached_sources() == 2
+        loaded_docs = reloaded.scraped_data["documentation"]
+        assert loaded_docs[0]["source_id"] != loaded_docs[1]["source_id"]
+        assert loaded_docs[0]["data_file"] != loaded_docs[1]["data_file"]
+
 
 class TestUnifiedDryRunAndOutput:
     """MCP-03 follow-up: dry_run must actually be honored by UnifiedScraper,
@@ -859,6 +902,97 @@ class TestUnifiedDryRunAndOutput:
         # Trailing slash is normalized by the shared resolver.
         scraper = UnifiedScraper(str(cfg), output_dir=str(tmp_path / "custom") + "/", dry_run=True)
         assert scraper.output_dir == str(tmp_path / "custom")
+
+
+class TestUnifiedSkipScrape:
+    """Unified skip_scrape reloads prior cache instead of scraping again."""
+
+    def test_run_loads_cached_sources_without_rescraping(self, tmp_path):
+        scraper = _make_scraper(
+            {
+                "sources": [
+                    {"type": "documentation", "base_url": "https://example.com/docs"},
+                    {"type": "github", "repo": "owner/repo"},
+                ]
+            },
+            tmp_path=tmp_path,
+        )
+        scraper.skip_scrape = True
+
+        docs_data = Path(scraper.sources_dir) / "test_unified_docs_data" / "summary.json"
+        docs_data.parent.mkdir(parents=True, exist_ok=True)
+        docs_data.write_text(
+            json.dumps({"pages": [{"title": "Intro", "url": "https://example.com"}]}),
+            encoding="utf-8",
+        )
+
+        github_data = Path(scraper.data_dir) / "github_data_0_owner_repo.json"
+        github_data.write_text(json.dumps({"readme": "cached"}), encoding="utf-8")
+
+        with (
+            patch.object(scraper, "scrape_all_sources") as scrape,
+            patch.object(scraper, "detect_conflicts", return_value=[]) as detect,
+            patch.object(scraper, "build_skill") as build,
+        ):
+            result = scraper.run()
+
+        assert result == 0
+        scrape.assert_not_called()
+        detect.assert_called_once()
+        build.assert_called_once_with(None)
+        assert scraper.scraped_data["documentation"][0]["data_file"] == str(docs_data)
+        assert scraper.scraped_data["documentation"][0]["pages"][0]["title"] == "Intro"
+        assert scraper.scraped_data["github"][0]["data"] == {"readme": "cached"}
+
+    def test_run_fails_if_skip_scrape_cache_is_missing(self, tmp_path):
+        scraper = _make_scraper(
+            {"sources": [{"type": "github", "repo": "owner/repo"}]},
+            tmp_path=tmp_path,
+        )
+        scraper.skip_scrape = True
+
+        with (
+            patch.object(scraper, "scrape_all_sources") as scrape,
+            patch.object(scraper, "build_skill") as build,
+        ):
+            result = scraper.run()
+
+        assert result == 1
+        scrape.assert_not_called()
+        build.assert_not_called()
+
+    def test_load_cached_sources_restores_converter_backed_source_shape(self, tmp_path):
+        scraper = _make_scraper(
+            {"sources": [{"type": "pdf", "path": "/tmp/manual.pdf"}]},
+            tmp_path=tmp_path,
+        )
+        pdf_data = Path(scraper.data_dir) / "pdf_data_0_manual.json"
+        pdf_data.write_text(json.dumps({"pages": [{"title": "Manual"}]}), encoding="utf-8")
+
+        assert scraper._load_cached_sources() == 1
+        assert scraper.scraped_data["pdf"][0] == {
+            "pdf_path": "/tmp/manual.pdf",
+            "pdf_id": "manual",
+            "idx": 0,
+            "data": {"pages": [{"title": "Manual"}]},
+            "data_file": str(pdf_data),
+        }
+
+    def test_load_cached_video_uses_unified_data_cache(self, tmp_path):
+        scraper = _make_scraper(
+            {"sources": [{"type": "video", "url": "https://youtu.be/example"}]},
+            tmp_path=tmp_path,
+        )
+        video_data = Path(scraper.data_dir) / "video_data_0.json"
+        video_data.write_text(json.dumps({"videos": [{"title": "Demo"}]}), encoding="utf-8")
+
+        assert scraper._load_cached_sources() == 1
+        assert scraper.scraped_data["video"][0] == {
+            "video_id": "https://youtu.be/example",
+            "idx": 0,
+            "data": {"videos": [{"title": "Demo"}]},
+            "data_file": str(video_data),
+        }
 
 
 # ===========================================================================

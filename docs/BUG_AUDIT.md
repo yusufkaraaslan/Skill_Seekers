@@ -91,7 +91,7 @@ After the fixes above, every commit in this PR was re-reviewed independently (on
 
 | ID | Sev | Resolution |
 |----|-----|-----------|
-| **I1 (MCP-03)** | High | `skip_scrape` was a no-op (set an attribute no converter read). Now honored at the `SkillConverter.run()` chokepoint (skip `extract()`, build from existing on-disk data) — covers the **single-source** path. The **unified multi-source** path still does not honor it (would require reloading each source's cache before build); the comment in `scraping_tools.py` now says so, and it is **tracked below**. Test: `test_skill_converter.py::TestSkipScrape`. |
+| **I1 (MCP-03)** | High | `skip_scrape` was a no-op (set an attribute no converter read). Now honored at the `SkillConverter.run()` chokepoint for single-source paths and by `UnifiedScraper.run()` for multi-source configs, which reloads each configured source from `.skillseeker-cache`/cached extraction files before conflict detection and build. Tests: `test_skill_converter.py::TestSkipScrape`, `test_unified_scraper_orchestration.py::TestUnifiedSkipScrape`, `test_unified_mcp_integration.py::test_mcp_scrape_docs_unified_skip_scrape_sets_attribute_without_warning`. |
 | **I2 (RT-06)** | Medium | Config-file **inline** `stages` never ran — `_build_inline_engine` re-read `args.enhance_stage` (None for config-only) instead of the resolved list. Now takes the resolved `inline_stages`. Test: `test_workflow_runner.py::...::test_inline_stages_from_config_execute`. |
 | **I3 (ENH-06)** | Low | The OpenAI branch of `_call_api` still hardcoded `timeout=120`; now forwards the caller's `request_timeout`. Test: `test_agent_client.py::...::test_openai_forwards_caller_timeout`. |
 | **I4 (RT-04)** | Low | RT-04 claimed `--timeout` is wired on `create`, but the flag isn't registered there, so the mapping is inert on that path (it only fires for config dicts carrying `timeout`). **Claim corrected here** — no CLI flag added (avoids new surface area for an over-claim). |
@@ -112,7 +112,7 @@ After the fixes above, every commit in this PR was re-reviewed independently (on
 ### Deferred (genuine larger work — not safe to do inline; tracked here)
 
 - **Streaming adaptor format (ADP-01 follow-up):** all 8 RAG/vector adaptors emit a *generic* streamed format rather than each platform's native shape (only the unregistered example classes override the converter). `--streaming` works; per-platform fidelity is a follow-up.
-- **Unified multi-source `skip_scrape` (I1 remainder):** honoring it requires reloading each source's `.skillseeker-cache` before build — a real feature, not a one-liner.
+- **Unified multi-source `skip_scrape` (I1 remainder):** fixed in #405 by rebuilding `scraped_data` from cached per-source files before the unified build, and by forwarding `--skip-scrape` through the config-source `create` path.
 - **Kotlin brace-depth / `is_suspend` corpus robustness (CBA-08, CBA-11):** the brace-depth nesting check is fooled by braces inside strings/comments; a robust fix needs a string/comment-aware scan (shared with the still-open CBA-11).
 ### Low-tier disposition (2026-06-11)
 

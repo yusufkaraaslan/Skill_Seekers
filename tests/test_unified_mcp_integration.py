@@ -153,11 +153,8 @@ async def test_mcp_scrape_docs_detection():
 
 
 @pytest.mark.skipif(not MCP_AVAILABLE, reason="MCP package not installed")
-async def test_mcp_scrape_docs_unified_skip_scrape_warns():
-    """Regression: skip_scrape is a no-op on the unified path
-    (UnifiedScraper.run() never reads the attribute and re-scrapes every
-    source) — the tool result must say so explicitly instead of silently
-    misleading the caller."""
+async def test_mcp_scrape_docs_unified_skip_scrape_sets_attribute_without_warning():
+    """Unified skip_scrape is honored by UnifiedScraper, so MCP should not warn."""
     from unittest.mock import patch
 
     unified_config = {
@@ -178,7 +175,7 @@ async def test_mcp_scrape_docs_unified_skip_scrape_warns():
         json.dump(legacy_config, f)
         legacy_config_path = f.name
 
-    warning = "skip_scrape is not yet supported for unified multi-source configs"
+    old_warning = "skip_scrape is not yet supported for unified multi-source configs"
 
     try:
         with (
@@ -191,25 +188,24 @@ async def test_mcp_scrape_docs_unified_skip_scrape_warns():
                 TextContent(type="text", text=progress_msg)
             ]
 
-            # Unified + skip_scrape → explicit warning in the tool result.
+            # Unified + skip_scrape → no stale warning, attribute is set.
             result = await scrape_docs_tool(
                 {"config_path": unified_config_path, "skip_scrape": True}
             )
             text = result[0].text
-            assert warning in text, f"Expected skip_scrape warning, got: {text}"
-            assert "all sources will be re-scraped" in text
-            # The attribute is still set for forward-compat.
+            assert old_warning not in text
+            assert "all sources will be re-scraped" not in text
             assert mock_get_converter.return_value.skip_scrape is True
 
             # Unified without skip_scrape → no warning.
             result = await scrape_docs_tool({"config_path": unified_config_path})
-            assert warning not in result[0].text
+            assert old_warning not in result[0].text
 
             # Legacy + skip_scrape → honored (SkillConverter.run), no warning.
             result = await scrape_docs_tool(
                 {"config_path": legacy_config_path, "skip_scrape": True}
             )
-            assert warning not in result[0].text
+            assert old_warning not in result[0].text
     finally:
         Path(unified_config_path).unlink(missing_ok=True)
         Path(legacy_config_path).unlink(missing_ok=True)
@@ -257,7 +253,7 @@ async def run_all_tests():
         await test_mcp_validate_unified_config()
         await test_mcp_validate_legacy_config()
         await test_mcp_scrape_docs_detection()
-        await test_mcp_scrape_docs_unified_skip_scrape_warns()
+        await test_mcp_scrape_docs_unified_skip_scrape_sets_attribute_without_warning()
         await test_mcp_merge_mode_override()
 
         print("\n" + "=" * 60)

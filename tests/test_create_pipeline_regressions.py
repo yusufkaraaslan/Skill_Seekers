@@ -6,7 +6,8 @@ Covers:
    and leftover output from a prior run existed.
 2. create_command: CLI --skip-scrape only landed in the config dict while
    SkillConverter.run() reads the instance attribute via getattr — the CLI
-   flag was a silent no-op (full network re-scrape).
+   flag was a silent no-op (full network re-scrape), including unified config
+   sources whose converter is built through a factory-shaped dict.
 3. skill_converter: the skip_scrape branch went straight to build_skill()
    without reloading cached data — document-family converters (pdf, word,
    epub, …) have self.extracted_data=None and crashed with AttributeError.
@@ -156,6 +157,21 @@ class TestSkipScrapePromotedToConverter:
         assert result == 0
         assert stub.run_called
         assert not hasattr(stub, "skip_scrape")
+
+    def test_config_source_skip_scrape_flag_sets_converter_attribute(self, tmp_path):
+        config = {
+            "name": "uni",
+            "description": "d",
+            "sources": [{"type": "documentation", "base_url": "https://example.com"}],
+        }
+        cfg = tmp_path / "uni.json"
+        cfg.write_text(json.dumps(config), encoding="utf-8")
+
+        result, stub = self._execute_with_stub(make_create_args(source=str(cfg), skip_scrape=True))
+
+        assert result == 0
+        assert stub.run_called
+        assert getattr(stub, "skip_scrape", False) is True
 
 
 # ═══════════════════════════════════════════════════════════════════════════

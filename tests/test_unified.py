@@ -457,8 +457,34 @@ def test_skill_builder_basic():
         assert skill_md.exists()
 
         content = skill_md.read_text()
-        assert "test_skill" in content.lower()
-        assert "Test skill description" in content
+    assert "test_skill" in content.lower()
+    assert "Test skill description" in content
+
+
+def test_skill_builder_loads_multiple_documentation_skill_mds(tmp_path):
+    """Multiple documentation source SKILL.md files are all loaded from cache."""
+    config = {
+        "name": "test_skill",
+        "description": "Test skill description",
+        "sources": [
+            {"type": "documentation", "base_url": "https://example.com/a"},
+            {"type": "documentation", "base_url": "https://example.com/b"},
+        ],
+    }
+    sources_dir = tmp_path / "cache" / "sources"
+    first_docs = sources_dir / "test_skill_docs_0_a"
+    second_docs = sources_dir / "test_skill_docs_1_b"
+    first_docs.mkdir(parents=True)
+    second_docs.mkdir(parents=True)
+    (first_docs / "SKILL.md").write_text("# First docs\n", encoding="utf-8")
+    (second_docs / "SKILL.md").write_text("# Second docs\n", encoding="utf-8")
+
+    builder = UnifiedSkillBuilder(config, {}, cache_dir=str(tmp_path / "cache"))
+
+    skill_mds = builder._load_source_skill_mds()
+
+    assert "# First docs" in skill_mds["documentation"]
+    assert "# Second docs" in skill_mds["documentation"]
 
 
 def test_skill_builder_with_conflicts():
