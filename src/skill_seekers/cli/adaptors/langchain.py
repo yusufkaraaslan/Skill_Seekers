@@ -223,7 +223,9 @@ class LangChainAdaptor(StreamingAdaptorMixin, SkillAdaptor):
 
         # Load documents
         with open("skill-langchain.json") as f:
-            docs_data = json.load(f)
+            raw_package = json.load(f)
+
+        docs_data = raw_package["documents"] if isinstance(raw_package, dict) else raw_package
 
         # Convert to LangChain Documents
         documents = [
@@ -254,7 +256,9 @@ import json
 
 # Load documents
 with open("{package_path.name}") as f:
-    docs_data = json.load(f)
+    raw_package = json.load(f)
+
+docs_data = raw_package["documents"] if isinstance(raw_package, dict) else raw_package
 
 # Convert to LangChain Documents
 documents = [
