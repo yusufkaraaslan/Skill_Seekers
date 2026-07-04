@@ -104,16 +104,38 @@ def _detect_gpu() -> bool:
         return False
 
 
+def _cpu_supports_quantized_ops() -> bool:
+    """Check whether the CPU can run PyTorch's quantized ops.
+
+    FBGEMM (torch's x86 quantized backend) requires AVX2. On x86 CPUs
+    without AVX2 (e.g. QEMU's default virtual CPU model), dynamically
+    quantized models crash the whole process with SIGILL, so EasyOCR
+    must fall back to fp32 weights there.
+    """
+    import platform
+
+    if platform.machine().lower() not in ("x86_64", "amd64", "i386", "i686"):
+        return True  # non-x86 (ARM etc.) uses QNNPACK, no AVX2 requirement
+    try:
+        with open("/proc/cpuinfo") as f:
+            return "avx2" in f.read()
+    except OSError:
+        return True  # not Linux or unreadable: assume a modern CPU
+
+
 def _get_ocr_reader():
     """Get or create the EasyOCR reader (lazy singleton)."""
     global _ocr_reader
     if _ocr_reader is None:
         use_gpu = _detect_gpu()
+        quantize = use_gpu or _cpu_supports_quantized_ops()
         logger.info(
             f"Initializing OCR engine ({'GPU' if use_gpu else 'CPU'} mode, "
             "first run may download models)..."
         )
-        _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu)
+        if not quantize:
+            logger.info("CPU lacks AVX2; disabling EasyOCR quantization (slower, but avoids SIGILL)")
+        _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu, quantize=quantize)
     return _ocr_reader
 
 
@@ -746,8 +768,9 @@ def _classify_region(gray, edges, hsv) -> FrameType:
             edges, 1, np.pi / 180, threshold=80, minLineLength=w // 8, maxLineGap=10
         )
         if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
+            # HoughLinesP returns shape (N, 1, 4) or (N, 4) depending on the
+            # OpenCV version; reshape handles both.
+            for x1, y1, x2, y2 in lines.reshape(-1, 4):
                 angle = abs(np.degrees(np.arctan2(y2 - y1, x2 - x1)))
                 if angle < 5 or angle > 175:
                     horizontal_lines += 1
