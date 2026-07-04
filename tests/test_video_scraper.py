@@ -466,13 +466,52 @@ class TestVideoTranscript(unittest.TestCase):
         finally:
             os.unlink(tmp_name)
 
-    def test_whisper_stub_raises(self):
+    def test_whisper_missing_raises(self):
         from skill_seekers.cli.video_transcript import transcribe_with_whisper, HAS_WHISPER
 
         if not HAS_WHISPER:
             with self.assertRaises(RuntimeError) as ctx:
                 transcribe_with_whisper("test.wav")
             self.assertIn("faster-whisper", str(ctx.exception))
+
+    def test_whisper_transcription(self):
+        """transcribe_with_whisper converts faster-whisper segments to TranscriptSegments."""
+        import sys
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli.video_models import TranscriptSource
+
+        fake_seg = MagicMock()
+        fake_seg.text = " Hello world. "
+        fake_seg.start = 0.0
+        fake_seg.end = 2.5
+        fake_seg.avg_logprob = -0.1
+        fake_empty = MagicMock()
+        fake_empty.text = "   "
+        fake_info = MagicMock()
+        fake_info.language = "en"
+        fake_info.language_probability = 0.99
+
+        fake_model = MagicMock()
+        fake_model.transcribe.return_value = ([fake_seg, fake_empty], fake_info)
+        fake_module = MagicMock()
+        fake_module.WhisperModel.return_value = fake_model
+
+        with (
+            patch.dict(sys.modules, {"faster_whisper": fake_module}),
+            patch("skill_seekers.cli.video_transcript.HAS_WHISPER", True),
+        ):
+            from skill_seekers.cli.video_transcript import transcribe_with_whisper
+
+            segments = transcribe_with_whisper("video.mp4", model="base", language="en")
+
+        self.assertEqual(len(segments), 1)  # empty segment filtered out
+        self.assertEqual(segments[0].text, "Hello world.")
+        self.assertEqual(segments[0].start, 0.0)
+        self.assertEqual(segments[0].end, 2.5)
+        self.assertEqual(segments[0].source, TranscriptSource.WHISPER)
+        self.assertGreater(segments[0].confidence, 0.8)
+        fake_model.transcribe.assert_called_once_with("video.mp4", language="en")
 
     def test_get_transcript_fallback_to_subtitle(self):
         """Test that get_transcript falls back to subtitle files."""

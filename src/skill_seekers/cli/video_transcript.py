@@ -301,19 +301,24 @@ def parse_vtt(path: str) -> list[TranscriptSegment]:
 
 
 # =============================================================================
-# Whisper Stub (Tier 2)
+# Whisper (Tier 2)
 # =============================================================================
 
 
 def transcribe_with_whisper(
-    audio_path: str,  # noqa: ARG001
-    model: str = "base",  # noqa: ARG001
-    language: str | None = None,  # noqa: ARG001
+    audio_path: str,
+    model: str = "base",
+    language: str | None = None,
 ) -> list[TranscriptSegment]:
     """Transcribe audio using faster-whisper (Tier 2).
 
+    Args:
+        audio_path: Path to an audio or video file (decoded via PyAV/ffmpeg).
+        model: Whisper model size (tiny, base, small, medium, large-v3, ...).
+        language: Language hint (e.g. "en"), or None for auto-detection.
+
     Raises:
-        RuntimeError: Always, unless faster-whisper is installed.
+        RuntimeError: If faster-whisper is not installed.
     """
     if not HAS_WHISPER:
         raise RuntimeError(
@@ -322,8 +327,32 @@ def transcribe_with_whisper(
             "Or: pip install faster-whisper"
         )
 
-    # Tier 2 implementation placeholder
-    raise NotImplementedError("Whisper transcription will be implemented in Tier 2")
+    import math
+
+    from faster_whisper import WhisperModel
+
+    logger.info(f"Transcribing with faster-whisper (model={model})...")
+    whisper_model = WhisperModel(model, device="auto", compute_type="default")
+    raw_segments, info = whisper_model.transcribe(audio_path, language=language or None)
+
+    segments = [
+        TranscriptSegment(
+            text=seg.text.strip(),
+            start=float(seg.start),
+            end=float(seg.end),
+            # avg_logprob is a mean token log-probability; exp() maps it
+            # to an approximate 0..1 confidence.
+            confidence=min(1.0, math.exp(seg.avg_logprob)),
+            source=TranscriptSource.WHISPER,
+        )
+        for seg in raw_segments
+        if seg.text.strip()
+    ]
+    logger.info(
+        f"Whisper produced {len(segments)} segments "
+        f"(language={info.language}, probability={info.language_probability:.2f})"
+    )
+    return segments
 
 
 # =============================================================================
@@ -388,8 +417,8 @@ def get_transcript(
             )
             if segments:
                 return segments, TranscriptSource.WHISPER
-        except (RuntimeError, NotImplementedError):
-            pass
+        except Exception as e:
+            logger.warning(f"Whisper transcription failed: {e}")
 
     # 4. No transcript available
     logger.warning(f"No transcript available for '{video_info.title}'")
