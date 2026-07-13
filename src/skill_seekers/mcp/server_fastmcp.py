@@ -1680,14 +1680,19 @@ async def run_http_server(host: str, port: int):
         # Get the SSE Starlette app from FastMCP
         app = mcp.sse_app()
 
-        # Add CORS middleware for cross-origin requests
+        # Add CORS middleware for cross-origin requests. Origins are configurable
+        # via CORS_ORIGINS; credentials auto-disable for wildcard origins because
+        # browsers reject allow_credentials=True with allow_origins=["*"].
         try:
             from starlette.middleware.cors import CORSMiddleware
 
+            from ..cors_config import resolve_cors_config
+
+            _allow_origins, _allow_credentials = resolve_cors_config()
             app.add_middleware(
                 CORSMiddleware,
-                allow_origins=["*"],
-                allow_credentials=True,
+                allow_origins=_allow_origins,
+                allow_credentials=_allow_credentials,
                 allow_methods=["*"],
                 allow_headers=["*"],
             )

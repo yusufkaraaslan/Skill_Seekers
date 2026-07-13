@@ -26,10 +26,14 @@ app = FastAPI(
 # Example: CORS_ORIGINS=https://skillseekersweb.com,https://app.skillseekers.dev
 # Note: browsers reject allow_credentials=True with allow_origins=["*"].
 _cors_origins_raw = os.environ.get("CORS_ORIGINS", "*")
-_cors_origins = (
-    ["*"] if _cors_origins_raw == "*" else [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
-)
-_cors_credentials = _cors_origins != ["*"]
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+if not _cors_origins or "*" in _cors_origins:
+    # Public access: a wildcard (even mixed into a list) forces credentials off,
+    # because browsers reject allow_credentials=True with allow_origins=["*"].
+    _cors_origins = ["*"]
+    _cors_credentials = False
+else:
+    _cors_credentials = True
 
 app.add_middleware(
     CORSMiddleware,
