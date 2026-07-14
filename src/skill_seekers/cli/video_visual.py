@@ -20,6 +20,8 @@ import re
 import tempfile
 from dataclasses import dataclass, field
 
+from skill_seekers.cli.agent_client import AgentClient
+from skill_seekers.cli.minimax_config import MINIMAX_IMAGE_MODEL
 from skill_seekers.cli.video_models import (
     CodeBlock,
     CodeContext,
@@ -547,84 +549,93 @@ def _pick_better_ocr_result(result_a: tuple, result_b: tuple) -> tuple:
     return result_a if conf_a >= conf_b else result_b
 
 
-def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
-    """Use Claude Vision API to extract code from a frame.
+def _vision_ocr_prompt(frame_type: FrameType) -> str:
+    """Build the exact-text OCR prompt for a video frame."""
+    context = "IDE screenshot" if frame_type == FrameType.CODE_EDITOR else "terminal screenshot"
+    return (
+        f"Extract all visible code/text from this {context} exactly as shown. "
+        "Preserve indentation, line breaks, and all characters. "
+        "Return only the raw code text, no explanations."
+    )
 
-    Sends the frame image to Claude Haiku and asks it to extract all
-    visible code/text exactly as shown.
+
+def _ocr_with_agent_vision(
+    frame_path: str,
+    frame_type: FrameType,
+    *,
+    api_key: str,
+    provider: str,
+    model: str,
+) -> tuple[str, float]:
+    """Extract frame text through AgentClient's multimodal API path."""
+    try:
+        client = AgentClient(
+            mode="api",
+            api_key=api_key,
+            provider=provider,
+            model=model,
+        )
+        text = client.call_with_image(
+            _vision_ocr_prompt(frame_type),
+            frame_path,
+            max_tokens=4096,
+        )
+        if text and text.strip():
+            return text.strip(), 0.95
+    except Exception:  # noqa: BLE001
+        logger.debug("Vision API call failed, falling back to OCR results")
+    return "", 0.0
+
+
+def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
+    """Use the configured Anthropic model to extract code from a frame.
+
+    This compatibility wrapper preserves the original function name used by
+    downstream callers and tests while routing the request through AgentClient.
 
     Returns:
         (extracted_text, confidence).  Confidence is 0.95 when successful.
         Returns ("", 0.0) if API key is not set or the call fails.
     """
-    import base64
-
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         return "", 0.0
+    return _ocr_with_agent_vision(
+        frame_path,
+        frame_type,
+        api_key=api_key,
+        provider="anthropic",
+        model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
+    )
 
-    try:
-        # DOCUMENTED EXCEPTION to the "all AI calls go through AgentClient"
-        # rule (docs/UNIFICATION_PLAN.md Phase 3): this is a multimodal
-        # (image) request and AgentClient only supports text prompts today.
-        # If AgentClient grows multimodal support, route this through it.
-        import anthropic
 
-        # Read image as base64
-        with open(frame_path, "rb") as f:
-            image_data = base64.standard_b64encode(f.read()).decode("utf-8")
-
-        # Determine media type
-        ext = os.path.splitext(frame_path)[1].lower()
-        media_type_map = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".webp": "image/webp",
-        }
-        media_type = media_type_map.get(ext, "image/png")
-
-        context = "IDE screenshot" if frame_type == FrameType.CODE_EDITOR else "terminal screenshot"
-        prompt = (
-            f"Extract all visible code/text from this {context} exactly as shown. "
-            "Preserve indentation, line breaks, and all characters. "
-            "Return only the raw code text, no explanations."
-        )
-
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
-            max_tokens=4096,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_data,
-                            },
-                        },
-                        {
-                            "type": "text",
-                            "text": prompt,
-                        },
-                    ],
-                }
-            ],
-        )
-
-        text = response.content[0].text.strip() if response.content else ""
-        if text:
-            return text, 0.95
+def _ocr_with_minimax_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
+    """Use MiniMax image input to extract code from a frame."""
+    api_key = os.environ.get("MINIMAX_API_KEY", "")
+    if not api_key:
         return "", 0.0
+    return _ocr_with_agent_vision(
+        frame_path,
+        frame_type,
+        api_key=api_key,
+        provider="minimax",
+        model=os.environ.get("MINIMAX_VISION_MODEL", MINIMAX_IMAGE_MODEL),
+    )
 
-    except Exception:  # noqa: BLE001
-        logger.debug("Claude Vision API call failed, falling back to OCR results")
+
+def _ocr_with_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
+    """Dispatch OCR to the selected vision provider without changing legacy defaults."""
+    provider = os.environ.get("SKILL_SEEKER_VISION_PROVIDER", "auto").strip().lower()
+    if provider == "minimax":
+        return _ocr_with_minimax_vision(frame_path, frame_type)
+    if provider in ("anthropic", "claude"):
+        return _ocr_with_claude_vision(frame_path, frame_type)
+    if provider != "auto":
+        logger.warning("Unsupported vision provider %r", provider)
         return "", 0.0
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return _ocr_with_claude_vision(frame_path, frame_type)
+    return _ocr_with_minimax_vision(frame_path, frame_type)
 
 
 def check_visual_dependencies() -> dict[str, bool]:
@@ -2030,7 +2041,7 @@ def _ocr_single_panel(
         # Vision API fallback for low-confidence panels
         vision_used = False
         if use_vision_api and p_conf < 0.5:
-            v_text, v_conf = _ocr_with_claude_vision(ocr_target, frame_type)
+            v_text, v_conf = _ocr_with_vision(ocr_target, frame_type)
             if v_text and v_conf > p_conf:
                 p_text, p_conf, p_regions = v_text, v_conf, []
                 vision_used = True
@@ -2264,7 +2275,7 @@ def extract_visual_data(
                 )
 
             if use_vision_api and ocr_confidence < 0.5:
-                vision_text, vision_conf = _ocr_with_claude_vision(frame_path, frame_type)
+                vision_text, vision_conf = _ocr_with_vision(frame_path, frame_type)
                 if vision_text and vision_conf > ocr_confidence:
                     ocr_text = vision_text
                     ocr_confidence = vision_conf

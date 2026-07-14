@@ -612,7 +612,7 @@ VIDEO_ARGUMENTS: dict[str, dict[str, Any]] = {
         "flags": ("--vision-ocr",),
         "kwargs": {
             "action": "store_true",
-            "help": "Use Claude Vision API as fallback for low-confidence code frames (requires ANTHROPIC_API_KEY, ~$0.004/frame)",
+            "help": "Use the configured vision API as fallback for low-confidence code frames",
         },
     },
     "start_time": {

@@ -5,7 +5,7 @@ Centralizes all AI invocations (API and LOCAL mode) so that every enhancer
 uses a single abstraction instead of hardcoding subprocess calls or model names.
 
 Supports:
-- API mode: Anthropic, Moonshot/Kimi, Google Gemini, OpenAI (via adaptor pattern)
+- API mode: Anthropic, Moonshot/Kimi, Google Gemini, OpenAI, MiniMax
 - LOCAL mode: Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents
 
 Usage:
@@ -23,7 +23,9 @@ Usage:
     model = AgentClient.get_model()
 """
 
+import base64
 import logging
+import mimetypes
 import os
 import shlex
 import shutil
@@ -31,6 +33,12 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from skill_seekers.cli.minimax_config import (
+    MINIMAX_DEFAULT_MODEL,
+    resolve_minimax_endpoint,
+    resolve_minimax_protocol,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +99,7 @@ DEFAULT_MODELS = {
     "moonshot": "moonshot-v1-auto",
     "google": "gemini-2.0-flash",
     "openai": "gpt-4o",
+    "minimax": MINIMAX_DEFAULT_MODEL,
 }
 
 # Ordered provider registry — THE single home for which API providers exist,
@@ -108,6 +117,7 @@ API_PROVIDERS: tuple[dict[str, Any], ...] = (
     {"provider": "google", "target": "gemini", "env_vars": ("GOOGLE_API_KEY",)},
     {"provider": "openai", "target": "openai", "env_vars": ("OPENAI_API_KEY",)},
     {"provider": "moonshot", "target": "kimi", "env_vars": ("MOONSHOT_API_KEY",)},
+    {"provider": "minimax", "target": "minimax", "env_vars": ("MINIMAX_API_KEY",)},
 )
 
 # API key env var → provider mapping (derived from the registry)
@@ -165,6 +175,7 @@ PROVIDER_TARGET_MAP = {
     "moonshot": "kimi",
     "google": "gemini",
     "openai": "openai",
+    "minimax": "minimax",
 }
 
 
@@ -269,7 +280,7 @@ class AgentClient:
                    Resolved from: arg → env SKILL_SEEKER_AGENT → "claude"
             api_key: API key override. If None, auto-detected from env vars.
             provider: API provider override ("anthropic", "moonshot", "openai",
-                "google"). Skips key-prefix detection — required for
+                "google", "minimax"). Skips key-prefix detection - required for
                 OpenAI-compatible platforms whose keys don't follow OpenAI's
                 prefix (MiniMax, DeepSeek, Together, ...).
             base_url: Custom API endpoint (anthropic- and openai-SDK providers).
@@ -297,6 +308,7 @@ class AgentClient:
         else:
             self.api_key, detected = self.detect_api_key()
             self.provider = provider or detected
+        self.api_protocol = self._resolve_api_protocol()
 
         # Determine mode (keep original for error handling decisions)
         self._requested_mode = mode
@@ -328,6 +340,9 @@ class AgentClient:
         for p in API_PROVIDERS:
             if forced in (p["provider"], p["target"]):
                 return p["provider"]
+        for env_var, provider in API_KEY_MAP.items():
+            if os.environ.get(env_var, "").strip() == api_key:
+                return provider
         if api_key.startswith("sk-ant-"):
             return "anthropic"
         if api_key.startswith("sk-"):
@@ -337,11 +352,15 @@ class AgentClient:
             return "openai"
         if api_key.startswith("AIza"):
             return "google"
-        # Default: check which env var matches
-        for env_var, provider in API_KEY_MAP.items():
-            if os.environ.get(env_var, "").strip() == api_key:
-                return provider
         return "anthropic"  # Safe fallback
+
+    def _resolve_api_protocol(self) -> str | None:
+        """Resolve the transport protocol used by the selected provider."""
+        if self.provider != "minimax":
+            return None
+        if self.base_url and self.base_url.rstrip("/").endswith("/anthropic"):
+            return "anthropic"
+        return resolve_minimax_protocol()
 
     def _init_api_client(self):
         """Initialize the API client based on detected provider."""
@@ -368,6 +387,16 @@ class AgentClient:
                 if self.base_url:
                     kwargs["base_url"] = self.base_url
                 return OpenAI(**kwargs)
+            elif self.provider == "minimax":
+                base_url = self.base_url or resolve_minimax_endpoint(protocol=self.api_protocol)
+                if self.api_protocol == "anthropic":
+                    import anthropic
+
+                    return anthropic.Anthropic(api_key=self.api_key, base_url=base_url)
+
+                from openai import OpenAI
+
+                return OpenAI(api_key=self.api_key, base_url=base_url)
             elif self.provider == "google":
                 import google.generativeai as genai
 
@@ -387,6 +416,63 @@ class AgentClient:
             logger.error(f"Failed to initialize {self.provider} API client: {e}")
             self.mode = "local"
         return None
+
+    def call_with_image(
+        self,
+        prompt: str,
+        image_path: str | Path,
+        max_tokens: int = 4096,
+        timeout: int | None = None,
+        system: str | None = None,
+        temperature: float | None = None,
+    ) -> str | None:
+        """Call an API provider with a local image and text prompt.
+
+        Args:
+            prompt: Text instruction accompanying the image.
+            image_path: Local image file to encode in the request.
+            max_tokens: Maximum response tokens.
+            timeout: Request timeout in seconds.
+            system: Optional system prompt.
+            temperature: Optional sampling temperature.
+
+        Returns:
+            Response text, or None when the image cannot be read or the call fails.
+        """
+        if self.mode != "api":
+            logger.warning("Image requests require API mode")
+            return None
+
+        path = Path(image_path)
+        try:
+            image_data = base64.standard_b64encode(path.read_bytes()).decode("ascii")
+        except OSError as e:
+            logger.error(f"Could not read image {path}: {e}")
+            return None
+
+        media_type = mimetypes.guess_type(path.name)[0] or "image/png"
+        result = self._call_api(
+            prompt,
+            max_tokens,
+            timeout,
+            system=system,
+            temperature=temperature,
+            image=(media_type, image_data),
+        )
+        if result is None and self._last_truncated:
+            logger.warning(
+                "Retrying image request once with doubled max_tokens=%s after truncation.",
+                max_tokens * 2,
+            )
+            result = self._call_api(
+                prompt,
+                max_tokens * 2,
+                timeout,
+                system=system,
+                temperature=temperature,
+                image=(media_type, image_data),
+            )
+        return result
 
     def call(
         self,
@@ -444,6 +530,7 @@ class AgentClient:
         timeout: int | None = None,
         system: str | None = None,
         temperature: float | None = None,
+        image: tuple[str, str] | None = None,
     ) -> str | None:
         """Call via API using the detected provider."""
         self._last_truncated = False
@@ -456,16 +543,32 @@ class AgentClient:
         request_timeout = timeout if timeout is not None else get_default_timeout()
 
         try:
-            if self.provider in ("anthropic", "moonshot"):
-                kwargs = {}
+            if self.provider in ("anthropic", "moonshot") or (
+                self.provider == "minimax" and self.api_protocol == "anthropic"
+            ):
+                kwargs: dict[str, Any] = {}
                 if system is not None:
                     kwargs["system"] = system
                 if temperature is not None:
                     kwargs["temperature"] = temperature
+                anthropic_content: str | list[dict[str, Any]] = prompt
+                if image:
+                    media_type, image_data = image
+                    anthropic_content = [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": image_data,
+                            },
+                        },
+                        {"type": "text", "text": prompt},
+                    ]
                 response = self.client.messages.create(
                     model=model,
                     max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{"role": "user", "content": anthropic_content}],
                     timeout=request_timeout,
                     **kwargs,
                 )
@@ -488,12 +591,26 @@ class AgentClient:
                 logger.warning("No text content found in API response")
                 return None
 
-            elif self.provider == "openai":
-                messages = []
+            elif self.provider == "openai" or (
+                self.provider == "minimax" and self.api_protocol == "openai"
+            ):
+                messages: list[dict[str, Any]] = []
                 if system is not None:
                     messages.append({"role": "system", "content": system})
-                messages.append({"role": "user", "content": prompt})
-                kwargs = {}
+                openai_content: str | list[dict[str, Any]] = prompt
+                if image:
+                    media_type, image_data = image
+                    openai_content = [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{image_data}",
+                            },
+                        },
+                    ]
+                messages.append({"role": "user", "content": openai_content})
+                kwargs: dict[str, Any] = {}
                 if temperature is not None:
                     kwargs["temperature"] = temperature
                 response = self.client.chat.completions.create(
@@ -514,6 +631,9 @@ class AgentClient:
                 return response.choices[0].message.content
 
             elif self.provider == "google":
+                if image:
+                    logger.warning("Image requests are not implemented for the google provider")
+                    return None
                 gmodel_kwargs = {}
                 if system is not None:
                     gmodel_kwargs["system_instruction"] = system
@@ -586,6 +706,8 @@ class AgentClient:
             # All other errors
             logger.error(f"{self.provider} API call failed: {e}")
             return None
+
+        return None
 
     def _call_local(
         self,
@@ -783,7 +905,8 @@ class AgentClient:
         Detect API key from environment variables.
 
         Returns:
-            (api_key, provider) tuple. Provider is "anthropic", "moonshot", "google", or "openai".
+            (api_key, provider) tuple. Provider is "anthropic", "moonshot", "google",
+            "openai", or "minimax".
             Returns (None, None) if no key found.
         """
         for env_var, provider in API_KEY_MAP.items():
@@ -811,6 +934,7 @@ class AgentClient:
             "moonshot": "MOONSHOT_MODEL",
             "google": "GOOGLE_MODEL",
             "openai": "OPENAI_MODEL",
+            "minimax": "MINIMAX_MODEL",
         }
         env_var = provider_env_map.get(provider)
         if env_var:
@@ -825,7 +949,8 @@ class AgentClient:
         """
         Auto-detect the default --target platform from available API keys.
 
-        Returns platform name: "claude", "kimi", "gemini", "openai", or "markdown" (fallback).
+        Returns platform name: "claude", "kimi", "gemini", "openai", "minimax",
+        or "markdown" (fallback).
         """
         _, provider = AgentClient.detect_api_key()
         if provider:
