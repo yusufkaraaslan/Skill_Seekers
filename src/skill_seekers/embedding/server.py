@@ -43,6 +43,7 @@ from .models import (
 )
 from .generator import EmbeddingGenerator
 from .cache import EmbeddingCache
+from ..cors_config import resolve_cors_config
 
 
 # Initialize FastAPI app
@@ -55,11 +56,13 @@ if FASTAPI_AVAILABLE:
         redoc_url="/redoc",
     )
 
-    # Add CORS middleware
+    # Add CORS middleware - origins configurable via CORS_ORIGINS env var.
+    # Credentials auto-disable for wildcard origins (browsers reject that combo).
+    _allow_origins, _allow_credentials = resolve_cors_config()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=_allow_origins,
+        allow_credentials=_allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )
