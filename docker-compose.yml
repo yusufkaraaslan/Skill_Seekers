@@ -1,8 +1,6 @@
 # Skill Seekers Docker Compose
 # Complete deployment with MCP server and vector databases
 
-version: '3.8'
-
 services:
   # Main Skill Seekers CLI application
   skill-seekers:

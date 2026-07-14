@@ -4,6 +4,7 @@ Skill Seekers Config API
 FastAPI backend for listing available skill configs
 """
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +21,20 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware - allow all origins for public API
+# CORS middleware - configure allowed origins via CORS_ORIGINS env var.
+# Use comma-separated list for specific origins, or "*" for public access.
+# Example: CORS_ORIGINS=https://skillseekersweb.com,https://app.skillseekers.dev
+# Note: browsers reject allow_credentials=True with allow_origins=["*"].
+_cors_origins_raw = os.environ.get("CORS_ORIGINS", "*")
+_cors_origins = (
+    ["*"] if _cors_origins_raw == "*" else [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+)
+_cors_credentials = _cors_origins != ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
