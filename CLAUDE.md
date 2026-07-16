@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** converts documentation from 18 source types into production-ready formats for 21+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
 
-**Version:** 3.7.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
+**Version:** 3.9.0 (dev; last release 3.8.0) — source of truth is `src/skill_seekers/_version.py` | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
 **Architecture:** See `docs/UML_ARCHITECTURE.md` for UML diagrams and module overview. StarUML project at `docs/UML/skill_seekers.mdj`. Refactor state/history: `docs/UNIFICATION_PLAN.md` (Grand Unification — all 5 phases done; remaining cosmetic items listed there).
 
@@ -59,7 +59,7 @@ Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **prima
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
 skill-seekers scan <dir>          # AI-driven discovery → emits one config per detected framework + <project>-codebase.json
-skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks/langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone/ibm-bob)
+skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks/atlas/langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone/ibm-bob)
 ```
 
 ### Scan command (issue #327)
@@ -163,6 +163,15 @@ src/skill_seekers/cli/
 Command modules' standalone `main(args=None)` paths build their parser FROM the central `SubcommandParser` class — **add/change a flag in `parsers/*.py` only**. Drift guards (`tests/test_cli_parsers.py::TestCentralModuleParserSync` and `TestCentralParserSingleSource`) fail CI on any divergence of dests/defaults/option strings.
 
 `ExecutionContext.override()` is context-local (a `ContextVar` layered over the unchanged base singleton) — thread/async safe for the MCP server; propagate to worker threads via `copy_context`.
+
+### Standalone subsystems (outside `cli/`)
+
+Four top-level packages sit beside `cli/` and are largely independent of the scrape→build→package flow:
+
+- `embedding/` — FastAPI embedding-generation server (`python -m skill_seekers.embedding.server`) with a caching layer (`cache.py`) and multi-backend generators (OpenAI, sentence-transformers, Anthropic). Feeds the vector-DB adaptors.
+- `sync/` — real-time doc-sync system: `detector.py` (content-hash / last-modified change detection), `monitor.py` (scheduled incremental re-scrapes), `notifier.py` (email/Slack/webhook). Keeps generated skills fresh as upstream docs change.
+- `benchmark/` — performance suite (`runner.py`, `framework.py`) measuring scrape/embedding/storage/e2e timing, memory, and CPU; emits comparison + optimization reports.
+- `workflows/` — bundled default enhancement-workflow presets consumed by the enhancement step.
 
 ### C3.x Codebase Analysis Pipeline
 
