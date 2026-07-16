@@ -3,7 +3,7 @@
 Handles all transcript acquisition:
 - YouTube captions via youtube-transcript-api (Tier 1)
 - Subtitle file parsing: SRT and VTT (Tier 1)
-- Whisper ASR stub (Tier 2 — raises ImportError with install instructions)
+- Whisper ASR via faster-whisper (Tier 2 — optional [video-full] dependency)
 """
 
 import logging
