@@ -40,6 +40,14 @@ class OpenAICompatibleAdaptor(SkillAdaptor):
         """Model to use: ``config['custom_model']`` if set, else DEFAULT_MODEL."""
         return self.config.get("custom_model") or self.DEFAULT_MODEL
 
+    def _api_base_url(self) -> str:
+        """API base URL for requests and packaged metadata.
+
+        Defaults to the static ``DEFAULT_API_ENDPOINT``; subclasses override for
+        region-aware routing (e.g. MiniMax global vs. China endpoints).
+        """
+        return self.DEFAULT_API_ENDPOINT
+
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
         Format SKILL.md as system instructions (no YAML frontmatter).
@@ -153,7 +161,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 "version": "1.0.0",
                 "created_with": "skill-seekers",
                 "model": self._resolve_model(),
-                "api_base": self.DEFAULT_API_ENDPOINT,
+                "api_base": self._api_base_url(),
             }
 
             zf.writestr(f"{self.PLATFORM}_metadata.json", json.dumps(metadata, indent=2))
@@ -226,7 +234,7 @@ Always prioritize accuracy by consulting the attached documentation files before
 
                 client = OpenAI(
                     api_key=api_key,
-                    base_url=self.DEFAULT_API_ENDPOINT,
+                    base_url=self._api_base_url(),
                 )
 
                 client.chat.completions.create(
@@ -294,7 +302,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             skill_dir,
             api_key,
             provider="openai",
-            base_url=self.DEFAULT_API_ENDPOINT,
+            base_url=self._api_base_url(),
             model=self._resolve_model(),
             system=(
                 "You are an expert technical writer creating system "

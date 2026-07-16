@@ -40,10 +40,22 @@ pip install skill-seekers[all-llms]
 ### 3. Configure Environment
 
 ```bash
-export MINIMAX_API_KEY=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+export MINIMAX_API_KEY=your-api-key
+export MINIMAX_API_REGION=global_en
+export MINIMAX_API_PROTOCOL=openai
 ```
 
 Add to your `~/.bashrc`, `~/.zshrc`, or `.env` file for persistence.
+
+Choose the region and protocol that match your account:
+
+| Region | OpenAI-compatible base URL | Anthropic-compatible base URL |
+|--------|----------------------------|-------------------------------|
+| `global_en` | `https://api.minimax.io/v1` | `https://api.minimax.io/anthropic` |
+| `cn_zh` | `https://api.minimaxi.com/v1` | `https://api.minimaxi.com/anthropic` |
+
+Set `MINIMAX_API_PROTOCOL` to `openai` or `anthropic`. Anthropic-compatible base
+URLs already end in `/anthropic`; do not append `/v1` to the configured base URL.
 
 ---
 
@@ -182,6 +194,24 @@ response = client.chat.completions.create(
 )
 ```
 
+### Vision OCR for Video Frames
+
+MiniMax-M3 accepts image input and can power the existing low-confidence OCR
+fallback used during visual video extraction. Select MiniMax as the vision
+provider, then run the normal video workflow:
+
+```bash
+export SKILL_SEEKER_VISION_PROVIDER=minimax
+export MINIMAX_API_REGION=global_en
+export MINIMAX_API_PROTOCOL=openai
+
+skill-seekers create --video-file demo.mp4 --visual --vision-ocr
+```
+
+Use `MINIMAX_API_REGION=cn_zh` for the China endpoint. Both `openai` and
+`anthropic` protocols support the same tool path. `MINIMAX_VISION_MODEL`
+defaults to `MiniMax-M3`; MiniMax-M2.7 remains available for text workflows.
+
 ---
 
 ## API Reference
@@ -213,6 +243,11 @@ success = adaptor.enhance(skill_dir, api_key)
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `MINIMAX_API_KEY` | Your MiniMax API key (JWT format) | Yes |
+| `MINIMAX_API_REGION` | API region: `global_en` or `cn_zh` | No; defaults to `global_en` |
+| `MINIMAX_API_PROTOCOL` | API protocol: `openai` or `anthropic` | No; defaults to `openai` |
+| `MINIMAX_MODEL` | Model override for text enhancement | No |
+| `MINIMAX_VISION_MODEL` | Model override for image OCR | No; defaults to `MiniMax-M3` |
+| `SKILL_SEEKER_VISION_PROVIDER` | Set to `minimax` to use MiniMax for vision OCR | No |
 
 ---
 

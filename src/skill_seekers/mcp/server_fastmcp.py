@@ -479,7 +479,7 @@ async def scrape_video(
         visual_interval: Seconds between frame captures (default: 5.0)
         visual_min_gap: Minimum seconds between kept frames (default: 2.0)
         visual_similarity: Similarity threshold to skip duplicate frames 0.0-1.0 (default: 0.95)
-        vision_ocr: Use vision model for OCR on extracted frames
+        vision_ocr: Use the configured vision provider for OCR on extracted frames
         start_time: Start time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
         end_time: End time for extraction (seconds, MM:SS, or HH:MM:SS). Single video only.
         setup: Auto-detect GPU and install visual extraction deps (PyTorch, easyocr, etc.)
