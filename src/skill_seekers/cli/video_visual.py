@@ -134,7 +134,9 @@ def _get_ocr_reader():
             "first run may download models)..."
         )
         if not quantize:
-            logger.info("CPU lacks AVX2; disabling EasyOCR quantization (slower, but avoids SIGILL)")
+            logger.info(
+                "CPU lacks AVX2; disabling EasyOCR quantization (slower, but avoids SIGILL)"
+            )
         _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu, quantize=quantize)
     return _ocr_reader
 
