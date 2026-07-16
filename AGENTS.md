@@ -265,14 +265,15 @@ GitHub Actions (7 workflows in `.github/workflows/`):
 ### Docker
 Multi-stage Dockerfile with Python 3.12 slim base:
 ```bash
-# Build image
-docker build -t skill-seekers .
+# Build CLI image
+docker build -t skill-seekers:local -f Dockerfile .
 
 # Run CLI
-docker run -v $(pwd)/output:/output skill-seekers create https://docs.example.com
+docker run -v $(pwd)/output:/output skill-seekers:local create https://docs.example.com
 
 # Run MCP server
-docker run -p 8765:8765 skill-seekers skill-seekers-mcp
+docker build -t skill-seekers-mcp:local -f Dockerfile.mcp .
+docker run -p 8765:8765 skill-seekers-mcp:local
 ```
 
 ### MCP Server
