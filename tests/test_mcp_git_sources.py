@@ -69,6 +69,7 @@ class TestFetchConfigModes:
         with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             # Mock API response
             mock_response = MagicMock()
+            mock_response.status_code = 200
             mock_response.json.return_value = {
                 "configs": [
                     {
@@ -103,6 +104,7 @@ class TestFetchConfigModes:
         with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             # Mock API responses
             mock_detail_response = MagicMock()
+            mock_detail_response.status_code = 200
             mock_detail_response.json.return_value = {
                 "name": "react",
                 "category": "web-frameworks",
@@ -111,6 +113,7 @@ class TestFetchConfigModes:
             }
 
             mock_download_response = MagicMock()
+            mock_download_response.status_code = 200
             mock_download_response.json.return_value = {
                 "name": "react",
                 "base_url": "https://react.dev/",
