@@ -2522,6 +2522,50 @@ class TestVisualCpuCompat(unittest.TestCase):
             self.assertTrue(_cpu_supports_quantized_ops())
 
 
+class TestPerFrameErrorIsolation(unittest.TestCase):
+    """One bad frame must not abort the whole video scan (#419 follow-up)."""
+
+    def test_frame_failure_skips_frame_and_continues(self):
+        import numpy as np
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli import video_visual
+        from skill_seekers.cli.video_models import FrameType, KeyFrame
+
+        frame = np.zeros((10, 10, 3), dtype=np.uint8)
+        fake_cap = MagicMock()
+        fake_cap.isOpened.return_value = True
+        fake_cap.get.return_value = 30.0
+        fake_cap.read.return_value = (True, frame)
+        fake_cv2 = MagicMock()
+        fake_cv2.VideoCapture.return_value = fake_cap
+
+        good_kf = KeyFrame(timestamp=2.0, image_path="frame_001_2s.jpg")
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch.object(video_visual, "HAS_OPENCV", True),
+            patch.object(video_visual, "cv2", fake_cv2),
+            patch.object(video_visual, "_compute_frame_timestamps", return_value=[1.0, 2.0]),
+            patch.object(video_visual, "_frames_are_similar", return_value=False),
+            patch.object(
+                video_visual,
+                "_process_frame",
+                side_effect=[RuntimeError("classifier exploded"), (good_kf, 0)],
+            ),
+            self.assertLogs("skill_seekers.cli.video_visual", level="WARNING") as logs,
+        ):
+            keyframes, code_blocks, timeline = video_visual.extract_visual_data(
+                "video.mp4", [], tmpdir
+            )
+
+        # First frame failed and was skipped; second survived.
+        self.assertEqual(len(keyframes), 1)
+        self.assertEqual(keyframes[0].frame_type, FrameType.OTHER)
+        self.assertEqual(code_blocks, [])
+        self.assertTrue(any("skipping frame" in m for m in logs.output))
+
+
 class TestMultiEngineOCR(unittest.TestCase):
     """Tests for multi-engine OCR ensemble voting."""
 

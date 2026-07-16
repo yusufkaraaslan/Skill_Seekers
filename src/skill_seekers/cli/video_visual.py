@@ -2119,6 +2119,155 @@ def _ocr_single_panel(
     return ss
 
 
+def _process_frame(
+    *,
+    frame_path: str,
+    idx: int,
+    ts: float,
+    frame_w: int,
+    frame_h: int,
+    use_vision_api: bool,
+    tracker: TextBlockTracker,
+) -> tuple[KeyFrame, int]:
+    """Classify, OCR, and track a single saved frame.
+
+    Extracted from extract_visual_data's scan loop so the caller can isolate
+    per-frame failures (one bad frame must not abort the whole video).
+
+    Returns:
+        (keyframe, vision_api_calls_used) for this frame.
+    """
+    vision_api_frames = 0
+
+    # Classify using region-based panel detection
+    regions = classify_frame_regions(frame_path)
+    code_panels = _get_code_panels(regions)
+    # Derive frame_type from already-computed regions (avoids loading
+    # the image a second time — classify_frame() would repeat the work).
+    frame_type = _frame_type_from_regions(regions)
+    is_code_frame = frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
+
+    # Per-panel OCR: each code/terminal panel is OCR'd independently
+    # so side-by-side editors produce separate code blocks.
+    sub_sections: list[FrameSubSection] = []
+    ocr_text = ""
+    ocr_regions: list[OCRRegion] = []
+    ocr_confidence = 0.0
+
+    if is_code_frame and code_panels and (HAS_EASYOCR or HAS_PYTESSERACT):
+        full_area = frame_h * frame_w
+
+        if len(code_panels) > 1:
+            import contextvars
+
+            # Parallel OCR — each panel is independent. Propagate
+            # contextvars into worker threads (threads don't inherit them),
+            # so per-call state like the MCP log-capture token survives.
+            _caller_ctx = contextvars.copy_context()
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(2, len(code_panels))
+            ) as pool:
+                futures = {
+                    pool.submit(
+                        _caller_ctx.copy().run,
+                        _ocr_single_panel,
+                        frame_path,
+                        pb,
+                        pi,
+                        frame_type,
+                        full_area,
+                        regions,
+                        use_vision_api,
+                    ): pi
+                    for pi, pb in enumerate(code_panels)
+                }
+                for fut in concurrent.futures.as_completed(futures):
+                    ss = fut.result()
+                    if ss is not None:
+                        if ss._vision_used:
+                            vision_api_frames += 1
+                        sub_sections.append(ss)
+        else:
+            # Single panel — avoid thread overhead
+            ss = _ocr_single_panel(
+                frame_path,
+                code_panels[0],
+                0,
+                frame_type,
+                full_area,
+                regions,
+                use_vision_api,
+            )
+            if ss is not None:
+                if ss._vision_used:
+                    vision_api_frames += 1
+                sub_sections.append(ss)
+
+        # Track each sub-section independently
+        for ss in sub_sections:
+            tracker.update(
+                idx,
+                ts,
+                ss.ocr_text,
+                ss.ocr_confidence,
+                ss.frame_type,
+                ocr_regions=ss.ocr_regions,
+                panel_bbox=ss.bbox,
+            )
+
+        # Set frame-level OCR to best sub-section for backward compat
+        if sub_sections:
+            best_ss = max(sub_sections, key=lambda s: s.ocr_confidence)
+            ocr_text = best_ss.ocr_text
+            ocr_regions = best_ss.ocr_regions
+            ocr_confidence = best_ss.ocr_confidence
+
+    elif is_code_frame and (HAS_EASYOCR or HAS_PYTESSERACT):
+        # No code panels detected but frame is code — OCR whole frame
+        raw_ocr_results, _flat_text = _run_multi_engine_ocr(frame_path, frame_type)
+        if raw_ocr_results:
+            ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
+            ocr_text = _assemble_structured_text(ocr_regions, frame_type)
+            ocr_confidence = (
+                sum(r.confidence for r in ocr_regions) / len(ocr_regions) if ocr_regions else 0.0
+            )
+
+        if use_vision_api and ocr_confidence < 0.5:
+            vision_text, vision_conf = _ocr_with_vision(frame_path, frame_type)
+            if vision_text and vision_conf > ocr_confidence:
+                ocr_text = vision_text
+                ocr_confidence = vision_conf
+                ocr_regions = []
+                vision_api_frames += 1
+
+        tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
+
+    elif HAS_EASYOCR and frame_type not in (FrameType.WEBCAM, FrameType.OTHER):
+        # Standard EasyOCR for slide/diagram frames (skip webcam/other)
+        raw_ocr_results, _flat_text = extract_text_from_frame(frame_path, frame_type)
+        if raw_ocr_results:
+            ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
+            ocr_text = _assemble_structured_text(ocr_regions, frame_type)
+            ocr_confidence = (
+                sum(r.confidence for r in ocr_regions) / len(ocr_regions) if ocr_regions else 0.0
+            )
+
+        tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
+
+    kf = KeyFrame(
+        timestamp=ts,
+        image_path=frame_path,
+        frame_type=frame_type,
+        ocr_text=ocr_text,
+        ocr_regions=ocr_regions,
+        ocr_confidence=ocr_confidence,
+        width=frame_w,
+        height=frame_h,
+        sub_sections=sub_sections,
+    )
+    return kf, vision_api_frames
+
+
 def extract_visual_data(
     video_path: str,
     segments: list,
@@ -2230,145 +2379,32 @@ def extract_visual_data(
         cv2.imwrite(frame_path, frame)
         del frame  # Free the numpy array early — saved to disk
 
-        # Classify using region-based panel detection
-        regions = classify_frame_regions(frame_path)
-        code_panels = _get_code_panels(regions)
-        # Derive frame_type from already-computed regions (avoids loading
-        # the image a second time — classify_frame() would repeat the work).
-        frame_type = _frame_type_from_regions(regions)
-        is_code_frame = frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
-
-        # Per-panel OCR: each code/terminal panel is OCR'd independently
-        # so side-by-side editors produce separate code blocks.
-        sub_sections: list[FrameSubSection] = []
-        ocr_text = ""
-        ocr_regions: list[OCRRegion] = []
-        ocr_confidence = 0.0
-
-        if is_code_frame and code_panels and (HAS_EASYOCR or HAS_PYTESSERACT):
-            full_area = frame_h * frame_w
-
-            if len(code_panels) > 1:
-                import contextvars
-
-                # Parallel OCR — each panel is independent. Propagate
-                # contextvars into worker threads (threads don't inherit them),
-                # so per-call state like the MCP log-capture token survives.
-                _caller_ctx = contextvars.copy_context()
-                with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=min(2, len(code_panels))
-                ) as pool:
-                    futures = {
-                        pool.submit(
-                            _caller_ctx.copy().run,
-                            _ocr_single_panel,
-                            frame_path,
-                            pb,
-                            pi,
-                            frame_type,
-                            full_area,
-                            regions,
-                            use_vision_api,
-                        ): pi
-                        for pi, pb in enumerate(code_panels)
-                    }
-                    for fut in concurrent.futures.as_completed(futures):
-                        ss = fut.result()
-                        if ss is not None:
-                            if ss._vision_used:
-                                vision_api_frames += 1
-                            sub_sections.append(ss)
-            else:
-                # Single panel — avoid thread overhead
-                ss = _ocr_single_panel(
-                    frame_path,
-                    code_panels[0],
-                    0,
-                    frame_type,
-                    full_area,
-                    regions,
-                    use_vision_api,
-                )
-                if ss is not None:
-                    if ss._vision_used:
-                        vision_api_frames += 1
-                    sub_sections.append(ss)
-
-            # Track each sub-section independently
-            for ss in sub_sections:
-                tracker.update(
-                    idx,
-                    ts,
-                    ss.ocr_text,
-                    ss.ocr_confidence,
-                    ss.frame_type,
-                    ocr_regions=ss.ocr_regions,
-                    panel_bbox=ss.bbox,
-                )
-
-            # Set frame-level OCR to best sub-section for backward compat
-            if sub_sections:
-                best_ss = max(sub_sections, key=lambda s: s.ocr_confidence)
-                ocr_text = best_ss.ocr_text
-                ocr_regions = best_ss.ocr_regions
-                ocr_confidence = best_ss.ocr_confidence
-
-        elif is_code_frame and (HAS_EASYOCR or HAS_PYTESSERACT):
-            # No code panels detected but frame is code — OCR whole frame
-            raw_ocr_results, _flat_text = _run_multi_engine_ocr(frame_path, frame_type)
-            if raw_ocr_results:
-                ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
-                ocr_text = _assemble_structured_text(ocr_regions, frame_type)
-                ocr_confidence = (
-                    sum(r.confidence for r in ocr_regions) / len(ocr_regions)
-                    if ocr_regions
-                    else 0.0
-                )
-
-            if use_vision_api and ocr_confidence < 0.5:
-                vision_text, vision_conf = _ocr_with_vision(frame_path, frame_type)
-                if vision_text and vision_conf > ocr_confidence:
-                    ocr_text = vision_text
-                    ocr_confidence = vision_conf
-                    ocr_regions = []
-                    vision_api_frames += 1
-
-            tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
-
-        elif HAS_EASYOCR and frame_type not in (FrameType.WEBCAM, FrameType.OTHER):
-            # Standard EasyOCR for slide/diagram frames (skip webcam/other)
-            raw_ocr_results, _flat_text = extract_text_from_frame(frame_path, frame_type)
-            if raw_ocr_results:
-                ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
-                ocr_text = _assemble_structured_text(ocr_regions, frame_type)
-                ocr_confidence = (
-                    sum(r.confidence for r in ocr_regions) / len(ocr_regions)
-                    if ocr_regions
-                    else 0.0
-                )
-
-            tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
-
-        kf = KeyFrame(
-            timestamp=ts,
-            image_path=frame_path,
-            frame_type=frame_type,
-            ocr_text=ocr_text,
-            ocr_regions=ocr_regions,
-            ocr_confidence=ocr_confidence,
-            width=frame_w,
-            height=frame_h,
-            sub_sections=sub_sections,
-        )
+        # Isolate per-frame failures: one bad frame (classifier/OCR crash on
+        # an odd image, library edge case, ...) must not abort the whole
+        # video — warn, skip the frame, and keep scanning (see #419).
+        try:
+            kf, vision_used = _process_frame(
+                frame_path=frame_path,
+                idx=idx,
+                ts=ts,
+                frame_w=frame_w,
+                frame_h=frame_h,
+                use_vision_api=use_vision_api,
+                tracker=tracker,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Frame at {ts:.1f}s failed visual processing ({e}); skipping frame")
+            continue
+        vision_api_frames += vision_used
         keyframes.append(kf)
 
         logger.debug(
-            f"  Frame {idx}: {frame_type.value} at {ts:.1f}s"
+            f"  Frame {idx}: {kf.frame_type.value} at {ts:.1f}s"
             + (
-                f" | OCR: {ocr_text[:60]}..."
-                if len(ocr_text) > 60
-                else f" | OCR: {ocr_text}"
-                if ocr_text
+                f" | OCR: {kf.ocr_text[:60]}..."
+                if len(kf.ocr_text) > 60
+                else f" | OCR: {kf.ocr_text}"
+                if kf.ocr_text
                 else ""
             )
         )
