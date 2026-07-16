@@ -456,13 +456,24 @@ class SingletonDetector(BasePatternDetector):
         # Check for private/protected constructor-like methods
         has_init_control = False
         for method in class_sig.methods:
-            # Python: __init__ or __new__
-            # Java/C#: private constructor (detected by naming)
-            # Check if it has logic (not just pass)
-            if method.name in ["__new__", "__init__", "constructor"] and (
-                method.docstring or len(method.parameters) > 1
+            # Python: an overridden __new__ is controlled initialization by
+            # itself (it exists precisely to intercept instance creation);
+            # __init__/constructor only count with logic (docstring or params)
+            # so trivial initializers don't fire.
+            if method.name == "__new__" or (
+                method.name in ["__init__", "constructor"]
+                and (method.docstring or len(method.parameters) > 1)
             ):
                 evidence.append(f"Controlled initialization: {method.name}")
+                confidence += 0.3
+                has_init_control = True
+                break
+            # Java/C#/C++: constructors are named after the class. Before this
+            # check, has_init_control was unreachable in those languages, so a
+            # canonical Java Singleton capped at 0.4 — permanently below the
+            # 0.5 threshold — and never fired (#425).
+            if method.name == class_sig.name:
+                evidence.append(f"Controlled initialization: {method.name} (constructor)")
                 confidence += 0.3
                 has_init_control = True
                 break
@@ -544,6 +555,32 @@ class FactoryDetector(BasePatternDetector):
     - ProductFactory with createProductA(), createProductB()
     """
 
+    # Creation verbs that indicate a factory method, matched as a PREFIX at a
+    # word boundary (camelCase hump, '_', digit, or end of name) — so renew()
+    # or getNewsFeed() never match "new". Accessor prefixes are excluded
+    # outright: a getX()/setX()/isX()/hasX() is property access, not object
+    # creation. The old bare-"get" substring match reported every Java getter
+    # as a Factory and misclassified getInstance() Singletons (#425).
+    CREATION_PREFIXES = ("create", "make", "build", "new", "construct")
+    ACCESSOR_PREFIXES = ("get", "set", "is", "has")
+
+    @staticmethod
+    def _prefix_at_word_boundary(name: str, prefix: str) -> bool:
+        """True if name starts with prefix followed by a word boundary."""
+        if not name.lower().startswith(prefix):
+            return False
+        if len(name) == len(prefix):
+            return True
+        nxt = name[len(prefix)]
+        return nxt.isupper() or nxt == "_" or nxt.isdigit()
+
+    @classmethod
+    def _is_creation_method(cls, name: str) -> bool:
+        """Whether a method name follows an object-creation convention."""
+        if any(cls._prefix_at_word_boundary(name, p) for p in cls.ACCESSOR_PREFIXES):
+            return False
+        return any(cls._prefix_at_word_boundary(name, p) for p in cls.CREATION_PREFIXES)
+
     def __init__(self, depth: str = "deep"):
         super().__init__(depth)
         self.pattern_type = "Factory"
@@ -563,13 +600,12 @@ class FactoryDetector(BasePatternDetector):
                 evidence=['Class name contains "Factory"'],
             )
 
-        # Check for factory methods
-        factory_method_names = ["create", "make", "build", "new", "get"]
+        # Check for factory methods (creation-verb prefix, accessors excluded)
         for method in class_sig.methods:
             method_lower = method.name.lower()
             # Check if method returns something (has return type or is not void)
-            if any(name in method_lower for name in factory_method_names) and (
-                method.return_type or "create" in method_lower
+            if self._is_creation_method(method.name) and (
+                method.return_type or method_lower.startswith("create")
             ):
                 return PatternInstance(
                     pattern_type=self.pattern_type,
@@ -590,14 +626,11 @@ class FactoryDetector(BasePatternDetector):
         confidence = 0.0
         factory_methods = []
 
-        # Look for methods that create objects
-        creation_keywords = ["create", "make", "build", "new", "construct", "get"]
-
+        # Look for methods that create objects (creation-verb prefix at a word
+        # boundary; getters/setters excluded — see _is_creation_method, #425)
         for method in class_sig.methods:
-            method_lower = method.name.lower()
-
             # Check if method name suggests object creation
-            if any(keyword in method_lower for keyword in creation_keywords):
+            if self._is_creation_method(method.name):
                 factory_methods.append(method.name)
                 confidence += 0.3
 
