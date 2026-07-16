@@ -285,7 +285,9 @@ class ConfigManager:
 
         self.assertEqual(report.file_path, "config.py")
         self.assertEqual(report.language, "Python")
-        self.assertGreater(len(report.patterns), 0)
+        # Must be detected AS Singleton — before #425 this assertion held only
+        # because FactoryDetector's substring bug matched getInstance().
+        self.assertIn("Singleton", {p.pattern_type for p in report.patterns})
         self.assertGreater(report.total_classes, 0)
 
     def test_analyze_factory_code(self):
@@ -702,6 +704,98 @@ class TestBaseClassMatching(unittest.TestCase):
         self.assertTrue(_matches_base("BaseStrategy", ["BaseStrategy<Foo>"]))
         self.assertTrue(_matches_base("Base", ["ns.Base"]))
         self.assertFalse(_matches_base("BaseStrategy", ["OtherBase"]))
+
+
+class TestDetectorPrecisionJava(unittest.TestCase):
+    """Regression tests for #425: getter/Factory false positives and the
+    structurally-unreachable Singleton detection in class-named-constructor
+    languages (Java/C#/C++)."""
+
+    def setUp(self):
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
+
+    def test_plain_pojo_is_not_a_factory(self):
+        """A data class with getters/setters must report NO patterns."""
+        code = """
+public class Person {
+    private String name;
+    private int age;
+    public String getName() { return name; }
+    public void setName(String n) { this.name = n; }
+    public int getAge() { return age; }
+}"""
+        report = self.recognizer.analyze_file("Person.java", code, "Java")
+        self.assertEqual(
+            [(p.pattern_type, p.confidence) for p in report.patterns],
+            [],
+            "plain POJO must not be reported as any pattern",
+        )
+
+    def test_single_getter_is_not_a_factory(self):
+        code = """
+public class Box {
+    private String v;
+    public String getValue() { return v; }
+}"""
+        report = self.recognizer.analyze_file("Box.java", code, "Java")
+        factories = [p for p in report.patterns if p.pattern_type == "Factory"]
+        self.assertEqual(factories, [])
+
+    def test_java_singleton_with_normal_class_name(self):
+        """Canonical Java Singleton (class NOT named *Singleton*) must be
+        detected as Singleton, not misclassified as Factory."""
+        code = """
+public class Config {
+    private static Config instance;
+    private Config() {}
+    public static Config getInstance() {
+        if (instance == null) { instance = new Config(); }
+        return instance;
+    }
+}"""
+        report = self.recognizer.analyze_file("Config.java", code, "Java")
+        types = {p.pattern_type for p in report.patterns}
+        self.assertIn("Singleton", types)
+        self.assertNotIn("Factory", types)
+        singleton = next(p for p in report.patterns if p.pattern_type == "Singleton")
+        self.assertGreaterEqual(singleton.confidence, 0.5)
+
+    def test_real_java_factory_still_detected(self):
+        code = """
+public class VehicleMaker {
+    public Vehicle createVehicle(String type) { return null; }
+    public Engine buildEngine(String spec) { return null; }
+}"""
+        report = self.recognizer.analyze_file("VehicleMaker.java", code, "Java")
+        factories = [p for p in report.patterns if p.pattern_type == "Factory"]
+        self.assertGreater(len(factories), 0)
+
+    def test_creation_method_word_boundaries(self):
+        """Creation verbs match only at word boundaries; accessors never match."""
+        cases = {
+            # accessors / boundary traps -> not creation methods
+            "getName": False,
+            "getInstance": False,
+            "getNewsFeed": False,
+            "setName": False,
+            "isEmpty": False,
+            "hasNext": False,
+            "renew": False,
+            "setup": False,
+            "newsfeed": False,
+            # genuine creation conventions
+            "create": True,
+            "createProduct": True,
+            "create_user": True,
+            "make_vehicle": True,
+            "buildEngine": True,
+            "newInstance": True,
+            "construct": True,
+            "CreateWindow": True,  # C# PascalCase
+        }
+        for name, expected in cases.items():
+            with self.subTest(method=name):
+                self.assertEqual(FactoryDetector._is_creation_method(name), expected)
 
 
 if __name__ == "__main__":

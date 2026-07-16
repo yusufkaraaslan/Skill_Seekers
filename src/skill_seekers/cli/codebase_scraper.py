@@ -1137,8 +1137,11 @@ def analyze_codebase(
                 language = detect_language(file_path)
 
                 if language != "Unknown":
-                    # Use relative path from directory for better graph readability
-                    rel_path = str(file_path.relative_to(directory))
+                    # Use relative path from directory for better graph
+                    # readability. as_posix() keeps node keys '/'-separated on
+                    # Windows too — import resolution matches on '/' suffixes,
+                    # so backslash keys would silently produce zero edges (#425).
+                    rel_path = file_path.relative_to(directory).as_posix()
                     dep_analyzer.analyze_file(rel_path, content, language)
             except Exception as e:
                 logger.warning(f"Error analyzing dependencies for {file_path}: {e}")
@@ -1146,6 +1149,33 @@ def analyze_codebase(
 
         # Build the graph
         graph = dep_analyzer.build_graph()
+
+        # An empty edge set on a multi-file codebase usually means import
+        # RESOLUTION failed (imports were extracted but none mapped to a file
+        # node), not that the code has no internal dependencies. A relative
+        # import is internal by definition, so "relative imports extracted but
+        # zero edges" is proof of breakage; without one, stay neutral — a
+        # directory of independent scripts legitimately has no edges (#425).
+        all_deps = [d for deps in dep_analyzer.file_dependencies.values() for d in deps]
+        if graph.number_of_nodes() > 1 and graph.number_of_edges() == 0 and all_deps:
+            if any(d.is_relative for d in all_deps):
+                logger.warning(
+                    "⚠️  Dependency graph has %d files but 0 edges even though "
+                    "relative (internal) imports were extracted — import "
+                    "resolution failed. Please report this with your OS and "
+                    "project layout: "
+                    "https://github.com/yusufkaraaslan/Skill_Seekers/issues",
+                    graph.number_of_nodes(),
+                )
+            else:
+                logger.warning(
+                    "⚠️  Dependency graph has %d files but 0 edges (%d imports "
+                    "extracted, none resolved to project files). If this "
+                    "project's modules import each other, resolution failed — "
+                    "please report it.",
+                    graph.number_of_nodes(),
+                    len(all_deps),
+                )
 
         # Detect circular dependencies
         cycles = dep_analyzer.detect_cycles()
