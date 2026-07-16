@@ -2464,16 +2464,15 @@ class TestClaudeVisionOCR(unittest.TestCase):
     """Tests for Claude Vision API OCR fallback."""
 
     def test_vision_ocr_no_api_key(self):
-        """Returns empty when ANTHROPIC_API_KEY is not set."""
+        """Returns empty when no vision provider key is set."""
         from unittest.mock import patch
 
         from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from skill_seekers.cli.video_visual import _ocr_with_vision
 
         with patch.dict(os.environ, {}, clear=True):
-            # Ensure no ANTHROPIC_API_KEY
-            os.environ.pop("ANTHROPIC_API_KEY", None)
-            text, conf = _ocr_with_claude_vision("/fake/path.png", FrameType.CODE_EDITOR)
+            # No provider keys → auto-detect finds nothing.
+            text, conf = _ocr_with_vision("/fake/path.png", FrameType.CODE_EDITOR)
             self.assertEqual(text, "")
             self.assertEqual(conf, 0.0)
 
@@ -2483,7 +2482,7 @@ class TestClaudeVisionOCR(unittest.TestCase):
         from unittest.mock import MagicMock, patch
 
         from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from skill_seekers.cli.video_visual import _ocr_with_vision
 
         # Create a minimal image file
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
@@ -2495,6 +2494,7 @@ class TestClaudeVisionOCR(unittest.TestCase):
             mock_content = MagicMock()
             mock_content.text = "def hello():\n    return 'world'"
             mock_response.content = [mock_content]
+            mock_response.stop_reason = "end_turn"
 
             mock_client = MagicMock()
             mock_client.messages.create.return_value = mock_response
@@ -2503,10 +2503,16 @@ class TestClaudeVisionOCR(unittest.TestCase):
             mock_anthropic.Anthropic.return_value = mock_client
 
             with (
-                patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
+                patch.dict(
+                    os.environ,
+                    {
+                        "ANTHROPIC_API_KEY": "test-key",
+                        "SKILL_SEEKER_VISION_PROVIDER": "anthropic",
+                    },
+                ),
                 patch.dict(sys.modules, {"anthropic": mock_anthropic}),
             ):
-                text, conf = _ocr_with_claude_vision(tmp_path, FrameType.CODE_EDITOR)
+                text, conf = _ocr_with_vision(tmp_path, FrameType.CODE_EDITOR)
 
             self.assertIn("def hello():", text)
             self.assertEqual(conf, 0.95)
@@ -2515,12 +2521,16 @@ class TestClaudeVisionOCR(unittest.TestCase):
 
     def test_vision_fallback_on_low_confidence(self):
         """Vision API is only called when multi-engine conf < 0.5."""
-        from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from unittest.mock import patch
 
-        # Without API key, vision always returns empty — simulating no-fallback
-        os.environ.pop("ANTHROPIC_API_KEY", None)
-        text, conf = _ocr_with_claude_vision("/fake.png", FrameType.CODE_EDITOR)
+        from skill_seekers.cli.video_models import FrameType
+        from skill_seekers.cli.video_visual import _ocr_with_vision
+
+        # Without a provider key, vision always returns empty — simulating no-fallback
+        with patch.dict(
+            os.environ, {"SKILL_SEEKER_VISION_PROVIDER": "anthropic"}, clear=True
+        ):
+            text, conf = _ocr_with_vision("/fake.png", FrameType.CODE_EDITOR)
         self.assertEqual(text, "")
         self.assertEqual(conf, 0.0)
 

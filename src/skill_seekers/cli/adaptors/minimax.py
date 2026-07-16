@@ -11,7 +11,7 @@ from .openai_compatible import OpenAICompatibleAdaptor
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
     MINIMAX_ENDPOINTS,
-    MINIMAX_MODEL_IDS,
+    resolve_minimax_endpoint,
 )
 
 
@@ -20,9 +20,14 @@ class MiniMaxAdaptor(OpenAICompatibleAdaptor):
 
     PLATFORM = "minimax"
     PLATFORM_NAME = "MiniMax AI"
-    API_ENDPOINTS = MINIMAX_ENDPOINTS
-    SUPPORTED_MODELS = MINIMAX_MODEL_IDS
+    # Static fallback (global). Actual requests resolve region from
+    # MINIMAX_API_REGION via _api_base_url() so China-issued keys reach
+    # api.minimaxi.com instead of 401-ing against the global endpoint.
     DEFAULT_API_ENDPOINT = MINIMAX_ENDPOINTS["global_en"]["openai"]
     DEFAULT_MODEL = MINIMAX_DEFAULT_MODEL
     ENV_VAR_NAME = "MINIMAX_API_KEY"
     PLATFORM_URL = "https://platform.minimaxi.com/"
+
+    def _api_base_url(self) -> str:
+        """Resolve the OpenAI-compatible endpoint for the configured region."""
+        return resolve_minimax_endpoint(protocol="openai")

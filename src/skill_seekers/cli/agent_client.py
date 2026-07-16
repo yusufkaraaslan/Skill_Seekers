@@ -36,8 +36,8 @@ from typing import Any
 
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
-    resolve_minimax_endpoint,
-    resolve_minimax_protocol,
+    MINIMAX_DEFAULT_PROTOCOL,
+    MINIMAX_ENDPOINTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,20 +108,69 @@ DEFAULT_MODELS = {
 # a provider forgotten at a call site was exactly the ENH-12 bug. Add new
 # providers HERE (plus an _init_api_client branch), not at call sites.
 # "target" is the platform name the enhance CLI / adaptors use.
+# "protocol" is the wire format (see WIRE_PROTOCOLS) — _call_api branches on it,
+#   NOT on provider name, so an OpenAI/Anthropic-compatible provider needs no new
+#   _call_api branch. Providers may declare "protocol_env" for a runtime override.
+# "supports_images" gates multimodal (call_with_image); "endpoints"/"region_env"
+#   describe a region→protocol→URL map for providers with regional base URLs.
+WIRE_PROTOCOLS = ("anthropic", "openai", "google")
 API_PROVIDERS: tuple[dict[str, Any], ...] = (
     {
         "provider": "anthropic",
         "target": "claude",
         "env_vars": ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"),
+        "protocol": "anthropic",
+        "supports_images": True,
     },
-    {"provider": "google", "target": "gemini", "env_vars": ("GOOGLE_API_KEY",)},
-    {"provider": "openai", "target": "openai", "env_vars": ("OPENAI_API_KEY",)},
-    {"provider": "moonshot", "target": "kimi", "env_vars": ("MOONSHOT_API_KEY",)},
-    {"provider": "minimax", "target": "minimax", "env_vars": ("MINIMAX_API_KEY",)},
+    {
+        "provider": "google",
+        "target": "gemini",
+        "env_vars": ("GOOGLE_API_KEY",),
+        "protocol": "google",
+        "supports_images": True,
+    },
+    {
+        "provider": "openai",
+        "target": "openai",
+        "env_vars": ("OPENAI_API_KEY",),
+        "protocol": "openai",
+        "supports_images": True,
+    },
+    {
+        "provider": "moonshot",
+        "target": "kimi",
+        "env_vars": ("MOONSHOT_API_KEY",),
+        "protocol": "anthropic",
+        "supports_images": False,
+    },
+    {
+        "provider": "minimax",
+        "target": "minimax",
+        "env_vars": ("MINIMAX_API_KEY",),
+        "protocol": MINIMAX_DEFAULT_PROTOCOL,
+        "protocol_env": "MINIMAX_API_PROTOCOL",
+        "endpoints": MINIMAX_ENDPOINTS,
+        "region_env": "MINIMAX_API_REGION",
+        "supports_images": True,
+    },
+)
+
+# provider name → its registry entry (single lookup, avoids re-scanning the tuple)
+PROVIDER_META = {p["provider"]: p for p in API_PROVIDERS}
+
+# Registry invariant: every provider must declare a known wire protocol, else
+# _call_api would silently return None for it (no matching branch).
+assert all(p.get("protocol") in WIRE_PROTOCOLS for p in API_PROVIDERS), (
+    "every API_PROVIDERS entry must declare a protocol in WIRE_PROTOCOLS"
 )
 
 # API key env var → provider mapping (derived from the registry)
 API_KEY_MAP = {var: p["provider"] for p in API_PROVIDERS for var in p["env_vars"]}
+
+
+def provider_supports_images(provider: str) -> bool:
+    """Whether a provider accepts image input (registry-declared capability)."""
+    return bool(PROVIDER_META.get(provider, {}).get("supports_images"))
 
 
 def get_provider_api_keys() -> dict[str, str | None]:
@@ -346,21 +395,56 @@ class AgentClient:
         if api_key.startswith("sk-ant-"):
             return "anthropic"
         if api_key.startswith("sk-"):
-            # Could be OpenAI or Moonshot — check env vars
-            if os.environ.get("MOONSHOT_API_KEY", "").strip() == api_key:
-                return "moonshot"
+            # Ambiguous "sk-" prefix (OpenAI or Moonshot). A key that matches a
+            # known env var was already resolved by the loop above, so default
+            # to OpenAI here.
             return "openai"
         if api_key.startswith("AIza"):
             return "google"
         return "anthropic"  # Safe fallback
 
-    def _resolve_api_protocol(self) -> str | None:
-        """Resolve the transport protocol used by the selected provider."""
-        if self.provider != "minimax":
-            return None
+    def _resolve_api_protocol(self) -> str:
+        """Resolve the wire protocol (see WIRE_PROTOCOLS) for the provider.
+
+        Precedence: a base_url ending in ``/anthropic`` forces the Anthropic
+        wire format; then a registry-declared ``protocol_env`` override (e.g.
+        MINIMAX_API_PROTOCOL); then the provider's registry default.
+        """
+        meta = PROVIDER_META.get(self.provider, {})
         if self.base_url and self.base_url.rstrip("/").endswith("/anthropic"):
             return "anthropic"
-        return resolve_minimax_protocol()
+        protocol_env = meta.get("protocol_env")
+        if protocol_env:
+            override = os.environ.get(protocol_env, "").strip().lower()
+            if override:
+                if override not in ("openai", "anthropic"):
+                    raise ValueError(
+                        f"Unsupported {protocol_env}={override!r}; choose one of: openai, anthropic"
+                    )
+                return override
+        return meta.get("protocol", "openai")
+
+    def _resolve_base_url(self) -> str | None:
+        """Resolve the API base URL for the provider.
+
+        Precedence: an explicit ``base_url`` override; then a registry-declared
+        regional ``endpoints`` map keyed by ``region_env`` and the resolved
+        protocol; then None (let the SDK use its own default).
+        """
+        if self.base_url:
+            return self.base_url
+        meta = PROVIDER_META.get(self.provider, {})
+        endpoints = meta.get("endpoints")
+        if not endpoints:
+            return None
+        region_env = meta.get("region_env")
+        region = (os.environ.get(region_env, "").strip() if region_env else "") or next(
+            iter(endpoints)
+        )
+        if region not in endpoints:
+            choices = ", ".join(endpoints)
+            raise ValueError(f"Unsupported region {region!r}; choose one of: {choices}")
+        return endpoints[region][self.api_protocol]
 
     def _init_api_client(self):
         """Initialize the API client based on detected provider."""
@@ -388,7 +472,7 @@ class AgentClient:
                     kwargs["base_url"] = self.base_url
                 return OpenAI(**kwargs)
             elif self.provider == "minimax":
-                base_url = self.base_url or resolve_minimax_endpoint(protocol=self.api_protocol)
+                base_url = self._resolve_base_url()
                 if self.api_protocol == "anthropic":
                     import anthropic
 
@@ -441,6 +525,9 @@ class AgentClient:
         """
         if self.mode != "api":
             logger.warning("Image requests require API mode")
+            return None
+        if not provider_supports_images(self.provider):
+            logger.warning("Provider %r does not support image requests", self.provider)
             return None
 
         path = Path(image_path)
@@ -543,9 +630,7 @@ class AgentClient:
         request_timeout = timeout if timeout is not None else get_default_timeout()
 
         try:
-            if self.provider in ("anthropic", "moonshot") or (
-                self.provider == "minimax" and self.api_protocol == "anthropic"
-            ):
+            if self.api_protocol == "anthropic":
                 kwargs: dict[str, Any] = {}
                 if system is not None:
                     kwargs["system"] = system
@@ -591,9 +676,7 @@ class AgentClient:
                 logger.warning("No text content found in API response")
                 return None
 
-            elif self.provider == "openai" or (
-                self.provider == "minimax" and self.api_protocol == "openai"
-            ):
+            elif self.api_protocol == "openai":
                 messages: list[dict[str, Any]] = []
                 if system is not None:
                     messages.append({"role": "system", "content": system})
@@ -610,7 +693,7 @@ class AgentClient:
                         },
                     ]
                 messages.append({"role": "user", "content": openai_content})
-                kwargs: dict[str, Any] = {}
+                kwargs = {}
                 if temperature is not None:
                     kwargs["temperature"] = temperature
                 response = self.client.chat.completions.create(
@@ -630,10 +713,7 @@ class AgentClient:
                     return None
                 return response.choices[0].message.content
 
-            elif self.provider == "google":
-                if image:
-                    logger.warning("Image requests are not implemented for the google provider")
-                    return None
+            elif self.api_protocol == "google":
                 gmodel_kwargs = {}
                 if system is not None:
                     gmodel_kwargs["system_instruction"] = system
@@ -641,10 +721,19 @@ class AgentClient:
                 generation_config = {"max_output_tokens": max_tokens}
                 if temperature is not None:
                     generation_config["temperature"] = temperature
+                # Gemini inline image parts want raw bytes, not the base64 string
+                # the OpenAI/Anthropic JSON payloads carry, so decode here.
+                content: str | list[Any] = prompt
+                if image:
+                    media_type, image_data = image
+                    content = [
+                        {"mime_type": media_type, "data": base64.b64decode(image_data)},
+                        prompt,
+                    ]
                 # Honor max_tokens + timeout (were ignored → output capped at the
                 # model default, request unbounded), and reject a truncated reply.
                 response = gmodel.generate_content(
-                    prompt,
+                    content,
                     generation_config=generation_config,
                     request_options={"timeout": request_timeout},
                 )

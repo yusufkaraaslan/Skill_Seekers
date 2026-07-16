@@ -106,8 +106,9 @@ AgentClient is now the single AI transport for every text-based call:
   sys.exit removed); unified_scraper Phase-6 API save is atomic;
   doc_scraper's path already routed via adaptors.
 - video_scraper's reference cleaner goes through AgentClient.
-  video_visual's frame classification is the DOCUMENTED EXCEPTION
-  (multimodal; AgentClient is text-only today).
+  video_visual's frame OCR goes through AgentClient.call_with_image()
+  (multimodal support landed with the MiniMax image work; the former
+  text-only exception is gone).
 - `build_local_agent_command()` in agent_client is the single
   preset-template/permissions-flag handler; LocalSkillEnhancer delegates.
 
@@ -119,7 +120,9 @@ contracts — blind merges would silently change AI quality):
 - LocalSkillEnhancer terminal/background/daemon orchestration is kept; the
   remaining overlap with AgentClient._call_local is the prompt-file +
   subprocess loop (small).
-- AgentClient multimodal support (would absorb video_visual).
+- ~~AgentClient multimodal support (would absorb video_visual).~~ DONE —
+  `AgentClient.call_with_image()` serves all image-capable providers;
+  `_call_api` branches on a registry `protocol`/`supports_images`.
 
 ## Phase 3 — Enhancement consolidation (medium-large)
 
@@ -277,7 +280,7 @@ quality.
 - Per-request ExecutionContext initialization at the MCP boundary —
   lower urgency since the converters' raw-config fallback (fixed earlier)
   plus the contextvars override (5b) cover the known divergences.
-- AgentClient multimodal support (absorbs video_visual).
+- ~~AgentClient multimodal support (absorbs video_visual).~~ DONE (see Phase 3).
 
 ## Phase 5 — Platform unification: config, dispatch, MCP (medium)
 

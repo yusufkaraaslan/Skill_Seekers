@@ -20,7 +20,7 @@ import re
 import tempfile
 from dataclasses import dataclass, field
 
-from skill_seekers.cli.agent_client import AgentClient
+from skill_seekers.cli.agent_client import API_PROVIDERS, AgentClient
 from skill_seekers.cli.minimax_config import MINIMAX_IMAGE_MODEL
 from skill_seekers.cli.video_models import (
     CodeBlock,
@@ -587,55 +587,81 @@ def _ocr_with_agent_vision(
     return "", 0.0
 
 
-def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
-    """Use the configured Anthropic model to extract code from a frame.
+# Per-provider vision-OCR config: which env vars carry the key and the model
+# override, and the default model. Keyed by AgentClient provider name so the
+# provider string flows straight into AgentClient. Only image-capable providers
+# appear here (Moonshot's default model has no vision).
+_VISION_PROVIDERS: dict[str, dict[str, str]] = {
+    "anthropic": {
+        "key_env": "ANTHROPIC_API_KEY",
+        "model_env": "ANTHROPIC_MODEL",
+        "default_model": "claude-haiku-4-5-20251001",
+    },
+    "openai": {
+        "key_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_MODEL",
+        "default_model": "gpt-4o",
+    },
+    "google": {
+        "key_env": "GOOGLE_API_KEY",
+        "model_env": "GOOGLE_MODEL",
+        "default_model": "gemini-2.0-flash",
+    },
+    "minimax": {
+        "key_env": "MINIMAX_API_KEY",
+        "model_env": "MINIMAX_VISION_MODEL",
+        "default_model": MINIMAX_IMAGE_MODEL,
+    },
+}
 
-    This compatibility wrapper preserves the original function name used by
-    downstream callers and tests while routing the request through AgentClient.
+# CLI/user-facing aliases → canonical provider name.
+_VISION_PROVIDER_ALIASES = {"claude": "anthropic", "gemini": "google"}
 
-    Returns:
-        (extracted_text, confidence).  Confidence is 0.95 when successful.
-        Returns ("", 0.0) if API key is not set or the call fails.
+
+def _auto_vision_provider() -> str | None:
+    """First image-capable provider (in registry priority order) with a key set.
+
+    Reuses the AgentClient registry rather than re-implementing key detection so
+    a newly-registered image-capable provider is picked up for free.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return "", 0.0
-    return _ocr_with_agent_vision(
-        frame_path,
-        frame_type,
-        api_key=api_key,
-        provider="anthropic",
-        model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
-    )
-
-
-def _ocr_with_minimax_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
-    """Use MiniMax image input to extract code from a frame."""
-    api_key = os.environ.get("MINIMAX_API_KEY", "")
-    if not api_key:
-        return "", 0.0
-    return _ocr_with_agent_vision(
-        frame_path,
-        frame_type,
-        api_key=api_key,
-        provider="minimax",
-        model=os.environ.get("MINIMAX_VISION_MODEL", MINIMAX_IMAGE_MODEL),
-    )
+    for meta in API_PROVIDERS:
+        provider = meta["provider"]
+        if not meta.get("supports_images") or provider not in _VISION_PROVIDERS:
+            continue
+        if any(os.environ.get(var, "").strip() for var in meta["env_vars"]):
+            return provider
+    return None
 
 
 def _ocr_with_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
-    """Dispatch OCR to the selected vision provider without changing legacy defaults."""
-    provider = os.environ.get("SKILL_SEEKER_VISION_PROVIDER", "auto").strip().lower()
-    if provider == "minimax":
-        return _ocr_with_minimax_vision(frame_path, frame_type)
-    if provider in ("anthropic", "claude"):
-        return _ocr_with_claude_vision(frame_path, frame_type)
-    if provider != "auto":
-        logger.warning("Unsupported vision provider %r", provider)
+    """Dispatch frame OCR to the selected (or auto-detected) vision provider.
+
+    ``SKILL_SEEKER_VISION_PROVIDER`` selects a provider explicitly (accepting
+    the aliases in ``_VISION_PROVIDER_ALIASES``); "auto" (the default) picks the
+    first image-capable provider with a key set. Returns ("", 0.0) when no
+    provider/key is available or the call fails.
+    """
+    selected = os.environ.get("SKILL_SEEKER_VISION_PROVIDER", "auto").strip().lower()
+    selected = _VISION_PROVIDER_ALIASES.get(selected, selected)
+    if selected == "auto":
+        selected = _auto_vision_provider() or ""
+        if not selected:
+            return "", 0.0
+    spec = _VISION_PROVIDERS.get(selected)
+    if spec is None:
+        logger.warning("Unsupported vision provider %r", selected)
         return "", 0.0
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return _ocr_with_claude_vision(frame_path, frame_type)
-    return _ocr_with_minimax_vision(frame_path, frame_type)
+    api_key = os.environ.get(spec["key_env"], "").strip()
+    if not api_key:
+        return "", 0.0
+    model = os.environ.get(spec["model_env"], "").strip() or spec["default_model"]
+    return _ocr_with_agent_vision(
+        frame_path,
+        frame_type,
+        api_key=api_key,
+        provider=selected,
+        model=model,
+    )
 
 
 def check_visual_dependencies() -> dict[str, bool]:

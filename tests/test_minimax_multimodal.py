@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from skill_seekers.cli.agent_client import AgentClient
+from skill_seekers.cli.agent_client import AgentClient, provider_supports_images
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
@@ -17,7 +17,7 @@ from skill_seekers.cli.minimax_config import (
     resolve_minimax_endpoint,
 )
 from skill_seekers.cli.video_models import FrameType
-from skill_seekers.cli.video_visual import _ocr_with_minimax_vision, _ocr_with_vision
+from skill_seekers.cli.video_visual import _ocr_with_vision
 
 
 def _mock_minimax_client(monkeypatch, protocol: str) -> AgentClient:
@@ -27,7 +27,6 @@ def _mock_minimax_client(monkeypatch, protocol: str) -> AgentClient:
 
 
 def test_minimax_endpoint_matrix_matches_public_regions():
-    assert get_adaptor("minimax").SUPPORTED_MODELS == ("MiniMax-M3", "MiniMax-M2.7")
     assert resolve_minimax_endpoint("global_en", "openai") == "https://api.minimax.io/v1"
     assert resolve_minimax_endpoint("cn_zh", "openai") == "https://api.minimaxi.com/v1"
     assert resolve_minimax_endpoint("global_en", "anthropic") == "https://api.minimax.io/anthropic"
@@ -35,6 +34,15 @@ def test_minimax_endpoint_matrix_matches_public_regions():
     assert all(
         endpoints["anthropic"].endswith("/anthropic") for endpoints in MINIMAX_ENDPOINTS.values()
     )
+
+
+def test_minimax_adaptor_endpoint_follows_region(monkeypatch):
+    """Adaptor enhancement endpoint honors MINIMAX_API_REGION (the cn_zh 401 fix)."""
+    adaptor = get_adaptor("minimax")
+    monkeypatch.setenv("MINIMAX_API_REGION", "cn_zh")
+    assert adaptor._api_base_url() == "https://api.minimaxi.com/v1"
+    monkeypatch.setenv("MINIMAX_API_REGION", "global_en")
+    assert adaptor._api_base_url() == "https://api.minimax.io/v1"
 
 
 @pytest.mark.parametrize(
@@ -115,8 +123,9 @@ def test_vision_dispatch_uses_minimax_when_selected(monkeypatch, tmp_path):
 
 
 def test_minimax_vision_without_key_returns_empty(monkeypatch):
+    monkeypatch.setenv("SKILL_SEEKER_VISION_PROVIDER", "minimax")
     monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
-    assert _ocr_with_minimax_vision("missing.png", FrameType.CODE_EDITOR) == ("", 0.0)
+    assert _ocr_with_vision("missing.png", FrameType.CODE_EDITOR) == ("", 0.0)
 
 
 def test_anthropic_compatible_base_appends_messages_path(monkeypatch):
@@ -169,3 +178,91 @@ def test_anthropic_compatible_base_appends_messages_path(monkeypatch):
         server.server_close()
 
     assert captured_paths == ["/anthropic/v1/messages"]
+
+
+# --- Generalized multimodal provider support (protocol/capability registry) ---
+
+
+@pytest.mark.parametrize(
+    ("provider", "expected"),
+    [
+        ("anthropic", "anthropic"),
+        ("openai", "openai"),
+        ("google", "google"),
+        ("moonshot", "anthropic"),
+        ("minimax", "openai"),
+    ],
+)
+def test_protocol_resolves_from_registry(monkeypatch, provider, expected):
+    """_call_api branches on api_protocol, which comes from the registry."""
+    monkeypatch.delenv("MINIMAX_API_PROTOCOL", raising=False)
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+    client = AgentClient(mode="api", api_key="unit-test-key", provider=provider)
+    assert client.api_protocol == expected
+
+
+def test_minimax_protocol_override_and_base_url_suffix(monkeypatch):
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+    monkeypatch.setenv("MINIMAX_API_PROTOCOL", "anthropic")
+    client = AgentClient(mode="api", api_key="k", provider="minimax")
+    assert client.api_protocol == "anthropic"
+    # An explicit /anthropic base URL wins even if the env says otherwise.
+    monkeypatch.setenv("MINIMAX_API_PROTOCOL", "openai")
+    client = AgentClient(
+        mode="api", api_key="k", provider="minimax", base_url="https://x.test/anthropic"
+    )
+    assert client.api_protocol == "anthropic"
+
+
+def test_invalid_minimax_protocol_raises(monkeypatch):
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+    monkeypatch.setenv("MINIMAX_API_PROTOCOL", "grpc")
+    with pytest.raises(ValueError):
+        AgentClient(mode="api", api_key="k", provider="minimax")
+
+
+def test_supports_images_capability():
+    assert provider_supports_images("anthropic") is True
+    assert provider_supports_images("openai") is True
+    assert provider_supports_images("google") is True
+    assert provider_supports_images("minimax") is True
+    assert provider_supports_images("moonshot") is False
+
+
+def test_call_with_image_rejected_for_non_image_provider(monkeypatch, tmp_path):
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+    client = AgentClient(mode="api", api_key="k", provider="moonshot")
+    image_path = tmp_path / "frame.png"
+    image_path.write_bytes(b"png-data")
+    assert client.call_with_image("Extract", image_path) is None
+
+
+def test_google_protocol_sends_inline_image_blob(monkeypatch, tmp_path):
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
+    client = AgentClient(mode="api", api_key="k", provider="google")
+    gmodel = MagicMock()
+    gmodel.generate_content.return_value = type(
+        "Resp", (), {"text": "code", "candidates": []}
+    )()
+    client.client.GenerativeModel.return_value = gmodel
+    image_path = tmp_path / "frame.jpg"
+    image_path.write_bytes(b"jpg-data")
+
+    assert client.call_with_image("Extract text", image_path) == "code"
+
+    parts = gmodel.generate_content.call_args.args[0]
+    assert parts[0]["mime_type"] == "image/jpeg"
+    assert parts[0]["data"] == b"jpg-data"
+    assert parts[1] == "Extract text"
+
+
+def test_auto_vision_prefers_anthropic_then_falls_through(monkeypatch):
+    from skill_seekers.cli.video_visual import _auto_vision_provider
+
+    for var in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY", "MINIMAX_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    assert _auto_vision_provider() is None
+    monkeypatch.setenv("MINIMAX_API_KEY", "k")
+    assert _auto_vision_provider() == "minimax"
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    assert _auto_vision_provider() == "anthropic"
