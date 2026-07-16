@@ -603,6 +603,7 @@ class TestSourceTools:
         """Test fetching config list from API."""
         with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
             mock_response = MagicMock()
+            mock_response.status_code = 200
             mock_response.json.return_value = {
                 "configs": [
                     {"name": "react", "category": "web-frameworks"},
