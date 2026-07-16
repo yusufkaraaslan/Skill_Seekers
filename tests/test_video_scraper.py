@@ -2385,6 +2385,104 @@ class TestDarkThemePreprocessing(unittest.TestCase):
             os.unlink(tmp_path)
 
 
+class TestVisualCpuCompat(unittest.TestCase):
+    """Tests for CPU-environment compatibility (HoughLinesP layouts, AVX2 check)."""
+
+    def _classify_dark_region(self, hough_result):
+        """Run _classify_region on a dark region whose classification depends on
+        the horizontal lines parsed from the (mocked) HoughLinesP result."""
+        import numpy as np
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli import video_visual
+
+        gray = np.full((100, 200), 30, dtype=np.uint8)  # dark: mean 30 < 80
+        # Edge density 0.02 — inside (0.01, 0.05], so the outcome depends on
+        # horizontal_lines >= 3 parsed from the HoughLinesP output.
+        edges = np.zeros((100, 200), dtype=np.uint8)
+        edges[25, :] = 255
+        edges[75, :] = 255
+        hsv = np.zeros((100, 200, 3), dtype=np.uint8)  # saturation 0
+
+        fake_cv2 = MagicMock()
+        fake_cv2.HoughLinesP.return_value = hough_result
+        with patch.object(video_visual, "cv2", fake_cv2):
+            return video_visual._classify_region(gray, edges, hsv)
+
+    def test_classify_region_hough_lines_new_shape(self):
+        """(N, 4) HoughLinesP layout (newer OpenCV builds) parses without crashing."""
+        import numpy as np
+
+        from skill_seekers.cli.video_models import FrameType
+
+        lines = np.array([[0, 10, 199, 10], [0, 20, 199, 20], [0, 30, 199, 30]], dtype=np.int32)
+        self.assertEqual(self._classify_dark_region(lines), FrameType.TERMINAL)
+
+    def test_classify_region_hough_lines_old_shape(self):
+        """(N, 1, 4) HoughLinesP layout (OpenCV 3/4) parses identically."""
+        import numpy as np
+
+        from skill_seekers.cli.video_models import FrameType
+
+        lines = np.array(
+            [[[0, 10, 199, 10]], [[0, 20, 199, 20]], [[0, 30, 199, 30]]], dtype=np.int32
+        )
+        self.assertEqual(self._classify_dark_region(lines), FrameType.TERMINAL)
+
+    def test_classify_region_no_lines_falls_through(self):
+        """Without horizontal lines the same region classifies as OTHER — proving
+        the parsed lines actually drive the TERMINAL classification above."""
+        from skill_seekers.cli.video_models import FrameType
+
+        self.assertEqual(self._classify_dark_region(None), FrameType.OTHER)
+
+    def test_cpu_quantization_non_x86_supported(self):
+        """ARM etc. use QNNPACK — quantization always considered supported."""
+        from unittest.mock import patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        with patch("platform.machine", return_value="aarch64"):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_x86_with_avx2(self):
+        from unittest.mock import mock_open, patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        cpuinfo = "flags\t\t: fpu vme sse sse2 avx avx2 fma\n"
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", mock_open(read_data=cpuinfo)),
+        ):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_x86_without_avx2(self):
+        """QEMU-style x86 CPU without AVX2 must disable quantization (SIGILL fix)."""
+        from unittest.mock import mock_open, patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        cpuinfo = "flags\t\t: fpu vme sse sse2 avx\n"
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", mock_open(read_data=cpuinfo)),
+        ):
+            self.assertFalse(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_unreadable_cpuinfo_assumes_modern(self):
+        """Non-Linux / unreadable /proc/cpuinfo keeps current behavior."""
+        from unittest.mock import patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", side_effect=OSError),
+        ):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+
 class TestMultiEngineOCR(unittest.TestCase):
     """Tests for multi-engine OCR ensemble voting."""
 
