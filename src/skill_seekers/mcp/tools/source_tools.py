@@ -27,6 +27,32 @@ from skill_seekers.services.source_manager import (
 
 import httpx
 
+from skill_seekers.cli.utils import retry_with_backoff_async
+
+
+async def _get_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    params: dict | None = None,
+    base_delay: float = 1.0,
+) -> httpx.Response:
+    """GET with exponential backoff on transient failures (E2.6, #92).
+
+    Retries connection/timeout errors and 5xx responses (3 attempts, then
+    1s/2s waits). 4xx responses are returned un-retried — a 404 is a real
+    answer the caller handles (e.g. "config not found"), not a fault.
+    """
+
+    async def _attempt() -> httpx.Response:
+        response = await client.get(url, params=params)
+        if response.status_code >= 500:
+            response.raise_for_status()
+        return response
+
+    return await retry_with_backoff_async(
+        _attempt, base_delay=base_delay, operation_name=f"GET {url}"
+    )
+
 
 async def fetch_config_tool(args: dict) -> list[TextContent]:
     """
@@ -213,7 +239,7 @@ Next steps:
                     if category:
                         params["category"] = category
 
-                    response = await client.get(list_url, params=params)
+                    response = await _get_with_retry(client, list_url, params=params)
                     response.raise_for_status()
                     data = response.json()
 
@@ -264,7 +290,7 @@ Next steps:
 
                 # Get config details first
                 detail_url = f"{API_BASE_URL}/api/configs/{config_name}"
-                detail_response = await client.get(detail_url)
+                detail_response = await _get_with_retry(client, detail_url)
 
                 if detail_response.status_code == 404:
                     return [
@@ -287,7 +313,7 @@ Next steps:
                         )
                     ]
 
-                download_response = await client.get(download_url)
+                download_response = await _get_with_retry(client, download_url)
                 download_response.raise_for_status()
                 config_data = download_response.json()
 
