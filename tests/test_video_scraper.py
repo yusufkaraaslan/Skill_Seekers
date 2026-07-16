@@ -2527,9 +2527,7 @@ class TestClaudeVisionOCR(unittest.TestCase):
         from skill_seekers.cli.video_visual import _ocr_with_vision
 
         # Without a provider key, vision always returns empty — simulating no-fallback
-        with patch.dict(
-            os.environ, {"SKILL_SEEKER_VISION_PROVIDER": "anthropic"}, clear=True
-        ):
+        with patch.dict(os.environ, {"SKILL_SEEKER_VISION_PROVIDER": "anthropic"}, clear=True):
             text, conf = _ocr_with_vision("/fake.png", FrameType.CODE_EDITOR)
         self.assertEqual(text, "")
         self.assertEqual(conf, 0.0)

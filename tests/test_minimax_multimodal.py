@@ -241,9 +241,7 @@ def test_google_protocol_sends_inline_image_blob(monkeypatch, tmp_path):
     monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: MagicMock())
     client = AgentClient(mode="api", api_key="k", provider="google")
     gmodel = MagicMock()
-    gmodel.generate_content.return_value = type(
-        "Resp", (), {"text": "code", "candidates": []}
-    )()
+    gmodel.generate_content.return_value = type("Resp", (), {"text": "code", "candidates": []})()
     client.client.GenerativeModel.return_value = gmodel
     image_path = tmp_path / "frame.jpg"
     image_path.write_bytes(b"jpg-data")
