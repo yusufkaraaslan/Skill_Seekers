@@ -8,7 +8,7 @@ This module contains all scraping-related MCP tool implementations:
 - scrape_pdf_tool: Scrape PDF documentation
 - scrape_codebase_tool: Analyze local codebase and extract code knowledge
 - scrape_generic_tool: Generic scraper for new source types (jupyter, html,
-  openapi, asciidoc, pptx, confluence, notion, rss, manpage, chat)
+  openapi, asciidoc, pptx, word, confluence, notion, rss, manpage, chat)
 
 Extracted from server.py for better modularity and organization.
 """
@@ -921,6 +921,7 @@ GENERIC_SOURCE_TYPES = (
     "openapi",
     "asciidoc",
     "pptx",
+    "word",
     "confluence",
     "notion",
     "rss",
@@ -939,6 +940,7 @@ _SOURCE_EMOJIS = {
     "openapi": "📡",
     "asciidoc": "📄",
     "pptx": "📊",
+    "word": "📃",
     "confluence": "🏢",
     "notion": "📝",
     "rss": "📰",
@@ -1009,6 +1011,7 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
         "openapi": "spec_path",
         "asciidoc": "asciidoc_path",
         "pptx": "pptx_path",
+        "word": "docx_path",
         "manpage": "man_path",
         "confluence": "export_path",
         "notion": "export_path",

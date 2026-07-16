@@ -794,7 +794,7 @@ async def extract_config_patterns(
 
 
 @safe_tool_decorator(
-    description="Scrape content from new source types: jupyter, html, openapi, asciidoc, pptx, confluence, notion, rss, manpage, chat. A generic entry point that delegates to the appropriate CLI scraper module."
+    description="Scrape content from new source types: jupyter, html, openapi, asciidoc, pptx, word, confluence, notion, rss, manpage, chat. A generic entry point that delegates to the appropriate CLI scraper module."
 )
 async def scrape_generic(
     source_type: str,
@@ -805,16 +805,16 @@ async def scrape_generic(
     """
     Scrape content from various source types and build a skill.
 
-    A generic scraper that supports 10 new source types. It delegates to the
+    A generic scraper that supports 11 new source types. It delegates to the
     corresponding CLI scraper module (e.g., skill_seekers.cli.jupyter_scraper).
 
-    File-based types (jupyter, html, openapi, asciidoc, pptx, manpage, chat)
+    File-based types (jupyter, html, openapi, asciidoc, pptx, word, manpage, chat)
     typically use the 'path' parameter. URL-based types (confluence, notion, rss)
     typically use the 'url' parameter.
 
     Args:
         source_type: Source type to scrape. One of: jupyter, html, openapi,
-            asciidoc, pptx, confluence, notion, rss, manpage, chat.
+            asciidoc, pptx, word, confluence, notion, rss, manpage, chat.
         name: Skill name for the output
         path: File or directory path (for file-based sources like jupyter, html, pptx)
         url: URL (for URL-based sources like confluence, notion, rss)
