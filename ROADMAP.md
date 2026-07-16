@@ -167,9 +167,10 @@ Generate skills from actual code repositories
 
 ---
 
-### 🔌 **Category D: Context7 Integration**
-- [ ] **Task D1.1-D1.4:** Research and planning
-- [ ] **Task D2.1-D2.5:** Basic integration
+### 🔌 **Category D: Context7 Integration** *(dropped)*
+~~Task D1.1-D1.4 / D2.1-D2.5~~ — superseded by the native embedding server,
+vector-DB adaptors (chroma/faiss/weaviate/qdrant/pinecone), and MCP export
+tools (issues #76-#84, #142 closed 2026-07).
 
 ---
 
@@ -183,11 +184,11 @@ Small improvements to existing MCP tools
 - [ ] **Task E1.4-E1.9:** Additional format scrapers
 
 #### E2: MCP Quality Improvements
-- [ ] **Task E2.1:** Add error handling to all tools
-- [ ] **Task E2.2:** Add structured logging
+- [x] **Task E2.1:** Add error handling to all tools ✅ (`mcp/tools/_common.py` containment)
+- [x] **Task E2.2:** Add structured logging ✅ (contextvar log capture + `--log-level`)
 - [ ] **Task E2.3:** Add progress indicators
-- [ ] **Task E2.4:** Add validation for all inputs
-- [ ] **Task E2.5:** Add helpful error messages
+- [x] **Task E2.4:** Add validation for all inputs ✅ (typed signatures + semantic checks)
+- [x] **Task E2.5:** Add helpful error messages ✅ (💡 hints across tools)
 - [x] **Task E2.6:** Add retry logic for network failures ✅ **Utilities ready**
 
 ---
@@ -196,15 +197,15 @@ Small improvements to existing MCP tools
 Technical improvements to existing features
 
 #### F1: Core Scraper Improvements
-- [ ] **Task F1.1:** Add URL normalization
-- [ ] **Task F1.2:** Add duplicate page detection
+- [x] **Task F1.1:** Add URL normalization ✅ (`doc_scraper._normalize_url`)
+- [x] **Task F1.2:** Add duplicate page detection ✅ (visited/enqueued sets)
 - [ ] **Task F1.3:** Add memory-efficient streaming
 - [ ] **Task F1.4:** Add HTML parser fallback
 - [x] **Task F1.5:** Add network retry with exponential backoff ✅
 - [ ] **Task F1.6:** Fix package path output bug
 
 #### F2: Incremental Updates
-- [ ] **Task F2.1-F2.5:** Track modifications, update only changed content
+- [ ] **Task F2.1-F2.5:** Track modifications, update only changed content — F2.1/F2.2 ✅ via `sync/` (hashes + Last-Modified); F2.3/F2.4 detection built, scraper wiring pending (#101, #102); F2.5 → #329
 
 ---
 
@@ -212,14 +213,14 @@ Technical improvements to existing features
 Small standalone tools that add value
 
 #### G1: Config Tools
-- [ ] **Task G1.1:** Create `validate_config.py`
+- [x] **Task G1.1:** Create `validate_config.py` ✅ (`cli/config_validator.py`)
 - [ ] **Task G1.2:** Create `test_selectors.py`
-- [ ] **Task G1.3:** Create `auto_detect_selectors.py` (AI-powered)
+- ~~Task G1.3: `auto_detect_selectors.py`~~ — superseded by `scan` AI config generation (#106 closed)
 - [ ] **Task G1.4:** Create `compare_configs.py`
 - [ ] **Task G1.5:** Create `optimize_config.py`
 
 #### G2: Skill Quality Tools
-- [ ] **Task G2.1-G2.5:** Quality analysis and reporting
+- [x] **Task G2.1-G2.5:** Quality analysis and reporting ✅ (`quality_metrics.py` + `quality_checker.py` + `skill-seekers quality`; G2.3 readability remains → #228)
 
 ---
 
@@ -230,12 +231,12 @@ Small standalone tools that add value
 
 ### 🎓 **Category I: Content & Documentation**
 - [ ] **Task I1.1-I1.6:** Video tutorials
-- [ ] **Task I2.1-I2.5:** Written guides
+- [x] **Task I2.2-I2.5:** Written guides ✅ (best practices, performance, config contribution, codebase scraping — #126-#129 closed)
 
 ---
 
 ### 🧪 **Category J: Testing & Quality**
-- [ ] **Task J1.1-J1.6:** Test expansion and coverage
+- [ ] **Task J1.1-J1.6:** Test expansion and coverage — J1.3 (MCP tool tests) + J1.6 (e2e suites) ✅ (#132, #135 closed)
 
 ---
 
