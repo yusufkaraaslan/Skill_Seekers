@@ -254,12 +254,19 @@ class GitHubScraper(SkillConverter):
         self.repo: Repository.Repository | None = None
 
         # Options
+        # Issue defaults favor token economy (#169): open issues only, a small
+        # cap, and label/milestone metadata off. A repo like facebook/react has
+        # 12k+ closed issues — scraping them (and their metadata) bloats every
+        # skill that uses it. Opt back in via issue_state/max_issues/
+        # include_issue_labels/include_issue_milestones.
         self.include_issues = config.get("include_issues", True)
-        self.max_issues = config.get("max_issues", 100)
+        self.max_issues = config.get("max_issues", 20)
         self.max_comments = config.get("max_comments", 0)
         self.issue_since = config.get("issue_since")
         self.issue_labels = config.get("issue_labels", [])
-        self.issue_state = config.get("issue_state", "all")
+        self.issue_state = config.get("issue_state", "open")
+        self.include_issue_labels = config.get("include_issue_labels", False)
+        self.include_issue_milestones = config.get("include_issue_milestones", False)
         self.per_issue_files = config.get("per_issue_files", False)
         self.include_changelog = config.get("include_changelog", True)
         self.include_releases = config.get("include_releases", True)
@@ -849,7 +856,7 @@ class GitHubScraper(SkillConverter):
         try:
             # Build kwargs for get_issues
             kwargs: dict[str, Any] = {
-                "state": self.issue_state or "all",
+                "state": self.issue_state or "open",
                 "sort": "updated",
                 "direction": "desc",
             }
@@ -901,8 +908,17 @@ class GitHubScraper(SkillConverter):
                     "number": issue.number,
                     "title": issue.title,
                     "state": issue.state,
-                    "labels": [label.name for label in issue.labels],
-                    "milestone": issue.milestone.title if issue.milestone else None,
+                    # Label/milestone metadata is off by default (#169) — it's
+                    # bloat for most skills. Empty list / None keep the schema
+                    # stable for downstream consumers.
+                    "labels": (
+                        [label.name for label in issue.labels] if self.include_issue_labels else []
+                    ),
+                    "milestone": (
+                        (issue.milestone.title if issue.milestone else None)
+                        if self.include_issue_milestones
+                        else None
+                    ),
                     "created_at": issue.created_at.isoformat() if issue.created_at else None,
                     "updated_at": issue.updated_at.isoformat() if issue.updated_at else None,
                     "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
@@ -1405,21 +1421,32 @@ Use this skill when you need to:
         open_issues = [i for i in issues if i["state"] == "open"]
         closed_issues = [i for i in issues if i["state"] == "closed"]
 
-        content += f"## Open Issues ({len(open_issues)})\n\n"
-        for issue in open_issues:
-            labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
-            created_at = issue.get("created_at") or "N/A"
-            content += f"### #{issue['number']}: {issue['title']}\n"
-            content += f"**Labels:** {labels} | **Created:** {created_at[:10]}\n"
-            content += f"[View on GitHub]({issue['url']})\n\n"
+        def _meta_line(issue: dict, date_label: str, date_key: str) -> str:
+            # Only surface labels when they were actually collected
+            # (include_issue_labels), so we don't print "No labels" on every
+            # issue by default (#169).
+            parts = []
+            if issue.get("labels"):
+                parts.append(f"**Labels:** {', '.join(issue['labels'])}")
+            date_val = issue.get(date_key) or "N/A"
+            parts.append(f"**{date_label}:** {date_val[:10]}")
+            return " | ".join(parts)
 
-        content += f"\n## Recently Closed Issues ({len(closed_issues)})\n\n"
-        for issue in closed_issues:
-            labels = ", ".join(issue["labels"]) if issue["labels"] else "No labels"
-            closed_at = issue.get("closed_at") or "N/A"
-            content += f"### #{issue['number']}: {issue['title']}\n"
-            content += f"**Labels:** {labels} | **Closed:** {closed_at[:10]}\n"
-            content += f"[View on GitHub]({issue['url']})\n\n"
+        # Only emit a section when it has issues — with the open-only default
+        # (#169) the closed section is otherwise a permanent empty stub.
+        if open_issues:
+            content += f"## Open Issues ({len(open_issues)})\n\n"
+            for issue in open_issues:
+                content += f"### #{issue['number']}: {issue['title']}\n"
+                content += _meta_line(issue, "Created", "created_at") + "\n"
+                content += f"[View on GitHub]({issue['url']})\n\n"
+
+        if closed_issues:
+            content += f"\n## Recently Closed Issues ({len(closed_issues)})\n\n"
+            for issue in closed_issues:
+                content += f"### #{issue['number']}: {issue['title']}\n"
+                content += _meta_line(issue, "Closed", "closed_at") + "\n"
+                content += f"[View on GitHub]({issue['url']})\n\n"
 
         issues_path = f"{self.skill_dir}/references/issues.md"
         with open(issues_path, "w", encoding="utf-8") as f:

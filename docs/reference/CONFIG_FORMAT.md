@@ -118,8 +118,11 @@ For analyzing GitHub repositories.
       "code_analysis_depth": "deep",
 
       "fetch_issues": true,
-      "max_issues": 100,
+      "issue_state": "open",
+      "max_issues": 20,
       "issue_labels": ["bug", "enhancement"],
+      "include_issue_labels": false,
+      "include_issue_milestones": false,
 
       "fetch_releases": true,
       "max_releases": 20,
@@ -147,8 +150,11 @@ For analyzing GitHub repositories.
 | `enable_codebase_analysis` | boolean | No | true | Analyze source code |
 | `code_analysis_depth` | string | No | "standard" | `surface`, `standard`, `deep` |
 | `fetch_issues` | boolean | No | true | Fetch GitHub issues |
-| `max_issues` | number | No | 100 | Maximum issues to fetch |
+| `issue_state` | string | No | `"open"` | `open`, `closed`, or `all`. Open-only by default to avoid scraping stale closed issues (token bloat). |
+| `max_issues` | number | No | 20 | Maximum issues to fetch |
 | `issue_labels` | array | No | [] | Filter by labels |
+| `include_issue_labels` | boolean | No | false | Include each issue's labels in the skill (off by default; metadata bloat) |
+| `include_issue_milestones` | boolean | No | false | Include each issue's milestone (off by default) |
 | `fetch_releases` | boolean | No | true | Fetch releases |
 | `max_releases` | number | No | 20 | Maximum releases |
 | `fetch_changelog` | boolean | No | true | Extract CHANGELOG |

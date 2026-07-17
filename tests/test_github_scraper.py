@@ -288,12 +288,15 @@ class TestIssuesExtraction(unittest.TestCase):
         self.GitHubScraper = GitHubScraper
 
     def test_extract_issues_success(self):
-        """Test successful issues extraction"""
+        """Test successful issues extraction (labels/milestones opted in)"""
         config = {
             "repo": "facebook/react",
             "name": "react",
             "github_token": None,
             "max_issues": 10,
+            # Metadata is off by default (#169) — opt in to assert its capture.
+            "include_issue_labels": True,
+            "include_issue_milestones": True,
         }
 
         # Create mock issues
@@ -1173,7 +1176,7 @@ class TestErrorHandling(unittest.TestCase):
             self.assertEqual(call_kwargs["since"], datetime.fromisoformat("2026-01-01"))
 
     def test_extract_issues_no_filters_by_default(self):
-        """Test that _extract_issues uses defaults when no filters set."""
+        """Default state is 'open' (#169) and no label/since filters are set."""
         config = {
             "repo": "facebook/react",
             "name": "react",
@@ -1189,9 +1192,50 @@ class TestErrorHandling(unittest.TestCase):
             scraper._extract_issues()
 
             call_kwargs = scraper.repo.get_issues.call_args[1]
-            self.assertEqual(call_kwargs["state"], "all")
+            self.assertEqual(call_kwargs["state"], "open")
             self.assertNotIn("labels", call_kwargs)
             self.assertNotIn("since", call_kwargs)
+
+    def test_issue_token_economy_defaults(self):
+        """#169: open-only, small cap, metadata off — unless opted in."""
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper({"repo": "facebook/react", "name": "react"})
+            self.assertEqual(scraper.issue_state, "open")
+            self.assertEqual(scraper.max_issues, 20)
+            self.assertFalse(scraper.include_issue_labels)
+            self.assertFalse(scraper.include_issue_milestones)
+
+    def test_extract_issues_excludes_metadata_by_default(self):
+        """Labels/milestone are dropped from issue data unless opted in (#169)."""
+        config = {"repo": "facebook/react", "name": "react", "max_issues": 5}
+
+        mock_label = Mock()
+        mock_label.name = "bug"
+        mock_milestone = Mock()
+        mock_milestone.title = "v18.0"
+        mock_issue = Mock()
+        mock_issue.number = 1
+        mock_issue.title = "Something"
+        mock_issue.state = "open"
+        mock_issue.labels = [mock_label]
+        mock_issue.milestone = mock_milestone
+        mock_issue.created_at = datetime(2026, 1, 1)
+        mock_issue.updated_at = datetime(2026, 1, 2)
+        mock_issue.closed_at = None
+        mock_issue.html_url = "https://github.com/facebook/react/issues/1"
+        mock_issue.body = "body"
+        mock_issue.pull_request = None
+        mock_issue.get_comments.return_value = []
+
+        with patch("skill_seekers.cli.github_scraper.Github"):
+            scraper = self.GitHubScraper(config)
+            scraper.repo = Mock()
+            scraper.repo.get_issues.return_value = [mock_issue]
+            scraper._extract_issues()
+
+            issue = scraper.extracted_data["issues"][0]
+            self.assertEqual(issue["labels"], [])
+            self.assertIsNone(issue["milestone"])
 
     def test_issue_filter_args_in_config(self):
         """Test that issue filter config keys are read in __init__."""
