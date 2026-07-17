@@ -95,6 +95,7 @@ For scraping documentation websites.
 | `categories` | object | No | `{}` | Content categorization rules |
 | `rate_limit` | number | No | 0.5 | Seconds between requests |
 | `max_pages` | number | No | 500 | Maximum pages to scrape |
+| `max_retries` | number | No | 3 | Fetch attempts per page; transient failures (connect/timeout/5xx) retry with exponential backoff. `1` disables retrying. |
 | `merge_mode` | string | No | "claude-enhanced" | Merge strategy |
 | `extract_api` | boolean | No | false | Extract API references |
 | `llms_txt_url` | string | No | auto | Path to llms.txt file |
