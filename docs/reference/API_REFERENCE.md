@@ -248,10 +248,12 @@ converter = GitHubScraper({
     "local_repo_path": None,          # optional local clone => unlimited analysis, no API limits
     "include_code": True,
     "include_issues": True,
-    "max_issues": 100,
+    "max_issues": 20,                 # token economy: keep issue payload small
     "max_comments": 0,
     "issue_labels": [],               # filter issues by label
-    "issue_state": "all",             # 'open' | 'closed' | 'all'
+    "issue_state": "open",            # 'open' | 'closed' | 'all' (open-only by default)
+    "include_issue_labels": False,    # include per-issue labels (off = less bloat)
+    "include_issue_milestones": False,  # include per-issue milestone
     "include_changelog": True,
     "include_releases": True,
     "output_dir": "output/fastapi",
