@@ -379,6 +379,87 @@ Finally, verify the installation.
                 )
             )
 
+    def test_ignores_workflow_steps_inside_code_blocks(self):
+        """Step comments in a code example must NOT count as workflow guidance (#229)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """# Test Skill
+
+Widgets library.
+
+## Code Example
+
+```python
+# Step 1: Initialize the client
+# Step 2: Configure options
+# Step 3: Run the query
+client = APIClient()
+```
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+            report = SkillQualityChecker(skill_dir).check_all()
+
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            # No POSITIVE workflow finding (✓ / "markers"); only the suggestion is allowed.
+            self.assertFalse(
+                any(
+                    "✓" in i.message and "workflow" in i.message.lower() for i in completeness_infos
+                )
+            )
+            self.assertFalse(any("markers)" in i.message for i in completeness_infos))
+
+    def test_ignores_grounding_and_error_hints_inside_code_blocks(self):
+        """`verify that` / `if it fails` in code comments must not satisfy the
+        grounding/error-handling checks (#229)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = """# Test Skill
+
+## Example
+
+```python
+# prerequisites: none, but verify that the token is set
+# if the request fails, retry with backoff
+do_thing()
+```
+"""
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+            report = SkillQualityChecker(skill_dir).check_all()
+
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            # Both should be reported as MISSING (suggestion), not found.
+            self.assertTrue(
+                any("Consider adding prerequisites" in i.message for i in completeness_infos)
+            )
+            self.assertTrue(
+                any("Consider adding troubleshooting" in i.message for i in completeness_infos)
+            )
+
+    def test_ignores_inline_code_markers(self):
+        """Workflow markers that appear only inside inline code are ignored (#229).
+
+        The surrounding prose deliberately contains no step markers, so any
+        detection would come solely from the inline `step N` spans.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_md = "# Test Skill\n\nInvoke `step 1` and `step 2` on the `first, item`.\n"
+            skill_dir = self.create_test_skill(tmpdir, skill_md)
+            report = SkillQualityChecker(skill_dir).check_all()
+
+            completeness_infos = [i for i in report.info if i.category == "completeness"]
+            self.assertFalse(any("markers)" in i.message for i in completeness_infos))
+
+    def test_strip_code_removes_fenced_and_inline(self):
+        from skill_seekers.cli.quality_checker import _strip_code
+
+        text = (
+            "before `inline` mid\n```python\nhidden step 1\n```\nafter\n~~~\nalso hidden\n~~~\nend"
+        )
+        stripped = _strip_code(text)
+        self.assertNotIn("hidden", stripped)
+        self.assertNotIn("inline", stripped)
+        self.assertIn("before", stripped)
+        self.assertIn("after", stripped)
+        self.assertIn("end", stripped)
+
     def test_checker_suggests_adding_prerequisites(self):
         """Test that checker suggests adding prerequisites when missing"""
         with tempfile.TemporaryDirectory() as tmpdir:
