@@ -182,6 +182,26 @@ docs/                        # Documentation (guides, integrations, architecture
 
 **Supported platforms (21):** claude, gemini, openai, minimax, opencode, kimi, deepseek, qwen, openrouter, together, fireworks, markdown, langchain, llama-index, haystack, weaviate, chroma, faiss, qdrant, pinecone.
 
+## Web UI (Seeker HUD)
+
+Local web app: React 19 + Vite + Tailwind/shadcn frontend in `ui/`, FastAPI backend in `src/skill_seekers/web/`.
+
+```bash
+# Run the app (opens browser; API on :8770)
+skill-seekers ui
+
+# Frontend dev mode (hot reload, proxies /api to :8770)
+cd ui && npm install && npm run dev
+
+# Build frontend (served by the backend from ui/dist)
+cd ui && npm run build
+```
+
+- Backend deps: `pip install -e ".[ui]"` (fastapi + uvicorn; also in `[all]` and dev group)
+- Jobs run as subprocesses (`python -m skill_seekers.web.runner`) with streamed logs + `[[PROGRESS:nn]]` markers
+- UI state: `~/.skill-seekers/ui/` (jobs, projects, activity, skill overrides, settings)
+- API tests: `tests/test_web_api.py`
+
 ## CLI Commands
 
 ```bash

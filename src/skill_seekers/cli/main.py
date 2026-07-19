@@ -50,6 +50,7 @@ COMMAND_CLASSES: dict[str, tuple[str, str]] = {
     "create": ("skill_seekers.cli.create_command", "CreateCommand"),
     "scan": ("skill_seekers.cli.scan_command", "ScanCommand"),
     "doctor": ("skill_seekers.cli.doctor", "DoctorCommand"),
+    "ui": ("skill_seekers.cli.ui_command", "UiCommand"),
 }
 
 
