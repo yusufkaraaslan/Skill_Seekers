@@ -247,6 +247,12 @@ embedding = [
     "voyageai>=0.2.0",
 ]
 
+# Web UI (Seeker HUD) — `skill-seekers ui`
+ui = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+]
+
 # All optional dependencies combined (dev dependencies now in [dependency-groups])
 # Note: video-full deps (opencv, easyocr, faster-whisper) excluded due to heavy
 # native dependencies. Install separately: pip install skill-seekers[video-full]
@@ -329,6 +335,7 @@ skill-seekers-sync-config = "skill_seekers.cli.sync_config:main"
 # Advanced
 skill-seekers-cloud = "skill_seekers.cli.cloud_storage_cli:main"
 skill-seekers-embed = "skill_seekers.embedding.server:main"
+skill-seekers-ui = "skill_seekers.cli.ui_command:main"
 skill-seekers-sync = "skill_seekers.cli.sync_cli:main"
 skill-seekers-benchmark = "skill_seekers.cli.benchmark_cli:main"
 skill-seekers-stream = "skill_seekers.cli.streaming_ingest:main"
@@ -444,6 +451,8 @@ dev = [
     "numpy>=1.24.0",        # Numerical operations
     "starlette>=0.31.0",    # HTTP transport testing
     "httpx>=0.24.0",        # HTTP client for testing
+    "fastapi>=0.109.0",     # Web UI API (skill_seekers.web)
+    "uvicorn>=0.27.0",      # Web UI server
 
     # Cloud storage testing (Kimi's finding #2)
     "boto3>=1.26.0",                    # AWS S3

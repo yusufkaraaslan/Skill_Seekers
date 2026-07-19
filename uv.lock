@@ -5734,7 +5734,7 @@ wheels = [
 
 [[package]]
 name = "skill-seekers"
-version = "3.9.0.dev0"
+version = "3.10.0.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -5903,6 +5903,10 @@ sentence-transformers = [
 together = [
     { name = "openai" },
 ]
+ui = [
+    { name = "fastapi" },
+    { name = "uvicorn" },
+]
 video = [
     { name = "youtube-transcript-api" },
     { name = "yt-dlp" },
@@ -5924,6 +5928,7 @@ dev = [
     { name = "azure-storage-blob" },
     { name = "boto3" },
     { name = "coverage" },
+    { name = "fastapi" },
     { name = "google-cloud-storage" },
     { name = "httpx" },
     { name = "mypy" },
@@ -5935,6 +5940,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
     { name = "starlette" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -5959,6 +5965,7 @@ requires-dist = [
     { name = "ebooklib", marker = "extra == 'epub'", specifier = ">=0.18" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.109.0" },
     { name = "fastapi", marker = "extra == 'embedding'", specifier = ">=0.109.0" },
+    { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.109.0" },
     { name = "faster-whisper", marker = "extra == 'video-full'", specifier = ">=1.0.0" },
     { name = "feedparser", marker = "extra == 'all'", specifier = ">=6.0.0" },
     { name = "feedparser", marker = "extra == 'rss'", specifier = ">=6.0.0" },
@@ -6035,6 +6042,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.38.0" },
     { name = "uvicorn", marker = "extra == 'embedding'", specifier = ">=0.27.0" },
     { name = "uvicorn", marker = "extra == 'mcp'", specifier = ">=0.38.0" },
+    { name = "uvicorn", marker = "extra == 'ui'", specifier = ">=0.27.0" },
     { name = "voyageai", marker = "extra == 'all'", specifier = ">=0.2.0" },
     { name = "voyageai", marker = "extra == 'embedding'", specifier = ">=0.2.0" },
     { name = "weaviate-client", marker = "extra == 'all'", specifier = ">=3.25.0,<4" },
@@ -6047,13 +6055,14 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'video'", specifier = ">=2024.12.0" },
     { name = "yt-dlp", marker = "extra == 'video-full'", specifier = ">=2024.12.0" },
 ]
-provides-extras = ["mcp", "gemini", "openai", "minimax", "kimi", "deepseek", "qwen", "openrouter", "together", "fireworks", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "browser", "embedding", "all"]
+provides-extras = ["mcp", "gemini", "openai", "minimax", "kimi", "deepseek", "qwen", "openrouter", "together", "fireworks", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "browser", "embedding", "ui", "all"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "azure-storage-blob", specifier = ">=12.17.0" },
     { name = "boto3", specifier = ">=1.26.0" },
     { name = "coverage", specifier = ">=7.11.0" },
+    { name = "fastapi", specifier = ">=0.109.0" },
     { name = "google-cloud-storage", specifier = ">=2.10.0" },
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "mypy", specifier = ">=1.19.1" },
@@ -6064,6 +6073,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.14.13" },
     { name = "starlette", specifier = ">=0.31.0" },
+    { name = "uvicorn", specifier = ">=0.27.0" },
 ]
 
 [[package]]

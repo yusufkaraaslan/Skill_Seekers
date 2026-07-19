@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 30% 4%;
+    --foreground: 210 20% 92%;
+    --card: 222 26% 6.5%;
+    --card-foreground: 210 20% 92%;
+    --popover: 222 28% 7%;
+    --popover-foreground: 210 20% 92%;
+    --primary: 187 92% 50%;
+    --primary-foreground: 222 40% 6%;
+    --secondary: 220 18% 12%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 220 16% 11%;
+    --muted-foreground: 217 12% 52%;
+    --accent: 220 18% 14%;
+    --accent-foreground: 187 92% 55%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 16% 15%;
+    --input: 220 16% 16%;
+    --ring: 187 92% 50%;
+    --radius: 0.5rem;
+    --sidebar-background: 222 30% 5%;
+    --sidebar-foreground: 217 12% 60%;
+    --sidebar-primary: 187 92% 50%;
+    --sidebar-primary-foreground: 222 40% 6%;
+    --sidebar-accent: 220 18% 11%;
+    --sidebar-accent-foreground: 187 92% 55%;
+    --sidebar-border: 220 16% 13%;
+    --sidebar-ring: 187 92% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04';
+  }
+
+  ::selection {
+    background: hsl(187 92% 50% / 0.25);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(220 16% 20%);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(187 60% 35%);
+  }
+}
+
+@layer utilities {
+  .font-mono-hud {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* HUD panel with corner ticks */
+  .hud-panel {
+    position: relative;
+    background: linear-gradient(180deg, hsl(222 26% 7% / 0.9), hsl(222 28% 5.5% / 0.95));
+    border: 1px solid hsl(220 16% 15%);
+  }
+  .hud-corners::before,
+  .hud-corners::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+  }
+  .hud-corners::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid hsl(187 92% 50% / 0.7);
+    border-left: 1px solid hsl(187 92% 50% / 0.7);
+  }
+  .hud-corners::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid hsl(187 92% 50% / 0.7);
+    border-right: 1px solid hsl(187 92% 50% / 0.7);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 12px hsl(187 92% 50% / 0.45);
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(220 16% 12% / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(220 16% 12% / 0.5) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .scanline::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 3px,
+      hsl(187 92% 50% / 0.012) 3px,
+      hsl(187 92% 50% / 0.012) 4px
+    );
+  }
+
+  @keyframes radar-sweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+  }
+  .animate-radar {
+    animation: radar-sweep 4s linear infinite;
+    transform-origin: center;
+  }
+
+  @keyframes blip-pulse {
+    0%, 100% { opacity: 0.35; r: 3; }
+    50% { opacity: 1; }
+  }
+  .animate-blip {
+    animation: blip-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scan-bar {
+    0% { top: 0%; opacity: 0; }
+    8% { opacity: 1; }
+    92% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+  .animate-scan-bar {
+    animation: scan-bar 2.4s ease-in-out infinite;
+  }
+
+  @keyframes dash-flow {
+    to { stroke-dashoffset: -20; }
+  }
+  .animate-dash {
+    animation: dash-flow 1s linear infinite;
+  }
+
+  @keyframes flicker-in {
+    0% { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-flicker {
+    animation: flicker-in 0.35s ease-out both;
+  }
+
+  .status-dot {
+    box-shadow: 0 0 6px currentColor;
+  }
+}
