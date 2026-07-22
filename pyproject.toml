@@ -46,6 +46,7 @@ classifiers = [
 dependencies = [
     "requests>=2.32.5",
     "beautifulsoup4>=4.14.2",
+    "html5lib>=1.1", # Lenient HTML parser fallback for broken markup (#96)
     "PyGithub>=2.5.0",
     "GitPython>=3.1.40",
     "httpx>=0.28.1", # Required for async scraping (core feature)

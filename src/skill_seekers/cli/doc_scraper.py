@@ -25,7 +25,6 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 import requests
-from bs4 import BeautifulSoup
 
 from skill_seekers.cli.config_fetcher import (
     get_last_searched_paths,
@@ -43,6 +42,7 @@ from skill_seekers.cli.constants import (
     MIN_CATEGORIZATION_SCORE,
 )
 from skill_seekers.cli.defaults import DEFAULTS
+from skill_seekers.cli.html_parsing import parse_html
 from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
@@ -141,7 +141,7 @@ def infer_description_from_docs(
     # If we have first page content, try to extract description
     if first_page_content:
         try:
-            soup = BeautifulSoup(first_page_content, "html.parser")
+            soup = parse_html(first_page_content, context=base_url)
 
             # Strategy 1: Try meta description tag
             meta_desc = soup.find("meta", {"name": "description"})
@@ -742,7 +742,7 @@ class DocToSkillConverter(SkillConverter):
             "links": [],
         }
 
-        soup = BeautifulSoup(html_content, "html.parser")
+        soup = parse_html(html_content, context=url)
 
         # Try to extract title
         title_elem = soup.select_one("title")
@@ -1021,7 +1021,7 @@ class DocToSkillConverter(SkillConverter):
             if self.browser_mode and not self._has_md_extension(url):
                 # Use Playwright headless browser for JavaScript rendering
                 html = self._render_with_browser(url)
-                soup = BeautifulSoup(html, "html.parser")
+                soup = parse_html(html, context=url)
                 page = self.extract_content(soup, url)
             else:
                 headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
@@ -1032,7 +1032,7 @@ class DocToSkillConverter(SkillConverter):
                 if self._has_md_extension(url):
                     page = self._extract_markdown_content(response.text, url)
                 else:
-                    soup = BeautifulSoup(response.content, "html.parser")
+                    soup = parse_html(response.content, context=url)
                     page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required for workers > 1)
@@ -1088,7 +1088,7 @@ class DocToSkillConverter(SkillConverter):
                     # Use Playwright in executor (sync API in async context)
                     loop = asyncio.get_event_loop()
                     html = await loop.run_in_executor(None, self._render_with_browser, url)
-                    soup = BeautifulSoup(html, "html.parser")
+                    soup = parse_html(html, context=url)
                     page = self.extract_content(soup, url)
                 else:
                     # Async HTTP request
@@ -1101,7 +1101,7 @@ class DocToSkillConverter(SkillConverter):
                         page = self._extract_markdown_content(response.text, url)
                     else:
                         # BeautifulSoup parsing (still synchronous, but fast)
-                        soup = BeautifulSoup(response.content, "html.parser")
+                        soup = parse_html(response.content, context=url)
                         page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
@@ -1468,7 +1468,7 @@ class DocToSkillConverter(SkillConverter):
             discovery_renderer.close()
 
             # Parse rendered DOM for all links
-            soup = BeautifulSoup(html, "html.parser")
+            soup = parse_html(html, context=self.base_url)
             discovered = []
             seen = set()
 
@@ -1573,7 +1573,7 @@ class DocToSkillConverter(SkillConverter):
                     try:
                         headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper - Dry Run)"}
                         response = requests.get(url, headers=headers, timeout=10)
-                        soup = BeautifulSoup(response.content, "html.parser")
+                        soup = parse_html(response.content, context=url)
 
                         # Discover links from full page (not just main content)
                         # to match real scrape path behaviour in extract_content()
@@ -1773,7 +1773,7 @@ class DocToSkillConverter(SkillConverter):
                                     },
                                     timeout=10,
                                 )
-                                soup = BeautifulSoup(response.content, "html.parser")
+                                soup = parse_html(response.content, context=url)
                                 for link in soup.find_all("a", href=True):
                                     href = urljoin(url, str(link.get("href") or ""))
                                     href = href.split("#")[0]
