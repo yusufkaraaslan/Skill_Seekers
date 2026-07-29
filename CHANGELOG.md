@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.9.0.dev0_
+## [3.9.0] - 2026-07-29
 
 ### Added
+- **HTML parser fallback for broken markup** (#96, task F1.4) — new `parse_html()` helper (`cli/html_parsing.py`) keeps `html.parser` as the primary parser (well-formed pages stay byte-identical) but retries with `lxml` (if installed) then `html5lib` when parsing raises or yields a tag-free tree for tag-bearing markup, so severely malformed pages no longer scrape as empty. Wired into all web-scraper parse sites (`doc_scraper.py`) and local HTML file parsing (`html_scraper.py`); `html5lib` added as a core dependency so the fallback always exists.
 - **Doc scraper retries transient network failures** (#97) — `scrape_page`/`scrape_page_async` now wrap fetches in `retry_with_backoff`, so a connection blip or 5xx no longer silently drops the page and ships an incomplete skill. Only transient faults retry (connect/timeout errors, 5xx); 4xx is a definitive answer and returns un-retried. Attempts configurable via the new `max_retries` config option (default 3; 1 disables retrying).
 - **MCP `fetch_config` retries transient network failures** (#92) — the registry list/detail/download GETs go through `_get_with_retry` (3 attempts, exponential backoff); 4xx like "config not found" still returns immediately.
 - **Whisper transcription fallback (Tier 2) implemented** (#420) — `transcribe_with_whisper()` was a placeholder that always raised, so local videos without subtitle files produced no transcript despite the documented 3-tier fallback. Now implemented with faster-whisper (device auto, `--whisper-model` size, language hint, per-segment confidence), and `get_transcript()` logs the actual transcription error instead of swallowing it.

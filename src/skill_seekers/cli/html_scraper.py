@@ -26,6 +26,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, Comment, Tag
 
 from .document_skill_builder import DocumentSkillBuilder
+from skill_seekers.cli.html_parsing import parse_html
 from skill_seekers.cli.scraper_utils import extract_table_from_html as _extract_table_from_html
 from skill_seekers.cli.scraper_utils import parse_leading_int as _parse_leading_int
 from skill_seekers.cli.scraper_utils import score_code_quality as _score_code_quality
@@ -172,7 +173,7 @@ class HtmlToSkillConverter(DocumentSkillBuilder):
 
         Workflow:
         1. Collect HTML files from path (single file or directory)
-        2. For each file: parse with BeautifulSoup (html.parser)
+        2. For each file: parse via parse_html (html.parser with lenient fallback, #96)
         3. Extract document metadata (title, meta tags)
         4. Extract main content using common selectors (article, main, etc.)
         5. Split content by h1/h2 heading boundaries into sections
@@ -209,7 +210,7 @@ class HtmlToSkillConverter(DocumentSkillBuilder):
                 logger.warning("Could not read %s: %s", file_path, e)
                 continue
 
-            soup = BeautifulSoup(raw_html, "html.parser")
+            soup = parse_html(raw_html, context=str(file_path))
 
             # Extract metadata from first file (or merge)
             file_meta = self._extract_metadata(soup, file_path)
