@@ -730,6 +730,108 @@ function test() {
         self.assertGreaterEqual(len(inline_comments), 2)
         self.assertGreaterEqual(len(block_comments), 2)
 
+    def test_javascript_comments_ignore_markers_inside_strings(self):
+        """Comment markers inside string literals are not comments."""
+        code = """
+const url = "https://example.com/path";
+const block = "/* not a block comment */";
+const slash = '// not an inline comment';
+const template = `https://example.com/${value}/* not a block either */`;
+
+/* Real block */
+const value = 1;
+// Real inline
+"""
+        result = self.analyzer.analyze_file("test.js", code, "JavaScript")
+
+        comment_texts = [c["text"] for c in result["comments"]]
+        self.assertEqual(comment_texts, ["Real inline", "Real block"])
+
+    def test_javascript_comments_ignore_markers_inside_comments(self):
+        """Comment markers inside real comments are not counted twice."""
+        code = """
+/* Block mentions // not an inline comment */
+const value = 1;
+// Inline mentions /* not a block comment */
+"""
+        result = self.analyzer.analyze_file("test.js", code, "JavaScript")
+
+        comment_texts = [c["text"] for c in result["comments"]]
+        self.assertEqual(
+            comment_texts,
+            [
+                "Inline mentions /* not a block comment */",
+                "Block mentions // not an inline comment",
+            ],
+        )
+
+    def test_java_comments_ignore_markers_inside_strings(self):
+        """Java comment extraction ignores string literals but keeps JavaDoc."""
+        code = """
+public class Demo {
+    String url = "https://example.com/path";
+    String block = "/* not a block comment */";
+
+    // Real inline
+    /** Real JavaDoc */
+    /* Real block */
+    void run() {}
+}
+"""
+        result = self.analyzer.analyze_file("Demo.java", code, "Java")
+
+        comments = [(c["text"], c["type"]) for c in result["comments"]]
+        self.assertEqual(
+            comments,
+            [
+                ("Real inline", "inline"),
+                ("Real JavaDoc", "doc"),
+                ("Real block", "block"),
+            ],
+        )
+
+    def test_go_raw_string_backslash_does_not_hide_following_comment(self):
+        """Go raw strings use backticks without backslash escaping."""
+        code = r"""
+package main
+
+func main() {
+    raw := `ends with \`
+    // Real Go comment
+}
+"""
+        result = self.analyzer.analyze_file("main.go", code, "Go")
+
+        comment_texts = [c["text"] for c in result["comments"]]
+        self.assertEqual(comment_texts, ["Real Go comment"])
+
+    def test_cpp_digit_separator_does_not_swallow_comments(self):
+        """A single ' digit separator (C++14, e.g. 1'000) is not a char-literal opener."""
+        code = """
+int main() {
+    int x = 1'000;  // comment one
+    int y = 5;      // comment two
+}
+"""
+        result = self.analyzer.analyze_file("a.cpp", code, "C++")
+
+        comment_texts = [c["text"] for c in result["comments"]]
+        self.assertEqual(comment_texts, ["comment one", "comment two"])
+
+    def test_unterminated_block_comment_emits_no_comment(self):
+        """An unterminated /* matches the prior regex behaviour and yields nothing."""
+        code = "var a = 1;\n/* never closed\nvar b = 2;"
+        result = self.analyzer.analyze_file("x.js", code, "JavaScript")
+
+        self.assertEqual(result["comments"], [])
+
+    def test_empty_block_comment_emits_no_comment(self):
+        """An empty /**/ has no inner text and is not reported (matches prior regex)."""
+        code = "public class Demo {\n    /**/\n    void run() {}\n}\n"
+        result = self.analyzer.analyze_file("Demo.java", code, "Java")
+
+        self.assertEqual(result["comments"], [])
+
     def test_cpp_comment_extraction(self):
         """Test C++ comment extraction (uses same logic as JavaScript)."""
         code = """

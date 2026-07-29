@@ -229,13 +229,13 @@ python -m pip install skill-seekers[all-llms]
 
 ```bash
 # Pull image
-docker pull skillseekers/skill-seekers:latest
+docker pull yusyuss/skill-seekers:latest
 
 # Run
 docker run -it --rm \
   -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
   -v $(pwd)/output:/output \
-  skillseekers/skill-seekers \
+  yusyuss/skill-seekers:latest \
   skill-seekers create https://docs.react.dev/
 ```
 

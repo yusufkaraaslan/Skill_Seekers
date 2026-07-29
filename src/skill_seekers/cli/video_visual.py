@@ -20,6 +20,8 @@ import re
 import tempfile
 from dataclasses import dataclass, field
 
+from skill_seekers.cli.agent_client import API_PROVIDERS, AgentClient
+from skill_seekers.cli.minimax_config import MINIMAX_IMAGE_MODEL
 from skill_seekers.cli.video_models import (
     CodeBlock,
     CodeContext,
@@ -104,16 +106,40 @@ def _detect_gpu() -> bool:
         return False
 
 
+def _cpu_supports_quantized_ops() -> bool:
+    """Check whether the CPU can run PyTorch's quantized ops.
+
+    FBGEMM (torch's x86 quantized backend) requires AVX2. On x86 CPUs
+    without AVX2 (e.g. QEMU's default virtual CPU model), dynamically
+    quantized models crash the whole process with SIGILL, so EasyOCR
+    must fall back to fp32 weights there.
+    """
+    import platform
+
+    if platform.machine().lower() not in ("x86_64", "amd64", "i386", "i686"):
+        return True  # non-x86 (ARM etc.) uses QNNPACK, no AVX2 requirement
+    try:
+        with open("/proc/cpuinfo") as f:
+            return "avx2" in f.read()
+    except OSError:
+        return True  # not Linux or unreadable: assume a modern CPU
+
+
 def _get_ocr_reader():
     """Get or create the EasyOCR reader (lazy singleton)."""
     global _ocr_reader
     if _ocr_reader is None:
         use_gpu = _detect_gpu()
+        quantize = use_gpu or _cpu_supports_quantized_ops()
         logger.info(
             f"Initializing OCR engine ({'GPU' if use_gpu else 'CPU'} mode, "
             "first run may download models)..."
         )
-        _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu)
+        if not quantize:
+            logger.info(
+                "CPU lacks AVX2; disabling EasyOCR quantization (slower, but avoids SIGILL)"
+            )
+        _ocr_reader = easyocr.Reader(["en"], gpu=use_gpu, quantize=quantize)
     return _ocr_reader
 
 
@@ -547,84 +573,119 @@ def _pick_better_ocr_result(result_a: tuple, result_b: tuple) -> tuple:
     return result_a if conf_a >= conf_b else result_b
 
 
-def _ocr_with_claude_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
-    """Use Claude Vision API to extract code from a frame.
+def _vision_ocr_prompt(frame_type: FrameType) -> str:
+    """Build the exact-text OCR prompt for a video frame."""
+    context = "IDE screenshot" if frame_type == FrameType.CODE_EDITOR else "terminal screenshot"
+    return (
+        f"Extract all visible code/text from this {context} exactly as shown. "
+        "Preserve indentation, line breaks, and all characters. "
+        "Return only the raw code text, no explanations."
+    )
 
-    Sends the frame image to Claude Haiku and asks it to extract all
-    visible code/text exactly as shown.
 
-    Returns:
-        (extracted_text, confidence).  Confidence is 0.95 when successful.
-        Returns ("", 0.0) if API key is not set or the call fails.
+def _ocr_with_agent_vision(
+    frame_path: str,
+    frame_type: FrameType,
+    *,
+    api_key: str,
+    provider: str,
+    model: str,
+) -> tuple[str, float]:
+    """Extract frame text through AgentClient's multimodal API path."""
+    try:
+        client = AgentClient(
+            mode="api",
+            api_key=api_key,
+            provider=provider,
+            model=model,
+        )
+        text = client.call_with_image(
+            _vision_ocr_prompt(frame_type),
+            frame_path,
+            max_tokens=4096,
+        )
+        if text and text.strip():
+            return text.strip(), 0.95
+    except Exception:  # noqa: BLE001
+        logger.debug("Vision API call failed, falling back to OCR results")
+    return "", 0.0
+
+
+# Per-provider vision-OCR config: which env vars carry the key and the model
+# override, and the default model. Keyed by AgentClient provider name so the
+# provider string flows straight into AgentClient. Only image-capable providers
+# appear here (Moonshot's default model has no vision).
+_VISION_PROVIDERS: dict[str, dict[str, str]] = {
+    "anthropic": {
+        "key_env": "ANTHROPIC_API_KEY",
+        "model_env": "ANTHROPIC_MODEL",
+        "default_model": "claude-haiku-4-5-20251001",
+    },
+    "openai": {
+        "key_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_MODEL",
+        "default_model": "gpt-4o",
+    },
+    "google": {
+        "key_env": "GOOGLE_API_KEY",
+        "model_env": "GOOGLE_MODEL",
+        "default_model": "gemini-2.0-flash",
+    },
+    "minimax": {
+        "key_env": "MINIMAX_API_KEY",
+        "model_env": "MINIMAX_VISION_MODEL",
+        "default_model": MINIMAX_IMAGE_MODEL,
+    },
+}
+
+# CLI/user-facing aliases → canonical provider name.
+_VISION_PROVIDER_ALIASES = {"claude": "anthropic", "gemini": "google"}
+
+
+def _auto_vision_provider() -> str | None:
+    """First image-capable provider (in registry priority order) with a key set.
+
+    Reuses the AgentClient registry rather than re-implementing key detection so
+    a newly-registered image-capable provider is picked up for free.
     """
-    import base64
+    for meta in API_PROVIDERS:
+        provider = meta["provider"]
+        if not meta.get("supports_images") or provider not in _VISION_PROVIDERS:
+            continue
+        if any(os.environ.get(var, "").strip() for var in meta["env_vars"]):
+            return provider
+    return None
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+
+def _ocr_with_vision(frame_path: str, frame_type: FrameType) -> tuple[str, float]:
+    """Dispatch frame OCR to the selected (or auto-detected) vision provider.
+
+    ``SKILL_SEEKER_VISION_PROVIDER`` selects a provider explicitly (accepting
+    the aliases in ``_VISION_PROVIDER_ALIASES``); "auto" (the default) picks the
+    first image-capable provider with a key set. Returns ("", 0.0) when no
+    provider/key is available or the call fails.
+    """
+    selected = os.environ.get("SKILL_SEEKER_VISION_PROVIDER", "auto").strip().lower()
+    selected = _VISION_PROVIDER_ALIASES.get(selected, selected)
+    if selected == "auto":
+        selected = _auto_vision_provider() or ""
+        if not selected:
+            return "", 0.0
+    spec = _VISION_PROVIDERS.get(selected)
+    if spec is None:
+        logger.warning("Unsupported vision provider %r", selected)
+        return "", 0.0
+    api_key = os.environ.get(spec["key_env"], "").strip()
     if not api_key:
         return "", 0.0
-
-    try:
-        # DOCUMENTED EXCEPTION to the "all AI calls go through AgentClient"
-        # rule (docs/UNIFICATION_PLAN.md Phase 3): this is a multimodal
-        # (image) request and AgentClient only supports text prompts today.
-        # If AgentClient grows multimodal support, route this through it.
-        import anthropic
-
-        # Read image as base64
-        with open(frame_path, "rb") as f:
-            image_data = base64.standard_b64encode(f.read()).decode("utf-8")
-
-        # Determine media type
-        ext = os.path.splitext(frame_path)[1].lower()
-        media_type_map = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".webp": "image/webp",
-        }
-        media_type = media_type_map.get(ext, "image/png")
-
-        context = "IDE screenshot" if frame_type == FrameType.CODE_EDITOR else "terminal screenshot"
-        prompt = (
-            f"Extract all visible code/text from this {context} exactly as shown. "
-            "Preserve indentation, line breaks, and all characters. "
-            "Return only the raw code text, no explanations."
-        )
-
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
-            max_tokens=4096,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_data,
-                            },
-                        },
-                        {
-                            "type": "text",
-                            "text": prompt,
-                        },
-                    ],
-                }
-            ],
-        )
-
-        text = response.content[0].text.strip() if response.content else ""
-        if text:
-            return text, 0.95
-        return "", 0.0
-
-    except Exception:  # noqa: BLE001
-        logger.debug("Claude Vision API call failed, falling back to OCR results")
-        return "", 0.0
+    model = os.environ.get(spec["model_env"], "").strip() or spec["default_model"]
+    return _ocr_with_agent_vision(
+        frame_path,
+        frame_type,
+        api_key=api_key,
+        provider=selected,
+        model=model,
+    )
 
 
 def check_visual_dependencies() -> dict[str, bool]:
@@ -746,8 +807,9 @@ def _classify_region(gray, edges, hsv) -> FrameType:
             edges, 1, np.pi / 180, threshold=80, minLineLength=w // 8, maxLineGap=10
         )
         if lines is not None:
-            for line in lines:
-                x1, y1, x2, y2 = line[0]
+            # HoughLinesP returns shape (N, 1, 4) or (N, 4) depending on the
+            # OpenCV version; reshape handles both.
+            for x1, y1, x2, y2 in lines.reshape(-1, 4):
                 angle = abs(np.degrees(np.arctan2(y2 - y1, x2 - x1)))
                 if angle < 5 or angle > 175:
                     horizontal_lines += 1
@@ -2030,7 +2092,7 @@ def _ocr_single_panel(
         # Vision API fallback for low-confidence panels
         vision_used = False
         if use_vision_api and p_conf < 0.5:
-            v_text, v_conf = _ocr_with_claude_vision(ocr_target, frame_type)
+            v_text, v_conf = _ocr_with_vision(ocr_target, frame_type)
             if v_text and v_conf > p_conf:
                 p_text, p_conf, p_regions = v_text, v_conf, []
                 vision_used = True
@@ -2055,6 +2117,155 @@ def _ocr_single_panel(
     # Stash vision_used flag for the caller to count
     ss._vision_used = vision_used
     return ss
+
+
+def _process_frame(
+    *,
+    frame_path: str,
+    idx: int,
+    ts: float,
+    frame_w: int,
+    frame_h: int,
+    use_vision_api: bool,
+    tracker: TextBlockTracker,
+) -> tuple[KeyFrame, int]:
+    """Classify, OCR, and track a single saved frame.
+
+    Extracted from extract_visual_data's scan loop so the caller can isolate
+    per-frame failures (one bad frame must not abort the whole video).
+
+    Returns:
+        (keyframe, vision_api_calls_used) for this frame.
+    """
+    vision_api_frames = 0
+
+    # Classify using region-based panel detection
+    regions = classify_frame_regions(frame_path)
+    code_panels = _get_code_panels(regions)
+    # Derive frame_type from already-computed regions (avoids loading
+    # the image a second time — classify_frame() would repeat the work).
+    frame_type = _frame_type_from_regions(regions)
+    is_code_frame = frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
+
+    # Per-panel OCR: each code/terminal panel is OCR'd independently
+    # so side-by-side editors produce separate code blocks.
+    sub_sections: list[FrameSubSection] = []
+    ocr_text = ""
+    ocr_regions: list[OCRRegion] = []
+    ocr_confidence = 0.0
+
+    if is_code_frame and code_panels and (HAS_EASYOCR or HAS_PYTESSERACT):
+        full_area = frame_h * frame_w
+
+        if len(code_panels) > 1:
+            import contextvars
+
+            # Parallel OCR — each panel is independent. Propagate
+            # contextvars into worker threads (threads don't inherit them),
+            # so per-call state like the MCP log-capture token survives.
+            _caller_ctx = contextvars.copy_context()
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(2, len(code_panels))
+            ) as pool:
+                futures = {
+                    pool.submit(
+                        _caller_ctx.copy().run,
+                        _ocr_single_panel,
+                        frame_path,
+                        pb,
+                        pi,
+                        frame_type,
+                        full_area,
+                        regions,
+                        use_vision_api,
+                    ): pi
+                    for pi, pb in enumerate(code_panels)
+                }
+                for fut in concurrent.futures.as_completed(futures):
+                    ss = fut.result()
+                    if ss is not None:
+                        if ss._vision_used:
+                            vision_api_frames += 1
+                        sub_sections.append(ss)
+        else:
+            # Single panel — avoid thread overhead
+            ss = _ocr_single_panel(
+                frame_path,
+                code_panels[0],
+                0,
+                frame_type,
+                full_area,
+                regions,
+                use_vision_api,
+            )
+            if ss is not None:
+                if ss._vision_used:
+                    vision_api_frames += 1
+                sub_sections.append(ss)
+
+        # Track each sub-section independently
+        for ss in sub_sections:
+            tracker.update(
+                idx,
+                ts,
+                ss.ocr_text,
+                ss.ocr_confidence,
+                ss.frame_type,
+                ocr_regions=ss.ocr_regions,
+                panel_bbox=ss.bbox,
+            )
+
+        # Set frame-level OCR to best sub-section for backward compat
+        if sub_sections:
+            best_ss = max(sub_sections, key=lambda s: s.ocr_confidence)
+            ocr_text = best_ss.ocr_text
+            ocr_regions = best_ss.ocr_regions
+            ocr_confidence = best_ss.ocr_confidence
+
+    elif is_code_frame and (HAS_EASYOCR or HAS_PYTESSERACT):
+        # No code panels detected but frame is code — OCR whole frame
+        raw_ocr_results, _flat_text = _run_multi_engine_ocr(frame_path, frame_type)
+        if raw_ocr_results:
+            ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
+            ocr_text = _assemble_structured_text(ocr_regions, frame_type)
+            ocr_confidence = (
+                sum(r.confidence for r in ocr_regions) / len(ocr_regions) if ocr_regions else 0.0
+            )
+
+        if use_vision_api and ocr_confidence < 0.5:
+            vision_text, vision_conf = _ocr_with_vision(frame_path, frame_type)
+            if vision_text and vision_conf > ocr_confidence:
+                ocr_text = vision_text
+                ocr_confidence = vision_conf
+                ocr_regions = []
+                vision_api_frames += 1
+
+        tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
+
+    elif HAS_EASYOCR and frame_type not in (FrameType.WEBCAM, FrameType.OTHER):
+        # Standard EasyOCR for slide/diagram frames (skip webcam/other)
+        raw_ocr_results, _flat_text = extract_text_from_frame(frame_path, frame_type)
+        if raw_ocr_results:
+            ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
+            ocr_text = _assemble_structured_text(ocr_regions, frame_type)
+            ocr_confidence = (
+                sum(r.confidence for r in ocr_regions) / len(ocr_regions) if ocr_regions else 0.0
+            )
+
+        tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
+
+    kf = KeyFrame(
+        timestamp=ts,
+        image_path=frame_path,
+        frame_type=frame_type,
+        ocr_text=ocr_text,
+        ocr_regions=ocr_regions,
+        ocr_confidence=ocr_confidence,
+        width=frame_w,
+        height=frame_h,
+        sub_sections=sub_sections,
+    )
+    return kf, vision_api_frames
 
 
 def extract_visual_data(
@@ -2168,145 +2379,32 @@ def extract_visual_data(
         cv2.imwrite(frame_path, frame)
         del frame  # Free the numpy array early — saved to disk
 
-        # Classify using region-based panel detection
-        regions = classify_frame_regions(frame_path)
-        code_panels = _get_code_panels(regions)
-        # Derive frame_type from already-computed regions (avoids loading
-        # the image a second time — classify_frame() would repeat the work).
-        frame_type = _frame_type_from_regions(regions)
-        is_code_frame = frame_type in (FrameType.CODE_EDITOR, FrameType.TERMINAL)
-
-        # Per-panel OCR: each code/terminal panel is OCR'd independently
-        # so side-by-side editors produce separate code blocks.
-        sub_sections: list[FrameSubSection] = []
-        ocr_text = ""
-        ocr_regions: list[OCRRegion] = []
-        ocr_confidence = 0.0
-
-        if is_code_frame and code_panels and (HAS_EASYOCR or HAS_PYTESSERACT):
-            full_area = frame_h * frame_w
-
-            if len(code_panels) > 1:
-                import contextvars
-
-                # Parallel OCR — each panel is independent. Propagate
-                # contextvars into worker threads (threads don't inherit them),
-                # so per-call state like the MCP log-capture token survives.
-                _caller_ctx = contextvars.copy_context()
-                with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=min(2, len(code_panels))
-                ) as pool:
-                    futures = {
-                        pool.submit(
-                            _caller_ctx.copy().run,
-                            _ocr_single_panel,
-                            frame_path,
-                            pb,
-                            pi,
-                            frame_type,
-                            full_area,
-                            regions,
-                            use_vision_api,
-                        ): pi
-                        for pi, pb in enumerate(code_panels)
-                    }
-                    for fut in concurrent.futures.as_completed(futures):
-                        ss = fut.result()
-                        if ss is not None:
-                            if ss._vision_used:
-                                vision_api_frames += 1
-                            sub_sections.append(ss)
-            else:
-                # Single panel — avoid thread overhead
-                ss = _ocr_single_panel(
-                    frame_path,
-                    code_panels[0],
-                    0,
-                    frame_type,
-                    full_area,
-                    regions,
-                    use_vision_api,
-                )
-                if ss is not None:
-                    if ss._vision_used:
-                        vision_api_frames += 1
-                    sub_sections.append(ss)
-
-            # Track each sub-section independently
-            for ss in sub_sections:
-                tracker.update(
-                    idx,
-                    ts,
-                    ss.ocr_text,
-                    ss.ocr_confidence,
-                    ss.frame_type,
-                    ocr_regions=ss.ocr_regions,
-                    panel_bbox=ss.bbox,
-                )
-
-            # Set frame-level OCR to best sub-section for backward compat
-            if sub_sections:
-                best_ss = max(sub_sections, key=lambda s: s.ocr_confidence)
-                ocr_text = best_ss.ocr_text
-                ocr_regions = best_ss.ocr_regions
-                ocr_confidence = best_ss.ocr_confidence
-
-        elif is_code_frame and (HAS_EASYOCR or HAS_PYTESSERACT):
-            # No code panels detected but frame is code — OCR whole frame
-            raw_ocr_results, _flat_text = _run_multi_engine_ocr(frame_path, frame_type)
-            if raw_ocr_results:
-                ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
-                ocr_text = _assemble_structured_text(ocr_regions, frame_type)
-                ocr_confidence = (
-                    sum(r.confidence for r in ocr_regions) / len(ocr_regions)
-                    if ocr_regions
-                    else 0.0
-                )
-
-            if use_vision_api and ocr_confidence < 0.5:
-                vision_text, vision_conf = _ocr_with_claude_vision(frame_path, frame_type)
-                if vision_text and vision_conf > ocr_confidence:
-                    ocr_text = vision_text
-                    ocr_confidence = vision_conf
-                    ocr_regions = []
-                    vision_api_frames += 1
-
-            tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
-
-        elif HAS_EASYOCR and frame_type not in (FrameType.WEBCAM, FrameType.OTHER):
-            # Standard EasyOCR for slide/diagram frames (skip webcam/other)
-            raw_ocr_results, _flat_text = extract_text_from_frame(frame_path, frame_type)
-            if raw_ocr_results:
-                ocr_regions = _cluster_ocr_into_lines(raw_ocr_results, frame_type)
-                ocr_text = _assemble_structured_text(ocr_regions, frame_type)
-                ocr_confidence = (
-                    sum(r.confidence for r in ocr_regions) / len(ocr_regions)
-                    if ocr_regions
-                    else 0.0
-                )
-
-            tracker.update(idx, ts, ocr_text, ocr_confidence, frame_type, ocr_regions=ocr_regions)
-
-        kf = KeyFrame(
-            timestamp=ts,
-            image_path=frame_path,
-            frame_type=frame_type,
-            ocr_text=ocr_text,
-            ocr_regions=ocr_regions,
-            ocr_confidence=ocr_confidence,
-            width=frame_w,
-            height=frame_h,
-            sub_sections=sub_sections,
-        )
+        # Isolate per-frame failures: one bad frame (classifier/OCR crash on
+        # an odd image, library edge case, ...) must not abort the whole
+        # video — warn, skip the frame, and keep scanning (see #419).
+        try:
+            kf, vision_used = _process_frame(
+                frame_path=frame_path,
+                idx=idx,
+                ts=ts,
+                frame_w=frame_w,
+                frame_h=frame_h,
+                use_vision_api=use_vision_api,
+                tracker=tracker,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Frame at {ts:.1f}s failed visual processing ({e}); skipping frame")
+            continue
+        vision_api_frames += vision_used
         keyframes.append(kf)
 
         logger.debug(
-            f"  Frame {idx}: {frame_type.value} at {ts:.1f}s"
+            f"  Frame {idx}: {kf.frame_type.value} at {ts:.1f}s"
             + (
-                f" | OCR: {ocr_text[:60]}..."
-                if len(ocr_text) > 60
-                else f" | OCR: {ocr_text}"
-                if ocr_text
+                f" | OCR: {kf.ocr_text[:60]}..."
+                if len(kf.ocr_text) > 60
+                else f" | OCR: {kf.ocr_text}"
+                if kf.ocr_text
                 else ""
             )
         )

@@ -21,10 +21,13 @@ class TestCliPackage:
 
     def test_cli_has_version(self):
         """Test that skill_seekers.cli package has __version__."""
+        import skill_seekers
         import skill_seekers.cli
 
         assert hasattr(skill_seekers.cli, "__version__")
-        assert skill_seekers.cli.__version__ == "3.8.0"
+        # Track the single source of truth (skill_seekers.__version__ <- pyproject)
+        # rather than a hardcoded literal that breaks on every release bump.
+        assert skill_seekers.cli.__version__ == skill_seekers.__version__
 
     def test_cli_has_all(self):
         """Test that skill_seekers.cli package has __all__ export list."""
@@ -85,10 +88,11 @@ class TestMcpPackage:
 
     def test_mcp_has_version(self):
         """Test that skill_seekers.mcp package has __version__."""
+        import skill_seekers
         import skill_seekers.mcp
 
         assert hasattr(skill_seekers.mcp, "__version__")
-        assert skill_seekers.mcp.__version__ == "3.8.0"
+        assert skill_seekers.mcp.__version__ == skill_seekers.__version__
 
     def test_mcp_has_all(self):
         """Test that skill_seekers.mcp package has __all__ export list."""
@@ -105,10 +109,11 @@ class TestMcpPackage:
 
     def test_mcp_tools_has_version(self):
         """Test that skill_seekers.mcp.tools has __version__."""
+        import skill_seekers
         import skill_seekers.mcp.tools
 
         assert hasattr(skill_seekers.mcp.tools, "__version__")
-        assert skill_seekers.mcp.tools.__version__ == "3.8.0"
+        assert skill_seekers.mcp.tools.__version__ == skill_seekers.__version__
 
 
 class TestPackageStructure:
@@ -209,10 +214,17 @@ class TestRootPackage:
 
     def test_root_has_version(self):
         """Test that skill_seekers root package has __version__."""
+        import re
+
         import skill_seekers
 
         assert hasattr(skill_seekers, "__version__")
-        assert skill_seekers.__version__ == "3.8.0"
+        # Source of truth is pyproject.toml; verify the package re-exports it
+        # exactly, so a release bump only needs to touch pyproject.toml.
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        match = re.search(r'^version = "([^"]+)"', pyproject.read_text(), re.MULTILINE)
+        assert match is not None, "version not found in pyproject.toml"
+        assert skill_seekers.__version__ == match.group(1)
 
     def test_root_has_metadata(self):
         """Test that skill_seekers root package has metadata."""

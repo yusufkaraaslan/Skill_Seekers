@@ -25,7 +25,6 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 import requests
-from bs4 import BeautifulSoup
 
 from skill_seekers.cli.config_fetcher import (
     get_last_searched_paths,
@@ -43,12 +42,18 @@ from skill_seekers.cli.constants import (
     MIN_CATEGORIZATION_SCORE,
 )
 from skill_seekers.cli.defaults import DEFAULTS
+from skill_seekers.cli.html_parsing import parse_html
 from skill_seekers.cli.language_detector import LanguageDetector
 from skill_seekers.cli.llms_txt_detector import LlmsTxtDetector
 from skill_seekers.cli.llms_txt_downloader import LlmsTxtDownloader
 from skill_seekers.cli.llms_txt_parser import LlmsTxtParser
 from skill_seekers.cli.skill_converter import SkillConverter
-from skill_seekers.cli.utils import sanitize_url, setup_logging
+from skill_seekers.cli.utils import (
+    retry_with_backoff,
+    retry_with_backoff_async,
+    sanitize_url,
+    setup_logging,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -136,7 +141,7 @@ def infer_description_from_docs(
     # If we have first page content, try to extract description
     if first_page_content:
         try:
-            soup = BeautifulSoup(first_page_content, "html.parser")
+            soup = parse_html(first_page_content, context=base_url)
 
             # Strategy 1: Try meta description tag
             meta_desc = soup.find("meta", {"name": "description"})
@@ -281,6 +286,10 @@ class DocToSkillConverter(SkillConverter):
         # Parallel scraping config
         self.workers = normalized_config.get("workers") or DEFAULTS["scraping"]["workers"]
         self.async_mode = normalized_config.get("async_mode", DEFAULT_ASYNC_MODE)
+        # Total fetch attempts per page (#97). Transient network failures
+        # (connection/timeout/5xx) previously dropped a page on the first blip;
+        # now they retry with exponential backoff. 1 disables retrying.
+        self.max_retries = max(1, int(normalized_config.get("max_retries", 3)))
 
         # State
         self.visited_urls: set[str] = set()
@@ -733,7 +742,7 @@ class DocToSkillConverter(SkillConverter):
             "links": [],
         }
 
-        soup = BeautifulSoup(html_content, "html.parser")
+        soup = parse_html(html_content, context=url)
 
         # Try to extract title
         title_elem = soup.select_one("title")
@@ -957,6 +966,40 @@ class DocToSkillConverter(SkillConverter):
             )
         return self._browser_renderer.render_page(url)
 
+    def _get_with_retry(self, url: str, headers: dict, timeout: float) -> requests.Response:
+        """GET a URL, retrying transient network failures with backoff (#97).
+
+        Retries connection/timeout errors and 5xx responses (self.max_retries
+        attempts total). A 4xx is a definitive answer (missing/forbidden page),
+        so it is returned un-retried and surfaces via the caller's
+        raise_for_status().
+        """
+
+        def _attempt() -> requests.Response:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            if resp.status_code >= 500:
+                resp.raise_for_status()  # trigger a retry on server errors
+            return resp
+
+        return retry_with_backoff(
+            _attempt, max_attempts=self.max_retries, operation_name=f"fetch {url}"
+        )
+
+    async def _aget_with_retry(
+        self, client: httpx.AsyncClient, url: str, headers: dict, timeout: float
+    ) -> httpx.Response:
+        """Async counterpart of _get_with_retry (#97)."""
+
+        async def _attempt() -> httpx.Response:
+            resp = await client.get(url, headers=headers, timeout=timeout)
+            if resp.status_code >= 500:
+                resp.raise_for_status()
+            return resp
+
+        return await retry_with_backoff_async(
+            _attempt, max_attempts=self.max_retries, operation_name=f"fetch {url}"
+        )
+
     def scrape_page(self, url: str) -> None:
         """Scrape a single page with thread-safe operations.
 
@@ -978,18 +1021,18 @@ class DocToSkillConverter(SkillConverter):
             if self.browser_mode and not self._has_md_extension(url):
                 # Use Playwright headless browser for JavaScript rendering
                 html = self._render_with_browser(url)
-                soup = BeautifulSoup(html, "html.parser")
+                soup = parse_html(html, context=url)
                 page = self.extract_content(soup, url)
             else:
                 headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                response = requests.get(url, headers=headers, timeout=30)
+                response = self._get_with_retry(url, headers, 30)
                 response.raise_for_status()
 
                 # Check if this is a Markdown file
                 if self._has_md_extension(url):
                     page = self._extract_markdown_content(response.text, url)
                 else:
-                    soup = BeautifulSoup(response.content, "html.parser")
+                    soup = parse_html(response.content, context=url)
                     page = self.extract_content(soup, url)
 
             # Thread-safe operations (lock required for workers > 1)
@@ -1045,12 +1088,12 @@ class DocToSkillConverter(SkillConverter):
                     # Use Playwright in executor (sync API in async context)
                     loop = asyncio.get_event_loop()
                     html = await loop.run_in_executor(None, self._render_with_browser, url)
-                    soup = BeautifulSoup(html, "html.parser")
+                    soup = parse_html(html, context=url)
                     page = self.extract_content(soup, url)
                 else:
                     # Async HTTP request
                     headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper)"}
-                    response = await client.get(url, headers=headers, timeout=30.0)
+                    response = await self._aget_with_retry(client, url, headers, 30.0)
                     response.raise_for_status()
 
                     # Check if this is a Markdown file
@@ -1058,7 +1101,7 @@ class DocToSkillConverter(SkillConverter):
                         page = self._extract_markdown_content(response.text, url)
                     else:
                         # BeautifulSoup parsing (still synchronous, but fast)
-                        soup = BeautifulSoup(response.content, "html.parser")
+                        soup = parse_html(response.content, context=url)
                         page = self.extract_content(soup, url)
 
                 # Async-safe operations (no lock needed - single event loop)
@@ -1425,7 +1468,7 @@ class DocToSkillConverter(SkillConverter):
             discovery_renderer.close()
 
             # Parse rendered DOM for all links
-            soup = BeautifulSoup(html, "html.parser")
+            soup = parse_html(html, context=self.base_url)
             discovered = []
             seen = set()
 
@@ -1530,7 +1573,7 @@ class DocToSkillConverter(SkillConverter):
                     try:
                         headers = {"User-Agent": "Mozilla/5.0 (Documentation Scraper - Dry Run)"}
                         response = requests.get(url, headers=headers, timeout=10)
-                        soup = BeautifulSoup(response.content, "html.parser")
+                        soup = parse_html(response.content, context=url)
 
                         # Discover links from full page (not just main content)
                         # to match real scrape path behaviour in extract_content()
@@ -1730,7 +1773,7 @@ class DocToSkillConverter(SkillConverter):
                                     },
                                     timeout=10,
                                 )
-                                soup = BeautifulSoup(response.content, "html.parser")
+                                soup = parse_html(response.content, context=url)
                                 for link in soup.find_all("a", href=True):
                                     href = urljoin(url, str(link.get("href") or ""))
                                     href = href.split("#")[0]

@@ -75,7 +75,7 @@ helm install skillseekers skillseekers/skillseekers \
   --create-namespace
 
 # Or install from local chart
-helm install skillseekers ./helm/skillseekers \
+helm install skillseekers ./helm/skill-seekers \
   --namespace skillseekers \
   --create-namespace
 ```
@@ -121,7 +121,7 @@ autoscaling:
 EOF
 
 # Install with custom values
-helm install skillseekers ./helm/skillseekers \
+helm install skillseekers ./helm/skill-seekers \
   --namespace skillseekers \
   --create-namespace \
   --values values-prod.yaml
@@ -137,7 +137,7 @@ helm list -n skillseekers
 helm status skillseekers -n skillseekers
 
 # Upgrade release
-helm upgrade skillseekers ./helm/skillseekers \
+helm upgrade skillseekers ./helm/skill-seekers \
   --namespace skillseekers \
   --values values-prod.yaml
 
@@ -219,7 +219,7 @@ spec:
     spec:
       containers:
       - name: mcp-server
-        image: skillseekers:2.9.0
+        image: yusyuss/skill-seekers-mcp:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8765
@@ -374,17 +374,17 @@ env:
 
 ```bash
 # Development
-helm install skillseekers-dev ./helm/skillseekers \
+helm install skillseekers-dev ./helm/skill-seekers \
   --namespace skillseekers-dev \
   --values values-dev.yaml
 
 # Staging
-helm install skillseekers-staging ./helm/skillseekers \
+helm install skillseekers-staging ./helm/skill-seekers \
   --namespace skillseekers-staging \
   --values values-staging.yaml
 
 # Production
-helm install skillseekers-prod ./helm/skillseekers \
+helm install skillseekers-prod ./helm/skill-seekers \
   --namespace skillseekers-prod \
   --values values-prod.yaml
 ```

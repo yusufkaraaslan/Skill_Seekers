@@ -27,7 +27,7 @@ FROM python:3.12-slim
 
 LABEL maintainer="Skill Seekers <noreply@skillseekers.dev>"
 LABEL description="Skill Seekers - Convert documentation to AI skills"
-LABEL version="2.9.0"
+LABEL version="3.9.0.dev0"
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \

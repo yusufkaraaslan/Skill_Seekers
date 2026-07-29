@@ -13,6 +13,22 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Fenced code blocks (``` or ~~~) and inline code spans. Stripped before
+# completeness pattern matching so code examples don't trigger prose heuristics.
+_FENCED_CODE_RE = re.compile(r"(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$")
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+
+
+def _strip_code(text: str) -> str:
+    """Return ``text`` with fenced code blocks and inline code removed.
+
+    Completeness heuristics (workflow steps, prerequisites, error handling) are
+    about the skill's prose guidance, not its code samples — a ``# Step 1:``
+    comment inside a ```python block is not a workflow step (#229).
+    """
+    without_fenced = _FENCED_CODE_RE.sub("", text)
+    return _INLINE_CODE_RE.sub("", without_fenced)
+
 
 @dataclass
 class QualityIssue:
@@ -326,11 +342,16 @@ class SkillQualityChecker:
 
         Validates that skills include verification/prerequisites sections,
         error handling guidance, and clear workflow steps.
+
+        Pattern matching runs against prose only (fenced code blocks and inline
+        code are stripped first) so a ``# Step 1:`` comment inside a code
+        example is not mistaken for real workflow guidance (#229).
         """
         if not self.skill_md_path.exists():
             return
 
-        content = self.skill_md_path.read_text(encoding="utf-8")
+        raw = self.skill_md_path.read_text(encoding="utf-8")
+        content = _strip_code(raw)
 
         # Check for grounding/verification section (prerequisites)
         grounding_patterns = [

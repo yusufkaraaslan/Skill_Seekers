@@ -466,13 +466,52 @@ class TestVideoTranscript(unittest.TestCase):
         finally:
             os.unlink(tmp_name)
 
-    def test_whisper_stub_raises(self):
+    def test_whisper_missing_raises(self):
         from skill_seekers.cli.video_transcript import transcribe_with_whisper, HAS_WHISPER
 
         if not HAS_WHISPER:
             with self.assertRaises(RuntimeError) as ctx:
                 transcribe_with_whisper("test.wav")
             self.assertIn("faster-whisper", str(ctx.exception))
+
+    def test_whisper_transcription(self):
+        """transcribe_with_whisper converts faster-whisper segments to TranscriptSegments."""
+        import sys
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli.video_models import TranscriptSource
+
+        fake_seg = MagicMock()
+        fake_seg.text = " Hello world. "
+        fake_seg.start = 0.0
+        fake_seg.end = 2.5
+        fake_seg.avg_logprob = -0.1
+        fake_empty = MagicMock()
+        fake_empty.text = "   "
+        fake_info = MagicMock()
+        fake_info.language = "en"
+        fake_info.language_probability = 0.99
+
+        fake_model = MagicMock()
+        fake_model.transcribe.return_value = ([fake_seg, fake_empty], fake_info)
+        fake_module = MagicMock()
+        fake_module.WhisperModel.return_value = fake_model
+
+        with (
+            patch.dict(sys.modules, {"faster_whisper": fake_module}),
+            patch("skill_seekers.cli.video_transcript.HAS_WHISPER", True),
+        ):
+            from skill_seekers.cli.video_transcript import transcribe_with_whisper
+
+            segments = transcribe_with_whisper("video.mp4", model="base", language="en")
+
+        self.assertEqual(len(segments), 1)  # empty segment filtered out
+        self.assertEqual(segments[0].text, "Hello world.")
+        self.assertEqual(segments[0].start, 0.0)
+        self.assertEqual(segments[0].end, 2.5)
+        self.assertEqual(segments[0].source, TranscriptSource.WHISPER)
+        self.assertGreater(segments[0].confidence, 0.8)
+        fake_model.transcribe.assert_called_once_with("video.mp4", language="en")
 
     def test_get_transcript_fallback_to_subtitle(self):
         """Test that get_transcript falls back to subtitle files."""
@@ -2385,6 +2424,148 @@ class TestDarkThemePreprocessing(unittest.TestCase):
             os.unlink(tmp_path)
 
 
+class TestVisualCpuCompat(unittest.TestCase):
+    """Tests for CPU-environment compatibility (HoughLinesP layouts, AVX2 check)."""
+
+    def _classify_dark_region(self, hough_result):
+        """Run _classify_region on a dark region whose classification depends on
+        the horizontal lines parsed from the (mocked) HoughLinesP result."""
+        import numpy as np
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli import video_visual
+
+        gray = np.full((100, 200), 30, dtype=np.uint8)  # dark: mean 30 < 80
+        # Edge density 0.02 — inside (0.01, 0.05], so the outcome depends on
+        # horizontal_lines >= 3 parsed from the HoughLinesP output.
+        edges = np.zeros((100, 200), dtype=np.uint8)
+        edges[25, :] = 255
+        edges[75, :] = 255
+        hsv = np.zeros((100, 200, 3), dtype=np.uint8)  # saturation 0
+
+        fake_cv2 = MagicMock()
+        fake_cv2.HoughLinesP.return_value = hough_result
+        with patch.object(video_visual, "cv2", fake_cv2):
+            return video_visual._classify_region(gray, edges, hsv)
+
+    def test_classify_region_hough_lines_new_shape(self):
+        """(N, 4) HoughLinesP layout (newer OpenCV builds) parses without crashing."""
+        import numpy as np
+
+        from skill_seekers.cli.video_models import FrameType
+
+        lines = np.array([[0, 10, 199, 10], [0, 20, 199, 20], [0, 30, 199, 30]], dtype=np.int32)
+        self.assertEqual(self._classify_dark_region(lines), FrameType.TERMINAL)
+
+    def test_classify_region_hough_lines_old_shape(self):
+        """(N, 1, 4) HoughLinesP layout (OpenCV 3/4) parses identically."""
+        import numpy as np
+
+        from skill_seekers.cli.video_models import FrameType
+
+        lines = np.array(
+            [[[0, 10, 199, 10]], [[0, 20, 199, 20]], [[0, 30, 199, 30]]], dtype=np.int32
+        )
+        self.assertEqual(self._classify_dark_region(lines), FrameType.TERMINAL)
+
+    def test_classify_region_no_lines_falls_through(self):
+        """Without horizontal lines the same region classifies as OTHER — proving
+        the parsed lines actually drive the TERMINAL classification above."""
+        from skill_seekers.cli.video_models import FrameType
+
+        self.assertEqual(self._classify_dark_region(None), FrameType.OTHER)
+
+    def test_cpu_quantization_non_x86_supported(self):
+        """ARM etc. use QNNPACK — quantization always considered supported."""
+        from unittest.mock import patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        with patch("platform.machine", return_value="aarch64"):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_x86_with_avx2(self):
+        from unittest.mock import mock_open, patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        cpuinfo = "flags\t\t: fpu vme sse sse2 avx avx2 fma\n"
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", mock_open(read_data=cpuinfo)),
+        ):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_x86_without_avx2(self):
+        """QEMU-style x86 CPU without AVX2 must disable quantization (SIGILL fix)."""
+        from unittest.mock import mock_open, patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        cpuinfo = "flags\t\t: fpu vme sse sse2 avx\n"
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", mock_open(read_data=cpuinfo)),
+        ):
+            self.assertFalse(_cpu_supports_quantized_ops())
+
+    def test_cpu_quantization_unreadable_cpuinfo_assumes_modern(self):
+        """Non-Linux / unreadable /proc/cpuinfo keeps current behavior."""
+        from unittest.mock import patch
+
+        from skill_seekers.cli.video_visual import _cpu_supports_quantized_ops
+
+        with (
+            patch("platform.machine", return_value="x86_64"),
+            patch("builtins.open", side_effect=OSError),
+        ):
+            self.assertTrue(_cpu_supports_quantized_ops())
+
+
+class TestPerFrameErrorIsolation(unittest.TestCase):
+    """One bad frame must not abort the whole video scan (#419 follow-up)."""
+
+    def test_frame_failure_skips_frame_and_continues(self):
+        import numpy as np
+        from unittest.mock import MagicMock, patch
+
+        from skill_seekers.cli import video_visual
+        from skill_seekers.cli.video_models import FrameType, KeyFrame
+
+        frame = np.zeros((10, 10, 3), dtype=np.uint8)
+        fake_cap = MagicMock()
+        fake_cap.isOpened.return_value = True
+        fake_cap.get.return_value = 30.0
+        fake_cap.read.return_value = (True, frame)
+        fake_cv2 = MagicMock()
+        fake_cv2.VideoCapture.return_value = fake_cap
+
+        good_kf = KeyFrame(timestamp=2.0, image_path="frame_001_2s.jpg")
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch.object(video_visual, "HAS_OPENCV", True),
+            patch.object(video_visual, "cv2", fake_cv2),
+            patch.object(video_visual, "_compute_frame_timestamps", return_value=[1.0, 2.0]),
+            patch.object(video_visual, "_frames_are_similar", return_value=False),
+            patch.object(
+                video_visual,
+                "_process_frame",
+                side_effect=[RuntimeError("classifier exploded"), (good_kf, 0)],
+            ),
+            self.assertLogs("skill_seekers.cli.video_visual", level="WARNING") as logs,
+        ):
+            keyframes, code_blocks, timeline = video_visual.extract_visual_data(
+                "video.mp4", [], tmpdir
+            )
+
+        # First frame failed and was skipped; second survived.
+        self.assertEqual(len(keyframes), 1)
+        self.assertEqual(keyframes[0].frame_type, FrameType.OTHER)
+        self.assertEqual(code_blocks, [])
+        self.assertTrue(any("skipping frame" in m for m in logs.output))
+
+
 class TestMultiEngineOCR(unittest.TestCase):
     """Tests for multi-engine OCR ensemble voting."""
 
@@ -2464,16 +2645,15 @@ class TestClaudeVisionOCR(unittest.TestCase):
     """Tests for Claude Vision API OCR fallback."""
 
     def test_vision_ocr_no_api_key(self):
-        """Returns empty when ANTHROPIC_API_KEY is not set."""
+        """Returns empty when no vision provider key is set."""
         from unittest.mock import patch
 
         from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from skill_seekers.cli.video_visual import _ocr_with_vision
 
         with patch.dict(os.environ, {}, clear=True):
-            # Ensure no ANTHROPIC_API_KEY
-            os.environ.pop("ANTHROPIC_API_KEY", None)
-            text, conf = _ocr_with_claude_vision("/fake/path.png", FrameType.CODE_EDITOR)
+            # No provider keys → auto-detect finds nothing.
+            text, conf = _ocr_with_vision("/fake/path.png", FrameType.CODE_EDITOR)
             self.assertEqual(text, "")
             self.assertEqual(conf, 0.0)
 
@@ -2483,7 +2663,7 @@ class TestClaudeVisionOCR(unittest.TestCase):
         from unittest.mock import MagicMock, patch
 
         from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from skill_seekers.cli.video_visual import _ocr_with_vision
 
         # Create a minimal image file
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
@@ -2495,6 +2675,7 @@ class TestClaudeVisionOCR(unittest.TestCase):
             mock_content = MagicMock()
             mock_content.text = "def hello():\n    return 'world'"
             mock_response.content = [mock_content]
+            mock_response.stop_reason = "end_turn"
 
             mock_client = MagicMock()
             mock_client.messages.create.return_value = mock_response
@@ -2503,10 +2684,16 @@ class TestClaudeVisionOCR(unittest.TestCase):
             mock_anthropic.Anthropic.return_value = mock_client
 
             with (
-                patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
+                patch.dict(
+                    os.environ,
+                    {
+                        "ANTHROPIC_API_KEY": "test-key",
+                        "SKILL_SEEKER_VISION_PROVIDER": "anthropic",
+                    },
+                ),
                 patch.dict(sys.modules, {"anthropic": mock_anthropic}),
             ):
-                text, conf = _ocr_with_claude_vision(tmp_path, FrameType.CODE_EDITOR)
+                text, conf = _ocr_with_vision(tmp_path, FrameType.CODE_EDITOR)
 
             self.assertIn("def hello():", text)
             self.assertEqual(conf, 0.95)
@@ -2515,12 +2702,14 @@ class TestClaudeVisionOCR(unittest.TestCase):
 
     def test_vision_fallback_on_low_confidence(self):
         """Vision API is only called when multi-engine conf < 0.5."""
-        from skill_seekers.cli.video_models import FrameType
-        from skill_seekers.cli.video_visual import _ocr_with_claude_vision
+        from unittest.mock import patch
 
-        # Without API key, vision always returns empty — simulating no-fallback
-        os.environ.pop("ANTHROPIC_API_KEY", None)
-        text, conf = _ocr_with_claude_vision("/fake.png", FrameType.CODE_EDITOR)
+        from skill_seekers.cli.video_models import FrameType
+        from skill_seekers.cli.video_visual import _ocr_with_vision
+
+        # Without a provider key, vision always returns empty — simulating no-fallback
+        with patch.dict(os.environ, {"SKILL_SEEKER_VISION_PROVIDER": "anthropic"}, clear=True):
+            text, conf = _ocr_with_vision("/fake.png", FrameType.CODE_EDITOR)
         self.assertEqual(text, "")
         self.assertEqual(conf, 0.0)
 

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Skill Seekers** converts documentation from 18 source types into production-ready formats for 21+ AI platforms (LLM platforms, RAG frameworks, vector databases, AI coding assistants). Published on PyPI as `skill-seekers`.
 
-**Version:** 3.7.0 | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
+**Version:** 3.9.0 (dev; last release 3.8.0) — source of truth is `src/skill_seekers/_version.py` | **Python:** 3.10+ | **Website:** https://skillseekersweb.com/
 
 **Architecture:** See `docs/UML_ARCHITECTURE.md` for UML diagrams and module overview. StarUML project at `docs/UML/skill_seekers.mdj`. Refactor state/history: `docs/UNIFICATION_PLAN.md` (Grand Unification — all 5 phases done; remaining cosmetic items listed there).
 
@@ -59,7 +59,7 @@ Entry point `src/skill_seekers/cli/main.py`. The `create` command is the **prima
 ```
 skill-seekers create <source>     # Auto-detect: URL, owner/repo, ./path, file.pdf, etc.
 skill-seekers scan <dir>          # AI-driven discovery → emits one config per detected framework + <project>-codebase.json
-skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks/langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone/ibm-bob)
+skill-seekers package <dir>       # Package for platform (--target claude/gemini/openai/markdown/minimax/opencode/kimi/deepseek/qwen/openrouter/together/fireworks/atlas/langchain/llama-index/haystack/chroma/faiss/weaviate/qdrant/pinecone/ibm-bob)
 ```
 
 ### Scan command (issue #327)
@@ -164,6 +164,15 @@ Command modules' standalone `main(args=None)` paths build their parser FROM the 
 
 `ExecutionContext.override()` is context-local (a `ContextVar` layered over the unchanged base singleton) — thread/async safe for the MCP server; propagate to worker threads via `copy_context`.
 
+### Standalone subsystems (outside `cli/`)
+
+Four top-level packages sit beside `cli/` and are largely independent of the scrape→build→package flow:
+
+- `embedding/` — FastAPI embedding-generation server (`python -m skill_seekers.embedding.server`) with a caching layer (`cache.py`) and multi-backend generators (OpenAI, sentence-transformers, Anthropic). Feeds the vector-DB adaptors.
+- `sync/` — real-time doc-sync system: `detector.py` (content-hash / last-modified change detection), `monitor.py` (scheduled incremental re-scrapes), `notifier.py` (email/Slack/webhook). Keeps generated skills fresh as upstream docs change.
+- `benchmark/` — performance suite (`runner.py`, `framework.py`) measuring scrape/embedding/storage/e2e timing, memory, and CPU; emits comparison + optimization reports.
+- `workflows/` — bundled default enhancement-workflow presets consumed by the enhancement step.
+
 ### C3.x Codebase Analysis Pipeline
 
 Local codebase analysis features, all opt-out (`--skip-*` flags):
@@ -184,9 +193,9 @@ Local codebase analysis features, all opt-out (`--skip-*` flags):
 
 ### Enhancement (AgentClient is the single AI transport)
 
-Every text-based AI call goes through `AgentClient` (`src/skill_seekers/cli/agent_client.py`): central truncation gate, timeout policy, error classification. `API_PROVIDERS` (provider registry) and `AGENT_PRESETS` (local-agent command templates) live ONLY there. Adaptors declare provider/endpoint/model/prompt and route through `SkillAdaptor._enhance_skill_md_via_client` (atomic save with backup). `video_visual` frame classification is the documented multimodal exception (AgentClient is text-only).
+Every AI call goes through `AgentClient` (`src/skill_seekers/cli/agent_client.py`): central truncation gate, timeout policy, error classification. `API_PROVIDERS` (provider registry) and `AGENT_PRESETS` (local-agent command templates) live ONLY there. Each `API_PROVIDERS` entry declares its wire `protocol` (`anthropic`/`openai`/`google`) and `supports_images` capability — `_call_api` branches on the resolved protocol, NOT the provider name, so an OpenAI/Anthropic-compatible provider needs no new branch. Adaptors declare provider/endpoint/model/prompt and route through `SkillAdaptor._enhance_skill_md_via_client` (atomic save with backup). Multimodal image input goes through `AgentClient.call_with_image()` (used by `video_visual` frame OCR across all image-capable providers); it no longer bypasses AgentClient with a direct SDK call.
 
-- **API mode** (if API key set): Anthropic, Google Gemini, OpenAI, Moonshot/Kimi — detected in registry order; `SKILL_SEEKER_PROVIDER` forces one. Models: `SKILL_SEEKER_MODEL` (global) or `ANTHROPIC_MODEL`/`GOOGLE_MODEL`/`OPENAI_MODEL`/`MOONSHOT_MODEL`; `ANTHROPIC_BASE_URL` for compatible endpoints.
+- **API mode** (if API key set): Anthropic, Google Gemini, OpenAI, Moonshot/Kimi, MiniMax — detected in registry order; `SKILL_SEEKER_PROVIDER` forces one. Models: `SKILL_SEEKER_MODEL` (global) or `ANTHROPIC_MODEL`/`GOOGLE_MODEL`/`OPENAI_MODEL`/`MOONSHOT_MODEL`/`MINIMAX_MODEL`; `ANTHROPIC_BASE_URL` for compatible endpoints. MiniMax adds `MINIMAX_API_REGION` (`global_en`/`cn_zh`) and `MINIMAX_API_PROTOCOL` (`openai`/`anthropic`). Vision OCR provider: `SKILL_SEEKER_VISION_PROVIDER` (`auto` picks the first image-capable provider with a key).
 - **LOCAL mode** (fallback): Claude Code, Kimi Code, Codex, Copilot, OpenCode, custom agents — command built by `build_local_agent_command()`.
 - Control: `--enhance-level 0` (off) / `1` (SKILL.md only) / `2` (default, balanced) / `3` (full)
 - Agent selection: `--agent claude|codex|copilot|opencode|kimi|custom`

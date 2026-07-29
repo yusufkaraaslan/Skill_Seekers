@@ -313,6 +313,11 @@ class UniSkillConfigValidator:
                     f"Must be one of {valid_issue_states}"
                 )
 
+        # Validate issue-metadata opt-in flags if specified (#169)
+        for bool_key in ("include_issue_labels", "include_issue_milestones"):
+            if bool_key in source and not isinstance(source[bool_key], bool):
+                raise ValueError(f"Source {index} (github): '{bool_key}' must be a boolean")
+
         # Validate enable_codebase_analysis if specified (C3.5)
         if "enable_codebase_analysis" in source and not isinstance(
             source["enable_codebase_analysis"], bool

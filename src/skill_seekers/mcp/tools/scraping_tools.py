@@ -8,7 +8,7 @@ This module contains all scraping-related MCP tool implementations:
 - scrape_pdf_tool: Scrape PDF documentation
 - scrape_codebase_tool: Analyze local codebase and extract code knowledge
 - scrape_generic_tool: Generic scraper for new source types (jupyter, html,
-  openapi, asciidoc, pptx, confluence, notion, rss, manpage, chat)
+  openapi, asciidoc, pptx, word, confluence, notion, rss, manpage, chat)
 
 Extracted from server.py for better modularity and organization.
 """
@@ -119,9 +119,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             - unlimited (bool, optional): Remove page limit (default: False)
             - enhance_local (bool, optional): Open terminal for local enhancement (default: False)
             - skip_scrape (bool, optional): Skip scraping, use cached data (default: False).
-              Single-source configs only — not yet supported for unified
-              multi-source configs (a warning is emitted and all sources are
-              re-scraped).
+              Legacy configs rebuild from each converter's cached extraction file;
+              unified configs rebuild from .skillseeker-cache per-source data.
             - dry_run (bool, optional): Preview without saving (default: False)
             - merge_mode (str, optional): Override merge mode for unified configs
 
@@ -184,16 +183,8 @@ async def scrape_docs_tool(args: dict) -> list[TextContent]:
             # merge_mode/dry_run overrides). dry_run must go through the
             # constructor: UnifiedScraper.run() previews-and-returns and
             # __init__ skips directory creation.
-            # skip_scrape is NOT yet honored on the unified multi-source path
-            # (it would need to reload each source's cached data from
-            # .skillseeker-cache before building); the attribute is set for
-            # forward-compat but currently has no effect here. Single-source
-            # configs DO honor skip_scrape (SkillConverter.run).
-            if skip_scrape:
-                progress_msg += (
-                    "⚠️ skip_scrape is not yet supported for unified multi-source "
-                    "configs — all sources will be re-scraped\n\n"
-                )
+            # skip_scrape is honored by UnifiedScraper.run(), which reloads
+            # cached per-source data from .skillseeker-cache before building.
             converter = get_converter(
                 "config",
                 {"config_path": config_to_use, "merge_mode": merge_mode, "dry_run": dry_run},
@@ -930,6 +921,7 @@ GENERIC_SOURCE_TYPES = (
     "openapi",
     "asciidoc",
     "pptx",
+    "word",
     "confluence",
     "notion",
     "rss",
@@ -948,6 +940,7 @@ _SOURCE_EMOJIS = {
     "openapi": "📡",
     "asciidoc": "📄",
     "pptx": "📊",
+    "word": "📃",
     "confluence": "🏢",
     "notion": "📝",
     "rss": "📰",
@@ -1018,6 +1011,7 @@ async def scrape_generic_tool(args: dict) -> list[TextContent]:
         "openapi": "spec_path",
         "asciidoc": "asciidoc_path",
         "pptx": "pptx_path",
+        "word": "docx_path",
         "manpage": "man_path",
         "confluence": "export_path",
         "notion": "export_path",

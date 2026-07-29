@@ -252,7 +252,9 @@ class LlamaIndexAdaptor(StreamingAdaptorMixin, SkillAdaptor):
 
         # Load nodes
         with open("skill-llama-index.json") as f:
-            nodes_data = json.load(f)
+            raw_package = json.load(f)
+
+        nodes_data = raw_package["nodes"] if isinstance(raw_package, dict) else raw_package
 
         # Convert to LlamaIndex Nodes
         nodes = [
@@ -291,7 +293,9 @@ import json
 
 # Load nodes
 with open("{package_path.name}") as f:
-    nodes_data = json.load(f)
+    raw_package = json.load(f)
+
+nodes_data = raw_package["nodes"] if isinstance(raw_package, dict) else raw_package
 
 # Convert to LlamaIndex Nodes
 nodes = [

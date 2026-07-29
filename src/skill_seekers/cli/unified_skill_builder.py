@@ -100,16 +100,29 @@ class UnifiedSkillBuilder:
         # Determine base directory for source SKILL.md files
         sources_dir = Path(self.cache_dir) / "sources" if self.cache_dir else Path("output")
 
-        # Load documentation SKILL.md
-        docs_skill_path = sources_dir / f"{self.name}_docs" / "SKILL.md"
-        if docs_skill_path.exists():
-            try:
-                skill_mds["documentation"] = docs_skill_path.read_text(encoding="utf-8")
-                logger.debug(
-                    f"Loaded documentation SKILL.md ({len(skill_mds['documentation'])} chars)"
-                )
-            except OSError as e:
-                logger.warning(f"Failed to read documentation SKILL.md: {e}")
+        # Load ALL documentation sources. A single docs source keeps the
+        # historical {name}_docs cache path; multiple docs sources use
+        # {name}_docs_{idx}_{slug}.
+        docs_sources = []
+        docs_dirs = [sources_dir / f"{self.name}_docs"]
+        docs_dirs.extend(sorted(sources_dir.glob(f"{self.name}_docs_*")))
+        for docs_dir in docs_dirs:
+            docs_skill_path = docs_dir / "SKILL.md"
+            if docs_skill_path.exists():
+                try:
+                    content = docs_skill_path.read_text(encoding="utf-8")
+                    docs_sources.append(content)
+                    logger.debug(
+                        f"Loaded documentation SKILL.md from {docs_dir.name} ({len(content)} chars)"
+                    )
+                except OSError as e:
+                    logger.warning(
+                        f"Failed to read documentation SKILL.md from {docs_dir.name}: {e}"
+                    )
+
+        if docs_sources:
+            skill_mds["documentation"] = "\n\n---\n\n".join(docs_sources)
+            logger.debug(f"Combined {len(docs_sources)} documentation SKILL.md files")
 
         # Load ALL GitHub sources (multi-source support)
         github_sources = []

@@ -117,6 +117,15 @@ class TestLangChainAdaptor:
         assert result["skill_id"] is None
         assert "message" in result
         assert "from langchain" in result["message"]
+        assert 'raw_package["documents"] if isinstance(raw_package, dict)' in result["message"]
+
+    def test_upload_snippet_selector_supports_streaming_and_standard_packages(self):
+        """The copy-paste upload snippet must handle both package shapes."""
+        documents = [{"page_content": "content", "metadata": {"source": "test"}}]
+
+        for raw_package in (documents, {"documents": documents, "streaming": True}):
+            docs_data = raw_package["documents"] if isinstance(raw_package, dict) else raw_package
+            assert docs_data == documents
 
     def test_validate_api_key_returns_false(self):
         """Test that API key validation returns False (no API needed)."""
