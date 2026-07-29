@@ -5,7 +5,18 @@ description: Automatically detect source types and build AI skills using Skill S
 
 # Skill Builder
 
-You have access to the Skill Seekers MCP server which provides 40 tools for converting knowledge sources into AI-ready skills.
+This skill uses the Skill Seekers MCP server, which provides 40 tools for converting knowledge sources into AI-ready skills. If the MCP tools are not available, use the CLI fallback at the bottom of this file instead — do not stop.
+
+## Prerequisites
+
+The MCP tools below only work when the Skill Seekers MCP server is connected:
+
+1. Install the package: `pip install "skill-seekers[mcp]"`
+2. Connect the server:
+   - Installed as the Skill Seekers plugin? Nothing to do — the plugin's bundled `.mcp.json` starts the server automatically (it still needs step 1).
+   - Installed standalone (e.g. copied into `~/.claude/skills/`)? Register the server once: `claude mcp add skill-seekers -- python -m skill_seekers.mcp.server_fastmcp`
+
+If tools like `scrape_docs` or `package_skill` are not in your tool list, the server is not connected. Tell the user about the two steps above, and use the CLI fallback in the meantime.
 
 ## When to Use This Skill
 
@@ -67,3 +78,14 @@ Automatically detect the source type from user input:
 - `build_how_to_guides` — Generate how-to guides from tests
 - `split_config` — Split large configs into focused skills
 - `export_to_weaviate`, `export_to_chroma`, `export_to_faiss`, `export_to_qdrant` — Vector DB export
+
+## CLI Fallback (MCP server not connected)
+
+The same pipeline is available from the command line (requires `pip install skill-seekers`). Run it with the Bash tool:
+
+```bash
+skill-seekers create <source>                      # auto-detects: URL, owner/repo, ./path, file.pdf, video URL, ...
+skill-seekers package <skill_dir> --target claude  # or gemini/openai/langchain/chroma/...
+```
+
+`create` covers detection, scraping, and building in one step; add `--enhance-level 0` to skip AI enhancement. After it finishes, read the generated `SKILL.md` and summarize what was created.

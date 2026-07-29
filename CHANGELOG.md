@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.9.0.dev0_
+## [3.9.0] - 2026-07-29
 
 ### Added
 - **HTML parser fallback for broken markup** (#96, task F1.4) — new `parse_html()` helper (`cli/html_parsing.py`) keeps `html.parser` as the primary parser (well-formed pages stay byte-identical) but retries with `lxml` (if installed) then `html5lib` when parsing raises or yields a tag-free tree for tag-bearing markup, so severely malformed pages no longer scrape as empty. Wired into all web-scraper parse sites (`doc_scraper.py`) and local HTML file parsing (`html_scraper.py`); `html5lib` added as a core dependency so the fallback always exists.
