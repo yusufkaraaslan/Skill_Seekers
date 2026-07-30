@@ -122,11 +122,24 @@ jobs:
         # Start MCP server in background
         docker run -d --name mcp-test -p 8765:8765 skill-seekers-mcp:test
 
-        # Wait for server to start
-        sleep 10
+        # Poll for readiness — heavy imports (fastmcp + deps) can take well over
+        # the old fixed 10s to boot, which flaked this check on every PR run.
+        healthy=0
+        for i in $(seq 1 30); do
+          if curl -fsS http://localhost:8765/health >/dev/null 2>&1; then
+            echo "✅ MCP server healthy after $((i * 2))s"
+            healthy=1
+            break
+          fi
+          sleep 2
+        done
 
-        # Check health
-        curl -f http://localhost:8765/health || exit 1
+        if [ "$healthy" != "1" ]; then
+          echo "❌ MCP server did not become healthy within 60s"
+          docker logs mcp-test || true
+          docker stop mcp-test; docker rm mcp-test
+          exit 1
+        fi
 
         # Stop container
         docker stop mcp-test
