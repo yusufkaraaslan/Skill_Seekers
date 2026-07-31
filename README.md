@@ -1298,6 +1298,9 @@ skill-seekers multilang <source>        # Multi-language skill generation
 skill-seekers quality output/react/     # Quality report (add --threshold 7 to gate: non-zero exit below 7/10)
 ```
 
+Quality reports also include provisional English readability metrics and aggregated warnings for
+long sentences and paragraphs.
+
 ### RAG Chunking Options (package)
 ```bash
 skill-seekers package output/react/ --chunk-for-rag --chunk-tokens 512 --chunk-overlap-tokens 50

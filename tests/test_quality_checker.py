@@ -488,6 +488,189 @@ Just run the command.
             )
 
 
+class TestReadabilityChecks(unittest.TestCase):
+    """Test provisional readability checks."""
+
+    def create_test_skill(self, tmpdir, skill_md_content):
+        """Create a minimal skill for readability tests."""
+        skill_dir = Path(tmpdir) / "test-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(skill_md_content, encoding="utf-8")
+        (skill_dir / "references").mkdir()
+        return skill_dir
+
+    def readability_info(self, report):
+        """Return readability info issues from a report."""
+        return [issue for issue in report.info if issue.category == "readability"]
+
+    def readability_warnings(self, report):
+        """Return readability warning issues from a report."""
+        return [issue for issue in report.warnings if issue.category == "readability"]
+
+    def test_known_english_prose_reports_readability_information(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                """---
+name: test
+---
+
+# Test Skill
+
+This guide explains how to configure the client. Follow the example carefully.
+
+The reference section describes common setup choices and safe verification steps.
+""",
+            )
+
+            report = SkillQualityChecker(skill_dir).check_all()
+            infos = self.readability_info(report)
+
+            self.assertEqual(len(infos), 1)
+            self.assertIn("Flesch Reading Ease", infos[0].message)
+            self.assertIn("Flesch-Kincaid Grade Level", infos[0].message)
+            self.assertIn("average sentence length", infos[0].message)
+            self.assertIn("average paragraph length", infos[0].message)
+            self.assertIn("English-language formulas", infos[0].message)
+            self.assertIn("may be inaccurate for non-English content", infos[0].message)
+
+    def test_sentence_average_and_exact_boundary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            thirty_words = " ".join(f"word{i}" for i in range(30))
+            skill_dir = self.create_test_skill(tmpdir, f"---\nname: test\n---\n\n{thirty_words}.")
+
+            report = SkillQualityChecker(skill_dir).check_all()
+            warnings = self.readability_warnings(report)
+
+            self.assertTrue(self.readability_info(report))
+            self.assertFalse(any("sentence(s) exceed" in issue.message for issue in warnings))
+
+    def test_31_word_sentence_triggers_one_aggregated_warning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            thirty_one_words = " ".join(f"word{i}" for i in range(31))
+            skill_dir = self.create_test_skill(
+                tmpdir, f"---\nname: test\n---\n\n{thirty_one_words}."
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            sentence_warnings = [
+                issue for issue in warnings if "sentence(s) exceed" in issue.message
+            ]
+            self.assertEqual(len(sentence_warnings), 1)
+            self.assertIn("1 sentence(s)", sentence_warnings[0].message)
+
+    def test_paragraph_average_and_exact_boundary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            two_hundred_words = " ".join(f"word{i}" for i in range(200))
+            skill_dir = self.create_test_skill(
+                tmpdir, f"---\nname: test\n---\n\n{two_hundred_words}."
+            )
+
+            report = SkillQualityChecker(skill_dir).check_all()
+            warnings = self.readability_warnings(report)
+
+            self.assertTrue(
+                any(
+                    "average paragraph length 1.0 sentences" in issue.message
+                    for issue in self.readability_info(report)
+                )
+            )
+            self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
+
+    def test_201_word_paragraph_triggers_one_aggregated_warning(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            two_hundred_one_words = " ".join(f"word{i}" for i in range(201))
+            skill_dir = self.create_test_skill(
+                tmpdir, f"---\nname: test\n---\n\n{two_hundred_one_words}."
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            paragraph_warnings = [
+                issue for issue in warnings if "paragraph(s) exceed" in issue.message
+            ]
+            self.assertEqual(len(paragraph_warnings), 1)
+            self.assertIn("1 paragraph(s)", paragraph_warnings[0].message)
+
+    def test_multiple_offences_are_aggregated(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            long_paragraph = " ".join(f"word{i}" for i in range(201)) + "."
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                f"---\nname: test\n---\n\n{long_paragraph}\n\n{long_paragraph}",
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            self.assertEqual(len(warnings), 2)
+            self.assertTrue(any("2 sentence(s) exceed" in issue.message for issue in warnings))
+            self.assertTrue(any("2 paragraph(s) exceed" in issue.message for issue in warnings))
+
+    def test_frontmatter_is_excluded(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            frontmatter_words = " ".join(f"word{i}" for i in range(201))
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                f"---\nname: test\ndescription: {frontmatter_words}\n---\n\nShort prose.",
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
+
+    def test_fenced_code_is_excluded(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            code_words = " ".join(f"word{i}" for i in range(201))
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                f"---\nname: test\n---\n\nShort prose.\n\n```text\n{code_words}\n```",
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
+
+    def test_inline_code_is_excluded(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            code_words = " ".join(f"word{i}" for i in range(201))
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                f"---\nname: test\n---\n\nShort prose with `{code_words}` included.",
+            )
+
+            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+
+            self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
+
+    def test_crlf_fenced_code_is_excluded(self):
+        from skill_seekers.cli.quality_checker import _strip_code
+
+        code_words = " ".join(f"word{i}" for i in range(201))
+        stripped = _strip_code(f"Prose.\r\n```text\r\n{code_words}\r\n```\r\n")
+
+        self.assertNotIn("word200", stripped)
+
+    def test_empty_and_code_only_skills_do_not_crash(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            empty_skill = self.create_test_skill(tmpdir, "---\nname: empty\n---\n")
+            code_skill = Path(tmpdir) / "code-only"
+            code_skill.mkdir()
+            (code_skill / "SKILL.md").write_text(
+                "---\nname: code-only\n---\n\n```python\nprint('hello')\n```\n",
+                encoding="utf-8",
+            )
+            (code_skill / "references").mkdir()
+
+            empty_report = SkillQualityChecker(empty_skill).check_all()
+            code_report = SkillQualityChecker(code_skill).check_all()
+
+            self.assertFalse(self.readability_info(empty_report))
+            self.assertFalse(self.readability_info(code_report))
+            self.assertFalse(self.readability_warnings(empty_report))
+            self.assertFalse(self.readability_warnings(code_report))
+
+
 class TestQualityCheckerCLI(unittest.TestCase):
     """Test quality checker CLI"""
 
