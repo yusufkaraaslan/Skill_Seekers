@@ -6,11 +6,11 @@
 
 [English](README.md) | 简体中文 | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
-> ⚠️ **机器翻译声明**
+> ⚠️ **翻译说明**
 >
-> 本文档由 AI 自动翻译生成。虽然我们努力确保翻译质量，但可能存在不准确或不自然的表述。
+> 本中文文档由社区贡献者人工润色，基于 AI 初译版本改进而来。
 >
-> 欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 帮助改进翻译！您的反馈对我们非常宝贵。
+> 如发现翻译不准确之处，欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 反馈！
 
 [![版本](https://img.shields.io/badge/version-3.7.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -66,7 +66,7 @@ skill-seekers package output/react --target cursor      # → .cursorrules
 skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目录
 ```
 
-### 可构建的输出
+### 生成的输出
 
 | 输出 | 目标 | 应用场景 |
 |------|------|---------|
@@ -84,13 +84,13 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目�
 
 ### 为什么选择 Skill Seekers
 
-- ⚡ **快 99%** — 数天的手动数据准备 → 15–45 分钟
+- ⚡ **效率提升 99%** — 从数天的手动数据准备缩短到 15–45 分钟
 - 🎯 **AI 技能质量** — 500+ 行的 SKILL.md 文件，包含示例、模式和指南
 - 📊 **RAG 就绪的分块** — 智能分块保留代码块并维护上下文
 - 🎬 **视频** — 从 YouTube 和本地视频提取代码、字幕和结构化知识
 - 🔄 **多源支持** — 将 18 种来源类型（文档、GitHub、PDF、视频、笔记本、Wiki 等）合并为一个知识资产
 - 🌐 **一次准备，导出所有目标** — 无需重新抓取即可将同一资产导出到 21 个平台
-- ✅ **久经考验** — 3,700+ 测试，24+ 框架预设，生产就绪
+- ✅ **实战验证** — 3,700+ 测试，24+ 框架预设，生产就绪
 
 ## 🚀 快速开始（3 条命令）
 
@@ -98,7 +98,7 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目�
 # 1. 安装
 pip install skill-seekers
 
-# 2. 从任意来源创建技能
+# 2. 从任意来源生成技能
 skill-seekers create https://docs.django.com/
 
 # 3. 为您的 AI 平台打包
@@ -225,8 +225,8 @@ Skill Seekers 是 **AI 系统的数据层**，将 18 种来源类型——文档
 
 Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 
-1. **采集** — 文档、GitHub 仓库、本地代码库、PDF、视频、笔记本、Wiki 等 10 种以上来源类型
-2. **分析** — 深度 AST 解析、模式检测、API 提取
+1. **采集** — 文档、GitHub 仓库、本地代码库、PDF、视频、笔记本、Wiki 等 多种来源类型
+2. **分析** —— 深度 AST 解析、模式检测、API 提取
 3. **结构化** — 带元数据的分类参考文件
 4. **增强** — AI 驱动的 SKILL.md 生成（Claude、Gemini 或本地）
 5. **导出** — 从一个资产导出到 16 种平台专用格式
@@ -244,7 +244,7 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 ### 面向 RAG 构建者和 AI 工程师
 
 - 🤖 **RAG 就绪数据** — 预分块的 LangChain `Documents`、LlamaIndex `TextNodes`、Haystack `Documents`
-- 🚀 **快 99%** — 数天的预处理 → 15–45 分钟
+- 🚀 **效率提升 99%** — 从数天的预处理缩短到 15–45 分钟
 - 📊 **智能元数据** — 类别、来源、类型 → 更高的检索精度
 - 🔄 **多源支持** — 在一个流水线中合并文档 + GitHub + PDF + 视频
 - 🌐 **平台无关** — 无需重新抓取即可导出到任意向量数据库或框架
@@ -259,7 +259,7 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 
 ### 🌐 文档抓取
 - ✅ **智能 SPA 发现** - 针对 JavaScript SPA 网站的三层发现机制（sitemap.xml → llms.txt → 无头浏览器渲染）
-- ✅ **llms.txt 支持** - 自动检测并使用 LLM 就绪文档文件（快 10 倍）
+- ✅ **llms.txt 支持** - 自动检测并使用 LLM 就绪文档文件（速度提升 10 倍）
 - ✅ **通用抓取器** - 适用于任意文档网站
 - ✅ **智能分类** - 按主题自动组织内容
 - ✅ **代码语言检测** - 识别 Python、JavaScript、C++、GDScript 等
@@ -270,8 +270,8 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 - ✅ **扫描件 OCR** - 从扫描文档提取文本
 - ✅ **密码保护 PDF** - 处理加密 PDF
 - ✅ **表格提取** - 提取复杂表格
-- ✅ **并行处理** - 大型 PDF 快 3 倍
-- ✅ **智能缓存** - 重复运行快 50%
+- ✅ **并行处理** - 大型 PDF 速度提升 3 倍
+- ✅ **智能缓存** - 重复运行速度提升 50%
 
 ### 🎬 视频提取
 - ✅ **YouTube 和本地视频** - 从视频提取字幕、屏幕代码和结构化知识
@@ -285,7 +285,7 @@ Skill Seekers 通过以下步骤代替数天的手动预处理工作：
 ### 🐙 GitHub 仓库分析
 - ✅ **深度代码分析** - 支持 Python、JavaScript、TypeScript、Java、C++、Go 的 AST 解析
 - ✅ **API 提取** - 函数、类、方法及参数和类型
-- ✅ **仓库元数据** - README、文件树、语言统计、星标/分支数
+- ✅ **仓库元数据** - README、文件树、语言统计、Star/Fork 数
 - ✅ **GitHub Issues 和 PR** - 获取带标签和里程碑的开放/已关闭 issues
 - ✅ **CHANGELOG 和发布** - 自动提取版本历史
 - ✅ **冲突检测** - 对比文档化 API 与实际代码实现
@@ -344,7 +344,7 @@ skill-seekers package output/react/ --target markdown
 <details>
 <summary>🔧 <strong>使用您自己的 AI 提供商（OpenAI 兼容端点 + 订阅计划，无需 Anthropic 额度）</strong></summary>
 
-可选的 AI **增强**步骤（由 `create`、`scan` 和 `enhance` 使用）**不需要** Anthropic 密钥。您有三种方式为其供能：
+可选的 AI **增强**步骤（由 `create`、`scan` 和 `enhance` 使用）**不需要** Anthropic 密钥。您有三种方式为其提供动力：
 
 **1. 使用您已付费的订阅 — 完全无需 API 额度（LOCAL 代理模式）**
 
@@ -504,7 +504,7 @@ python examples/continue-dev-universal/context_server.py
 **三流说明：**
 - **流 1：代码** - 深度 C3.x 分析（模式、示例、指南、配置、架构）
 - **流 2：文档** - 仓库文档（README、CONTRIBUTING、docs/*.md）
-- **流 3：洞察** - 社区知识（Issues、标签、Stars、Forks）
+- **流 3：洞察** - 社区知识（Issues、标签、Star、Fork）
 
 ```python
 from skill_seekers.cli.unified_codebase_analyzer import UnifiedCodebaseAnalyzer
@@ -538,11 +538,11 @@ print(f"常见问题: {len(result.github_insights['common_problems'])}")
   - 每个配置文件可设置超时（默认：30 分钟，防止无限等待）
   - 智能回退链：CLI 参数 → 环境变量 → 配置文件 → 提示
   - Claude、Gemini、OpenAI 的 API Key 管理
-- ✅ **交互式配置向导** - 美观的终端 UI，轻松设置
+- ✅ **交互式配置向导** - 美观的终端界面，轻松上手
   - 浏览器集成辅助创建 token（自动打开 GitHub 等）
   - Token 验证和连接测试
-  - 带颜色编码的可视化状态显示
-- ✅ **智能速率限制处理器** - 不再无限等待！
+  - 带颜色编码的可视化状态面板
+- ✅ **智能速率限制处理器** - 告别无限等待
   - 关于速率限制的预先警告（60 次/小时 vs 5000 次/小时）
   - 从 GitHub API 响应中实时检测
   - 带进度的实时倒计时
@@ -691,7 +691,7 @@ stages:
 ```
 
 ### ⚡ 性能与规模
-- ✅ **异步模式** - 使用 async/await 抓取速度快 2–3 倍（使用 `--async` 标志）
+- ✅ **异步模式** - 使用 async/await 抓取速度速度提升 2–3 倍（使用 `--async` 标志）
 - ✅ **大型文档支持** - 通过智能拆分处理 10K–40K+ 页文档
 - ✅ **路由器/Hub 技能** - 智能路由到专用子技能
 - ✅ **并行抓取** - 同时处理多个技能
@@ -825,7 +825,7 @@ skill-seekers create --config configs/react.json
 # 快速抓取（无需配置）
 skill-seekers create https://react.dev --name react
 
-# 异步模式（快 3 倍）
+# 异步模式（速度提升 3 倍）
 skill-seekers create --config configs/godot.json --async --workers 8
 
 # 使用特定 AI 代理进行增强
@@ -1221,7 +1221,7 @@ rm -rf output/myframework_data/
 skill-seekers create --config configs/myframework.json
 ```
 
-### 分类不理想？
+### 分类效果不佳？
 编辑配置中的 `categories` 部分，使用更好的关键词。
 
 ### 想要更新文档？
@@ -1231,7 +1231,7 @@ rm -rf output/godot_data/
 skill-seekers create --config configs/godot.json
 ```
 
-### 增强不工作？
+### 增强未生效？
 ```bash
 # 检查 API Key 是否设置
 echo $ANTHROPIC_API_KEY
@@ -1259,7 +1259,7 @@ skill-seekers config --github
 | 任务 | 时间 | 备注 |
 |------|------|------|
 | 抓取（同步）| 15–45 分钟 | 仅首次，基于线程 |
-| 抓取（异步）| 5–15 分钟 | `--async` 标志快 2–3 倍 |
+| 抓取（异步）| 5–15 分钟 | `--async` 标志速度提升 2–3 倍 |
 | 构建 | 1–3 分钟 | 从缓存快速重建 |
 | 重建 | <1 分钟 | 使用 `--skip-scrape` |
 | 增强（LOCAL）| 30–60 秒 | 使用 Claude Code Max |
@@ -1355,7 +1355,7 @@ MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-祝您构建技能愉快！ 🚀
+祝您使用愉快！ 🚀
 
 ---
 
