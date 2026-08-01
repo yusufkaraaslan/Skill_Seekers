@@ -81,3 +81,5 @@ docs/superpowers/
 # Web UI (Seeker HUD)
 ui/node_modules/
 ui/dist/
+# Built frontend — Vite outputs here; bundled into the wheel at build time
+src/skill_seekers/web/dist/
