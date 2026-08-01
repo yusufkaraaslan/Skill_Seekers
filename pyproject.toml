@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -351,7 +351,14 @@ include = ["skill_seekers*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-skill_seekers = ["py.typed", "workflows/*.yaml", "cli/defaults.json"]
+skill_seekers = [
+    "py.typed",
+    "workflows/*.yaml",
+    "cli/defaults.json",
+    # Built Seeker HUD frontend (Vite outputs here; ships in the wheel)
+    "web/dist/*",
+    "web/dist/**/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

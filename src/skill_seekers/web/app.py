@@ -28,7 +28,22 @@ from .clis import detect_clis
 from .jobs import Job, get_job_manager
 from .paths import load_settings, save_settings
 
-DIST_DIR = Path(__file__).resolve().parents[3] / "ui" / "dist"
+# The built frontend ships *inside* the package as ``skill_seekers/web/dist`` so
+# it is present in installed wheels (Vite builds straight into this directory).
+# A repo-checkout location (``ui/dist``) is kept as a fallback for older builds.
+_PACKAGED_DIST = Path(__file__).resolve().parent / "dist"
+_CHECKOUT_DIST = Path(__file__).resolve().parents[3] / "ui" / "dist"
+
+
+def _resolve_dist_dir() -> Path:
+    """Return the first existing built-frontend directory (packaged, then checkout)."""
+    for candidate in (_PACKAGED_DIST, _CHECKOUT_DIST):
+        if candidate.is_dir():
+            return candidate
+    return _PACKAGED_DIST
+
+
+DIST_DIR = _resolve_dist_dir()
 
 OFFICIAL_API_BASE = "https://api.skillseekersweb.com"
 _official_cache: dict[str, Any] = {"at": 0.0, "configs": None, "total": 0}

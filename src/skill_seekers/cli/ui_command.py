@@ -30,7 +30,7 @@ class UiCommand:
             )
             return 1
 
-        from skill_seekers.web.app import create_app  # noqa: PLC0415
+        from skill_seekers.web.app import DIST_DIR, create_app  # noqa: PLC0415
 
         root = Path(self.args.root).expanduser().resolve() if self.args.root else Path.cwd()
         port = int(self.args.port or DEFAULT_PORT)
@@ -39,6 +39,11 @@ class UiCommand:
         url = f"http://127.0.0.1:{port}"
         print(f"Seeker HUD · serving {root}")
         print(f"→ {url}")
+        if not DIST_DIR.is_dir():
+            print(
+                "⚠ Frontend not built — the API is up but the UI won't load.\n"
+                "  Build it with: cd ui && npm install && npm run build"
+            )
         if not self.args.no_browser:
             webbrowser.open(url)
 
