@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Create your first skill in 3 commands**
 
 ---

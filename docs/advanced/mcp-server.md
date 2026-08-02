@@ -1,6 +1,6 @@
 # MCP Server Setup Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Integrate with AI agents via Model Context Protocol**
 
 ---

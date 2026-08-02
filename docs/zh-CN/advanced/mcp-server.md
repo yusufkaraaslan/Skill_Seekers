@@ -1,6 +1,6 @@
 # MCP 服务器设置指南
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **通过 Model Context Protocol 与 AI 代理集成**
 
 ---

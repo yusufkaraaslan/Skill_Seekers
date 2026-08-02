@@ -1,6 +1,6 @@
 # 你的第一个 Skill — 完整演练
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **创建你的第一个 skill 的分步指南**
 
 ---

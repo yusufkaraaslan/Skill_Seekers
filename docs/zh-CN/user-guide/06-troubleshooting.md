@@ -1,6 +1,6 @@
 # 故障排除指南
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 本章涵盖最常见的问题。如需包含所有错误代码、平台特定修复和高级诊断的**完整故障排除指南**，请参阅 [docs/TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)。
 

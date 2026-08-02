@@ -1,6 +1,6 @@
 # Workflows Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Enhancement workflow presets for specialized analysis**
 
 ---

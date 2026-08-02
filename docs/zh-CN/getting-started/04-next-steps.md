@@ -1,6 +1,6 @@
 # 下一步
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **创建你的第一个 skill 之后该去哪里**
 
 ---
