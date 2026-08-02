@@ -137,7 +137,7 @@ pip install skill-seekers[all]         # 全部功能
 
 </details>
 
-**前置条件：** Python 3.10+、Git。第一次使用？→ **[零障碍快速上手](BULLETPROOF_QUICKSTART.md)** 🎯
+**前置条件：** Python 3.10+、Git。第一次使用？→ **[零障碍快速上手](docs/getting-started/BULLETPROOF_QUICKSTART.md)** 🎯
 
 ---
 

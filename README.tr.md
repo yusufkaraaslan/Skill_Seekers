@@ -137,7 +137,7 @@ pip install skill-seekers[all]         # Her şey
 
 </details>
 
-**Ön koşullar:** Python 3.10+, Git. Yeni misiniz? → **[Kusursuz Hızlı Başlangıç](BULLETPROOF_QUICKSTART.md)** 🎯
+**Ön koşullar:** Python 3.10+, Git. Yeni misiniz? → **[Kusursuz Hızlı Başlangıç](docs/getting-started/BULLETPROOF_QUICKSTART.md)** 🎯
 
 ---
 

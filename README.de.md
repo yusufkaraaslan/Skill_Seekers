@@ -137,7 +137,7 @@ pip install skill-seekers[all]         # Alles
 
 </details>
 
-**Voraussetzungen:** Python 3.10+, Git. Neu hier? → **[Bulletproof Quick Start](BULLETPROOF_QUICKSTART.md)** 🎯
+**Voraussetzungen:** Python 3.10+, Git. Neu hier? → **[Bulletproof Quick Start](docs/getting-started/BULLETPROOF_QUICKSTART.md)** 🎯
 
 ---
 

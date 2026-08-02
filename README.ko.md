@@ -137,7 +137,7 @@ pip install skill-seekers[all]         # 전체
 
 </details>
 
-**사전 요구사항:** Python 3.10+, Git. 처음 사용하시나요? → **[확실한 빠른 시작](BULLETPROOF_QUICKSTART.md)** 🎯
+**사전 요구사항:** Python 3.10+, Git. 처음 사용하시나요? → **[확실한 빠른 시작](docs/getting-started/BULLETPROOF_QUICKSTART.md)** 🎯
 
 ---
 

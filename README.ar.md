@@ -135,7 +135,7 @@ pip install skill-seekers[all]         # كل شيء
 
 </details>
 
-**المتطلبات المسبقة:** Python 3.10+، وGit. جديد هنا؟ ← **[بداية سريعة مضمونة](BULLETPROOF_QUICKSTART.md)** 🎯
+**المتطلبات المسبقة:** Python 3.10+، وGit. جديد هنا؟ ← **[بداية سريعة مضمونة](docs/getting-started/BULLETPROOF_QUICKSTART.md)** 🎯
 
 ---
 
