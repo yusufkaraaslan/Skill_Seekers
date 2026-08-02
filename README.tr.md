@@ -390,7 +390,7 @@ skill-seekers doctor          # kurulumu ve ortamı teşhis eder
 skill-seekers sync-config     # config sapmasını tespit eder
 ```
 
-Sık karşılaşılan sorunlar ve çözümleri: **[Sorun Giderme Rehberi](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Sık karşılaşılan sorunlar ve çözümleri: **[Sorun Giderme Rehberi](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

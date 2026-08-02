@@ -390,7 +390,7 @@ skill-seekers doctor          # diagnostiquer l'installation et l'environnement
 skill-seekers sync-config     # détecter les dérives de configuration
 ```
 
-Problèmes courants et solutions : **[Guide de dépannage](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Problèmes courants et solutions : **[Guide de dépannage](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

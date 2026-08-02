@@ -390,7 +390,7 @@ skill-seekers doctor          # 诊断安装与运行环境
 skill-seekers sync-config     # 检测配置漂移
 ```
 
-常见问题与解决办法：**[故障排查指南](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+常见问题与解决办法：**[故障排查指南](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

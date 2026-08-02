@@ -465,7 +465,7 @@ skill-seekers validate-config configs/my-config.json
 - [Full README](../README.md)
 - [Usage Guide](USAGE.md)
 - [API Reference](../../reference/API_REFERENCE.md)
-- [Troubleshooting](../../../TROUBLESHOOTING.md)
+- [Troubleshooting](../../TROUBLESHOOTING.md)
 
 **Links:**
 - GitHub: https://github.com/yusufkaraaslan/Skill_Seekers

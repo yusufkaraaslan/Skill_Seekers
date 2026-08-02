@@ -390,7 +390,7 @@ skill-seekers doctor          # diagnostica la instalación y el entorno
 skill-seekers sync-config     # detecta desviaciones en la configuración
 ```
 
-Problemas habituales y sus soluciones: **[Guía de solución de problemas](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Problemas habituales y sus soluciones: **[Guía de solución de problemas](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

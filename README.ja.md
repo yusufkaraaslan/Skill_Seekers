@@ -390,7 +390,7 @@ skill-seekers doctor          # インストール状況と環境を診断
 skill-seekers sync-config     # 設定のずれを検出
 ```
 
-よくある問題と対処法: **[トラブルシューティングガイド](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+よくある問題と対処法: **[トラブルシューティングガイド](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

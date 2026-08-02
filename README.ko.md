@@ -390,7 +390,7 @@ skill-seekers doctor          # 설치 및 환경 진단
 skill-seekers sync-config     # 설정 드리프트 감지
 ```
 
-자주 발생하는 문제와 해결 방법: **[문제 해결 가이드](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+자주 발생하는 문제와 해결 방법: **[문제 해결 가이드](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

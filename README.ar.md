@@ -388,7 +388,7 @@ skill-seekers doctor          # تشخيص التثبيت والبيئة
 skill-seekers sync-config     # كشف انحراف الإعدادات
 ```
 
-المشكلات الشائعة وحلولها: **[دليل استكشاف الأخطاء](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+المشكلات الشائعة وحلولها: **[دليل استكشاف الأخطاء](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

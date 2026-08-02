@@ -390,7 +390,7 @@ skill-seekers doctor          # Installation & Umgebung diagnostizieren
 skill-seekers sync-config     # Konfigurations-Drift erkennen
 ```
 
-Häufige Probleme und Lösungen: **[Leitfaden zur Fehlerbehebung](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Häufige Probleme und Lösungen: **[Leitfaden zur Fehlerbehebung](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

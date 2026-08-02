@@ -390,7 +390,7 @@ skill-seekers doctor          # इंस्टॉलेशन और एनव�
 skill-seekers sync-config     # config ड्रिफ़्ट का पता लगाएँ
 ```
 
-आम समस्याएँ और उनके समाधान: **[ट्रबलशूटिंग गाइड](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+आम समस्याएँ और उनके समाधान: **[ट्रबलशूटिंग गाइड](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

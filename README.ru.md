@@ -388,7 +388,7 @@ skill-seekers doctor          # диагностика установки и о�
 skill-seekers sync-config     # обнаружение расхождений в конфигурации
 ```
 
-Типичные проблемы и их решения: **[Руководство по устранению неполадок](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Типичные проблемы и их решения: **[Руководство по устранению неполадок](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

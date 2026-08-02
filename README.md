@@ -384,7 +384,7 @@ skill-seekers doctor          # diagnose installation & environment
 skill-seekers sync-config     # detect config drift
 ```
 
-Common issues and fixes: **[Troubleshooting Guide](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Common issues and fixes: **[Troubleshooting Guide](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

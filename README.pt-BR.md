@@ -390,7 +390,7 @@ skill-seekers doctor          # diagnostica a instalação e o ambiente
 skill-seekers sync-config     # detecta divergências de configuração
 ```
 
-Problemas comuns e correções: **[Guia de Solução de Problemas](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+Problemas comuns e correções: **[Guia de Solução de Problemas](docs/user-guide/06-troubleshooting.md)** · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

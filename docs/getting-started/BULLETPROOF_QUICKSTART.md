@@ -567,7 +567,7 @@ curl -I https://docs.yoursite.com
 
 ### Still stuck?
 
-1. **Check our detailed troubleshooting guide:** [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)
+1. **Check our detailed troubleshooting guide:** [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
 2. **Open an issue:** https://github.com/yusufkaraaslan/Skill_Seekers/issues
 3. **Include this info:**
    - Operating system (macOS 13, Ubuntu 22.04, Windows 11, etc.)
