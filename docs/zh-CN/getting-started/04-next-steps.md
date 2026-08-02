@@ -107,7 +107,7 @@ skill-seekers create ./my-project \
 **资源：**
 - [高级：自定义工作流](../advanced/custom-workflows.md)
 - [MCP 参考](../reference/MCP_REFERENCE.md)
-- [API 参考](../advanced/api-reference.md)
+- [API 参考](../reference/API_REFERENCE.md)
 - [贡献指南](../../../CONTRIBUTING.md)
 
 ---
@@ -253,7 +253,7 @@ python -m skill_seekers.mcp.server_fastmcp --transport http --port 8765
 1. [多来源抓取](../advanced/multi-source.md)
 2. [MCP Server 设置](../advanced/mcp-server.md)
 3. [自定义工作流](../advanced/custom-workflows.md)
-4. [API 参考](../advanced/api-reference.md)
+4. [API 参考](../reference/API_REFERENCE.md)
 
 ---
 

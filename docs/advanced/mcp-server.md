@@ -350,5 +350,5 @@ skill-seekers-mcp --port 8766
 ## See Also
 
 - [MCP Reference](../reference/MCP_REFERENCE.md) - Complete tool reference
-- [MCP Tools Deep Dive](mcp-tools.md) - Advanced usage
+- MCP Tools Deep Dive - Advanced usage
 - [MCP Protocol](https://modelcontextprotocol.io/) - Official MCP docs

@@ -332,7 +332,7 @@ Once MCP integration works:
 
 ## Reference
 
-- **Full Setup Guide:** [docs/MCP_SETUP.md](docs/MCP_SETUP.md)
+- **Full Setup Guide:** [docs/MCP_SETUP.md](../../guides/MCP_SETUP.md)
 - **MCP Documentation:** [mcp/README.md](mcp/README.md)
 - **Main README:** [README.md](README.md)
 - **Setup Script:** `./setup_mcp.sh`

@@ -107,7 +107,7 @@ skill-seekers create ./my-project \
 **Resources:**
 - [Advanced: Custom Workflows](../advanced/custom-workflows.md)
 - [MCP Reference](../reference/MCP_REFERENCE.md)
-- [API Reference](../advanced/api-reference.md)
+- [API Reference](../reference/API_REFERENCE.md)
 - [Contributing Guide](../../CONTRIBUTING.md)
 
 ---
@@ -257,7 +257,7 @@ Config sources are managed through the MCP tools (`add_config_source`,
 1. [Multi-Source Scraping](../advanced/multi-source.md)
 2. [MCP Server Setup](../advanced/mcp-server.md)
 3. [Custom Workflows](../advanced/custom-workflows.md)
-4. [API Reference](../advanced/api-reference.md)
+4. [API Reference](../reference/API_REFERENCE.md)
 
 ---
 

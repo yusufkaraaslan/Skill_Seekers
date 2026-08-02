@@ -1,8 +1,8 @@
 > ⚠️ **DEPRECATED**: This document contains phantom commands and outdated patterns.
 > 
 > For up-to-date documentation, please see:
-> - [Quick Start Guide](getting-started/02-quick-start.md) - 3 commands to first skill
-> - [CLI Reference](reference/CLI_REFERENCE.md) - Complete command reference
+> - [Quick Start Guide](../../getting-started/02-quick-start.md) - 3 commands to first skill
+> - [CLI Reference](../../reference/CLI_REFERENCE.md) - Complete command reference
 > - [Documentation Hub](README.md) - All documentation
 >
 > *This file is kept for historical reference only.*
@@ -463,9 +463,9 @@ skill-seekers validate-config configs/my-config.json
 
 **Documentation:**
 - [Full README](../README.md)
-- [Usage Guide](guides/USAGE.md)
-- [API Reference](reference/API_REFERENCE.md)
-- [Troubleshooting](../TROUBLESHOOTING.md)
+- [Usage Guide](USAGE.md)
+- [API Reference](../../reference/API_REFERENCE.md)
+- [Troubleshooting](../../../TROUBLESHOOTING.md)
 
 **Links:**
 - GitHub: https://github.com/yusufkaraaslan/Skill_Seekers

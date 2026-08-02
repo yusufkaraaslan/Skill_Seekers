@@ -656,10 +656,10 @@ For API-based enhancement (requires Anthropic API key):
 
 ## Documentation
 
-- **Full Setup Guide**: [docs/guides/MCP_SETUP.md](../docs/guides/MCP_SETUP.md)
-- **Main README**: [README.md](../README.md)
-- **Usage Guide**: [docs/README.md](../docs/README.md)
-- **Testing Guide**: [docs/guides/TESTING_GUIDE.md](../docs/guides/TESTING_GUIDE.md)
+- **Full Setup Guide**: [docs/guides/MCP_SETUP.md](../../../docs/guides/MCP_SETUP.md)
+- **Main README**: [README.md](../../../README.md)
+- **Usage Guide**: [docs/README.md](../../../docs/README.md)
+- **Testing Guide**: [docs/guides/TESTING_GUIDE.md](../../../docs/guides/TESTING_GUIDE.md)
 
 ## Support
 

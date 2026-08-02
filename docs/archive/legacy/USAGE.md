@@ -1,7 +1,7 @@
 > ⚠️ **DEPRECATED**: This document uses outdated CLI patterns (`python3 cli/X.py`).
 > 
 > For up-to-date documentation, please see:
-> - [CLI Reference](../reference/CLI_REFERENCE.md) - Complete command reference
+> - [CLI Reference](../../reference/CLI_REFERENCE.md) - Complete command reference
 > - [User Guides](../user-guide/) - Common tasks and workflows
 > - [Documentation Hub](../README.md) - All documentation
 >

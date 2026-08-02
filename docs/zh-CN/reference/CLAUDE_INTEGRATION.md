@@ -100,7 +100,7 @@ generator = RouterGenerator(
 skill_md = generator.generate_skill_md()
 ```
 
-**完整文档请参阅**：[三流实现总结](IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
+**完整文档请参阅**：[三流实现总结](../../archive/historical/IMPLEMENTATION_SUMMARY_THREE_STREAM.md)
 
 ## 概述
 
@@ -232,7 +232,7 @@ skill-seekers enhance output/react/ --target gemini     # Gemini 2.0
 skill-seekers enhance output/react/ --target openai     # GPT-4o
 ```
 
-完整详情请参阅[多平台指南](UPLOAD_GUIDE.md)和[功能矩阵](FEATURE_MATRIX.md)。
+完整详情请参阅[多平台指南](../../guides/UPLOAD_GUIDE.md)和[功能矩阵](FEATURE_MATRIX.md)。
 
 ## 架构
 

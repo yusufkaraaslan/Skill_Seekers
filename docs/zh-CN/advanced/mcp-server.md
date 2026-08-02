@@ -350,5 +350,5 @@ skill-seekers-mcp --port 8766
 ## 另请参阅
 
 - [MCP 参考文档](../reference/MCP_REFERENCE.md) - 完整工具参考
-- [MCP 工具深入](mcp-tools.md) - 高级用法
+- MCP 工具深入 - 高级用法
 - [MCP 协议](https://modelcontextprotocol.io/) - 官方 MCP 文档

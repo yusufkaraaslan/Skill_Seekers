@@ -886,9 +886,9 @@ get_converter("config", {"config_path": cfg, "dry_run": True}).run()
 - **[主文档](../../README.md)** - 完整用户指南
 - **[CLI 参考](CLI_REFERENCE.md)** - 稳定的命令行接口
 - **[配置格式](CONFIG_FORMAT.md)** - 权威配置模式
-- **[MCP 设置](../guides/MCP_SETUP.md)** - MCP 服务器集成
-- **[多 LLM 支持](../integrations/MULTI_LLM_SUPPORT.md)** - 平台对比
-- **[CHANGELOG](../../CHANGELOG.md)** - 版本历史与 API 变更
+- **[MCP 设置](../../guides/MCP_SETUP.md)** - MCP 服务器集成
+- **[多 LLM 支持](../../integrations/MULTI_LLM_SUPPORT.md)** - 平台对比
+- **[CHANGELOG](../../../CHANGELOG.md)** - 版本历史与 API 变更
 
 ---
 
