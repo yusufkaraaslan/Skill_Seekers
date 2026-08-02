@@ -29,13 +29,17 @@
 
 ## 💛 스폰서
 
+<!-- SPONSORS:TOP:START -->
+**Launch Partner**
+
 <p align="center">
-  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
-    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
-  </a>
+  <a href="https://www.atlascloud.ai/"><img src="docs/assets/sponsors/atlas-cloud.png" alt="Atlas Cloud" width="200"></a>
 </p>
 
-[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — 풀 모달(full-modal) OpenAI 호환 AI 추론 플랫폼입니다. Skill Seekers는 `ATLAS_API_KEY`와 함께 `--target atlas`를 통해 패키징/개선 타깃으로 이를 지원합니다.
+[Atlas Cloud](https://www.atlascloud.ai/) — A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
+<!-- SPONSORS:TOP:END -->
+
+**[스폰서 되기](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)
 
 ---
 
@@ -413,6 +417,10 @@ MIT — [LICENSE](LICENSE)를 참고하세요.
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
 
 ---
+
+<!-- SPONSORS:BOTTOM:START -->
+
+<!-- SPONSORS:BOTTOM:END -->
 
 ## 🌐 에코시스템
 

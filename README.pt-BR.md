@@ -29,13 +29,17 @@
 
 ## 💛 Patrocinadores
 
+<!-- SPONSORS:TOP:START -->
+**Launch Partner**
+
 <p align="center">
-  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
-    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
-  </a>
+  <a href="https://www.atlascloud.ai/"><img src="docs/assets/sponsors/atlas-cloud.png" alt="Atlas Cloud" width="200"></a>
 </p>
 
-[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — uma plataforma de inferência de IA multimodal completa e compatível com a OpenAI. O Skill Seekers a suporta como alvo de empacotamento/aprimoramento via `--target atlas` com `ATLAS_API_KEY`.
+[Atlas Cloud](https://www.atlascloud.ai/) — A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
+<!-- SPONSORS:TOP:END -->
+
+**[Torne-se um patrocinador](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)
 
 ---
 
@@ -413,6 +417,10 @@ MIT — veja [LICENSE](LICENSE).
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
 
 ---
+
+<!-- SPONSORS:BOTTOM:START -->
+
+<!-- SPONSORS:BOTTOM:END -->
 
 ## 🌐 Ecossistema
 

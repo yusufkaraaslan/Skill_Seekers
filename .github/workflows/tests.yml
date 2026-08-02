@@ -28,6 +28,9 @@ jobs:
     - name: Run mypy type checker
       run: mypy src/skill_seekers --show-error-codes --pretty
       continue-on-error: true
+    - name: Check sponsor placements match sponsors.json
+      # Also enforces SPONSORSHIP.md rule 4 (no tracking parameters in sponsor URLs)
+      run: python scripts/render_sponsors.py --check
 
   test-fast:
     name: Fast Unit Tests (parallel)

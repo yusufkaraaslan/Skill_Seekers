@@ -29,13 +29,17 @@
 
 ## 💛 赞助商
 
+<!-- SPONSORS:TOP:START -->
+**Launch Partner**
+
 <p align="center">
-  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
-    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
-  </a>
+  <a href="https://www.atlascloud.ai/"><img src="docs/assets/sponsors/atlas-cloud.png" alt="Atlas Cloud" width="200"></a>
 </p>
 
-[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) —— 全模态、兼容 OpenAI 的 AI 推理平台。Skill Seekers 通过 `--target atlas` 搭配 `ATLAS_API_KEY` 将其作为打包／增强目标提供支持。
+[Atlas Cloud](https://www.atlascloud.ai/) — A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
+<!-- SPONSORS:TOP:END -->
+
+**[成为赞助商](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)
 
 ---
 
@@ -413,6 +417,10 @@ MIT —— 详见 [LICENSE](LICENSE)。
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
 
 ---
+
+<!-- SPONSORS:BOTTOM:START -->
+
+<!-- SPONSORS:BOTTOM:END -->
 
 ## 🌐 生态项目
 
