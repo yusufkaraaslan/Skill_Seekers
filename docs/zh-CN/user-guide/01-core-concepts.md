@@ -1,6 +1,6 @@
 # 核心概念
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 > **了解 Skill Seekers 的工作原理**
 
 ---

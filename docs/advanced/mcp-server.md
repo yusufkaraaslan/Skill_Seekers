@@ -1,6 +1,6 @@
 # MCP Server Setup Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Integrate with AI agents via Model Context Protocol**
 
 ---
@@ -350,5 +350,5 @@ skill-seekers-mcp --port 8766
 ## See Also
 
 - [MCP Reference](../reference/MCP_REFERENCE.md) - Complete tool reference
-- [MCP Tools Deep Dive](mcp-tools.md) - Advanced usage
+- MCP Tools Deep Dive - Advanced usage
 - [MCP Protocol](https://modelcontextprotocol.io/) - Official MCP docs

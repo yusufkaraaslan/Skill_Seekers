@@ -645,7 +645,7 @@ pip install -e ".[all-llms,dev]"
 ```
 
 **If still failing:**
-1. Check [Troubleshooting Guide](../TROUBLESHOOTING.md)
+1. Check [Troubleshooting Guide](TROUBLESHOOTING.md)
 2. Report issue on [GitHub](https://github.com/yusufkaraaslan/Skill_Seekers/issues)
 
 ---
@@ -822,15 +822,15 @@ python -m skill_seekers.cli.config_validator configs/react.json
 
 **Main Documentation:**
 - [README](../README.md) - Project overview
-- [Usage Guide](guides/USAGE.md) - Detailed usage
+- [Usage Guide](archive/legacy/USAGE.md) - Detailed usage
 - [API Reference](reference/API_REFERENCE.md) - Programmatic usage
-- [Troubleshooting](../TROUBLESHOOTING.md) - Common issues
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
 
 **Guides:**
 - [MCP Setup](guides/MCP_SETUP.md)
 - [Testing Guide](guides/TESTING_GUIDE.md)
 - [Migration Guide](guides/MIGRATION_GUIDE.md)
-- [Quick Reference](QUICK_REFERENCE.md)
+- [Quick Reference](archive/legacy/QUICK_REFERENCE.md)
 
 ### How do I report bugs?
 

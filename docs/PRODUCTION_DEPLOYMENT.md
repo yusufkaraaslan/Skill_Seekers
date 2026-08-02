@@ -250,7 +250,7 @@ helm install skillseekers ./helm/skillseekers \
 
 ### Option 4: Docker Compose
 
-See [Docker Compose Guide](./DOCKER_COMPOSE.md) for multi-service deployment.
+See Docker Compose Guide for multi-service deployment.
 
 ```bash
 # Start all services

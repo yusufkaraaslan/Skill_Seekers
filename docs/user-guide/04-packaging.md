@@ -1,6 +1,6 @@
 # Packaging Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Export skills to AI platforms and vector databases**
 
 ---

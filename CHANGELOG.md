@@ -7,7 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.10.0.dev0_
+## [3.9.1] - 2026-08-02
+
+**Theme:** Documentation and project-infrastructure release. No runtime code changed — the package is functionally identical to 3.9.0.
+
+### Added
+- **Sponsorship program** (#442) — `SPONSORSHIP.md` (five tiers plus the rules), `SPONSORS.md`, and a `sponsors.json` single source of truth rendered into all 12 READMEs by `scripts/render_sponsors.py`. Adding a sponsor is one JSON edit instead of thirteen hand edits, and CI (`--check`) fails on drift. `.github/FUNDING.yml` gains GitHub Sponsors alongside Buy Me a Coffee.
+- **Sponsor URLs are policy-checked in code** — the renderer refuses any sponsor link carrying `utm_`/`ref`/`fbclid`/`gclid`-style parameters, enforcing rule 4 of the published policy. This immediately caught 24 UTM-tagged links already present across the READMEs; all sponsor links are now clean.
+
+### Changed
+- **README restructured into a lean landing page** — 1,371 → 424 lines, with the deep-dive material moved behind links to the `docs/` pages that already covered it. Mirrored across all 11 translations (~16,500 → ~5,100 lines total), each keeping its machine-translation notice and language switcher.
+- **Repo root decluttered** — `BULLETPROOF_QUICKSTART.md` → `docs/getting-started/`, the dated `DOCUMENTATION_AUDIT_REPORT_2026-05-30.md` → `docs/archive/historical/`, with every reference repointed.
+- **`QWEN.md` reduced from 719 to 64 lines** — it duplicated `AGENTS.md` while advertising three different version numbers at once (v3.6.0, 3.3.0, and "17+ source types" beside "18 source types"). It is now a pointer to `AGENTS.md` that keeps the essential commands and conventions inline and carries no hardcoded version.
+
+### Fixed
+- **Stale and incorrect README claims corrected against the codebase** — version badge 3.7.0 → 3.9.0; the documented `scan --quick|--comprehensive|--enhance` flags do not exist and are now `create --preset quick|standard|comprehensive`; export targets "16 formats"/"21 platforms" → 22; CLI reference "all 20 commands" → 19; the `install-agent` table 15 → 19 entries; workflow presets "24+" → 68; and the dead `# skill-seekers list-configs` line removed.
+- **Three overlapping troubleshooting guides unified** — root `TROUBLESHOOTING.md` (485 lines), `docs/TROUBLESHOOTING.md` (1,102) and `docs/user-guide/06-troubleshooting.md` (108) shared only 2 of 22 headings, so none was a stale copy. `docs/TROUBLESHOOTING.md` is now the single comprehensive reference (1,398 lines) with the five sections that existed only at root merged in; the user-guide chapter stays as the short entry in the numbered series.
+- **92 broken relative links repaired across the docs tree** (109 → 17) — targets relinked to their real locations, case/separator mismatches fixed (`integrations/cursor.md` → `CURSOR.md`, `advanced/api-reference.md` → `reference/API_REFERENCE.md`), and links to never-written docs unlinked rather than left as 404s. The remaining 17 are intentional (template placeholders, illustrative generated-output samples, archived snapshots).
+- **Version stamps refreshed in 28 docs files** (14 English + 14 zh-CN) from v3.6.0 to v3.9.0. Historical references in `MIGRATION_GUIDE.md` and "added in vX.Y.Z" notes are deliberately untouched.
+- **`test_cli_paths.py` no longer pins a version literal** — it asserted `"3.9.0"` and broke the moment the dev version moved, the same fragility already fixed in `test_package_structure.py`. It now tracks `skill_seekers.__version__`.
+- **The published MCP Docker image was broken and is now fixed** — `Dockerfile.mcp` installed the MCP SDK with a bare `pip install mcp`, bypassing the `mcp>=1.25,<2` pin in `pyproject.toml`. Once mcp 2.0.0 shipped, that resolved to 2.x, where `FastMCP` moved out of `mcp.server`, so the container died on startup with `cannot import name 'FastMCP'`. It now installs via the `[mcp]` extra so the pin applies. Verified by building the image and confirming the server answers `/health` in ~4s on mcp 1.29.0.
+- **Docker MCP image smoke test polls for readiness** — the PR-only `Test MCP image` job waited a fixed 10s before curling `/health`, then failed with no diagnostics. It now polls for up to 60s and dumps container logs on timeout. That log dump is what surfaced the broken-image bug above, which the old silent failure had masked for months.
 
 ## [3.9.0] - 2026-07-29
 
@@ -2184,9 +2204,9 @@ None - All changes are backward compatible. Existing v2.4.0 workflows continue t
    - All packaging tools now accept `target` parameter
 
 **See full documentation:**
-- [Multi-Platform Guide](docs/UPLOAD_GUIDE.md)
-- [Feature Matrix](docs/FEATURE_MATRIX.md)
-- [Enhancement Guide](docs/ENHANCEMENT.md)
+- [Multi-Platform Guide](docs/guides/UPLOAD_GUIDE.md)
+- [Feature Matrix](docs/reference/FEATURE_MATRIX.md)
+- [Enhancement Guide](docs/features/ENHANCEMENT.md)
 
 ### Contributors
 
@@ -2609,7 +2629,7 @@ fetch_config(source="team", config_name="react-custom")
 - Example repository uses 'master' branch (git init default)
 
 ### See Also
-- [GIT_CONFIG_SOURCES.md](docs/GIT_CONFIG_SOURCES.md) - Complete guide
+- [GIT_CONFIG_SOURCES.md](docs/reference/GIT_CONFIG_SOURCES.md) - Complete guide
 - [configs/example-team/](configs/example-team/) - Example repository
 - [Issue #211](https://github.com/yusufkaraaslan/Skill_Seekers/issues/211) - Original feature request
 

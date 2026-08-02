@@ -147,7 +147,7 @@ Example:
 ```markdown
 # Topic Guide
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 ## Major Section
 
@@ -164,13 +164,13 @@ Link to related docs using relative paths:
 
 ```markdown
 <!-- Within same directory -->
-See [Troubleshooting](06-troubleshooting.md)
+See [Troubleshooting](user-guide/06-troubleshooting.md)
 
 <!-- Up one directory, then into reference -->
-See [CLI Reference](../reference/CLI_REFERENCE.md)
+See [CLI Reference](reference/CLI_REFERENCE.md)
 
 <!-- Up two directories (to root) -->
-See [Contributing](../../CONTRIBUTING.md)
+See [Contributing](../CONTRIBUTING.md)
 ```
 
 ---

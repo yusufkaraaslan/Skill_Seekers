@@ -1027,7 +1027,7 @@ export function useFetch<T>(url: string): UseFetchResult<T> {
 - [Windsurf Integration](WINDSURF.md) - Alternative AI IDE
 - [Continue.dev Integration](CONTINUE_DEV.md) - IDE-agnostic assistant
 - [LangChain Integration](LANGCHAIN.md) - Build RAG pipelines
-- [MCP Setup Guide](../MCP_SETUP.md) - Detailed MCP configuration
+- [MCP Setup Guide](../guides/MCP_SETUP.md) - Detailed MCP configuration
 
 ---
 

@@ -394,8 +394,8 @@ This case study enables:
 
 - [Integration Strategy](../strategy/INTEGRATION_STRATEGY.md)
 - [Integration Templates](../strategy/INTEGRATION_TEMPLATES.md)
-- [Cursor Integration Guide](../integrations/cursor.md) *(next target)*
-- [GitHub Action Guide](../integrations/github-actions.md) *(automation)*
+- [Cursor Integration Guide](../integrations/CURSOR.md) *(next target)*
+- GitHub Action Guide *(automation)*
 
 ---
 

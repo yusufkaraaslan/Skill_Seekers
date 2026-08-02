@@ -353,7 +353,7 @@ Teams managing complex codebases use this workflow to [specific benefit].
 
 - [Integration Strategy](./INTEGRATION_STRATEGY.md) - Overall strategy
 - [Integration Templates](./INTEGRATION_TEMPLATES.md) - Templates for new guides
-- [Outreach Scripts](./OUTREACH_SCRIPTS.md) - Maintainer communication
+- Outreach Scripts - Maintainer communication
 - [DeepWiki Case Study](../case-studies/deepwiki-open.md) - Detailed case study
 
 ---

@@ -899,8 +899,8 @@ def update_source(name: str, **kwargs) -> dict:
 ## 另请参阅
 
 - [README.md](../README.md) - 主文档
-- [MCP_SETUP.md](MCP_SETUP.md) - MCP 服务器设置
-- [UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md) - 多源抓取
+- [MCP_SETUP.md](../../guides/MCP_SETUP.md) - MCP 服务器设置
+- [UNIFIED_SCRAPING.md](../../features/UNIFIED_SCRAPING.md) - 多源抓取
 - [configs/example-team/](../configs/example-team/) - 示例仓库
 
 ---

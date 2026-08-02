@@ -1,6 +1,6 @@
 # 打包指南
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 > **将 skill 导出到 AI 平台和向量数据库**
 
 ---

@@ -1,0 +1,23 @@
+{
+  "_comment": "Single source of truth for sponsors. Edit this file, then run: python scripts/render_sponsors.py --write. Never hand-edit the generated blocks in README files or SPONSORS.md.",
+  "contact": "yusufkaraaslan.yk@pm.me",
+  "sponsors_url": "https://github.com/sponsors/yusufkaraaslan",
+  "policy": "SPONSORSHIP.md",
+
+  "partners": [
+    {
+      "name": "Atlas Cloud",
+      "url": "https://www.atlascloud.ai/",
+      "logo": "docs/assets/sponsors/atlas-cloud.png",
+      "width": 200,
+      "blurb": "A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.",
+      "note": "Launch Partner - predates the tier structure, placement grandfathered outside the standard tiers."
+    }
+  ],
+
+  "platinum": [],
+  "gold": [],
+  "silver": [],
+  "bronze": [],
+  "supporters": []
+}

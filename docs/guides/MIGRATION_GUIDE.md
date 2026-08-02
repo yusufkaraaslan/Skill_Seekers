@@ -563,7 +563,7 @@ cp -r configs.backup/* configs/
 ### Resources
 
 - **[CHANGELOG](../../CHANGELOG.md)** - Full version history
-- **[Troubleshooting](../../TROUBLESHOOTING.md)** - Common issues
+- **[Troubleshooting](../TROUBLESHOOTING.md)** - Common issues
 - **[GitHub Issues](https://github.com/yusufkaraaslan/Skill_Seekers/issues)** - Report problems
 - **[Discussions](https://github.com/yusufkaraaslan/Skill_Seekers/discussions)** - Ask questions
 
