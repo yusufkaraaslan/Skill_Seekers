@@ -1,6 +1,6 @@
 # 抓取指南
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 > **所有抓取选项的完整指南**
 
 ---

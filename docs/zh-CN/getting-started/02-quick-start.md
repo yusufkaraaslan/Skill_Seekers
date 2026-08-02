@@ -1,6 +1,6 @@
 # 快速入门指南
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **用 3 条命令创建你的第一个 skill**
 
 ---

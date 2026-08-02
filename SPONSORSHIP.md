@@ -1,6 +1,6 @@
 # Sponsoring Skill Seekers
 
-Skill Seekers is an open-source data layer for AI systems — 14K+ GitHub stars, 100K+ monthly PyPI downloads, enrolled in Anthropic's open-source program, and benchmarked first on pass@3 in SkillGenBench ([arXiv 2605.18693](https://arxiv.org/abs/2605.18693)). Our audience is developers building with Claude, Cursor, LangChain, and the broader AI tooling ecosystem.
+Skill Seekers is an open-source data layer for AI systems — 14K+ GitHub stars, 130K+ total PyPI downloads, enrolled in Anthropic's open-source program, and benchmarked first on pass@3 in SkillGenBench ([arXiv 2605.18693](https://arxiv.org/abs/2605.18693)). Our audience is developers building with Claude, Cursor, LangChain, and the broader AI tooling ecosystem.
 
 Sponsorship keeps the project maintained, secure, and free.
 

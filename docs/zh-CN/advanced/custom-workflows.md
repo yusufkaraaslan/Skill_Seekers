@@ -1,6 +1,6 @@
 # 自定义工作流指南
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **创建自定义 AI 增强工作流**
 
 ---

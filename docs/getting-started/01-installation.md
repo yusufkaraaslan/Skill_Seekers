@@ -1,6 +1,6 @@
 # Installation Guide
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 Get Skill Seekers installed and running in under 5 minutes.
 

@@ -1,6 +1,6 @@
 # 安装指南
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 在 5 分钟内完成 Skill Seekers 的安装并运行。
 

@@ -1,6 +1,6 @@
 # Multi-Source Scraping Guide
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Combine 18 source types into one unified skill**
 
 ---
