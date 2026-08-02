@@ -4,6 +4,8 @@
 
 # Skill Seekers
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fyusufkaraaslan%2FSkill_Seekers.svg)](https://mcptoplist.com/server/glama%2Fyusufkaraaslan%2FSkill_Seekers)
+
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
 [![Version](https://img.shields.io/badge/version-3.9.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
