@@ -136,9 +136,12 @@ class TestUnifiedCLIEntryPoints(unittest.TestCase):
                 result.returncode, 0, f"skill-seekers --version failed: {result.stderr}"
             )
 
-            # Should show version
+            # Should show the version the package actually reports, not a
+            # hardcoded literal that breaks on every release bump.
+            from skill_seekers import __version__
+
             output = result.stdout + result.stderr
-            self.assertIn("3.9.0", output)
+            self.assertIn(__version__, output)
 
         except FileNotFoundError:
             # If skill-seekers is not installed, skip this test
