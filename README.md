@@ -28,20 +28,15 @@ English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국�
 
 > 📋 **[View Development Roadmap & Tasks](https://github.com/users/yusufkaraaslan/projects/2)** - 134 tasks across 10 categories, pick any to contribute!
 
-## 🌐 Ecosystem
+## 💛 Sponsors
 
-Skill Seekers is a multi-repo project. Here's where everything lives:
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
+    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
 
-| Repository | Description | Links |
-|-----------|-------------|-------|
-| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | Core CLI & MCP server (this repo) | [PyPI](https://pypi.org/project/skill-seekers/) |
-| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Website & documentation | [Live](https://skillseekersweb.com/) |
-| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Community config repository | |
-| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action for CI/CD | |
-| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code plugin | |
-| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap for macOS | |
-
-> **Want to contribute?** The website and configs repos are great starting points for new contributors!
+[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — a full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
 
 ## 🧠 The Data Layer for AI Systems
 
@@ -1364,12 +1359,17 @@ Happy skill building! 🚀
 
 ---
 
-## 💛 Sponsors
+## 🌐 Ecosystem
 
-<p align="center">
-  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers">
-    <img src="docs/assets/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
-  </a>
-</p>
+Skill Seekers is a multi-repo project. Here's where everything lives:
 
-[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=skill_seekers) — a full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
+| Repository | Description | Links |
+|-----------|-------------|-------|
+| **[Skill_Seekers](https://github.com/yusufkaraaslan/Skill_Seekers)** | Core CLI & MCP server (this repo) | [PyPI](https://pypi.org/project/skill-seekers/) |
+| **[skillseekersweb](https://github.com/yusufkaraaslan/skillseekersweb)** | Website & documentation | [Live](https://skillseekersweb.com/) |
+| **[skill-seekers-configs](https://github.com/yusufkaraaslan/skill-seekers-configs)** | Community config repository | |
+| **[skill-seekers-action](https://github.com/yusufkaraaslan/skill-seekers-action)** | GitHub Action for CI/CD | |
+| **[skill-seekers-plugin](https://github.com/yusufkaraaslan/skill-seekers-plugin)** | Claude Code plugin | |
+| **[homebrew-skill-seekers](https://github.com/yusufkaraaslan/homebrew-skill-seekers)** | Homebrew tap for macOS | |
+
+> **Want to contribute?** The website and configs repos are great starting points for new contributors!
