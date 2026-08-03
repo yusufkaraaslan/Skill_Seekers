@@ -316,10 +316,10 @@ skill-seekers generate-router output/[skill-name]/
 
 ## 📚 Related Guides
 
-- [MCP Setup Guide](../features/MCP_SETUP.md)
+- [MCP Setup Guide](../guides/MCP_SETUP.md)
 - [Enhancement Modes](../features/ENHANCEMENT_MODES.md)
 - [Unified Scraping](../features/UNIFIED_SCRAPING.md)
-- [Router Skills](../features/ROUTER_SKILLS.md)
+- Router Skills
 
 ---
 
@@ -619,7 +619,7 @@ Happy to answer questions!
 
 - [Integration Strategy](./INTEGRATION_STRATEGY.md)
 - [DeepWiki Analysis](./DEEPWIKI_ANALYSIS.md)
-- [Outreach Scripts](./OUTREACH_SCRIPTS.md)
+- Outreach Scripts
 
 ---
 

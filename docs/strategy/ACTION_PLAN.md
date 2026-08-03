@@ -223,16 +223,16 @@ Position Skill Seekers as **the universal documentation preprocessor** for the e
    ## Universal Preprocessor for Any AI System
 
    ### RAG & Vector Databases
-   - LangChain - [Guide](integrations/LANGCHAIN.md)
-   - LlamaIndex - [Guide](integrations/LLAMA_INDEX.md)
-   - Pinecone - [Guide](integrations/PINECONE.md)
+   - LangChain - [Guide](../integrations/LANGCHAIN.md)
+   - LlamaIndex - [Guide](../integrations/LLAMA_INDEX.md)
+   - Pinecone - [Guide](../integrations/PINECONE.md)
    - Chroma - Coming soon
 
    ### AI Coding Assistants
-   - Cursor - [Guide](integrations/cursor.md)
-   - Windsurf - [Guide](integrations/windsurf.md)
-   - Cline - [Guide](integrations/cline.md)
-   - Continue.dev - [Guide](integrations/continue-dev.md)
+   - Cursor - [Guide](../integrations/CURSOR.md)
+   - Windsurf - [Guide](../integrations/WINDSURF.md)
+   - Cline - [Guide](../integrations/CLINE.md)
+   - Continue.dev - [Guide](../integrations/CONTINUE_DEV.md)
 
    ### Documentation Generators
    - Coming soon...

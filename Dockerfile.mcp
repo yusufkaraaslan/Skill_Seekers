@@ -25,10 +25,12 @@ COPY --chown=mcp:mcp src/ src/
 COPY --chown=mcp:mcp configs/ configs/
 COPY --chown=mcp:mcp pyproject.toml README.md ./
 
-# Install dependencies
+# Install dependencies.
+# NOTE: install mcp via the [mcp] extra, never as a bare `pip install mcp`.
+# pyproject pins `mcp>=1.25,<2`; a bare install resolves to mcp 2.x, where
+# FastMCP moved out of `mcp.server` and the server fails to start.
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e ".[all-llms]" && \
-    pip install --no-cache-dir mcp
+    pip install --no-cache-dir -e ".[all-llms,mcp]"
 
 # Switch to non-root user
 USER mcp

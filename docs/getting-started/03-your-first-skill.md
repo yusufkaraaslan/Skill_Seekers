@@ -1,6 +1,6 @@
 # Your First Skill - Complete Walkthrough
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Step-by-step guide to creating your first skill**
 
 ---

@@ -1,6 +1,6 @@
 # Core Concepts
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **Understanding how Skill Seekers works**
 
 ---

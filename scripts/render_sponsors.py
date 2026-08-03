@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+"""Render sponsor placements from ``sponsors.json`` into the READMEs and SPONSORS.md.
+
+``sponsors.json`` is the single source of truth. This script rewrites the content
+between the sponsor markers in every ``README*.md`` and regenerates ``SPONSORS.md``,
+so adding a sponsor is a one-file edit instead of 13 hand edits.
+
+Markers (already present in each README)::
+
+    <!-- SPONSORS:TOP:START -->    ... generated ...  <!-- SPONSORS:TOP:END -->
+    <!-- SPONSORS:BOTTOM:START --> ... generated ...  <!-- SPONSORS:BOTTOM:END -->
+
+Only logos/links are generated; the surrounding prose stays hand-maintained so the
+translated READMEs keep their own wording.
+
+Usage::
+
+    python scripts/render_sponsors.py --write   # apply
+    python scripts/render_sponsors.py --check   # CI drift guard (non-zero on drift)
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SPONSORS_FILE = REPO_ROOT / "sponsors.json"
+SPONSORS_MD = REPO_ROOT / "SPONSORS.md"
+
+# Tiers rendered near the top of the README vs in the bottom grid.
+TOP_TIERS = ("partners", "platinum", "gold")
+BOTTOM_TIERS = ("silver", "bronze")
+
+# Logo width (px) per tier - Gold "large", Silver "medium", Bronze "small".
+TIER_WIDTH = {
+    "partners": 200,
+    "platinum": 200,
+    "gold": 180,
+    "silver": 140,
+    "bronze": 100,
+}
+
+TIER_LABEL = {
+    "partners": "Launch Partner",
+    "platinum": "Platinum Sponsors",
+    "gold": "Gold Sponsors",
+    "silver": "Silver Sponsors",
+    "bronze": "Bronze Sponsors",
+}
+
+# SPONSORSHIP.md rule 4: sponsor links are clean URLs - no tracking parameters.
+TRACKING_PARAMS = re.compile(
+    r"^(utm_|ref$|referrer$|fbclid$|gclid$|mc_|_hs|source$|campaign$)", re.I
+)
+
+
+class PolicyError(ValueError):
+    """Raised when sponsor data violates the published sponsorship policy."""
+
+
+def _assert_clean_url(name: str, url: str) -> None:
+    """Reject sponsor URLs carrying tracking parameters (SPONSORSHIP.md rule 4)."""
+    query = urlsplit(url).query
+    if not query:
+        return
+    offenders = [k for k in parse_qs(query) if TRACKING_PARAMS.match(k)]
+    if offenders:
+        raise PolicyError(
+            f"{name}: sponsor URL carries tracking parameters {offenders} - "
+            f"rule 4 of SPONSORSHIP.md requires clean URLs.\n  {url}"
+        )
+
+
+def load_sponsors() -> dict:
+    """Load and validate sponsors.json."""
+    data = json.loads(SPONSORS_FILE.read_text(encoding="utf-8"))
+    for tier in (*TOP_TIERS, *BOTTOM_TIERS):
+        for entry in data.get(tier, []):
+            _assert_clean_url(entry["name"], entry["url"])
+            logo = REPO_ROOT / entry["logo"]
+            if not logo.is_file():
+                raise PolicyError(f"{entry['name']}: logo not found at {entry['logo']}")
+    return data
+
+
+def _logo_html(entry: dict, tier: str) -> str:
+    width = entry.get("width", TIER_WIDTH[tier])
+    return (
+        f'  <a href="{entry["url"]}">'
+        f'<img src="{entry["logo"]}" alt="{entry["name"]}" width="{width}"></a>'
+    )
+
+
+def render_top(data: dict) -> str:
+    """Large placements: launch partners, Platinum and Gold."""
+    out: list[str] = []
+    for tier in TOP_TIERS:
+        entries = data.get(tier, [])
+        if not entries:
+            continue
+        out.append(f"**{TIER_LABEL[tier]}**\n")
+        out.append('<p align="center">')
+        out.extend(_logo_html(e, tier) for e in entries)
+        out.append("</p>\n")
+        # Platinum (and grandfathered partners) may carry a short approved blurb.
+        for e in entries:
+            if e.get("blurb"):
+                out.append(f"[{e['name']}]({e['url']}) — {e['blurb']}\n")
+    return "\n".join(out).rstrip() if out else ""
+
+
+def render_bottom(data: dict) -> str:
+    """Grid placements: Silver (medium) and Bronze (small)."""
+    out: list[str] = []
+    for tier in BOTTOM_TIERS:
+        entries = data.get(tier, [])
+        if not entries:
+            continue
+        out.append(f"**{TIER_LABEL[tier]}**\n")
+        out.append('<p align="center">')
+        out.extend(_logo_html(e, tier) for e in entries)
+        out.append("</p>\n")
+    return "\n".join(out).rstrip() if out else ""
+
+
+def _replace_block(text: str, marker: str, body: str) -> str:
+    """Replace everything between the ``START``/``END`` markers for ``marker``."""
+    pattern = re.compile(
+        rf"<!-- SPONSORS:{marker}:START -->.*?<!-- SPONSORS:{marker}:END -->",
+        re.DOTALL,
+    )
+    if not pattern.search(text):
+        return text
+    rendered = f"<!-- SPONSORS:{marker}:START -->\n{body}\n<!-- SPONSORS:{marker}:END -->"
+    # lambda avoids backslash/group-reference interpretation in the replacement
+    return pattern.sub(lambda _m: rendered, text)
+
+
+def render_sponsors_md(data: dict) -> str:
+    """Full sponsor roll, including the Supporter tier (names only)."""
+    lines = [
+        "# Sponsors",
+        "",
+        "Skill Seekers is maintained in the open. These sponsors keep it that way.",
+        "",
+        f"Interested? See **[SPONSORSHIP.md]({data['policy']})** for tiers and rules, "
+        f"or sponsor directly at [GitHub Sponsors]({data['sponsors_url']}).",
+        "",
+        "> All placements on this page are paid sponsorships and are labelled as such.",
+        "> Sponsorship buys placement, not endorsement - see the rules in SPONSORSHIP.md.",
+        "",
+    ]
+    any_listed = False
+    for tier in (*TOP_TIERS, *BOTTOM_TIERS):
+        entries = data.get(tier, [])
+        if not entries:
+            continue
+        any_listed = True
+        lines += [f"## {TIER_LABEL[tier]}", ""]
+        for e in entries:
+            note = f" - {e['note']}" if e.get("note") else ""
+            lines.append(f"- [{e['name']}]({e['url']}){note}")
+        lines.append("")
+
+    supporters = data.get("supporters", [])
+    lines += ["## Supporters", ""]
+    if supporters:
+        any_listed = True
+        lines += [f"- {s}" for s in supporters]
+    else:
+        lines.append(f"_No supporters yet - [be the first]({data['sponsors_url']})._")
+    lines.append("")
+
+    if not any_listed:
+        lines.insert(6, "_No sponsors yet._\n")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--write", action="store_true", help="apply changes")
+    group.add_argument("--check", action="store_true", help="fail if files are out of date")
+    args = parser.parse_args(argv)
+
+    try:
+        data = load_sponsors()
+    except PolicyError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    top, bottom = render_top(data), render_bottom(data)
+    drifted: list[str] = []
+
+    for readme in sorted(REPO_ROOT.glob("README*.md")):
+        original = readme.read_text(encoding="utf-8")
+        updated = _replace_block(original, "TOP", top)
+        updated = _replace_block(updated, "BOTTOM", bottom)
+        if updated != original:
+            drifted.append(readme.name)
+            if args.write:
+                readme.write_text(updated, encoding="utf-8")
+
+    sponsors_md = render_sponsors_md(data)
+    if not SPONSORS_MD.is_file() or SPONSORS_MD.read_text(encoding="utf-8") != sponsors_md:
+        drifted.append(SPONSORS_MD.name)
+        if args.write:
+            SPONSORS_MD.write_text(sponsors_md, encoding="utf-8")
+
+    if args.check and drifted:
+        print(
+            "error: sponsor placements are out of date with sponsors.json:\n  "
+            + "\n  ".join(drifted)
+            + "\n\nRun: python scripts/render_sponsors.py --write",
+            file=sys.stderr,
+        )
+        return 1
+
+    action = "updated" if args.write else "would update"
+    print(f"{action} {len(drifted)} file(s)" if drifted else "sponsor placements up to date")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

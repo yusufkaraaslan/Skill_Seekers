@@ -427,5 +427,5 @@ wait
 
 **有问题？请参阅：**
 - [主 README](../README.md)
-- [MCP 设置指南](MCP_SETUP.md)
-- [增强指南](ENHANCEMENT.md)
+- [MCP 设置指南](../../guides/MCP_SETUP.md)
+- [增强指南](../../features/ENHANCEMENT.md)

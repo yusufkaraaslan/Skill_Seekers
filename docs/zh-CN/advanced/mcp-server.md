@@ -1,6 +1,6 @@
 # MCP 服务器设置指南
 
-> **Skill Seekers v3.6.0**  
+> **Skill Seekers v3.9.0**  
 > **通过 Model Context Protocol 与 AI 代理集成**
 
 ---
@@ -350,5 +350,5 @@ skill-seekers-mcp --port 8766
 ## 另请参阅
 
 - [MCP 参考文档](../reference/MCP_REFERENCE.md) - 完整工具参考
-- [MCP 工具深入](mcp-tools.md) - 高级用法
+- MCP 工具深入 - 高级用法
 - [MCP 协议](https://modelcontextprotocol.io/) - 官方 MCP 文档

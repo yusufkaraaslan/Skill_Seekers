@@ -376,7 +376,7 @@ A：是的！所有 18 种来源类型都适用于全部 21 个平台（Claude�
 ## 另请参阅
 
 - **[README.md](../README.md)** - 完整用户文档
-- **[UNIFIED_SCRAPING.md](UNIFIED_SCRAPING.md)** - 多源抓取指南
-- **[ENHANCEMENT.md](ENHANCEMENT.md)** - AI 增强指南
-- **[UPLOAD_GUIDE.md](UPLOAD_GUIDE.md)** - 上传说明
-- **[MCP_SETUP.md](MCP_SETUP.md)** - MCP 服务器设置
+- **[UNIFIED_SCRAPING.md](../../features/UNIFIED_SCRAPING.md)** - 多源抓取指南
+- **[ENHANCEMENT.md](../../features/ENHANCEMENT.md)** - AI 增强指南
+- **[UPLOAD_GUIDE.md](../../guides/UPLOAD_GUIDE.md)** - 上传说明
+- **[MCP_SETUP.md](../../guides/MCP_SETUP.md)** - MCP 服务器设置

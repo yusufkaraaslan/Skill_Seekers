@@ -797,7 +797,7 @@ results = retriever.run(
 ### Learn More
 
 - [RAG Pipelines Guide](RAG_PIPELINES.md) - Complete RAG overview
-- [Chunking Guide](../features/CHUNKING.md) - Semantic chunking details
+- Chunking Guide - Semantic chunking details
 - [Haystack Documentation](https://docs.haystack.deepset.ai/)
 - [Example Repository](../../examples/haystack-pipeline/)
 

@@ -513,10 +513,10 @@ jobs:
 ## 📚 Related Documents
 
 - [Integration Templates](./INTEGRATION_TEMPLATES.md)
-- [Outreach Scripts](./OUTREACH_SCRIPTS.md)
-- [Blog Post Outlines](./BLOG_POST_OUTLINES.md)
+- Outreach Scripts
+- Blog Post Outlines
 - [DeepWiki Case Study](../case-studies/deepwiki-open.md)
-- [Cursor Integration Guide](../integrations/cursor.md)
+- [Cursor Integration Guide](../integrations/CURSOR.md)
 
 ---
 

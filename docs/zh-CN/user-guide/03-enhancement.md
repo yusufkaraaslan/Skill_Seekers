@@ -1,6 +1,6 @@
 # 增强指南
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 > **AI 驱动的 skill 质量提升**
 
 ---

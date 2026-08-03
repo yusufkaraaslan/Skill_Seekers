@@ -147,7 +147,7 @@ docs/
 ```markdown
 # Topic Guide
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 ## Major Section
 
@@ -164,7 +164,7 @@ docs/
 
 ```markdown
 <!-- 同一目录内 -->
-See [Troubleshooting](06-troubleshooting.md)
+See [Troubleshooting](user-guide/06-troubleshooting.md)
 
 <!-- 向上进入 reference 目录 -->
 See [CLI Reference](../reference/CLI_REFERENCE.md)

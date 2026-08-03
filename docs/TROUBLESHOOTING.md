@@ -24,8 +24,15 @@ Comprehensive guide for diagnosing and resolving common issues with Skill Seeker
 - [Performance Issues](#performance-issues)
 - [Storage Issues](#storage-issues)
 - [Network Issues](#network-issues)
+- [Runtime Issues](#runtime-issues)
+- [MCP Setup Issues](#mcp-setup-issues)
+- [Platform-Specific Issues](#platform-specific-issues)
 - [General Debug Techniques](#general-debug-techniques)
+- [Getting More Help](#getting-more-help)
 - [Source-Type-Specific Issues](#source-type-specific-issues)
+- [Common Error Messages Reference](#common-error-messages-reference)
+- [Verification Commands](#verification-commands)
+- [Quick Fixes Checklist](#quick-fixes-checklist)
 
 ## Installation Issues
 
@@ -807,6 +814,246 @@ export PYTHONHTTPSVERIFY=0
 skill-seekers create --config config.json
 ```
 
+## Runtime Issues
+
+### File Not Found
+
+**Error:**
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'src/skill_seekers/cli/main.py'
+```
+
+**Solutions:**
+1. **Check you're in the Skill_Seekers directory:**
+   ```bash
+   pwd
+   # Should show: .../Skill_Seekers
+
+   ls
+   # Should show: README.md, src/, configs/, tests/
+   ```
+
+2. **Change to the correct directory:**
+   ```bash
+   cd ~/Projects/Skill_Seekers  # Adjust path
+   ```
+
+3. **Ensure the package is installed:**
+   ```bash
+   pip install -e .
+   ```
+
+### Config File Not Found
+
+**Error:**
+```
+❌ Error: Config file not found: configs/myconfig.json
+```
+
+**Understanding Config Locations:**
+
+The tool searches for configs in this order:
+1. Exact path as provided
+2. `./configs/` (current directory)
+3. `~/.config/skill-seekers/configs/` (user config directory)
+4. SkillSeekersWeb.com API (preset configs)
+
+**Solutions:**
+
+1. **Place config in user directory (recommended for custom configs):**
+   ```bash
+   mkdir -p ~/.config/skill-seekers/configs
+   cp myconfig.json ~/.config/skill-seekers/configs/
+
+   # Now you can use it from anywhere
+   skill-seekers create --config myconfig.json
+   ```
+
+2. **Place config in current directory (project-specific):**
+   ```bash
+   mkdir -p configs
+   cp myconfig.json configs/
+
+   skill-seekers create --config configs/myconfig.json
+   ```
+
+3. **Use absolute path:**
+   ```bash
+   skill-seekers create --config /full/path/to/myconfig.json
+   ```
+
+4. **Check if it's a preset config (auto-downloads):**
+   ```bash
+   # List all available presets
+   skill-seekers estimate --all
+
+   # Use preset (auto-fetched from API)
+   skill-seekers create --config react.json
+   ```
+
+5. **Create new config interactively:**
+   ```bash
+   skill-seekers create --interactive
+   ```
+
+---
+
+
+## MCP Setup Issues
+
+### MCP Server Not Loading
+
+**Symptoms:**
+- Tools don't appear in Claude Code
+- "List all available configs" doesn't work
+
+**Solutions:**
+
+1. **Check configuration file:**
+   ```bash
+   cat ~/.config/claude-code/mcp.json
+   ```
+
+2. **Verify paths are ABSOLUTE (not placeholders):**
+   ```json
+   {
+     "mcpServers": {
+       "skill-seeker": {
+         "command": "python",
+         "args": [
+           "-m",
+           "skill_seekers.mcp.server_fastmcp"
+         ]
+       }
+     }
+   }
+   ```
+   ❌ **Bad:** `$REPO_PATH` or `/path/to/Skill_Seekers`
+   ✅ **Good:** `/Users/john/Projects/Skill_Seekers`
+
+3. **Test server manually:**
+   ```bash
+   cd ~/Projects/Skill_Seekers
+   python -m skill_seekers.mcp.server_fastmcp
+   # Should start without errors (Ctrl+C to stop)
+   ```
+
+4. **Re-run setup script:**
+   ```bash
+   ./setup_mcp.sh
+   # Select "y" for auto-configure
+   ```
+
+5. **RESTART Claude Code completely:**
+   - Quit (don't just close window)
+   - Reopen
+
+### Placeholder Paths in Config
+
+**Problem:** Config has `$REPO_PATH` or `/Users/username/` instead of real paths
+
+**Solution:**
+```bash
+# Get your actual path
+cd ~/Projects/Skill_Seekers
+pwd
+# Copy this path
+
+# Edit config
+nano ~/.config/claude-code/mcp.json
+
+# Replace ALL instances of placeholders with your actual path
+# Save (Ctrl+O, Enter, Ctrl+X)
+
+# Restart Claude Code
+```
+
+### Tools Appear But Don't Work
+
+**Symptoms:**
+- Tools listed but commands fail
+- "Error executing tool" messages
+
+**Solutions:**
+
+1. **Check working directory:**
+   ```json
+   {
+     "cwd": "/FULL/PATH/TO/Skill_Seekers"
+   }
+   ```
+
+2. **Verify package is installed:**
+   ```bash
+   pip list | grep skill-seekers
+   python -c "import skill_seekers; print(skill_seekers.__version__)"
+   ```
+
+3. **Test CLI tools directly:**
+   ```bash
+   skill-seekers create --help
+   ```
+
+---
+
+
+## Platform-Specific Issues
+
+### macOS
+
+**Issue:** Can't run `./setup_mcp.sh`
+
+**Solution:**
+```bash
+chmod +x setup_mcp.sh
+./setup_mcp.sh
+```
+
+**Issue:** Homebrew not installed
+
+**Solution:**
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Linux
+
+**Issue:** pip3 not found
+
+**Solution:**
+```bash
+sudo apt update
+sudo apt install python3-pip
+```
+
+**Issue:** Permission errors
+
+**Solution:**
+```bash
+# Use --user flag
+pip3 install --user -e .
+```
+
+### Windows (WSL)
+
+**Issue:** Python not in PATH
+
+**Solution:**
+1. Reinstall Python
+2. Check "Add Python to PATH"
+3. Or add manually to PATH
+
+**Issue:** Line ending errors
+
+**Solution:**
+```bash
+dos2unix setup_mcp.sh
+./setup_mcp.sh
+```
+
+---
+
+
 ## General Debug Techniques
 
 ### Enable Debug Logging
@@ -1100,3 +1347,52 @@ ls ./slack-export/
 ---
 
 **Still stuck?** Open an issue with the "help wanted" label and we'll assist you!
+
+## Verification Commands
+
+Use these to check your setup:
+
+```bash
+# 1. Check Python
+python3 --version  # Should be 3.10+
+
+# 2. Check package is installed
+pip list | grep skill-seekers
+python -c "import skill_seekers; print(skill_seekers.__version__)"
+
+# 3. Check source layout
+ls src/skill_seekers/cli/
+ls src/skill_seekers/mcp/
+ls configs/
+
+# 4. Check MCP config
+cat ~/.config/claude-code/mcp.json
+
+# 5. Test scraper
+skill-seekers create --help
+
+# 6. Test MCP server
+timeout 3 python -m skill_seekers.mcp.server_fastmcp || echo "Server OK"
+
+# 7. Check git repo
+git status
+git log --oneline -5
+```
+
+---
+
+
+## Quick Fixes Checklist
+
+- [ ] In the Skill_Seekers directory? (`pwd`)
+- [ ] Python 3.10+ installed? (`python3 --version`)
+- [ ] Package installed? (`pip list | grep skill-seekers`)
+- [ ] Config file exists? (`ls configs/yourconfig.json`)
+- [ ] Internet connection working? (`ping google.com`)
+- [ ] For MCP: Config uses absolute paths? (not `$REPO_PATH`)
+- [ ] For MCP: Claude Code restarted? (quit and reopen)
+
+---
+
+**Still stuck?** Open an issue: https://github.com/yusufkaraaslan/Skill_Seekers/issues/new
+

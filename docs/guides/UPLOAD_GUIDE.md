@@ -440,7 +440,7 @@ source ~/.bashrc  # or ~/.zshrc
 
 ## See Also
 
-- [FEATURE_MATRIX.md](FEATURE_MATRIX.md) - Complete feature comparison
-- [MULTI_LLM_SUPPORT.md](MULTI_LLM_SUPPORT.md) - Multi-platform guide
-- [ENHANCEMENT.md](ENHANCEMENT.md) - AI enhancement guide
+- [FEATURE_MATRIX.md](../reference/FEATURE_MATRIX.md) - Complete feature comparison
+- [MULTI_LLM_SUPPORT.md](../integrations/MULTI_LLM_SUPPORT.md) - Multi-platform guide
+- [ENHANCEMENT.md](../features/ENHANCEMENT.md) - AI enhancement guide
 - [README.md](../README.md) - Main documentation

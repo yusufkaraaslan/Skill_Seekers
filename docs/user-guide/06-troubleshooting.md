@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-> **Skill Seekers v3.6.0**
+> **Skill Seekers v3.9.0**
 
 This chapter covers the most common issues. For the **complete troubleshooting guide** with all error codes, platform-specific fixes, and advanced diagnostics, see [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md).
 

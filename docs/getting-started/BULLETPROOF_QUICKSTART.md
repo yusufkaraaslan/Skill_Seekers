@@ -492,7 +492,7 @@ If you have Claude Code installed:
 # "Package the skill at output/svelte/"
 ```
 
-**See:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md) for full MCP setup
+**See:** [docs/guides/MCP_SETUP.md](../guides/MCP_SETUP.md) for full MCP setup
 
 ---
 
@@ -567,7 +567,7 @@ curl -I https://docs.yoursite.com
 
 ### Still stuck?
 
-1. **Check our detailed troubleshooting guide:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+1. **Check our detailed troubleshooting guide:** [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
 2. **Open an issue:** https://github.com/yusufkaraaslan/Skill_Seekers/issues
 3. **Include this info:**
    - Operating system (macOS 13, Ubuntu 22.04, Windows 11, etc.)
@@ -579,10 +579,10 @@ curl -I https://docs.yoursite.com
 
 ## 📚 Next Steps
 
-- **Read the full README:** [README.md](README.md)
+- **Read the full README:** [README.md](../../README.md)
 - **Learn about presets:** [configs/](configs/)
-- **Try MCP integration:** [docs/guides/MCP_SETUP.md](docs/guides/MCP_SETUP.md)
-- **Advanced usage:** [docs/](docs/)
+- **Try MCP integration:** [docs/guides/MCP_SETUP.md](../guides/MCP_SETUP.md)
+- **Advanced usage:** [docs/](../)
 
 ---
 

@@ -811,10 +811,10 @@ open htmlcov/index.html
 
 ## 相关文档
 
-- **[测试指南](../guides/TESTING_GUIDE.md)** - 全面的测试文档
-- **[贡献指南](../../CONTRIBUTING.md)** - 贡献准则
+- **[测试指南](../../guides/TESTING_GUIDE.md)** - 全面的测试文档
+- **[贡献指南](../../../CONTRIBUTING.md)** - 贡献准则
 - **[API 参考](API_REFERENCE.md)** - 编程方式使用
-- **[CHANGELOG](../../CHANGELOG.md)** - 版本历史与变更
+- **[CHANGELOG](../../../CHANGELOG.md)** - 版本历史与变更
 
 ---
 

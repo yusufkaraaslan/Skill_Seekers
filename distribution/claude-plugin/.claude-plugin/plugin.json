@@ -1,7 +1,7 @@
 {
   "name": "skill-seekers",
   "description": "Transform 18 source types (docs, GitHub, PDFs, videos, Jupyter, Confluence, Notion, Slack, and more) into AI-ready skills and RAG knowledge for 21+ AI platforms.",
-  "version": "3.9.0",
+  "version": "3.9.1",
   "author": {
     "name": "Yusuf Karaaslan"
   },
