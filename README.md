@@ -247,7 +247,7 @@ YouTube, Vimeo, and local files. Three-tier transcript fallback (subtitles → Y
 <details>
 <summary><b>Quality, sync & scale</b></summary>
 
-Quality scoring with a gate (`skill-seekers quality output/react/ --threshold 7`), doc-change detection with scheduled re-scrapes and notifications, streaming ingestion for very large doc sets, and incremental updates.
+Quality scoring with a gate (`skill-seekers quality output/react/ --threshold 7`), provisional English readability metrics with aggregated warnings, doc-change detection with scheduled re-scrapes and notifications, streaming ingestion for very large doc sets, and incremental updates.
 
 → [Large Documentation](docs/reference/LARGE_DOCUMENTATION.md) · [Code Quality](docs/reference/CODE_QUALITY.md)
 </details>

@@ -15,8 +15,16 @@ from pathlib import Path
 
 # Fenced code blocks (``` or ~~~) and inline code spans. Stripped before
 # completeness pattern matching so code examples don't trigger prose heuristics.
-_FENCED_CODE_RE = re.compile(r"(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$")
+_FENCED_CODE_RE = re.compile(r"(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*\r?$")
 _INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+_FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n.*?\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL)
+_WORD_RE = re.compile(r"\b[\w]+(?:['’-][\w]+)*\b", re.UNICODE)
+_SENTENCE_RE = re.compile(r"(?<=[.!?])[\"')\]]*(?=\s|$)")
+_READABILITY_LANGUAGE_POLICY = (
+    "English-language formulas; may be inaccurate for non-English content"
+)
+_LONG_SENTENCE_WORDS = 30
+_LONG_PARAGRAPH_WORDS = 200
 
 
 def _strip_code(text: str) -> str:
@@ -28,6 +36,91 @@ def _strip_code(text: str) -> str:
     """
     without_fenced = _FENCED_CODE_RE.sub("", text)
     return _INLINE_CODE_RE.sub("", without_fenced)
+
+
+def _strip_frontmatter(text: str) -> str:
+    """Return ``text`` without a leading YAML frontmatter block."""
+    match = _FRONTMATTER_RE.match(text)
+    return text[match.end() :] if match else text
+
+
+def _count_syllables(word: str) -> int:
+    """Estimate English syllables for the provisional readability metrics."""
+    letters = re.sub(r"[^a-z]", "", word.lower())
+    if not letters:
+        return 1
+    if len(letters) <= 3:
+        return 1
+
+    syllables = len(re.findall(r"[aeiouy]+", letters))
+    if syllables > 1 and letters.endswith(("e", "es", "ed")) and not letters.endswith(("le", "ye")):
+        syllables -= 1
+    return max(1, syllables)
+
+
+@dataclass(frozen=True)
+class _ReadabilityMetrics:
+    """Internal readability values calculated from prose only."""
+
+    reading_ease: float
+    grade_level: float
+    average_sentence_length: float
+    average_paragraph_length: float
+    long_sentence_lengths: tuple[int, ...]
+    long_paragraph_lengths: tuple[int, ...]
+
+
+def _calculate_readability(text: str) -> _ReadabilityMetrics | None:
+    """Calculate provisional English readability metrics for Markdown prose."""
+    prose = _strip_code(_strip_frontmatter(text)).strip()
+    if not prose:
+        return None
+
+    sentences = [sentence for sentence in _SENTENCE_RE.split(prose) if sentence.strip()]
+    sentence_word_counts = [len(_WORD_RE.findall(sentence)) for sentence in sentences]
+    sentence_word_counts = [count for count in sentence_word_counts if count]
+    if not sentence_word_counts:
+        return None
+
+    paragraphs = [paragraph for paragraph in re.split(r"\n\s*\n", prose) if paragraph.strip()]
+    paragraph_word_counts = []
+    paragraph_sentence_counts = []
+    for paragraph in paragraphs:
+        word_count = len(_WORD_RE.findall(paragraph))
+        if not word_count:
+            continue
+        paragraph_word_counts.append(word_count)
+        paragraph_sentence_counts.append(
+            len(
+                [
+                    sentence
+                    for sentence in _SENTENCE_RE.split(paragraph)
+                    if _WORD_RE.search(sentence)
+                ]
+            )
+        )
+    word_count = sum(sentence_word_counts)
+    syllable_count = sum(_count_syllables(word) for word in _WORD_RE.findall(prose))
+    sentence_count = len(sentence_word_counts)
+    paragraph_count = len(paragraph_word_counts)
+
+    words_per_sentence = word_count / sentence_count
+    syllables_per_word = syllable_count / word_count
+    reading_ease = 206.835 - (1.015 * words_per_sentence) - (84.6 * syllables_per_word)
+    grade_level = (0.39 * words_per_sentence) + (11.8 * syllables_per_word) - 15.59
+
+    return _ReadabilityMetrics(
+        reading_ease=reading_ease,
+        grade_level=grade_level,
+        average_sentence_length=words_per_sentence,
+        average_paragraph_length=sum(paragraph_sentence_counts) / paragraph_count,
+        long_sentence_lengths=tuple(
+            count for count in sentence_word_counts if count > _LONG_SENTENCE_WORDS
+        ),
+        long_paragraph_lengths=tuple(
+            count for count in paragraph_word_counts if count > _LONG_PARAGRAPH_WORDS
+        ),
+    )
 
 
 @dataclass
@@ -135,6 +228,9 @@ class SkillQualityChecker:
 
         # Content quality checks
         self._check_content_quality()
+
+        # Provisional English readability checks
+        self._check_readability()
 
         # Link validation
         self._check_links()
@@ -298,6 +394,49 @@ class SkillQualityChecker:
                         "Reference files exist but none are mentioned in SKILL.md",
                         "SKILL.md",
                     )
+
+    def _check_readability(self):
+        """Report provisional English readability metrics for SKILL.md prose."""
+        if not self.skill_md_path.exists():
+            return
+
+        metrics = _calculate_readability(self.skill_md_path.read_text(encoding="utf-8"))
+        if metrics is None:
+            return
+
+        self.report.add_info(
+            "readability",
+            (
+                f"Readability ({_READABILITY_LANGUAGE_POLICY}): "
+                f"Flesch Reading Ease {metrics.reading_ease:.1f}; "
+                f"Flesch-Kincaid Grade Level {metrics.grade_level:.1f}; "
+                f"average sentence length {metrics.average_sentence_length:.1f} words; "
+                f"average paragraph length {metrics.average_paragraph_length:.1f} sentences"
+            ),
+            "SKILL.md",
+        )
+
+        if metrics.long_sentence_lengths:
+            self.report.add_warning(
+                "readability",
+                (
+                    f"Readability: {len(metrics.long_sentence_lengths)} sentence(s) exceed "
+                    f"{_LONG_SENTENCE_WORDS} words; longest is "
+                    f"{max(metrics.long_sentence_lengths)} words"
+                ),
+                "SKILL.md",
+            )
+
+        if metrics.long_paragraph_lengths:
+            self.report.add_warning(
+                "readability",
+                (
+                    f"Readability: {len(metrics.long_paragraph_lengths)} paragraph(s) exceed "
+                    f"{_LONG_PARAGRAPH_WORDS} words; longest is "
+                    f"{max(metrics.long_paragraph_lengths)} words"
+                ),
+                "SKILL.md",
+            )
 
     def _check_links(self):
         """Check internal markdown links."""

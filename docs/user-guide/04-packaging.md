@@ -385,6 +385,15 @@ skill-seekers quality output/my-skill/ --threshold 7.0
 - Code example coverage
 - Navigation structure
 - Reference file organization
+- Provisional English readability metrics, including average paragraph length in sentences
+- Aggregated warnings for sentences over 30 words and paragraphs over 200 words
+
+Readability scores use English-language formulas and may be inaccurate for non-English content.
+The lightweight syllable heuristic counts vowel groups and adjusts common silent endings, so
+results can also be less reliable for very short text, proper names, abbreviations, and unusual
+words. Headings, lists, and link targets are treated as text; simple punctuation rules determine
+sentence boundaries, so abbreviations and decimals can affect averages. Code and YAML frontmatter
+are excluded from the calculation.
 
 ---
 
