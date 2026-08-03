@@ -6,7 +6,7 @@ Sponsorship keeps the project maintained, secure, and free.
 
 ## Placements & tiers
 
-All amounts are monthly. One-time placements available at 2× the monthly rate for a 30-day run.
+All sponsorships run through [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan). All amounts are monthly.
 
 | Tier | Price | What you get |
 |------|-------|--------------|
@@ -16,7 +16,7 @@ All amounts are monthly. One-time placements available at 2× the monthly rate f
 | **Gold** | $400/mo | Large logo near the top of the README sponsor section + website placement + mention in release notes |
 | **Platinum** | $1,000/mo | Everything in Gold + a short "Sponsored" blurb (1–2 sentences, your copy, my approval) in the README + priority issue triage |
 
-Custom arrangements (integrations, co-marketing, content) are quoted case by case.
+One-time options are available on the Sponsors page. Custom arrangements (integrations, co-marketing, content) are quoted case by case.
 
 ## Rules — read before reaching out
 
@@ -25,24 +25,29 @@ These are non-negotiable and exist because I've been through enough of these dea
 1. **Relevance filter.** Sponsors must be tools or services genuinely useful to developers working with AI tooling, docs infrastructure, or open source. I decline everything else regardless of budget.
 2. **Clear labeling.** All paid placements are explicitly marked "Sponsor" or "Sponsored." No native-ad ambiguity.
 3. **No editorial control.** I don't write reviews or recommendations with predetermined conclusions. A sponsorship buys placement, not my endorsement. If I recommend your tool anywhere, it's because I use it and it earned it.
-4. **No tracking parameters.** Sponsor links are clean URLs. No UTM tags, no redirect chains, no analytics injection.
+4. **Link policy.** Sponsor links may include standard UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`) for traffic measurement. Affiliate/referral parameters, redirect chains, and analytics injection are not permitted.
 5. **Written trail.** All terms are agreed in writing (email is fine) before anything goes live. No chat-only negotiations.
-6. **Security review.** Any sponsor-submitted PR (badges, links, integrations) goes through the same security review as any other PR. Credits and placement are confirmed before merge, not after.
+6. **Security review.** Any sponsor-submitted asset or PR (logos, badges, links, integrations) goes through the same security review as any other contribution. Placement is confirmed in writing before merge, not after.
 7. **Termination.** Either side can end a monthly arrangement with 30 days' notice. I remove placements immediately if a sponsor's product or conduct conflicts with the project's interests.
-8. **Payment first.** Placement goes live after the first payment clears ([GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan) preferred; invoice possible for larger tiers).
+8. **Payment first.** Placement goes live after the first payment clears via [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan).
 
-> Rule 4 is enforced in code: `scripts/render_sponsors.py` refuses to render any sponsor URL carrying tracking parameters, and CI fails the build if it finds one.
+> Rule 4 is enforced in code: `scripts/render_sponsors.py` accepts standard UTM parameters but refuses to render any sponsor URL carrying affiliate, referral, or click-tracking parameters, and CI fails the build if it finds one.
 
 ## How to start
 
-Email **yusufkaraaslan.yk@pm.me** with:
-
-- which tier
-- which placement
-- your logo and link
-- billing contact
+Sponsor at the tier you want on **[github.com/sponsors/yusufkaraaslan](https://github.com/sponsors/yusufkaraaslan)**, then email **yusufkaraaslan.yk@pm.me** with your logo (SVG or transparent PNG) and target URL.
 
 If it passes the relevance filter, you'll get written confirmation of terms and a go-live date.
+
+<details>
+<summary>What to include in the email</summary>
+
+- the tier you sponsored at
+- your logo (SVG or transparent PNG)
+- the target URL, including any UTM parameters you want
+- a billing/contact address for the written confirmation
+
+</details>
 
 ---
 
