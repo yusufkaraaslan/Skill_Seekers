@@ -27,15 +27,21 @@
 
 ## 💛 Спонсоры
 
-<!-- SPONSORS:TOP:START -->
-**Launch Partner**
+<!-- SPONSORS:START -->
+### Launch Partner
 
 <p align="center">
   <a href="https://www.atlascloud.ai/"><img src="docs/assets/sponsors/atlas-cloud.png" alt="Atlas Cloud" width="200"></a><br/><sub><b>Launch Partner</b></sub>
 </p>
 
 [Atlas Cloud](https://www.atlascloud.ai/) — A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
-<!-- SPONSORS:TOP:END -->
+
+### Silver Sponsors
+
+<p align="center">
+  <a href="https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor"><img src="docs/assets/sponsors/rapidproxy.png" alt="RapidProxy" width="140"></a><br/><sub><b>Sponsor — Silver</b></sub>
+</p>
+<!-- SPONSORS:END -->
 
 **[Стать спонсором](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)
 
@@ -415,14 +421,6 @@ MIT — см. [LICENSE](LICENSE).
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/yusufkaraaslan-skill-seekers-badge.png)](https://mseep.ai/app/yusufkaraaslan-skill-seekers)
 
 ---
-
-<!-- SPONSORS:BOTTOM:START -->
-**Silver Sponsors**
-
-<p align="center">
-  <a href="https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor"><img src="docs/assets/sponsors/rapidproxy.png" alt="RapidProxy" width="140"></a><br/><sub><b>Sponsor — Silver</b></sub>
-</p>
-<!-- SPONSORS:BOTTOM:END -->
 
 ## 🌐 Экосистема
 

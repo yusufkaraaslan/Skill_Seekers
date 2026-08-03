@@ -11,10 +11,10 @@ All sponsorships run through [GitHub Sponsors](https://github.com/sponsors/yusuf
 | Tier | Price | What you get |
 |------|-------|--------------|
 | **Supporter** | $10/mo | Name in [SPONSORS.md](SPONSORS.md) |
-| **Bronze** | $50/mo | Small logo in the README bottom sponsor grid |
-| **Silver** | $150/mo | Medium logo in the README sponsor grid + logo on the [SkillSeekersWeb.com](https://skillseekersweb.com/) sponsors page |
-| **Gold** | $400/mo | Large logo near the top of the README sponsor section + website placement + mention in release notes |
-| **Platinum** | $1,000/mo | Everything in Gold + a short "Sponsored" blurb (1–2 sentences, your copy, my approval) in the README + priority issue triage |
+| **Bronze** | $50/mo | Small logo in the README sponsor section |
+| **Silver** | $150/mo | Medium logo in the README sponsor section, above Bronze + logo on the [SkillSeekersWeb.com](https://skillseekersweb.com/) sponsors page |
+| **Gold** | $400/mo | Large logo listed above Silver and Bronze in the README sponsor section + website placement + mention in release notes |
+| **Platinum** | $1,000/mo | Everything in Gold, listed first + a short "Sponsored" blurb (1–2 sentences, your copy, my approval) in the README + priority issue triage |
 
 One-time options are available on the Sponsors page. Custom arrangements (integrations, co-marketing, content) are quoted case by case.
 
@@ -65,4 +65,4 @@ python scripts/render_sponsors.py --write
 python scripts/render_sponsors.py --check
 ```
 
-Never edit the content between the `<!-- SPONSORS:TOP:START -->` / `<!-- SPONSORS:BOTTOM:START -->` markers by hand — it is overwritten on the next render.
+Never edit the content between the `<!-- SPONSORS:START -->` / `<!-- SPONSORS:END -->` markers by hand — it is overwritten on the next render.
