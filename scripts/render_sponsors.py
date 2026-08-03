@@ -7,8 +7,12 @@ so adding a sponsor is a one-file edit instead of 13 hand edits.
 
 Markers (already present in each README)::
 
-    <!-- SPONSORS:TOP:START -->    ... generated ...  <!-- SPONSORS:TOP:END -->
-    <!-- SPONSORS:BOTTOM:START --> ... generated ...  <!-- SPONSORS:BOTTOM:END -->
+    <!-- SPONSORS:START -->  ... generated ...  <!-- SPONSORS:END -->
+
+All tiers render in that single block as ``###`` subheadings, ordered from the
+highest tier down - the layout used by FastAPI and every comparable project.
+Tier value is expressed by order and logo size, not by scattering placements
+across the page.
 
 Only logos/links are generated; the surrounding prose stays hand-maintained so the
 translated READMEs keep their own wording.
@@ -32,9 +36,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SPONSORS_FILE = REPO_ROOT / "sponsors.json"
 SPONSORS_MD = REPO_ROOT / "SPONSORS.md"
 
-# Tiers rendered near the top of the README vs in the bottom grid.
-TOP_TIERS = ("partners", "platinum", "gold")
-BOTTOM_TIERS = ("silver", "bronze")
+# Tier render order, highest first. Order and logo size carry the hierarchy.
+TIERS = ("partners", "platinum", "gold", "silver", "bronze")
 
 # Logo width (px) per tier - Gold "large", Silver "medium", Bronze "small".
 TIER_WIDTH = {
@@ -104,7 +107,7 @@ def _assert_clean_url(name: str, url: str) -> None:
 def load_sponsors() -> dict:
     """Load and validate sponsors.json."""
     data = json.loads(SPONSORS_FILE.read_text(encoding="utf-8"))
-    for tier in (*TOP_TIERS, *BOTTOM_TIERS):
+    for tier in TIERS:
         for entry in data.get(tier, []):
             _assert_clean_url(entry["name"], entry["url"])
             for key in ("logo", "logo_svg"):
@@ -130,14 +133,14 @@ def _logo_html(entry: dict, tier: str) -> str:
     )
 
 
-def render_top(data: dict) -> str:
-    """Large placements: launch partners, Platinum and Gold."""
+def render_sponsors(data: dict) -> str:
+    """Render every tier into one block, highest tier first."""
     out: list[str] = []
-    for tier in TOP_TIERS:
+    for tier in TIERS:
         entries = data.get(tier, [])
         if not entries:
             continue
-        out.append(f"**{TIER_LABEL[tier]}**\n")
+        out.append(f"### {TIER_LABEL[tier]}\n")
         out.append('<p align="center">')
         out.extend(_logo_html(e, tier) for e in entries)
         out.append("</p>\n")
@@ -148,29 +151,15 @@ def render_top(data: dict) -> str:
     return "\n".join(out).rstrip() if out else ""
 
 
-def render_bottom(data: dict) -> str:
-    """Grid placements: Silver (medium) and Bronze (small)."""
-    out: list[str] = []
-    for tier in BOTTOM_TIERS:
-        entries = data.get(tier, [])
-        if not entries:
-            continue
-        out.append(f"**{TIER_LABEL[tier]}**\n")
-        out.append('<p align="center">')
-        out.extend(_logo_html(e, tier) for e in entries)
-        out.append("</p>\n")
-    return "\n".join(out).rstrip() if out else ""
-
-
 def _replace_block(text: str, marker: str, body: str) -> str:
     """Replace everything between the ``START``/``END`` markers for ``marker``."""
     pattern = re.compile(
-        rf"<!-- SPONSORS:{marker}:START -->.*?<!-- SPONSORS:{marker}:END -->",
+        rf"<!-- {marker}:START -->.*?<!-- {marker}:END -->",
         re.DOTALL,
     )
     if not pattern.search(text):
         return text
-    rendered = f"<!-- SPONSORS:{marker}:START -->\n{body}\n<!-- SPONSORS:{marker}:END -->"
+    rendered = f"<!-- {marker}:START -->\n{body}\n<!-- {marker}:END -->"
     # lambda avoids backslash/group-reference interpretation in the replacement
     return pattern.sub(lambda _m: rendered, text)
 
@@ -190,7 +179,7 @@ def render_sponsors_md(data: dict) -> str:
         "",
     ]
     any_listed = False
-    for tier in (*TOP_TIERS, *BOTTOM_TIERS):
+    for tier in TIERS:
         entries = data.get(tier, [])
         if not entries:
             continue
@@ -229,13 +218,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    top, bottom = render_top(data), render_bottom(data)
+    block = render_sponsors(data)
     drifted: list[str] = []
 
     for readme in sorted(REPO_ROOT.glob("README*.md")):
         original = readme.read_text(encoding="utf-8")
-        updated = _replace_block(original, "TOP", top)
-        updated = _replace_block(updated, "BOTTOM", bottom)
+        updated = _replace_block(original, "SPONSORS", block)
         if updated != original:
             drifted.append(readme.name)
             if args.write:
