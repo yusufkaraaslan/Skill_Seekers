@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Development version: 3.10.0.dev0_
+
 ### Added
 - **RapidProxy joins as our first Silver sponsor** — logo in the README sponsor grid across all 12 languages and on the website sponsors page, captioned "Sponsor — Silver" per rule 2. Sponsor entries gain an optional `since` field and a `logo_svg` vector companion.
 - **Readability metrics in the quality checker** (#228, PR #441 by @bferanmi806-sketch) — `skill-seekers quality` now reports Flesch Reading Ease, Flesch-Kincaid Grade Level, average sentence length, and average paragraph length for SKILL.md prose, plus aggregated notes for over-long sentences and paragraphs. YAML frontmatter, fenced code, and inline code are excluded, and no new dependency is added. Scores use English-language formulas and may be inaccurate for other languages.
