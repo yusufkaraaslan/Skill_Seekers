@@ -9,7 +9,11 @@ Interested? See **[SPONSORSHIP.md](SPONSORSHIP.md)** for tiers and rules, or spo
 
 ## Launch Partner
 
-- [Atlas Cloud](https://www.atlascloud.ai/) - Launch Partner - predates the tier structure, placement grandfathered outside the standard tiers.
+- [Atlas Cloud](https://www.atlascloud.ai/) — Launch Partner - predates the tier structure, placement grandfathered outside the standard tiers.
+
+## Silver Sponsors
+
+- [RapidProxy](https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor) — since August 2026
 
 ## Supporters
 
