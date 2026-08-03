@@ -416,6 +416,8 @@ MIT — راجع [LICENSE](LICENSE).
 
 ---
 
+## 💜 رعاة إضافيون
+
 <!-- SPONSORS:BOTTOM:START -->
 **Silver Sponsors**
 

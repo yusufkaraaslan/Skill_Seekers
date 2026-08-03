@@ -418,6 +418,8 @@ MIT — siehe [LICENSE](LICENSE).
 
 ---
 
+## 💜 Weitere Sponsoren
+
 <!-- SPONSORS:BOTTOM:START -->
 **Silver Sponsors**
 

@@ -412,6 +412,8 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
+## 💜 More Sponsors
+
 <!-- SPONSORS:BOTTOM:START -->
 **Silver Sponsors**
 

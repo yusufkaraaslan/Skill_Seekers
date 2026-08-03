@@ -418,6 +418,8 @@ MIT — consulte [LICENSE](LICENSE).
 
 ---
 
+## 💜 Más patrocinadores
+
 <!-- SPONSORS:BOTTOM:START -->
 **Silver Sponsors**
 

@@ -416,6 +416,8 @@ MIT — см. [LICENSE](LICENSE).
 
 ---
 
+## 💜 Другие спонсоры
+
 <!-- SPONSORS:BOTTOM:START -->
 **Silver Sponsors**
 
