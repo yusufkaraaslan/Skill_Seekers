@@ -396,7 +396,14 @@ class SkillQualityChecker:
                     )
 
     def _check_readability(self):
-        """Report provisional English readability metrics for SKILL.md prose."""
+        """Report provisional English readability metrics for SKILL.md prose.
+
+        Deliberately info-only. ``quality_score`` deducts 5 points per warning and
+        ``quality --threshold`` exits non-zero in CI, so emitting readability as
+        warnings would drop scores by up to 10 points and fail existing quality
+        gates on skills that had not changed. Readability is advisory, unlike a
+        missing section, so it reports without affecting the score.
+        """
         if not self.skill_md_path.exists():
             return
 
@@ -417,7 +424,7 @@ class SkillQualityChecker:
         )
 
         if metrics.long_sentence_lengths:
-            self.report.add_warning(
+            self.report.add_info(
                 "readability",
                 (
                     f"Readability: {len(metrics.long_sentence_lengths)} sentence(s) exceed "
@@ -428,7 +435,7 @@ class SkillQualityChecker:
             )
 
         if metrics.long_paragraph_lengths:
-            self.report.add_warning(
+            self.report.add_info(
                 "readability",
                 (
                     f"Readability: {len(metrics.long_paragraph_lengths)} paragraph(s) exceed "

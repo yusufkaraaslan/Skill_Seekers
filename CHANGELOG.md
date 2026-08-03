@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Readability metrics in the quality checker** (#228, PR #441 by @bferanmi806-sketch) — `skill-seekers quality` now reports Flesch Reading Ease, Flesch-Kincaid Grade Level, average sentence length, and average paragraph length for SKILL.md prose, plus aggregated notes for over-long sentences and paragraphs. YAML frontmatter, fenced code, and inline code are excluded, and no new dependency is added. Scores use English-language formulas and may be inaccurate for other languages.
+  - Readability is reported as **info, never as warnings**: `quality_score` deducts 5 points per warning and `quality --threshold` exits non-zero in CI, so emitting warnings would have dropped scores by up to 10 points and failed existing quality gates on skills that had not changed. A regression test pins this contract.
+
 ## [3.9.1] - 2026-08-02
 
 **Theme:** Documentation and project-infrastructure release. No runtime code changed — the package is functionally identical to 3.9.0.

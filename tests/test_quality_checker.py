@@ -503,10 +503,6 @@ class TestReadabilityChecks(unittest.TestCase):
         """Return readability info issues from a report."""
         return [issue for issue in report.info if issue.category == "readability"]
 
-    def readability_warnings(self, report):
-        """Return readability warning issues from a report."""
-        return [issue for issue in report.warnings if issue.category == "readability"]
-
     def test_known_english_prose_reports_readability_information(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_dir = self.create_test_skill(
@@ -540,7 +536,7 @@ The reference section describes common setup choices and safe verification steps
             skill_dir = self.create_test_skill(tmpdir, f"---\nname: test\n---\n\n{thirty_words}.")
 
             report = SkillQualityChecker(skill_dir).check_all()
-            warnings = self.readability_warnings(report)
+            warnings = self.readability_info(report)
 
             self.assertTrue(self.readability_info(report))
             self.assertFalse(any("sentence(s) exceed" in issue.message for issue in warnings))
@@ -552,13 +548,11 @@ The reference section describes common setup choices and safe verification steps
                 tmpdir, f"---\nname: test\n---\n\n{thirty_one_words}."
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            warnings = self.readability_info(SkillQualityChecker(skill_dir).check_all())
 
-            sentence_warnings = [
-                issue for issue in warnings if "sentence(s) exceed" in issue.message
-            ]
-            self.assertEqual(len(sentence_warnings), 1)
-            self.assertIn("1 sentence(s)", sentence_warnings[0].message)
+            sentence_notes = [issue for issue in warnings if "sentence(s) exceed" in issue.message]
+            self.assertEqual(len(sentence_notes), 1)
+            self.assertIn("1 sentence(s)", sentence_notes[0].message)
 
     def test_paragraph_average_and_exact_boundary(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -568,7 +562,7 @@ The reference section describes common setup choices and safe verification steps
             )
 
             report = SkillQualityChecker(skill_dir).check_all()
-            warnings = self.readability_warnings(report)
+            warnings = self.readability_info(report)
 
             self.assertTrue(
                 any(
@@ -585,13 +579,36 @@ The reference section describes common setup choices and safe verification steps
                 tmpdir, f"---\nname: test\n---\n\n{two_hundred_one_words}."
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            warnings = self.readability_info(SkillQualityChecker(skill_dir).check_all())
 
-            paragraph_warnings = [
+            paragraph_notes = [
                 issue for issue in warnings if "paragraph(s) exceed" in issue.message
             ]
-            self.assertEqual(len(paragraph_warnings), 1)
-            self.assertIn("1 paragraph(s)", paragraph_warnings[0].message)
+            self.assertEqual(len(paragraph_notes), 1)
+            self.assertIn("1 paragraph(s)", paragraph_notes[0].message)
+
+    def test_readability_never_affects_the_quality_score(self):
+        """Readability is advisory: it must not deduct from quality_score.
+
+        quality_score subtracts 5 points per warning and `quality --threshold`
+        exits non-zero in CI, so emitting readability as warnings would fail
+        existing quality gates on skills that had not changed.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            long_paragraph = " ".join(f"word{i}" for i in range(201)) + "."
+            skill_dir = self.create_test_skill(
+                tmpdir,
+                f"---\nname: test\n---\n\n{long_paragraph}\n\n{long_paragraph}",
+            )
+
+            report = SkillQualityChecker(skill_dir).check_all()
+
+            # Readability findings are present...
+            self.assertTrue(self.readability_info(report))
+            # ...but contribute nothing to warnings, and so nothing to the score.
+            self.assertEqual(
+                [issue for issue in report.warnings if issue.category == "readability"], []
+            )
 
     def test_multiple_offences_are_aggregated(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -601,11 +618,13 @@ The reference section describes common setup choices and safe verification steps
                 f"---\nname: test\n---\n\n{long_paragraph}\n\n{long_paragraph}",
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            notes = self.readability_info(SkillQualityChecker(skill_dir).check_all())
+            # Aggregated notes only; readability_info also carries the metrics summary.
+            aggregated = [issue for issue in notes if "exceed" in issue.message]
 
-            self.assertEqual(len(warnings), 2)
-            self.assertTrue(any("2 sentence(s) exceed" in issue.message for issue in warnings))
-            self.assertTrue(any("2 paragraph(s) exceed" in issue.message for issue in warnings))
+            self.assertEqual(len(aggregated), 2)
+            self.assertTrue(any("2 sentence(s) exceed" in issue.message for issue in aggregated))
+            self.assertTrue(any("2 paragraph(s) exceed" in issue.message for issue in aggregated))
 
     def test_frontmatter_is_excluded(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -615,7 +634,7 @@ The reference section describes common setup choices and safe verification steps
                 f"---\nname: test\ndescription: {frontmatter_words}\n---\n\nShort prose.",
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            warnings = self.readability_info(SkillQualityChecker(skill_dir).check_all())
 
             self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
 
@@ -627,7 +646,7 @@ The reference section describes common setup choices and safe verification steps
                 f"---\nname: test\n---\n\nShort prose.\n\n```text\n{code_words}\n```",
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            warnings = self.readability_info(SkillQualityChecker(skill_dir).check_all())
 
             self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
 
@@ -639,7 +658,7 @@ The reference section describes common setup choices and safe verification steps
                 f"---\nname: test\n---\n\nShort prose with `{code_words}` included.",
             )
 
-            warnings = self.readability_warnings(SkillQualityChecker(skill_dir).check_all())
+            warnings = self.readability_info(SkillQualityChecker(skill_dir).check_all())
 
             self.assertFalse(any("paragraph(s) exceed" in issue.message for issue in warnings))
 
@@ -667,8 +686,8 @@ The reference section describes common setup choices and safe verification steps
 
             self.assertFalse(self.readability_info(empty_report))
             self.assertFalse(self.readability_info(code_report))
-            self.assertFalse(self.readability_warnings(empty_report))
-            self.assertFalse(self.readability_warnings(code_report))
+            self.assertFalse(self.readability_info(empty_report))
+            self.assertFalse(self.readability_info(code_report))
 
 
 class TestQualityCheckerCLI(unittest.TestCase):
