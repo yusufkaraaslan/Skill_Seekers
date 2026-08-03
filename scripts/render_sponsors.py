@@ -53,6 +53,16 @@ TIER_LABEL = {
     "bronze": "Bronze Sponsors",
 }
 
+# Caption under each logo. Rule 2 requires paid placements to be explicitly
+# labelled, so every tier except the grandfathered partner says "Sponsor".
+TIER_CAPTION = {
+    "partners": "Launch Partner",
+    "platinum": "Sponsor — Platinum",
+    "gold": "Sponsor — Gold",
+    "silver": "Sponsor — Silver",
+    "bronze": "Sponsor — Bronze",
+}
+
 # SPONSORSHIP.md rule 4 (link policy): standard UTM parameters are allowed for
 # traffic measurement. Affiliate, referral and click-tracking parameters are not.
 #
@@ -97,17 +107,26 @@ def load_sponsors() -> dict:
     for tier in (*TOP_TIERS, *BOTTOM_TIERS):
         for entry in data.get(tier, []):
             _assert_clean_url(entry["name"], entry["url"])
-            logo = REPO_ROOT / entry["logo"]
-            if not logo.is_file():
-                raise PolicyError(f"{entry['name']}: logo not found at {entry['logo']}")
+            for key in ("logo", "logo_svg"):
+                path = entry.get(key)
+                if path and not (REPO_ROOT / path).is_file():
+                    raise PolicyError(f"{entry['name']}: {key} not found at {path}")
     return data
 
 
 def _logo_html(entry: dict, tier: str) -> str:
+    """Render one logo, captioned with its paid-placement label (rule 2).
+
+    ``logo`` is deliberately a raster: README.md is also the PyPI project
+    description, and SVG is not reliably rendered there. ``logo_svg`` keeps the
+    vector source alongside it for the website.
+    """
     width = entry.get("width", TIER_WIDTH[tier])
+    caption = TIER_CAPTION.get(tier, "Sponsor")
     return (
         f'  <a href="{entry["url"]}">'
         f'<img src="{entry["logo"]}" alt="{entry["name"]}" width="{width}"></a>'
+        f"<br/><sub><b>{caption}</b></sub>"
     )
 
 
@@ -178,8 +197,9 @@ def render_sponsors_md(data: dict) -> str:
         any_listed = True
         lines += [f"## {TIER_LABEL[tier]}", ""]
         for e in entries:
-            note = f" - {e['note']}" if e.get("note") else ""
-            lines.append(f"- [{e['name']}]({e['url']}){note}")
+            detail = e.get("note") or (f"since {e['since']}" if e.get("since") else "")
+            suffix = f" — {detail}" if detail else ""
+            lines.append(f"- [{e['name']}]({e['url']}){suffix}")
         lines.append("")
 
     supporters = data.get("supporters", [])

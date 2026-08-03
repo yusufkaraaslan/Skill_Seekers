@@ -17,7 +17,17 @@
 
   "platinum": [],
   "gold": [],
-  "silver": [],
+
+  "silver": [
+    {
+      "name": "RapidProxy",
+      "url": "https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor",
+      "logo": "docs/assets/sponsors/rapidproxy.png",
+      "logo_svg": "docs/assets/sponsors/rapidproxy.svg",
+      "since": "August 2026"
+    }
+  ],
+
   "bronze": [],
   "supporters": []
 }
