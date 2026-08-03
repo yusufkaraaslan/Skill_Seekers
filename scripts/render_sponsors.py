@@ -53,9 +53,19 @@ TIER_LABEL = {
     "bronze": "Bronze Sponsors",
 }
 
-# SPONSORSHIP.md rule 4: sponsor links are clean URLs - no tracking parameters.
-TRACKING_PARAMS = re.compile(
-    r"^(utm_|ref$|referrer$|fbclid$|gclid$|mc_|_hs|source$|campaign$)", re.I
+# SPONSORSHIP.md rule 4 (link policy): standard UTM parameters are allowed for
+# traffic measurement. Affiliate, referral and click-tracking parameters are not.
+#
+# This is a blocklist rather than an allowlist on purpose - sponsors legitimately
+# use product parameters (?plan=pro, ?lang=en) that the policy says nothing about.
+DISALLOWED_PARAMS = re.compile(
+    r"^("
+    r"ref|referrer|referral|refid|"  # referral
+    r"aff|affid|affiliate|partner|pid|"  # affiliate
+    r"fbclid|gclid|msclkid|dclid|twclid|ttclid|irclickid|clickid|"  # click IDs
+    r"mc_[a-z]+|_hs[a-z]*"  # mailchimp / hubspot analytics
+    r")$",
+    re.I,
 )
 
 
@@ -64,15 +74,20 @@ class PolicyError(ValueError):
 
 
 def _assert_clean_url(name: str, url: str) -> None:
-    """Reject sponsor URLs carrying tracking parameters (SPONSORSHIP.md rule 4)."""
+    """Reject sponsor URLs carrying affiliate or click-tracking parameters.
+
+    SPONSORSHIP.md rule 4 permits standard UTM parameters (``utm_source``,
+    ``utm_medium``, ``utm_campaign``) so sponsors can measure traffic, but
+    forbids affiliate/referral parameters and analytics injection.
+    """
     query = urlsplit(url).query
     if not query:
         return
-    offenders = [k for k in parse_qs(query) if TRACKING_PARAMS.match(k)]
+    offenders = sorted(k for k in parse_qs(query) if DISALLOWED_PARAMS.match(k))
     if offenders:
         raise PolicyError(
-            f"{name}: sponsor URL carries tracking parameters {offenders} - "
-            f"rule 4 of SPONSORSHIP.md requires clean URLs.\n  {url}"
+            f"{name}: sponsor URL carries affiliate/tracking parameters {offenders} - "
+            f"rule 4 of SPONSORSHIP.md permits standard UTM parameters only.\n  {url}"
         )
 
 
