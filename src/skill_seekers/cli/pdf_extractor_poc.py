@@ -53,6 +53,7 @@ import json
 import os
 import re
 import sys
+import threading
 from pathlib import Path
 
 # Import unified language detector
@@ -85,6 +86,10 @@ except ImportError:
 
 class PDFExtractor:
     """Extract text and code from PDF documentation"""
+
+    VECTOR_FIGURE_MIN_WIDTH = 70
+    VECTOR_FIGURE_MIN_HEIGHT = 55
+    VECTOR_FIGURE_MARGIN = 20
 
     def __init__(
         self,
@@ -122,6 +127,7 @@ class PDFExtractor:
         self.pages = []
         self.chapters = []  # Detected chapters/sections
         self.extracted_images = []  # List of extracted image info (NEW in B1.5)
+        self._image_lock = threading.Lock()
         self._cache = {}  # Cache for expensive operations (Priority 3)
 
         # Language detection
@@ -771,12 +777,255 @@ class PDFExtractor:
                 }
 
                 extracted.append(image_info)
-                self.extracted_images.append(image_info)
+                with self._image_lock:
+                    self.extracted_images.append(image_info)
                 self.log(f"    Extracted image: {image_filename} ({width}x{height})")
 
             except Exception as e:
                 self.log(f"    Error extracting image {img_index}: {e}")
                 continue
+
+        try:
+            extracted.extend(self.extract_vector_images_from_page(page, page_num))
+        except Exception as e:
+            # Vector extraction is an optional fallback; never lose raster output
+            # because a malformed drawing or render fails.
+            self.log(f"    Error extracting vector figures: {e}")
+        return extracted
+
+    @staticmethod
+    def _rect_overlap_ratio(first, second):
+        """Return intersection area as a ratio of the smaller rectangle."""
+        intersection = fitz.Rect(
+            max(first.x0, second.x0),
+            max(first.y0, second.y0),
+            min(first.x1, second.x1),
+            min(first.y1, second.y1),
+        )
+        if intersection.width <= 0 or intersection.height <= 0:
+            return 0.0
+
+        smaller_area = min(first.get_area(), second.get_area())
+        return intersection.get_area() / smaller_area if smaller_area else 0.0
+
+    @staticmethod
+    def _is_page_decoration(rect, page_rect):
+        """Reject page frames and long separator rules."""
+        if rect.width >= page_rect.width * 0.85 and rect.height >= page_rect.height * 0.85:
+            return True
+
+        is_horizontal_rule = rect.width >= page_rect.width * 0.75 and rect.height <= 6
+        is_vertical_rule = rect.height >= page_rect.height * 0.75 and rect.width <= 6
+        return is_horizontal_rule or is_vertical_rule
+
+    @staticmethod
+    def _is_table_grid(drawings):
+        """Reject collections of repeated horizontal and vertical grid rules."""
+        vertical = 0
+        horizontal = 0
+        for drawing in drawings:
+            rect = fitz.Rect(drawing["rect"])
+            if rect.width <= 3 and rect.height >= 20:
+                vertical += 1
+            elif rect.height <= 3 and rect.width >= 20:
+                horizontal += 1
+
+        return vertical >= 3 and horizontal >= 3
+
+    def _vector_region_is_meaningful(self, rect, drawings):
+        """Apply conservative size and structure checks to a drawing cluster."""
+        if (
+            rect.width < self.VECTOR_FIGURE_MIN_WIDTH
+            or rect.height < self.VECTOR_FIGURE_MIN_HEIGHT
+            or len(drawings) < 3
+            or self._is_table_grid(drawings)
+        ):
+            return False
+
+        filled = sum(1 for drawing in drawings if drawing.get("fill") is not None)
+        stroked = sum(1 for drawing in drawings if drawing.get("type") in {"s", "fs"})
+        return filled >= 2 or stroked >= 5
+
+    def _expand_vector_region(self, page, rect, text_blocks=None):
+        """Add a small margin and include text blocks that touch the margin."""
+        page_rect = page.rect
+        margin = self.VECTOR_FIGURE_MARGIN
+        expanded = fitz.Rect(
+            max(page_rect.x0, rect.x0 - margin),
+            max(page_rect.y0, rect.y0 - margin),
+            min(page_rect.x1, rect.x1 + margin),
+            min(page_rect.y1, rect.y1 + margin),
+        )
+
+        if text_blocks is None:
+            try:
+                text_blocks = page.get_text("blocks")
+            except (AttributeError, RuntimeError, ValueError):
+                text_blocks = []
+
+        for block in text_blocks:
+            if len(block) < 7 or block[6] != 0:
+                continue
+            text_rect = fitz.Rect(block[:4])
+            if self._rect_overlap_ratio(expanded, text_rect) > 0:
+                expanded = fitz.Rect(
+                    max(page_rect.x0, min(expanded.x0, text_rect.x0)),
+                    max(page_rect.y0, min(expanded.y0, text_rect.y0)),
+                    min(page_rect.x1, max(expanded.x1, text_rect.x1)),
+                    min(page_rect.y1, max(expanded.y1, text_rect.y1)),
+                )
+
+        return expanded
+
+    @staticmethod
+    def _separate_vector_clip(clip, region, regions):
+        """Keep label margins from crossing into a neighboring figure region."""
+        for other in regions:
+            if other is region:
+                continue
+
+            if region.x1 <= other.x0 and clip.x1 > other.x0:
+                clip = fitz.Rect(
+                    clip.x0,
+                    clip.y0,
+                    min(clip.x1, (region.x1 + other.x0) / 2),
+                    clip.y1,
+                )
+            elif region.x0 >= other.x1 and clip.x0 < other.x1:
+                clip = fitz.Rect(
+                    max(clip.x0, (other.x1 + region.x0) / 2),
+                    clip.y0,
+                    clip.x1,
+                    clip.y1,
+                )
+            elif region.y1 <= other.y0 and clip.y1 > other.y0:
+                clip = fitz.Rect(
+                    clip.x0,
+                    clip.y0,
+                    clip.x1,
+                    min(clip.y1, (region.y1 + other.y0) / 2),
+                )
+            elif region.y0 >= other.y1 and clip.y0 < other.y1:
+                clip = fitz.Rect(
+                    clip.x0,
+                    max(clip.y0, (other.y1 + region.y0) / 2),
+                    clip.x1,
+                    clip.y1,
+                )
+
+        return clip
+
+    def extract_vector_images_from_page(self, page, page_num):
+        """Render meaningful vector drawing clusters as PNG assets."""
+        try:
+            drawings = page.get_drawings()
+        except (AttributeError, RuntimeError, ValueError):
+            return []
+
+        page_rect = page.rect
+        filtered_drawings = [
+            drawing
+            for drawing in drawings
+            if not self._is_page_decoration(fitz.Rect(drawing["rect"]), page_rect)
+        ]
+        if not filtered_drawings or not hasattr(page, "cluster_drawings"):
+            return []
+
+        try:
+            clusters = page.cluster_drawings(
+                drawings=filtered_drawings,
+                x_tolerance=1,
+                y_tolerance=1,
+            )
+        except (AttributeError, RuntimeError, TypeError, ValueError):
+            return []
+
+        raster_rects = []
+        try:
+            for image in page.get_image_info(xrefs=True):
+                if (
+                    image.get("width", 0) >= self.min_image_size
+                    and image.get("height", 0) >= self.min_image_size
+                ):
+                    raster_rects.append(fitz.Rect(image["bbox"]))
+        except (AttributeError, RuntimeError, ValueError):
+            pass
+
+        candidates = []
+        for cluster in clusters:
+            rect = fitz.Rect(cluster)
+            members = [
+                drawing
+                for drawing in filtered_drawings
+                if self._rect_overlap_ratio(rect, fitz.Rect(drawing["rect"])) > 0
+                or rect.contains(fitz.Rect(drawing["rect"]))
+            ]
+            if not self._vector_region_is_meaningful(rect, members):
+                continue
+            if any(
+                self._rect_overlap_ratio(rect, raster_rect) >= 0.75 for raster_rect in raster_rects
+            ):
+                continue
+            candidates.append(rect)
+
+        # Keep the largest region when PyMuPDF returns nested or overlapping clusters.
+        regions = []
+        for rect in sorted(
+            candidates,
+            key=lambda candidate: (
+                -candidate.get_area(),
+                candidate.y0,
+                candidate.x0,
+                candidate.y1,
+                candidate.x1,
+            ),
+        ):
+            if any(self._rect_overlap_ratio(rect, existing) >= 0.75 for existing in regions):
+                continue
+            regions.append(rect)
+
+        extracted = []
+        pdf_basename = Path(self.pdf_path).stem
+        text_blocks = []
+        if regions:
+            try:
+                text_blocks = page.get_text("blocks")
+            except (AttributeError, RuntimeError, ValueError):
+                text_blocks = []
+
+        for vector_index, rect in enumerate(regions, start=1):
+            clip = self._expand_vector_region(page, rect, text_blocks)
+            clip = self._separate_vector_clip(clip, rect, regions)
+            try:
+                pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), clip=clip, alpha=False)
+                image_bytes = pixmap.tobytes("png")
+            except (RuntimeError, ValueError):
+                continue
+
+            image_filename = f"{pdf_basename}_page{page_num + 1}_vector{vector_index}.png"
+            image_path = Path(self.image_dir) / image_filename
+            image_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(image_path, "wb") as image_file:
+                image_file.write(image_bytes)
+
+            image_info = {
+                "filename": image_filename,
+                "path": str(image_path),
+                "page_number": page_num + 1,
+                "width": pixmap.width,
+                "height": pixmap.height,
+                "format": "png",
+                "size_bytes": len(image_bytes),
+                "xref": None,
+                "source": "vector",
+                "bbox": [clip.x0, clip.y0, clip.x1, clip.y1],
+            }
+            extracted.append(image_info)
+            with self._image_lock:
+                self.extracted_images.append(image_info)
+            self.log(
+                f"    Extracted vector figure: {image_filename} ({pixmap.width}x{pixmap.height})"
+            )
 
         return extracted
 
@@ -965,6 +1214,12 @@ class PDFExtractor:
             for page_num in range(len(self.doc)):
                 page_data = self.extract_page(page_num)
                 self.pages.append(page_data)
+
+        # Rebuild the aggregate from page-ordered results so parallel extraction
+        # cannot expose worker completion order or shared-list mutations.
+        self.extracted_images = [
+            image for page in self.pages for image in page.get("extracted_images", [])
+        ]
 
         # Merge code blocks that span across pages
         self.log("\n🔗 Merging code blocks across pages...")

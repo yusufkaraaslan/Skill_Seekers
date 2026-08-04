@@ -13,6 +13,7 @@ Tests cover:
 """
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -629,6 +630,285 @@ class TestQualityFiltering(unittest.TestCase):
         # Only high quality should pass
         self.assertGreaterEqual(high_quality["quality"], extractor.min_quality)
         self.assertLess(low_quality["quality"], extractor.min_quality)
+
+
+class TestVectorFigureExtraction(unittest.TestCase):
+    """Test conservative extraction of vector figures from PDF pages."""
+
+    def setUp(self):
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
+
+        self.PDFExtractor = PDFExtractor
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.pdf_path = Path(self.temp_dir.name) / "vector_figures.pdf"
+        self.image_dir = Path(self.temp_dir.name) / "images"
+        self._create_fixture()
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    @staticmethod
+    def _add_page_chrome(page):
+        """Add page decorations that must not become extracted figures."""
+        page.draw_rect(fitz.Rect(24, 24, 588, 768), color=(0.5, 0.5, 0.5), width=1)
+        page.draw_line((45, 100), (567, 100), color=(0.3, 0.3, 0.3), width=1)
+
+    @staticmethod
+    def _raster_bytes(width, height, color):
+        pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, width, height))
+        pixmap.clear_with(color)
+        return pixmap.tobytes("png")
+
+    def _create_fixture(self):
+        doc = fitz.open()
+
+        # Page 1: a vector-only technical diagram with overlapping shapes and a label.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        page.draw_rect(
+            fitz.Rect(100, 180, 240, 300),
+            color=(0.0, 0.2, 0.6),
+            fill=(0.85, 0.92, 1.0),
+            width=2,
+        )
+        page.draw_rect(
+            fitz.Rect(300, 180, 440, 300),
+            color=(0.0, 0.2, 0.6),
+            fill=(0.85, 0.92, 1.0),
+            width=2,
+        )
+        page.draw_circle((270, 240), 36, color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((240, 240), (300, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((440, 240), (500, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((490, 232), (500, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((490, 248), (500, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.insert_text((115, 326), "Vector signal path", fontsize=12)
+
+        # Page 2: raster-only content, including a small raster icon to filter.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        large_raster = self._raster_bytes(160, 100, 0x336699)
+        small_raster = self._raster_bytes(16, 16, 0xCC3300)
+        page.insert_image(fitz.Rect(100, 180, 300, 305), stream=large_raster)
+        page.insert_image(fitz.Rect(340, 180, 360, 200), stream=small_raster)
+
+        # Page 3: mixed vector and raster figures in separate regions.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        page.draw_rect(
+            fitz.Rect(80, 180, 220, 300),
+            color=(0.0, 0.5, 0.2),
+            fill=(0.85, 1.0, 0.88),
+            width=2,
+        )
+        page.draw_rect(
+            fitz.Rect(260, 180, 400, 300),
+            color=(0.0, 0.5, 0.2),
+            fill=(0.85, 1.0, 0.88),
+            width=2,
+        )
+        page.draw_line((220, 240), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((240, 232), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((240, 248), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.insert_text((90, 326), "Vector branch", fontsize=12)
+        page.insert_image(
+            fitz.Rect(430, 180, 570, 300),
+            stream=self._raster_bytes(140, 120, 0x663399),
+        )
+
+        # Page 4: only page chrome and a separator.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+
+        # Page 5: a table-like grid that must not become a figure.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        for x in (380, 440, 500, 560):
+            page.draw_line((x, 500), (x, 650), color=(0.0, 0.0, 0.0), width=1)
+        for y in (500, 530, 560, 590, 650):
+            page.draw_line((380, y), (560, y), color=(0.0, 0.0, 0.0), width=1)
+
+        # Page 6: a filled table-like grid that must also be rejected.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        for row in range(4):
+            for column in range(4):
+                x0 = 380 + column * 45
+                y0 = 500 + row * 30
+                page.draw_rect(
+                    fitz.Rect(x0, y0, x0 + 45, y0 + 30),
+                    color=(0.0, 0.0, 0.0),
+                    fill=(0.92, 0.92, 0.92),
+                    width=1,
+                )
+        for x in (380, 425, 470, 515, 560):
+            page.draw_line((x, 500), (x, 620), color=(0.0, 0.0, 0.0), width=1)
+        for y in (500, 530, 560, 590, 620):
+            page.draw_line((380, y), (560, y), color=(0.0, 0.0, 0.0), width=1)
+
+        # Page 7: small decorative marks that must be rejected by size.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        page.draw_rect(fitz.Rect(120, 220, 140, 240), color=(0.0, 0.0, 0.0), width=1)
+        page.draw_circle((170, 230), 10, color=(0.0, 0.0, 0.0), width=1)
+        page.draw_line((190, 230), (220, 230), color=(0.0, 0.0, 0.0), width=1)
+
+        # Page 8: two nearby figures separated by only three points.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        for x in (80, 263):
+            page.draw_rect(
+                fitz.Rect(x, 180, x + 80, 280),
+                color=(0.0, 0.2, 0.6),
+                fill=(0.85, 0.92, 1.0),
+                width=2,
+            )
+            page.draw_rect(
+                fitz.Rect(x + 100, 180, x + 180, 280),
+                color=(0.0, 0.2, 0.6),
+                fill=(0.85, 0.92, 1.0),
+                width=2,
+            )
+            page.draw_line((x + 80, 230), (x + 100, 230), color=(0.0, 0.0, 0.0), width=2)
+            page.draw_line((x + 90, 220), (x + 100, 230), color=(0.0, 0.0, 0.0), width=2)
+            page.draw_line((x + 90, 240), (x + 100, 230), color=(0.0, 0.0, 0.0), width=2)
+
+        # Page 9: a raster image inside a vector cluster must not be duplicated.
+        page = doc.new_page()
+        self._add_page_chrome(page)
+        page.draw_rect(
+            fitz.Rect(80, 180, 220, 300),
+            color=(0.0, 0.0, 0.0),
+            fill=(0.8, 0.9, 1.0),
+            width=2,
+        )
+        page.draw_rect(
+            fitz.Rect(260, 180, 400, 300),
+            color=(0.0, 0.0, 0.0),
+            fill=(0.8, 0.9, 1.0),
+            width=2,
+        )
+        page.draw_line((220, 240), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((240, 230), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.draw_line((240, 250), (260, 240), color=(0.0, 0.0, 0.0), width=2)
+        page.insert_image(
+            fitz.Rect(270, 190, 390, 290),
+            stream=self._raster_bytes(120, 100, 0x336699),
+        )
+
+        doc.save(self.pdf_path)
+        doc.close()
+
+    def _extract(self, extract_images=True):
+        extractor = self.PDFExtractor(
+            str(self.pdf_path),
+            extract_images=extract_images,
+            image_dir=str(self.image_dir),
+            min_image_size=100,
+            use_cache=False,
+        )
+        return extractor.extract_all()
+
+    def test_extracts_vector_only_figure_with_nearby_label_once(self):
+        """Overlapping vector drawings become one non-empty PNG with its label area."""
+        result = self._extract()
+        images = result["pages"][0]["extracted_images"]
+
+        self.assertEqual(len(images), 1)
+        image = images[0]
+        self.assertEqual(image["format"], "png")
+        self.assertEqual(image["source"], "vector")
+        self.assertGreater(image["size_bytes"], 0)
+        self.assertGreater(image["width"], 0)
+        self.assertGreater(image["height"], 0)
+        self.assertGreaterEqual(image["bbox"][3], 326)
+        self.assertTrue(Path(image["path"]).is_file())
+
+        rendered = fitz.Pixmap(image["path"])
+        self.assertGreater(len(set(rendered.samples)), 3)
+        self.assertGreater(sum(value < 80 for value in rendered.samples), 100)
+
+    def test_preserves_raster_and_extracts_mixed_content(self):
+        """Raster extraction remains available and mixed pages contain both types."""
+        result = self._extract()
+
+        raster_images = result["pages"][1]["extracted_images"]
+        mixed_images = result["pages"][2]["extracted_images"]
+
+        self.assertEqual(len(raster_images), 1)
+        self.assertEqual(raster_images[0].get("source", "raster"), "raster")
+        self.assertEqual(len(mixed_images), 2)
+        self.assertCountEqual(
+            [image.get("source", "raster") for image in mixed_images],
+            ["raster", "vector"],
+        )
+
+    def test_rejects_chrome_table_grid_and_small_decorations(self):
+        """Page chrome, separators, grids, and tiny marks are not figures."""
+        result = self._extract()
+
+        for page_number in (4, 5, 6, 7):
+            self.assertEqual(result["pages"][page_number - 1]["extracted_images"], [])
+
+    def test_disabling_image_extraction_disables_vector_fallback(self):
+        """The existing extract_images switch controls raster and vector output."""
+        result = self._extract(extract_images=False)
+
+        self.assertEqual(result["total_extracted_images"], 0)
+        self.assertTrue(all(not page["extracted_images"] for page in result["pages"]))
+
+    def test_keeps_nearby_vector_figures_separate(self):
+        """Figures separated by a small gap are not merged into one output."""
+        result = self._extract()
+        images = result["pages"][7]["extracted_images"]
+
+        self.assertEqual(len(images), 2)
+        self.assertEqual(
+            [image["filename"] for image in images],
+            [
+                "vector_figures_page8_vector1.png",
+                "vector_figures_page8_vector2.png",
+            ],
+        )
+        self.assertLessEqual(images[0]["bbox"][2], images[1]["bbox"][0])
+
+    def test_does_not_duplicate_vector_when_raster_overlaps(self):
+        """A large raster inside a vector cluster produces only the raster asset."""
+        result = self._extract()
+        images = result["pages"][8]["extracted_images"]
+
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0]["filename"], "vector_figures_page9_img1.png")
+        self.assertNotEqual(images[0].get("source"), "vector")
+
+    def test_parallel_image_output_is_page_ordered(self):
+        """Parallel workers still produce deterministic aggregate image ordering."""
+        extractor = self.PDFExtractor(
+            str(self.pdf_path),
+            extract_images=True,
+            image_dir=str(self.image_dir),
+            min_image_size=100,
+            parallel=True,
+            max_workers=4,
+            use_cache=False,
+        )
+        result = extractor.extract_all()
+
+        self.assertEqual(
+            [image["filename"] for image in result["extracted_images"]],
+            [
+                "vector_figures_page1_vector1.png",
+                "vector_figures_page2_img1.png",
+                "vector_figures_page3_img1.png",
+                "vector_figures_page3_vector1.png",
+                "vector_figures_page8_vector1.png",
+                "vector_figures_page8_vector2.png",
+                "vector_figures_page9_img1.png",
+            ],
+        )
 
 
 class TestMarkdownExtractionFallback(unittest.TestCase):
