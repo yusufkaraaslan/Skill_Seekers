@@ -6,11 +6,11 @@
 
 [English](README.md) | 简体中文 | [日本語](README.ja.md) | [한국어](README.ko.md) | [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Português](README.pt-BR.md) | [Türkçe](README.tr.md) | [العربية](README.ar.md) | [हिन्दी](README.hi.md) | [Русский](README.ru.md)
 
-> ⚠️ **机器翻译声明**
+> ⚠️ **翻译说明**
 >
-> 本文档由 AI 自动翻译生成。虽然我们努力确保翻译质量，但可能存在不准确或不自然的表述。
+> 本中文文档基于 AI 初译版本，并由社区贡献者人工润色改进。
 >
-> 欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 帮助改进翻译！您的反馈对我们非常宝贵。
+> 如发现翻译不准确之处，欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 反馈！
 
 [![Version](https://img.shields.io/badge/version-3.9.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -199,12 +199,12 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目�
 
 ### 为什么值得用
 
-- ⚡ **快 99%** —— 原本数天的人工数据准备 → 15–45 分钟
+- ⚡ **效率提升 99%** —— 从数天的人工数据准备缩短到 15–45 分钟
 - 🎯 **真正可用的技能质量** —— 500+ 行的 `SKILL.md` 文件，包含示例、模式与指南
 - 📊 **开箱即用的 RAG 分块** —— 智能分块保留代码块与上下文
 - 🔄 **多源融合** —— 把文档 + GitHub + PDF + 视频合并为一份知识资产
 - 🌐 **一次准备，通吃所有目标** —— 无需重新抓取即可导出到 22 个目标平台
-- ✅ **久经考验** —— 3,900+ 测试、68 个工作流预设，可用于生产环境
+- ✅ **实战验证** —— 3,900+ 测试、68 个工作流预设，可用于生产环境
 
 ---
 
