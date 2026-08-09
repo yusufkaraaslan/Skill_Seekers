@@ -5734,7 +5734,7 @@ wheels = [
 
 [[package]]
 name = "skill-seekers"
-version = "3.9.0.dev0"
+version = "3.10.0.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },

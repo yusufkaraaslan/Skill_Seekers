@@ -756,10 +756,12 @@ class TestVectorFigureExtraction(unittest.TestCase):
         page.draw_circle((170, 230), 10, color=(0.0, 0.0, 0.0), width=1)
         page.draw_line((190, 230), (220, 230), color=(0.0, 0.0, 0.0), width=1)
 
-        # Page 8: two nearby figures separated by only three points.
+        # Page 8: two distinct figures separated by a realistic gutter. Shapes
+        # inside one figure are merged across small gaps, so the separation has
+        # to exceed VECTOR_MERGE_GAP for them to stay two figures.
         page = doc.new_page()
         self._add_page_chrome(page)
-        for x in (80, 263):
+        for x in (80, 320):
             page.draw_rect(
                 fitz.Rect(x, 180, x + 80, 280),
                 color=(0.0, 0.2, 0.6),
@@ -861,7 +863,7 @@ class TestVectorFigureExtraction(unittest.TestCase):
         self.assertTrue(all(not page["extracted_images"] for page in result["pages"]))
 
     def test_keeps_nearby_vector_figures_separate(self):
-        """Figures separated by a small gap are not merged into one output."""
+        """Figures in separate page regions are not merged into one output."""
         result = self._extract()
         images = result["pages"][7]["extracted_images"]
 
@@ -875,14 +877,60 @@ class TestVectorFigureExtraction(unittest.TestCase):
         )
         self.assertLessEqual(images[0]["bbox"][2], images[1]["bbox"][0])
 
-    def test_does_not_duplicate_vector_when_raster_overlaps(self):
-        """A large raster inside a vector cluster produces only the raster asset."""
+    def test_keeps_vector_figure_containing_a_raster(self):
+        """A raster inside a much larger diagram must not delete the diagram.
+
+        De-duplication asks "are these the same object", so a contained thumbnail
+        is not grounds for dropping the figure that encloses it.
+        """
         result = self._extract()
         images = result["pages"][8]["extracted_images"]
 
-        self.assertEqual(len(images), 1)
-        self.assertEqual(images[0]["filename"], "vector_figures_page9_img1.png")
-        self.assertNotEqual(images[0].get("source"), "vector")
+        self.assertCountEqual(
+            [image["filename"] for image in images],
+            ["vector_figures_page9_img1.png", "vector_figures_page9_vector1.png"],
+        )
+
+    def test_raster_entries_carry_source_and_bbox(self):
+        """Raster and vector entries share one shape, so consumers need no fallback."""
+        result = self._extract()
+        raster = result["pages"][1]["extracted_images"][0]
+
+        self.assertEqual(raster["source"], "raster")
+        self.assertEqual(len(raster["bbox"]), 4)
+        self.assertLess(raster["bbox"][0], raster["bbox"][2])
+        self.assertLess(raster["bbox"][1], raster["bbox"][3])
+
+    def test_vector_figures_are_counted_separately_from_raster_objects(self):
+        """images_count stays raster-only, so extracted never exceeds found."""
+        result = self._extract()
+
+        self.assertEqual(result["pages"][0]["images_count"], 0)
+        self.assertEqual(result["pages"][0]["vector_figures_count"], 1)
+
+        extracted_rasters = sum(
+            1 for image in result["extracted_images"] if image["source"] == "raster"
+        )
+        self.assertEqual(
+            extracted_rasters + result["total_vector_figures"],
+            result["total_extracted_images"],
+        )
+        # Raster objects found bounds raster objects extracted: the fixture has a
+        # 16x16 icon that min_image_size drops.
+        self.assertGreater(result["total_images"], extracted_rasters)
+
+    def test_min_image_size_also_filters_vector_figures(self):
+        """--min-image-size is documented as filtering icons; it must reach figures."""
+        extractor = self.PDFExtractor(
+            str(self.pdf_path),
+            extract_images=True,
+            image_dir=str(self.image_dir),
+            min_image_size=4000,
+            use_cache=False,
+        )
+        result = extractor.extract_all()
+
+        self.assertEqual(result["extracted_images"], [])
 
     def test_parallel_image_output_is_page_ordered(self):
         """Parallel workers still produce deterministic aggregate image ordering."""
@@ -907,8 +955,175 @@ class TestVectorFigureExtraction(unittest.TestCase):
                 "vector_figures_page8_vector1.png",
                 "vector_figures_page8_vector2.png",
                 "vector_figures_page9_img1.png",
+                "vector_figures_page9_vector1.png",
             ],
         )
+
+
+class TestVectorFigureHeuristics(unittest.TestCase):
+    """Regression cases for the vector-figure detection heuristics.
+
+    Each fixture is a single-page PDF exercising one document shape that the
+    first implementation of this feature got wrong.
+    """
+
+    def setUp(self):
+        if not PYMUPDF_AVAILABLE:
+            self.skipTest("PyMuPDF not installed")
+
+        from skill_seekers.cli.pdf_extractor_poc import PDFExtractor
+
+        self.PDFExtractor = PDFExtractor
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.image_dir = Path(self.temp_dir.name) / "images"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _extract_page(self, draw, name, min_image_size=100):
+        """Build a one-page PDF with `draw`, extract it, return its image list."""
+        pdf_path = Path(self.temp_dir.name) / f"{name}.pdf"
+        doc = fitz.open()
+        draw(doc.new_page())
+        doc.save(pdf_path)
+        doc.close()
+
+        extractor = self.PDFExtractor(
+            str(pdf_path),
+            extract_images=True,
+            image_dir=str(self.image_dir),
+            min_image_size=min_image_size,
+            use_cache=False,
+        )
+        return extractor.extract_all()["pages"][0]["extracted_images"]
+
+    @staticmethod
+    def _box(page, rect):
+        page.draw_rect(rect, color=(0.0, 0.2, 0.6), fill=(0.85, 0.92, 1.0), width=2)
+
+    def test_shaded_code_blocks_are_not_figures(self):
+        """Stacked fill-only bands are page furniture, not a diagram."""
+
+        def draw(page):
+            for top in (100, 161, 222):
+                page.draw_rect(
+                    fitz.Rect(50, top, 540, top + 60),
+                    color=None,
+                    fill=(0.95, 0.95, 0.95),
+                )
+                page.insert_text((60, top + 20), "def handler(request):", fontsize=10)
+
+        self.assertEqual(self._extract_page(draw, "shaded_blocks"), [])
+
+    def test_label_expansion_stops_at_the_figure(self):
+        """A label may nudge the clip; the page body must never be dragged in."""
+
+        def draw(page):
+            for x in (80, 200, 300):
+                self._box(page, fitz.Rect(x, 100, x + 100, 200))
+            # Tight body copy: consecutive block bboxes touch, which is what made
+            # the original in-place union walk to the bottom of the page.
+            y = 210.0
+            while y < 800:
+                page.insert_text((80, y), "body copy line for layout purposes", fontsize=10)
+                y += 13.5
+
+        images = self._extract_page(draw, "label_cascade")
+
+        self.assertEqual(len(images), 1)
+        self.assertLess(images[0]["bbox"][3], 300)
+
+    def test_block_diagram_with_gaps_becomes_one_figure(self):
+        """Boxes 20pt apart are one diagram, not twelve rejected fragments."""
+
+        def draw(page):
+            for row in range(3):
+                for column in range(4):
+                    x = 80 + column * 80
+                    y = 200 + row * 60
+                    self._box(page, fitz.Rect(x, y, x + 60, y + 40))
+
+        images = self._extract_page(draw, "block_diagram")
+
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0]["source"], "vector")
+
+    def test_chart_with_gridlines_survives(self):
+        """Gridlines plus a wide baseline axis must not read as a table or chrome."""
+
+        def draw(page):
+            for y in (200, 240, 280, 320):
+                page.draw_line((80, y), (520, y), color=(0.8, 0.8, 0.8), width=1)
+            for x in (80, 200, 320):
+                page.draw_line((x, 180), (x, 340), color=(0.8, 0.8, 0.8), width=1)
+            # 80% of the page width: page furniture in the original thresholds.
+            page.draw_line((60, 360), (536, 360), color=(0.0, 0.0, 0.0), width=1)
+            page.draw_polyline(
+                [(90, 320), (180, 240), (270, 280), (360, 200), (450, 220)],
+                color=(0.8, 0.1, 0.1),
+                width=2,
+            )
+
+        images = self._extract_page(draw, "chart")
+
+        self.assertEqual(len(images), 1)
+        # The baseline axis is inside the rendered clip rather than cropped off.
+        self.assertGreaterEqual(images[0]["bbox"][3], 360)
+
+    def test_line_ruled_table_is_still_rejected(self):
+        """The chart escape hatch must not let a plain ruled table through."""
+
+        def draw(page):
+            for x in (380, 440, 500, 560):
+                page.draw_line((x, 500), (x, 650), color=(0.0, 0.0, 0.0), width=1)
+            for y in (500, 530, 560, 590, 650):
+                page.draw_line((380, y), (560, y), color=(0.0, 0.0, 0.0), width=1)
+
+        self.assertEqual(self._extract_page(draw, "ruled_table"), [])
+
+    def test_figures_are_numbered_in_reading_order(self):
+        """vector1 is the topmost figure, not the largest one."""
+
+        def draw(page):
+            self._box(page, fitz.Rect(80, 120, 180, 190))
+            self._box(page, fitz.Rect(200, 120, 300, 190))
+            page.draw_line((180, 155), (200, 155), color=(0, 0, 0), width=2)
+            self._box(page, fitz.Rect(80, 320, 280, 470))
+            self._box(page, fitz.Rect(300, 320, 500, 470))
+            page.draw_line((280, 395), (300, 395), color=(0, 0, 0), width=2)
+
+        images = self._extract_page(draw, "reading_order")
+
+        self.assertEqual(len(images), 2)
+        self.assertLess(images[0]["bbox"][1], images[1]["bbox"][1])
+        self.assertTrue(images[0]["filename"].endswith("_vector1.png"))
+
+    def test_near_coincident_raster_and_vector_deduplicate(self):
+        """A raster covering the same region as the cluster yields one asset."""
+        pixmap = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 200, 120))
+        pixmap.clear_with(0x336699)
+        raster = pixmap.tobytes("png")
+
+        def draw(page):
+            self._box(page, fitz.Rect(100, 200, 200, 320))
+            self._box(page, fitz.Rect(210, 200, 300, 320))
+            page.insert_image(fitz.Rect(100, 200, 300, 320), stream=raster)
+
+        images = self._extract_page(draw, "coincident")
+
+        self.assertEqual(len(images), 1)
+        self.assertEqual(images[0]["source"], "raster")
+
+    def test_dense_vector_page_bails_out(self):
+        """Scatter plots and maps skip extraction instead of clustering for minutes."""
+
+        def draw(page):
+            for index in range(2100):
+                x = 60 + (index % 60) * 8
+                y = 100 + (index // 60) * 18
+                page.draw_line((x, y), (x + 4, y + 4), color=(0.1, 0.1, 0.1), width=1)
+
+        self.assertEqual(self._extract_page(draw, "dense"), [])
 
 
 class TestMarkdownExtractionFallback(unittest.TestCase):
