@@ -502,6 +502,219 @@ class TestUnifiedSkillBuilderPdfReferences(unittest.TestCase):
             content = f.read()
             self.assertIn("3 PDF document", content)
 
+    def test_copies_each_pdf_reference_tree_without_name_collisions(self):
+        """Unified PDF output preserves every source's readable references and assets."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        first_skill_dir = os.path.join(self.temp_dir, "first")
+        second_skill_dir = os.path.join(self.temp_dir, "second")
+        first_refs = os.path.join(first_skill_dir, "references")
+        second_refs = os.path.join(second_skill_dir, "references")
+        first_assets = os.path.join(first_skill_dir, "assets")
+        second_assets = os.path.join(second_skill_dir, "assets")
+        for path in [first_refs, second_refs, first_assets, second_assets]:
+            os.makedirs(path)
+
+        with open(os.path.join(first_refs, "content.md"), "w") as f:
+            f.write("FIRST SENTINEL\n\n![first](../assets/cover.png)\n")
+        with open(os.path.join(second_refs, "content.md"), "w") as f:
+            f.write("SECOND SENTINEL\n\n![second](../assets/cover.png)\n")
+        with open(os.path.join(first_assets, "cover.png"), "wb") as f:
+            f.write(b"first image")
+        with open(os.path.join(second_assets, "cover.png"), "wb") as f:
+            f.write(b"second image")
+
+        config = {"name": "test_pdf_refs", "description": "Test", "sources": []}
+        scraped_data = {
+            "documentation": [],
+            "github": [],
+            "pdf": [
+                {"pdf_id": "book_one", "idx": 0, "refs_dir": first_refs},
+                {"pdf_id": "book_two", "idx": 1, "refs_dir": second_refs},
+            ],
+        }
+
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder._generate_pdf_references(scraped_data["pdf"])
+
+        pdf_dir = os.path.join(builder.skill_dir, "references", "pdf")
+        first_output = os.path.join(pdf_dir, "0_book_one")
+        second_output = os.path.join(pdf_dir, "1_book_two")
+        with open(os.path.join(first_output, "references", "content.md")) as f:
+            self.assertIn("FIRST SENTINEL", f.read())
+        with open(os.path.join(second_output, "references", "content.md")) as f:
+            self.assertIn("SECOND SENTINEL", f.read())
+        self.assertTrue(os.path.exists(os.path.join(first_output, "assets", "cover.png")))
+        self.assertTrue(os.path.exists(os.path.join(second_output, "assets", "cover.png")))
+
+        with open(os.path.join(pdf_dir, "index.md")) as f:
+            index = f.read()
+        self.assertIn("0_book_one/references/content.md", index)
+        self.assertIn("1_book_two/references/content.md", index)
+
+    def test_rebuild_removes_references_for_deleted_pdf_source(self):
+        """Rebuilding cannot leave removed source content available to enhancers."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        first_refs = os.path.join(self.temp_dir, "first", "references")
+        second_refs = os.path.join(self.temp_dir, "second", "references")
+        os.makedirs(first_refs)
+        os.makedirs(second_refs)
+        for refs_dir in [first_refs, second_refs]:
+            with open(os.path.join(refs_dir, "content.md"), "w") as f:
+                f.write("content")
+
+        config = {"name": "test_pdf_rebuild", "description": "Test", "sources": []}
+        scraped_data = {
+            "documentation": [],
+            "github": [],
+            "pdf": [
+                {"pdf_id": "keep", "idx": 0, "refs_dir": first_refs},
+                {"pdf_id": "remove", "idx": 1, "refs_dir": second_refs},
+            ],
+        }
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder._generate_pdf_references(scraped_data["pdf"])
+
+        pdf_dir = os.path.join(builder.skill_dir, "references", "pdf")
+        self.assertTrue(os.path.isdir(os.path.join(pdf_dir, "1_remove")))
+
+        builder._generate_pdf_references(scraped_data["pdf"][:1])
+
+        self.assertFalse(os.path.exists(os.path.join(pdf_dir, "1_remove")))
+
+    def test_rebuild_removes_pdf_directory_when_source_type_is_deleted(self):
+        """A source type removed from config cannot survive in the final references."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        refs_dir = os.path.join(self.temp_dir, "pdf_source", "references")
+        os.makedirs(refs_dir)
+        with open(os.path.join(refs_dir, "content.md"), "w") as f:
+            f.write("content")
+
+        config = {"name": "test_pdf_type_removal", "description": "Test", "sources": []}
+        scraped_data = {
+            "documentation": [],
+            "github": [],
+            "pdf": [{"pdf_id": "manual", "idx": 0, "refs_dir": refs_dir}],
+        }
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder._generate_references()
+
+        pdf_dir = os.path.join(builder.skill_dir, "references", "pdf")
+        self.assertTrue(os.path.isdir(pdf_dir))
+        builder.scraped_data["pdf"] = []
+
+        builder._generate_references()
+
+        self.assertFalse(os.path.exists(pdf_dir))
+
+
+class TestUnifiedSkillBuilderGenericReferences(unittest.TestCase):
+    """Test readable reference preservation for converter-backed source types."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        os.chdir(self.original_dir)
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    def test_copies_epub_markdown_references_and_keeps_raw_data(self):
+        """EPUB references remain readable while the legacy data JSON stays available."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        source_dir = os.path.join(self.temp_dir, "epub_source")
+        refs_dir = os.path.join(source_dir, "references")
+        os.makedirs(refs_dir)
+        with open(os.path.join(refs_dir, "chapter.md"), "w") as f:
+            f.write("EPUB SENTINEL")
+
+        data_file = os.path.join(self.temp_dir, "epub.json")
+        with open(data_file, "w") as f:
+            f.write('{"chapters": []}')
+
+        config = {"name": "test_epub_refs", "description": "Test", "sources": []}
+        scraped_data = {
+            "documentation": [],
+            "github": [],
+            "pdf": [],
+            "epub": [
+                {
+                    "epub_id": "handbook",
+                    "idx": 0,
+                    "refs_dir": refs_dir,
+                    "data_file": data_file,
+                    "data": {},
+                }
+            ],
+        }
+
+        builder = UnifiedSkillBuilder(config, scraped_data)
+        builder._generate_generic_references("epub", scraped_data["epub"])
+
+        epub_dir = os.path.join(builder.skill_dir, "references", "epub")
+        copied_reference = os.path.join(epub_dir, "0_handbook", "references", "chapter.md")
+        with open(copied_reference) as f:
+            self.assertEqual(f.read(), "EPUB SENTINEL")
+        self.assertTrue(os.path.exists(os.path.join(epub_dir, "handbook_data.json")))
+
+        with open(os.path.join(epub_dir, "index.md")) as f:
+            index = f.read()
+        self.assertIn("0_handbook/references/chapter.md", index)
+
+    def test_rebuild_removes_stale_namespace_when_references_disappear(self):
+        """A missing cache tree cannot leak references left by an earlier build."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        refs_dir = os.path.join(self.temp_dir, "epub_source", "references")
+        os.makedirs(refs_dir)
+        with open(os.path.join(refs_dir, "chapter.md"), "w") as f:
+            f.write("stale content")
+
+        config = {"name": "test_epub_rebuild", "description": "Test", "sources": []}
+        source = {"epub_id": "handbook", "idx": 0, "refs_dir": refs_dir, "data": {}}
+        builder = UnifiedSkillBuilder(config, {"epub": [source]})
+        builder._generate_generic_references("epub", [source])
+
+        namespace = os.path.join(builder.skill_dir, "references", "epub", "0_handbook")
+        self.assertTrue(os.path.isdir(namespace))
+        shutil.rmtree(refs_dir)
+
+        builder._generate_generic_references("epub", [source])
+
+        self.assertFalse(os.path.exists(namespace))
+
+    def test_copies_video_frames_next_to_readable_references(self):
+        """Visual video Markdown keeps its ../frames links valid after unification."""
+        from skill_seekers.cli.unified_skill_builder import UnifiedSkillBuilder
+
+        source_dir = os.path.join(self.temp_dir, "video_source")
+        refs_dir = os.path.join(source_dir, "references")
+        frames_dir = os.path.join(source_dir, "frames")
+        os.makedirs(refs_dir)
+        os.makedirs(frames_dir)
+        with open(os.path.join(refs_dir, "transcript.md"), "w") as f:
+            f.write("![frame](../frames/frame.jpg)")
+        with open(os.path.join(frames_dir, "frame.jpg"), "wb") as f:
+            f.write(b"video frame")
+
+        config = {"name": "test_video_refs", "description": "Test", "sources": []}
+        source = {"video_id": "demo", "idx": 0, "refs_dir": refs_dir, "data": {}}
+        builder = UnifiedSkillBuilder(config, {"video": [source]})
+        builder._generate_generic_references("video", [source])
+
+        output_dir = os.path.join(builder.skill_dir, "references", "video", "0_demo")
+        with open(os.path.join(output_dir, "references", "transcript.md")) as f:
+            self.assertIn("../frames/frame.jpg", f.read())
+        with open(os.path.join(output_dir, "frames", "frame.jpg"), "rb") as f:
+            self.assertEqual(f.read(), b"video frame")
+
 
 class TestCodebaseAnalysisIndex(unittest.TestCase):
     """Issue #362: SKILL.md must link to a real codebase_analysis target.
