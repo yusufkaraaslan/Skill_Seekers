@@ -20,6 +20,9 @@ _Development version: 3.10.0.dev0_
 - **Readability metrics in the quality checker** (#228, PR #441 by @bferanmi806-sketch) — `skill-seekers quality` now reports Flesch Reading Ease, Flesch-Kincaid Grade Level, average sentence length, and average paragraph length for SKILL.md prose, plus aggregated notes for over-long sentences and paragraphs. YAML frontmatter, fenced code, and inline code are excluded, and no new dependency is added. Scores use English-language formulas and may be inaccurate for other languages.
   - Readability is reported as **info, never as warnings**: `quality_score` deducts 5 points per warning and `quality --threshold` exits non-zero in CI, so emitting warnings would have dropped scores by up to 10 points and failed existing quality gates on skills that had not changed. A regression test pins this contract.
 
+### Fixed
+- **Unified multi-source builds preserve readable source references** (#453) — converter-backed sources such as PDF and EPUB no longer leave their generated Markdown stranded in the scrape cache while the final skill contains only an index or raw JSON. Each source's `references/` tree and adjacent assets are copied into an indexed namespace, preventing same-name collisions and preserving relative asset links; visual video frames and `skip_scrape` reference locations are preserved too.
+
 ## [3.9.1] - 2026-08-02
 
 **Theme:** Documentation and project-infrastructure release. No runtime code changed — the package is functionally identical to 3.9.0.
