@@ -358,10 +358,33 @@ def _quality_args(skill_dir, **overrides):
     """Full namespace as the unified CLI dispatch would pass it (Phase 5c:
     backfill_parser_defaults is gone — the central parser defines every dest,
     so main(args=...) callers must pass a complete namespace)."""
-    ns = argparse.Namespace(skill_dir=str(skill_dir), report=False, output=None, threshold=None)
+    ns = argparse.Namespace(
+        skill_dir=str(skill_dir), report=False, output=None, json=False, threshold=None
+    )
     for key, value in overrides.items():
         setattr(ns, key, value)
     return ns
+
+
+def test_json_stdout_is_valid_and_does_not_write_default_report(minimal_skill_dir, capsys):
+    from skill_seekers.cli.quality_metrics import main
+
+    exit_code = main(_quality_args(minimal_skill_dir, json=True))
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["skill_name"] == minimal_skill_dir.name
+    assert "overall_score" in payload
+    assert not (minimal_skill_dir / "quality_report.json").exists()
+
+
+def test_json_stdout_preserves_threshold_exit_code(minimal_skill_dir, capsys):
+    from skill_seekers.cli.quality_metrics import main
+
+    exit_code = main(_quality_args(minimal_skill_dir, json=True, threshold=101.0))
+
+    assert exit_code == 1
+    json.loads(capsys.readouterr().out)
 
 
 def test_main_report_only_exits_zero(minimal_skill_dir):

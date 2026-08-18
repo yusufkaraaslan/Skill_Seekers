@@ -565,20 +565,29 @@ def main(args=None):
     # Generate report
     report = analyzer.generate_report()
 
-    # Display report. --report prints the full breakdown; otherwise still show a
-    # one-line score summary so the user doesn't have to open the JSON to learn it.
-    if args.report:
+    json_output = getattr(args, "json", False)
+    serialized_report = json.dumps(asdict(report), indent=2, default=_json_default)
+
+    # JSON mode reserves stdout for one machine-readable document. Otherwise,
+    # --report prints the full breakdown and the default is a one-line summary.
+    if json_output:
+        print(serialized_report)
+    elif args.report:
         formatted = analyzer.format_report(report)
         print(formatted)
     else:
         score = report.overall_score
         print(f"\n📊 Quality Score: {score.total_score:.1f}/100 (Grade: {score.grade})")
 
-    # Save report
-    report_path = Path(args.output) if args.output else skill_dir / "quality_report.json"
-
-    report_path.write_text(json.dumps(asdict(report), indent=2, default=_json_default))
-    print(f"\n✅ Report saved: {report_path}")
+    # JSON stdout is useful in pipelines and should not create a side-effecting
+    # default file. An explicit --output still requests a saved copy.
+    report_path = Path(args.output) if args.output else None
+    if report_path is None and not json_output:
+        report_path = skill_dir / "quality_report.json"
+    if report_path is not None:
+        report_path.write_text(serialized_report)
+        if not json_output:
+            print(f"\n✅ Report saved: {report_path}")
 
     # Quality gating: only when --threshold is explicitly given. Report-only
     # invocations (the historical contract — e.g. CI steps that just want
@@ -588,10 +597,11 @@ def main(args=None):
     if args.threshold is not None:
         total_score = report.overall_score.total_score  # 0-100
         if total_score < args.threshold * 10:
-            print(
-                f"❌ Quality score {total_score / 10:.1f}/10 is below the "
-                f"threshold of {args.threshold:.1f}/10"
-            )
+            if not json_output:
+                print(
+                    f"❌ Quality score {total_score / 10:.1f}/10 is below the "
+                    f"threshold of {args.threshold:.1f}/10"
+                )
             return EXIT_ERROR
     return EXIT_SUCCESS
 

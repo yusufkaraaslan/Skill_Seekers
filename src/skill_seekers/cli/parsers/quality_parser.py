@@ -27,6 +27,7 @@ class QualityParser(SubcommandParser):
         # Keep in sync with quality_metrics.main()'s parser — a flag defined there
         # but not here is REJECTED by the unified CLI before main() runs.
         parser.add_argument("--output", help="Output path for JSON report")
+        parser.add_argument("--json", action="store_true", help="Print the JSON report to stdout")
         parser.add_argument(
             "--threshold",
             type=float,
