@@ -321,7 +321,6 @@ skill-seekers-workflows = "skill_seekers.cli.workflows_command:main"
 
 # Configuration & setup
 skill-seekers-config = "skill_seekers.cli.config_command:main"
-skill-seekers-doctor = "skill_seekers.cli.doctor:main"
 skill-seekers-setup = "skill_seekers.cli.setup_wizard:main"
 skill-seekers-resume = "skill_seekers.cli.resume_command:main"
 skill-seekers-sync-config = "skill_seekers.cli.sync_config:main"
