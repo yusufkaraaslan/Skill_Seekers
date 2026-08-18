@@ -23,3 +23,4 @@ class DoctorParser(SubcommandParser):
         parser.add_argument(
             "--verbose", "-v", action="store_true", help="Show detailed diagnostic info"
         )
+        parser.add_argument("--json", action="store_true", help="Output machine-readable JSON")

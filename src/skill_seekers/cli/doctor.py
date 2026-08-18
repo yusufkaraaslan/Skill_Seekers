@@ -7,11 +7,14 @@ similar to `brew doctor` or `flutter doctor`.
 
 from __future__ import annotations
 
+import json
+import contextlib
+import io
 import os
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 
@@ -294,6 +297,23 @@ def print_report(results: list[CheckResult], verbose: bool = False) -> int:
     return 1 if errors > 0 else 0
 
 
+def print_json_report(results: list[CheckResult]) -> int:
+    """Print a stable JSON report and return the normal doctor exit code."""
+    summary = {
+        "passed": sum(1 for result in results if result.status == "pass"),
+        "warnings": sum(1 for result in results if result.status == "warn"),
+        "failed": sum(1 for result in results if result.status == "fail"),
+    }
+    payload = {
+        "checks": [asdict(result) for result in results],
+        "summary": summary,
+        "healthy": summary["failed"] == 0,
+        "exit_code": 1 if summary["failed"] else 0,
+    }
+    print(json.dumps(payload, indent=2))
+    return payload["exit_code"]
+
+
 class DoctorCommand:
     """Entry point for `skill-seekers doctor`. Dispatched from `main.py` with
     the already-parsed argparse namespace (no duplicate argparse here).
@@ -303,5 +323,11 @@ class DoctorCommand:
         self.args = args
 
     def execute(self) -> int:
+        if getattr(self.args, "json", False):
+            # Some optional dependencies print import-time notices to stdout. Keep
+            # stdout reserved for a single JSON document in machine-readable mode.
+            with contextlib.redirect_stdout(io.StringIO()):
+                results = run_all_checks()
+            return print_json_report(results)
         results = run_all_checks()
         return print_report(results, verbose=getattr(self.args, "verbose", False))
