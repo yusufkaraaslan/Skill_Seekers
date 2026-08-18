@@ -391,6 +391,7 @@ Full history: **[CHANGELOG.md](CHANGELOG.md)**
 
 ```bash
 skill-seekers doctor          # diagnose installation & environment
+skill-seekers doctor --json   # machine-readable diagnostics for CI and agents
 skill-seekers sync-config     # detect config drift
 ```
 

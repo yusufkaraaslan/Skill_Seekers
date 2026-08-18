@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import os
+from argparse import Namespace
 from unittest.mock import patch
 
 from skill_seekers.cli.doctor import (
     CheckResult,
+    DoctorCommand,
     check_api_keys,
     check_core_deps,
     check_git,
@@ -173,3 +176,59 @@ class TestPrintReport:
         print_report(results, verbose=False)
         captured = capsys.readouterr()
         assert "secret: hidden" not in captured.out
+
+
+class TestJsonReport:
+    def test_main_json_suppresses_dependency_stdout(self, capsys):
+        def noisy_checks():
+            print("third-party import warning")
+            return [CheckResult("Python version", "pass", "3.12.0", critical=True)]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", side_effect=noisy_checks):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["checks"][0]["name"] == "Python version"
+
+    def test_main_json_outputs_structured_checks_and_summary(self, capsys):
+        results = [
+            CheckResult("Python version", "pass", "3.12.0", critical=True),
+            CheckResult("API keys", "warn", "No API keys configured"),
+        ]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["checks"] == [
+            {
+                "name": "Python version",
+                "status": "pass",
+                "detail": "3.12.0",
+                "critical": True,
+                "verbose_detail": "",
+            },
+            {
+                "name": "API keys",
+                "status": "warn",
+                "detail": "No API keys configured",
+                "critical": False,
+                "verbose_detail": "",
+            },
+        ]
+        assert payload["summary"] == {"passed": 1, "warnings": 1, "failed": 0}
+        assert payload["healthy"] is True
+        assert payload["exit_code"] == 0
+
+    def test_main_json_preserves_critical_failure_exit_code(self, capsys):
+        results = [CheckResult("Python version", "fail", "3.9", critical=True)]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 1
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["healthy"] is False
+        assert payload["exit_code"] == 1
