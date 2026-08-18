@@ -52,6 +52,9 @@ pip install skill-seekers
 # 2. Create a skill from any source
 skill-seekers create https://docs.djangoproject.com/
 
+# Optional: preview how a source will be detected without creating anything
+skill-seekers detect https://docs.djangoproject.com/ --json
+
 # 3. Package it for your AI platform
 skill-seekers package output/django --target claude
 ```

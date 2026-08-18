@@ -9,6 +9,7 @@ Usage:
 
 Commands:
     create               Create skill from any source (auto-detects type)
+    detect               Detect a source type without creating a skill
     enhance              AI-powered enhancement (auto: API or LOCAL mode)
     enhance-status       Check enhancement status (for background/daemon modes)
     package              Package skill into .zip file
@@ -48,6 +49,7 @@ from skill_seekers.cli import __version__
 # without each command re-parsing argv.
 COMMAND_CLASSES: dict[str, tuple[str, str]] = {
     "create": ("skill_seekers.cli.create_command", "CreateCommand"),
+    "detect": ("skill_seekers.cli.detect_command", "DetectCommand"),
     "scan": ("skill_seekers.cli.scan_command", "ScanCommand"),
     "doctor": ("skill_seekers.cli.doctor", "DoctorCommand"),
 }
