@@ -69,24 +69,32 @@ def infer_description_from_spec(info: dict | None = None, name: str = "") -> str
         name: Skill name for fallback
 
     Returns:
-        Description string suitable for "Use when..." format
+        Concise API summary with a grammatical "Use when..." trigger.
     """
-    if info:
-        # Try the spec description first
-        desc = info.get("description", "")
-        if desc and len(desc) > 20:
-            # Take first sentence or first 150 chars
-            first_sentence = desc.split(". ")[0]
-            if len(first_sentence) > 150:
-                first_sentence = first_sentence[:147] + "..."
-            return f"Use when working with {first_sentence.lower()}"
+    title = str((info or {}).get("title") or name).strip().rstrip(".")
+    if title:
+        api_name = (
+            title
+            if title.casefold() == "api" or title.casefold().endswith(" api")
+            else f"{title} API"
+        )
+        trigger = f"Use when working with the {api_name}."
+    else:
+        trigger = "Use when working with this API."
 
-        # Fall back to title
-        title = info.get("title", "")
-        if title and len(title) > 5:
-            return f"Use when working with the {title} API"
+    desc = str((info or {}).get("description") or "")
+    normalized = " ".join(desc.split())
+    if len(normalized) <= 20:
+        return trigger
 
-    return f"Use when working with the {name} API" if name else "Use when working with this API"
+    first_sentence = re.split(r"(?<=[.!?])\s+", normalized, maxsplit=1)[0]
+    if len(first_sentence) > 150:
+        first_sentence = first_sentence[:147].rstrip() + "..."
+    if first_sentence.casefold().startswith("use when "):
+        return first_sentence
+    if not first_sentence.endswith((".", "!", "?")):
+        first_sentence += "."
+    return f"{first_sentence} {trigger}"
 
 
 class OpenAPIToSkillConverter(SkillConverter):
