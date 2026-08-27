@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS } from '@/components/hud';
+import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS, OriginTag } from '@/components/hud';
 import { SOURCE_META, cliById, fmtSize } from '@/lib/data';
-import type { CliId, Project, Skill } from '@/lib/data';
+import type { CliId, Project, Skill, SkillOrigin } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,11 +15,15 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Search, MoreHorizontal, ArrowLeftRight, FolderInput, Trash2, Eye, Pencil, Sparkles, Package, X, Bot, CheckCircle2 } from 'lucide-react';
+import { Search, MoreHorizontal, ArrowLeftRight, FolderInput, Trash2, Eye, Pencil, Sparkles, Package, X, Bot, CheckCircle2, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/lib/store';
 
 type ScopeFilter = 'all' | 'global' | 'project';
+type OriginFilter = 'all' | SkillOrigin;
+const ORIGIN_FILTERS: OriginFilter[] = ['all', 'seeker', 'plugin', 'manual'];
+const isOwned = (s: Skill) => s.origin === 'seeker';
 
 export default function Skills({
   skills,
@@ -46,6 +50,7 @@ export default function Skills({
 }) {
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<ScopeFilter>('all');
+  const [origin, setOrigin] = useState<OriginFilter>('all');
   const [cliFilter, setCliFilter] = useState<CliId[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [moveFor, setMoveFor] = useState<string[] | null>(null);
@@ -55,6 +60,7 @@ export default function Skills({
   const filtered = useMemo(() => {
     return skills.filter((s) => {
       if (scope !== 'all' && s.scope !== scope) return false;
+      if (origin !== 'all' && s.origin !== origin) return false;
       if (projectFilter !== 'all' && s.projectId !== projectFilter) return false;
       if (cliFilter.length && !cliFilter.some((c) => s.installs.includes(c))) return false;
       if (query) {
@@ -62,12 +68,13 @@ export default function Skills({
         return (
           s.name.toLowerCase().includes(q) ||
           s.description.toLowerCase().includes(q) ||
-          s.tags.some((t) => t.includes(q))
+          s.tags.some((t) => t.includes(q)) ||
+          (s.pluginName ?? '').toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [skills, scope, projectFilter, cliFilter, query]);
+  }, [skills, scope, origin, projectFilter, cliFilter, query]);
 
   const toggleCli = (id: CliId) =>
     setCliFilter((f) => (f.includes(id) ? f.filter((c) => c !== id) : [...f, id]));
@@ -114,6 +121,21 @@ export default function Skills({
             </button>
           ))}
         </div>
+        <span className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground mx-1">origin:</span>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          {ORIGIN_FILTERS.map((o) => (
+            <button
+              key={o}
+              onClick={() => setOrigin(o)}
+              className={cn(
+                'px-2.5 py-1.5 font-mono-hud text-[10px] uppercase tracking-wider transition-colors',
+                origin === o ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
         <span className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground mx-1">project:</span>
         <div className="flex rounded-md border border-border overflow-hidden">
           {[{ id: 'all', name: 'all' }, ...projects.map((p) => ({ id: p.id, name: p.name }))].map((p) => (
@@ -143,24 +165,30 @@ export default function Skills({
       </div>
 
       {/* bulk action bar */}
-      {selected.length > 0 && (
-        <div className="flex items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 animate-flicker">
-          <span className="font-mono-hud text-xs text-primary">{selected.length} selected</span>
-          <div className="h-4 w-px bg-primary/30" />
-          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[11px] uppercase tracking-wider" onClick={() => setMoveFor(selected)}>
-            <FolderInput className="mr-1.5 h-3.5 w-3.5" /> Move
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[11px] uppercase tracking-wider" onClick={() => setPortFor(selected)}>
-            <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" /> Port to CLI
-          </Button>
-          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[11px] uppercase tracking-wider text-destructive hover:text-destructive" onClick={() => setDeleteFor(selected)}>
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-          </Button>
-          <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => setSelected([])}>
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {selected.length > 0 && (() => {
+        const owned = selected.filter((id) => skills.find((s) => s.id === id && isOwned(s)));
+        const skipped = selected.length - owned.length;
+        return (
+          <div className="flex items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-4 py-2 animate-flicker">
+            <span className="font-mono-hud text-xs text-primary">
+              {selected.length} selected{skipped > 0 && <span className="text-muted-foreground"> · {skipped} read-only skipped</span>}
+            </span>
+            <div className="h-4 w-px bg-primary/30" />
+            <Button size="sm" variant="ghost" disabled={owned.length === 0} className="h-7 font-mono-hud text-[11px] uppercase tracking-wider" onClick={() => setMoveFor(owned)}>
+              <FolderInput className="mr-1.5 h-3.5 w-3.5" /> Move
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[11px] uppercase tracking-wider" onClick={() => setPortFor(selected)}>
+              <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" /> Port to CLI
+            </Button>
+            <Button size="sm" variant="ghost" disabled={owned.length === 0} className="h-7 font-mono-hud text-[11px] uppercase tracking-wider text-destructive hover:text-destructive" onClick={() => setDeleteFor(owned)}>
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+            </Button>
+            <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => setSelected([])}>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* table */}
       <Panel corners={false} className="overflow-hidden">
@@ -171,6 +199,7 @@ export default function Skills({
                 <Checkbox checked={selected.length === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
               </th>
               <th className="px-3 py-2.5 text-left font-medium">skill</th>
+              <th className="px-3 py-2.5 text-left font-medium">origin</th>
               <th className="px-3 py-2.5 text-left font-medium">scope</th>
               <th className="px-3 py-2.5 text-left font-medium">installed on</th>
               <th className="px-3 py-2.5 text-left font-medium">quality</th>
@@ -196,11 +225,22 @@ export default function Skills({
                   <div className="flex items-center gap-2">
                     <span className="text-primary/70 font-mono-hud text-xs shrink-0">{SOURCE_META[s.sourceType].icon}</span>
                     <div className="min-w-0">
-                      <div className="font-mono-hud text-[13px] font-semibold truncate">{s.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono-hud text-[13px] font-semibold truncate">{s.name}</span>
+                        {!isOwned(s) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="font-mono-hud text-xs">managed outside Skill Seekers</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                       <div className="text-[11px] text-muted-foreground truncate">{s.description}</div>
                     </div>
                   </div>
                 </td>
+                <td className="px-3 py-2.5"><OriginTag origin={s.origin} pluginName={s.pluginName} /></td>
                 <td className="px-3 py-2.5"><ScopeTag scope={s.scope} project={projectName(s.projectId)} /></td>
                 <td className="px-3 py-2.5"><InstallSet installs={s.installs} /></td>
                 <td className="px-3 py-2.5"><QualityMeter q={s.quality} /></td>
@@ -215,16 +255,26 @@ export default function Skills({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 font-mono-hud text-xs">
                       <DropdownMenuItem onClick={() => onOpenSkill(s.id)}><Eye className="mr-2 h-3.5 w-3.5" /> View SKILL.md</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onOpenSkill(s.id)}><Pencil className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEnhance(s.id)}><Sparkles className="mr-2 h-3.5 w-3.5" /> Enhance</DropdownMenuItem>
+                      {isOwned(s) && (
+                        <>
+                          <DropdownMenuItem onClick={() => onOpenSkill(s.id)}><Pencil className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEnhance(s.id)}><Sparkles className="mr-2 h-3.5 w-3.5" /> Enhance</DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuItem onClick={() => onPackage(s.id)}><Package className="mr-2 h-3.5 w-3.5" /> Package / export</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setMoveFor([s.id])}><FolderInput className="mr-2 h-3.5 w-3.5" /> Move to…</DropdownMenuItem>
+                      {isOwned(s) && (
+                        <DropdownMenuItem onClick={() => setMoveFor([s.id])}><FolderInput className="mr-2 h-3.5 w-3.5" /> Move to…</DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => setPortFor([s.id])}><ArrowLeftRight className="mr-2 h-3.5 w-3.5" /> Port to CLI…</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteFor([s.id])}>
-                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                      </DropdownMenuItem>
+                      {isOwned(s) && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteFor([s.id])}>
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>
@@ -232,7 +282,7 @@ export default function Skills({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center font-mono-hud text-xs text-muted-foreground">
+                <td colSpan={9} className="px-3 py-10 text-center font-mono-hud text-xs text-muted-foreground">
                   ∅ no skills match the current filter
                 </td>
               </tr>
@@ -463,6 +513,7 @@ export function SkillDrawer({
             <SheetHeader className="border-b border-border p-5 pb-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <ScopeTag scope={skill.scope} project={project?.name} />
+                <OriginTag origin={skill.origin} pluginName={skill.pluginName} />
                 <span className="font-mono-hud text-[10px] text-muted-foreground">v{skill.version}</span>
                 <span className="font-mono-hud text-[10px] text-muted-foreground">·</span>
                 <span className="font-mono-hud text-[10px] text-muted-foreground">{SOURCE_META[skill.sourceType].label}</span>
@@ -476,12 +527,16 @@ export function SkillDrawer({
             </SheetHeader>
 
             <div className="flex gap-2 border-b border-border px-5 py-3">
-              <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={toggleEdit} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
-                <Pencil className="mr-1 h-3 w-3" /> {editing ? 'save' : 'edit'}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => onEnhance(skill.id)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
-                <Sparkles className="mr-1 h-3 w-3" /> enhance
-              </Button>
+              {skill.origin === 'seeker' && (
+                <>
+                  <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={toggleEdit} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
+                    <Pencil className="mr-1 h-3 w-3" /> {editing ? 'save' : 'edit'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onEnhance(skill.id)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
+                    <Sparkles className="mr-1 h-3 w-3" /> enhance
+                  </Button>
+                </>
+              )}
               <Button size="sm" variant="outline" onClick={() => onPackage(skill.id)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
                 <Package className="mr-1 h-3 w-3" /> package
               </Button>

@@ -28,12 +28,14 @@ export default function Overview({
 }) {
   const running = jobs.filter((j) => j.status === 'running');
   const totalSize = skills.reduce((a, s) => a + s.sizeKb, 0);
-  const globalCount = skills.filter((s) => s.scope === 'global').length;
+  const seekerCount = skills.filter((s) => s.origin === 'seeker').length;
+  const pluginCount = skills.filter((s) => s.origin === 'plugin').length;
+  const manualCount = skills.length - seekerCount - pluginCount;
   const avgQ = skills.length ? Math.round(skills.reduce((a, s) => a + s.quality, 0) / skills.length) : 0;
   const detected = clis.filter((c) => c.detected);
 
   const stats = [
-    { label: 'Skills tracked', value: String(skills.length), sub: `${globalCount} global · ${skills.length - globalCount} project`, accent: true },
+    { label: 'Skills tracked', value: String(seekerCount), sub: `+${pluginCount} plugin · +${manualCount} manual`, accent: true },
     { label: 'CLIs detected', value: `${detected.length}/${clis.length}`, sub: detected.map((c) => c.id).join(' · ') || 'none' },
     { label: 'Skill footprint', value: fmtSize(totalSize), sub: 'across all installs' },
     { label: 'Avg quality', value: String(avgQ), sub: 'heuristic score' },
