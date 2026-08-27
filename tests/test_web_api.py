@@ -473,3 +473,37 @@ def test_origin_of(workspace):
     assert registry.origin_of(root, "built-elsewhere") == "seeker"
     with pytest.raises(KeyError):
         registry.origin_of(root, "nope")
+
+
+# ── mutation guard ───────────────────────────────────────────────────────────
+
+
+def test_mutations_rejected_for_external_skills(workspace):
+    root, client = workspace
+    _seed_external_skills(Path(os.environ["HOME"]))
+
+    r = client.post("/api/skills/move", json={"ids": ["brainstorming"], "dest": "global"})
+    assert r.status_code == 403
+    assert r.json()["detail"] == "skill 'brainstorming' is managed outside Skill Seekers"
+    assert client.post("/api/skills/delete", json={"ids": ["handwritten"]}).status_code == 403
+    assert client.post("/api/skills/brainstorming/enhance").status_code == 403
+    assert client.put("/api/skills/handwritten/content", json={"content": "x"}).status_code == 403
+
+    # a mixed batch is rejected whole and the seeker skill is untouched
+    r = client.post("/api/skills/delete", json={"ids": ["demo", "brainstorming"]})
+    assert r.status_code == 403
+    assert (root / "output" / "demo" / "SKILL.md").is_file()
+
+    # unknown ids are 404, not 403
+    assert (
+        client.post("/api/skills/move", json={"ids": ["nope"], "dest": "global"}).status_code == 404
+    )
+
+    # copy-style actions stay open to every origin
+    r = client.post("/api/skills/brainstorming/package", json={"targets": ["claude"]})
+    assert r.status_code == 200
+    r = client.post(
+        "/api/skills/port",
+        json={"ids": ["handwritten"], "cli": "kimi", "ai": False, "agent": "claude"},
+    )
+    assert r.status_code == 200

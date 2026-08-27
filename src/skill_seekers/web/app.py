@@ -465,6 +465,19 @@ def create_app(root: Path | None = None) -> FastAPI:
                 return Path(s["dir"])
         raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}")
 
+    def require_seeker(skill_ids: list[str]) -> None:
+        """Refuse to mutate skills Skill Seekers does not own (plugin / manual)."""
+        for sid in skill_ids:
+            try:
+                origin = registry.origin_of(root, sid)
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"unknown skill: {sid}") from None
+            if origin != "seeker":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"skill '{sid}' is managed outside Skill Seekers",
+                )
+
     def on_job_done(job: Job) -> None:
         """Post-completion hooks: ingest scan results, refresh registry state."""
         if job.type == "scan" and job.status == "done" and job.meta.get("project_id"):
@@ -516,6 +529,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/skills/move")
     def move_skills(req: MoveRequest) -> dict[str, Any]:
+        require_seeker(req.ids)
         registry.move_skills(req.ids, req.dest)
         dest_name = "global scope" if req.dest == "global" else req.dest
         registry.log_activity("move", f"moved {len(req.ids)} skill(s) → {dest_name}")
@@ -523,6 +537,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/skills/delete")
     def delete_skills(req: IdsRequest) -> dict[str, Any]:
+        require_seeker(req.ids)
         processed = registry.delete_skills(req.ids, root)
         registry.log_activity(
             "delete", f"deleted {len(processed)} skill(s): {', '.join(processed)}"
@@ -542,6 +557,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/skills/{skill_id}/enhance")
     def enhance_skill(skill_id: str) -> dict[str, Any]:
+        require_seeker([skill_id])
         skill_dir = skill_dir_for(skill_id)
         settings = load_settings()
         job = jobs.submit(
@@ -577,6 +593,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.put("/api/skills/{skill_id}/content")
     def save_skill_content(skill_id: str, req: ContentRequest) -> dict[str, Any]:
+        require_seeker([skill_id])
         skill_dir = skill_dir_for(skill_id)
         skill_md = skill_dir / "SKILL.md"
         if not skill_md.is_file():
