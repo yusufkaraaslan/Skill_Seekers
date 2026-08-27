@@ -19,6 +19,15 @@ _Development version: 3.10.0.dev0_
 - **RapidProxy joins as our first Silver sponsor** — logo in the README sponsor grid across all 12 languages and on the website sponsors page, captioned "Sponsor — Silver" per rule 2. Sponsor entries gain an optional `since` field and a `logo_svg` vector companion.
 - **Readability metrics in the quality checker** (#228, PR #441 by @bferanmi806-sketch) — `skill-seekers quality` now reports Flesch Reading Ease, Flesch-Kincaid Grade Level, average sentence length, and average paragraph length for SKILL.md prose, plus aggregated notes for over-long sentences and paragraphs. YAML frontmatter, fenced code, and inline code are excluded, and no new dependency is added. Scores use English-language formulas and may be inaccurate for other languages.
   - Readability is reported as **info, never as warnings**: `quality_score` deducts 5 points per warning and `quality --threshold` exits non-zero in CI, so emitting warnings would have dropped scores by up to 10 points and failed existing quality gates on skills that had not changed. A regression test pins this contract.
+- Seeker HUD: skills are tagged by origin (`seeker` / `plugin · <name>` / `manual`) with a filter; external skills are read-only except port/package (API returns 403 on mutation).
+- Seeker HUD: `GET /api/mcp/status` probes the stdio/HTTP transports; the Seeker MCP tab shows real status and copyable client config.
+- Seeker HUD: live skill search shared between the top bar and the grid; configs search; 25/50/100 paging on the skills, configs and workflows lists.
+
+### Changed
+- Seeker HUD: "Library" tab is now "Configs", "MCP Tools" is now "Seeker MCP".
+
+### Fixed
+- Seeker HUD: installed-plugin scan no longer reads `~/.claude/plugins/marketplaces/` (a catalogue clone), which over-reported skills from plugins that were never installed.
 
 ## [3.9.1] - 2026-08-02
 
