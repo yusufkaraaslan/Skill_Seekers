@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { cliById, ORIGIN_META } from '@/lib/data';
@@ -190,5 +191,87 @@ export function Kbd({ children }: { children: ReactNode }) {
     <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 font-mono-hud text-[10px] text-muted-foreground">
       {children}
     </kbd>
+  );
+}
+
+// ── Paging ───────────────────────────────────────────────────────────────────
+export const PAGE_SIZES = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
+
+function readPageSize(listKey: string): number {
+  try {
+    const v = Number(localStorage.getItem(`seeker.pageSize.${listKey}`));
+    return (PAGE_SIZES as readonly number[]).includes(v) ? v : DEFAULT_PAGE_SIZE;
+  } catch {
+    return DEFAULT_PAGE_SIZE;
+  }
+}
+
+export function usePagination<T>(items: T[], listKey: string, resetKey: string) {
+  const [pageSize, setPageSizeState] = useState<number>(() => readPageSize(listKey));
+  const [page, setPage] = useState(1);
+
+  // any filter change or page-size change starts over at page 1
+  useEffect(() => {
+    setPage(1);
+  }, [resetKey, pageSize]);
+
+  const total = items.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(page, pageCount);
+  const slice = items.slice((current - 1) * pageSize, current * pageSize);
+
+  const setPageSize = (n: number) => {
+    setPageSizeState(n);
+    try {
+      localStorage.setItem(`seeker.pageSize.${listKey}`, String(n));
+    } catch {
+      /* storage unavailable — size still applies for this session */
+    }
+  };
+
+  return { slice, page: current, pageCount, pageSize, total, setPage, setPageSize };
+}
+
+export function Pager({
+  page,
+  pageCount,
+  pageSize,
+  total,
+  onPage,
+  onPageSize,
+}: {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  onPage: (p: number) => void;
+  onPageSize: (n: number) => void;
+}) {
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(total, page * pageSize);
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono-hud text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-1">
+        <span className="mr-1 uppercase tracking-widest">per page</span>
+        {PAGE_SIZES.map((n) => (
+          <button
+            key={n}
+            onClick={() => onPageSize(n)}
+            className={cn(
+              'rounded border px-1.5 py-0.5 transition-colors',
+              n === pageSize ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border hover:text-foreground'
+            )}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <button disabled={page <= 1} onClick={() => onPage(page - 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">‹</button>
+        <span>{from}–{to} of {total}</span>
+        <button disabled={page >= pageCount} onClick={() => onPage(page + 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">›</button>
+      </div>
+    </div>
   );
 }
