@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS, OriginTag } from '@/components/hud';
+import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS, OriginTag, usePagination, Pager } from '@/components/hud';
 import { SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
 import type { CliId, Project, Skill, SkillOrigin } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -70,11 +70,17 @@ export default function Skills({
     });
   }, [skills, scope, origin, projectFilter, cliFilter, query]);
 
+  const pager = usePagination(
+    filtered,
+    'skills',
+    `${query}|${scope}|${origin}|${projectFilter}|${cliFilter.join(',')}`,
+  );
+
   const toggleCli = (id: CliId) =>
     setCliFilter((f) => (f.includes(id) ? f.filter((c) => c !== id) : [...f, id]));
 
   const toggleAll = () =>
-    setSelected((sel) => (sel.length === filtered.length ? [] : filtered.map((s) => s.id)));
+    setSelected((sel) => (sel.length === pager.slice.length ? [] : pager.slice.map((s) => s.id)));
 
   const toggleOne = (id: string) =>
     setSelected((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]));
@@ -190,7 +196,7 @@ export default function Skills({
           <thead>
             <tr className="border-b border-border font-mono-hud text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
               <th className="w-10 px-3 py-2.5 text-left">
-                <Checkbox checked={selected.length === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
+                <Checkbox checked={pager.slice.length > 0 && pager.slice.every((s) => selected.includes(s.id))} onCheckedChange={toggleAll} />
               </th>
               <th className="px-3 py-2.5 text-left font-medium">skill</th>
               <th className="px-3 py-2.5 text-left font-medium">origin</th>
@@ -203,7 +209,7 @@ export default function Skills({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((s) => (
+            {pager.slice.map((s) => (
               <tr
                 key={s.id}
                 className={cn(
@@ -283,6 +289,7 @@ export default function Skills({
             )}
           </tbody>
         </table>
+        <Pager page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} total={pager.total} onPage={pager.setPage} onPageSize={pager.setPageSize} />
       </Panel>
 
       {/* ── Move dialog ── */}

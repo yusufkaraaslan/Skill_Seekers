@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Panel, SectionHeader } from '@/components/hud';
+import { Panel, SectionHeader, usePagination, Pager } from '@/components/hud';
 import type { ConfigEntry, ConfigSource, Workflow } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,9 @@ export default function Library({
       (c.description ?? '').toLowerCase().includes(q)
     );
   });
+
+  const pager = usePagination(filtered, 'configs', `${query}|${activeSource}`);
+  const wfPager = usePagination(workflows, 'workflows', '');
 
   return (
     <div className="space-y-5 animate-flicker">
@@ -129,7 +132,7 @@ export default function Library({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
+            {pager.slice.map((c) => (
               <tr key={c.id} className="border-b border-border/60 hover:bg-secondary/40 transition-colors" title={c.description}>
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
@@ -185,13 +188,14 @@ export default function Library({
             )}
           </tbody>
         </table>
+        <Pager page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} total={pager.total} onPage={pager.setPage} onPageSize={pager.setPageSize} />
       </Panel>
 
       {/* enhancement workflows */}
       <Panel className="p-5">
         <SectionHeader title="Enhancement workflows" sub={`${workflows.length} YAML presets chained via --enhance-workflow (mirrors the 5 workflow MCP tools)`} />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 max-h-[420px] overflow-y-auto pr-1">
-          {workflows.map((w) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+          {wfPager.slice.map((w) => (
             <div key={w.id} className="flex items-start gap-3 rounded border border-border bg-secondary/30 p-3.5 hover:border-primary/30 transition-colors group">
               <Sparkles className="h-4 w-4 text-[hsl(45_93%_55%)] shrink-0 mt-0.5" />
               <div className="min-w-0">
@@ -201,6 +205,7 @@ export default function Library({
             </div>
           ))}
         </div>
+        <div className="mt-3"><Pager page={wfPager.page} pageCount={wfPager.pageCount} pageSize={wfPager.pageSize} total={wfPager.total} onPage={wfPager.setPage} onPageSize={wfPager.setPageSize} /></div>
       </Panel>
 
       {/* add source dialog */}
