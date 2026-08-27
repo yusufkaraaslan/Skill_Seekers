@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.10.0.dev0_
 
+### Added
+- Seeker HUD: skills are tagged by origin (`seeker` / `plugin · <name>` / `manual`) with a filter; external skills are read-only except port/package (API returns 403 on mutation).
+- Seeker HUD: `GET /api/mcp/status` probes the stdio/HTTP transports; the Seeker MCP tab shows real status and copyable client config.
+- Seeker HUD: live skill search shared between the top bar and the grid; configs search; 25/50/100 paging on the skills, configs and workflows lists.
+
+### Changed
+- Seeker HUD: "Library" tab is now "Configs", "MCP Tools" is now "Seeker MCP".
+
+### Fixed
+- Seeker HUD: installed-plugin scan no longer reads `~/.claude/plugins/marketplaces/` (a catalogue clone), which over-reported skills from plugins that were never installed.
+
 ## [3.9.0] - 2026-07-29
 
 ### Added
