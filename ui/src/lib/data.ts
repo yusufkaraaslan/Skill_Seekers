@@ -173,6 +173,18 @@ export const fmtSize = (kb: number) =>
 export const qualityColor = (q: number) =>
   q >= 85 ? '187 92% 50%' : q >= 70 ? '45 93% 55%' : '0 72% 55%';
 
+// One predicate for both the top-bar search and the Skills grid filter.
+export function matchesSkillQuery(s: Skill, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    s.name.toLowerCase().includes(q) ||
+    s.description.toLowerCase().includes(q) ||
+    s.tags.some((t) => t.toLowerCase().includes(q)) ||
+    (s.pluginName ?? '').toLowerCase().includes(q)
+  );
+}
+
 // ── Marketplace ─────────────────────────────────────────────────────────────
 
 export interface Marketplace {

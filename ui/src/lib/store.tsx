@@ -28,6 +28,8 @@ export interface StoreState {
   marketSkills: MarketSkill[];
   settings: SettingsPayload | null;
   root: string;
+  skillQuery: string;
+  setSkillQuery: (q: string) => void;
 
   refresh: () => Promise<void>;
   refreshLibrary: () => Promise<void>;
@@ -81,6 +83,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [markets, setMarkets] = useState<Marketplace[]>([]);
   const [marketSkills, setMarketSkills] = useState<MarketSkill[]>([]);
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
+  const [skillQuery, setSkillQuery] = useState('');
   const runningRef = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -166,6 +169,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ready, backendDown, skills, jobs, projects, clis, activity, mcpTools, workflows,
     sources, entries, markets, marketSkills, settings,
     root: settings?.root ?? '',
+    skillQuery, setSkillQuery,
     refresh, refreshLibrary, refreshMarket, refreshSettings,
 
     create: (spec) =>

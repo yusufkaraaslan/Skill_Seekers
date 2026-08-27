@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS, OriginTag } from '@/components/hud';
-import { SOURCE_META, cliById, fmtSize } from '@/lib/data';
+import { SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
 import type { CliId, Project, Skill, SkillOrigin } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,8 @@ export default function Skills({
   projects,
   projectFilter,
   onProjectFilter,
+  query,
+  onQuery,
   onOpenSkill,
   onMove,
   onPort,
@@ -41,6 +43,8 @@ export default function Skills({
   projects: Project[];
   projectFilter: string;
   onProjectFilter: (p: string) => void;
+  query: string;
+  onQuery: (q: string) => void;
   onOpenSkill: (id: string) => void;
   onMove: (ids: string[], dest: 'global' | string) => void;
   onPort: (ids: string[], cli: CliId, opts: { ai: boolean; agent: string }) => void;
@@ -48,7 +52,6 @@ export default function Skills({
   onEnhance: (id: string) => void;
   onPackage: (id: string) => void;
 }) {
-  const [query, setQuery] = useState('');
   const [scope, setScope] = useState<ScopeFilter>('all');
   const [origin, setOrigin] = useState<OriginFilter>('all');
   const [cliFilter, setCliFilter] = useState<CliId[]>([]);
@@ -63,16 +66,7 @@ export default function Skills({
       if (origin !== 'all' && s.origin !== origin) return false;
       if (projectFilter !== 'all' && s.projectId !== projectFilter) return false;
       if (cliFilter.length && !cliFilter.some((c) => s.installs.includes(c))) return false;
-      if (query) {
-        const q = query.toLowerCase();
-        return (
-          s.name.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q) ||
-          s.tags.some((t) => t.includes(q)) ||
-          (s.pluginName ?? '').toLowerCase().includes(q)
-        );
-      }
-      return true;
+      return matchesSkillQuery(s, query);
     });
   }, [skills, scope, origin, projectFilter, cliFilter, query]);
 
@@ -97,7 +91,7 @@ export default function Skills({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => onQuery(e.target.value)}
               placeholder="filter by name, tag, keyword…"
               className="pl-8 h-8 font-mono-hud text-xs bg-secondary/50"
             />
