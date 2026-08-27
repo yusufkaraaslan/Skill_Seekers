@@ -37,7 +37,7 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
 
   return (
     <div className="space-y-5 animate-flicker">
-      <SectionHeader title="MCP server" sub={`${tools.length} tools exposed to AI agents — stdio + HTTP transports`} />
+      <SectionHeader title="Seeker MCP" sub={`Skill Seekers' own MCP server — ${tools.length} tools it exposes to agents (stdio + HTTP)`} />
 
       {/* server status strip */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

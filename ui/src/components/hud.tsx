@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { cliById } from '@/lib/data';
-import type { CliId } from '@/lib/data';
+import { cliById, ORIGIN_META } from '@/lib/data';
+import type { CliId, SkillOrigin } from '@/lib/data';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ── Panel: HUD card with corner ticks ────────────────────────────────────────
@@ -110,6 +110,24 @@ export function ScopeTag({ scope, project }: { scope: 'global' | 'project'; proj
   ) : (
     <span className="inline-flex items-center gap-1 rounded-[4px] border border-[hsl(45_93%_55%/0.4)] bg-[hsl(45_93%_55%/0.08)] px-1.5 py-0.5 font-mono-hud text-[10px] tracking-wider text-[hsl(45_93%_60%)]">
       ▣ {project ?? 'project'}
+    </span>
+  );
+}
+
+// ── Origin tag: seeker-built / plugin-shipped / hand-installed ───────────────
+export function OriginTag({ origin, pluginName }: { origin: SkillOrigin; pluginName?: string | null }) {
+  const meta = ORIGIN_META[origin];
+  const label = origin === 'plugin' && pluginName ? `plugin · ${pluginName}` : meta.label;
+  return (
+    <span
+      className="inline-flex items-center rounded-[4px] border px-1.5 py-0.5 font-mono-hud text-[10px] tracking-wider whitespace-nowrap"
+      style={{
+        color: `hsl(${meta.color})`,
+        borderColor: `hsl(${meta.color} / 0.4)`,
+        background: `hsl(${meta.color} / 0.08)`,
+      }}
+    >
+      {label}
     </span>
   );
 }
