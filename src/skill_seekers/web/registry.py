@@ -266,10 +266,17 @@ SKILL_ORIGINS = ("seeker", "plugin", "manual")
 def classify_origin(skill_dir: Path, root: Path) -> tuple[str, str | None]:
     """(origin, plugin_name) for a skill directory.
 
-    seeker: built in this workspace (under root/output) or carries the
-            .seeker-meta.json sidecar a create job writes (copied along by
-            the installer, so builds from other workspaces still count).
-    plugin: installed under ~/.claude/plugins.
+    Evaluated in order — location beats provenance:
+
+    seeker: built in this workspace (under root/output).
+    plugin: installed under ~/.claude/plugins — even when the directory
+            carries a .seeker-meta.json sidecar, e.g. a Skill-Seekers-built
+            skill that was republished inside a plugin. Location wins over
+            provenance: once a skill lives in a plugin bundle, it is managed
+            by that plugin, not by Skill Seekers.
+    seeker: (fallback) carries the .seeker-meta.json sidecar a create job
+            writes (copied along by the installer, so builds from other
+            workspaces still count), as long as it isn't under plugins.
     manual: anything else found in a CLI's skills dir.
     """
     from .clis import is_under_plugins, plugin_name_for
@@ -279,10 +286,10 @@ def classify_origin(skill_dir: Path, root: Path) -> tuple[str, str | None]:
         return "seeker", None
     except ValueError:
         pass
-    if (skill_dir / ".seeker-meta.json").is_file():
-        return "seeker", None
     if is_under_plugins(skill_dir):
         return "plugin", plugin_name_for(skill_dir)
+    if (skill_dir / ".seeker-meta.json").is_file():
+        return "seeker", None
     return "manual", None
 
 

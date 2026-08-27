@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -200,17 +201,48 @@ def run_scan(spec: dict[str, Any]) -> int:
 
 
 def run_package(spec: dict[str, Any]) -> int:
-    """Package an existing skill dir to one or more targets."""
-    skill_dir = spec["skill_dir"]
+    """Package an existing skill dir to one or more targets.
+
+    ``package_skill`` always writes the archive beside the skill dir
+    (``skill_path.parent``). For a seeker-built skill that's fine — it lands
+    in the workspace's ``output/``. For an externally-installed skill (a
+    plugin bundle, ``~/.claude/skills/...``) that would write into a
+    location Skill Seekers doesn't own. When ``spec["output_dir"]`` is set,
+    stage a copy of the skill dir there first and package the copy, so the
+    archive lands in the workspace instead of at the real source.
+    """
+    skill_dir = Path(spec["skill_dir"])
     targets: list[str] = spec.get("targets") or ["claude"]
     total = len(targets)
-    for i, target in enumerate(targets):
-        progress(10 + int((i / total) * 85), f"packaging → {target}…")
-        argv = [skill_dir, "--target", target, "--no-open", "--yes", "--skip-quality-check"]
-        code = _run_cli_main("skill_seekers.cli.package_skill", argv)
-        if code != 0:
-            return code
-    return 0
+
+    output_dir = spec.get("output_dir")
+    staged: Path | None = None
+    package_dir = skill_dir
+    if output_dir:
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        staged = out / skill_dir.name
+        shutil.copytree(skill_dir, staged, dirs_exist_ok=True)
+        package_dir = staged
+
+    try:
+        for i, target in enumerate(targets):
+            progress(10 + int((i / total) * 85), f"packaging → {target}…")
+            argv = [
+                str(package_dir),
+                "--target",
+                target,
+                "--no-open",
+                "--yes",
+                "--skip-quality-check",
+            ]
+            code = _run_cli_main("skill_seekers.cli.package_skill", argv)
+            if code != 0:
+                return code
+        return 0
+    finally:
+        if staged is not None:
+            shutil.rmtree(staged, ignore_errors=True)
 
 
 def run_enhance(spec: dict[str, Any]) -> int:

@@ -11,11 +11,11 @@ Run with: ``skill-seekers ui`` (see cli/ui_command.py).
 
 from __future__ import annotations
 
+import http.client
 import importlib.util
 import json
 import os
 import re
-import socket
 from pathlib import Path
 from typing import Any
 
@@ -109,18 +109,32 @@ MCP_STDIO_MODULE = "mcp"  # the [mcp] extra — what makes the module runnable
 MCP_STDIO_COMMAND = "python -m skill_seekers.mcp.server_fastmcp"
 MCP_HTTP_HOST = "127.0.0.1"
 MCP_HTTP_PORT = 8000
-MCP_HTTP_TIMEOUT = 0.3
+MCP_HTTP_TIMEOUT = 0.5
+MCP_HEALTH_PATH = "/health"
+MCP_SERVER_NAME_PREFIX = "skill-seeker"
 
 
 def probe_mcp_status() -> dict[str, Any]:
-    """Probe stdio (module importable) and HTTP (port listening) transports."""
-    stdio_state = "installed" if importlib.util.find_spec(MCP_STDIO_MODULE) else "missing"
-    http_state = "down"
+    """Probe stdio (module importable) and HTTP (/health fingerprint) transports."""
     try:
-        with socket.create_connection((MCP_HTTP_HOST, MCP_HTTP_PORT), timeout=MCP_HTTP_TIMEOUT):
-            http_state = "live"
-    except OSError:
+        stdio_state = "installed" if importlib.util.find_spec(MCP_STDIO_MODULE) else "missing"
+    except Exception:  # noqa: BLE001 — a misbehaving meta-path finder must not 500 the status route
+        stdio_state = "missing"
+    http_state = "down"
+    conn = http.client.HTTPConnection(MCP_HTTP_HOST, MCP_HTTP_PORT, timeout=MCP_HTTP_TIMEOUT)
+    try:
+        conn.request("GET", MCP_HEALTH_PATH)
+        resp = conn.getresponse()
+        body = resp.read()
+        if resp.status == 200:
+            data = json.loads(body)
+            server = data["server"]
+            if isinstance(server, str) and server.startswith(MCP_SERVER_NAME_PREFIX):
+                http_state = "live"
+    except (OSError, http.client.HTTPException, ValueError, KeyError, AttributeError):
         pass
+    finally:
+        conn.close()
     return {
         "stdio": {"state": stdio_state, "command": MCP_STDIO_COMMAND},
         "http": {
@@ -609,16 +623,26 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.post("/api/skills/{skill_id}/package")
     def package_skill(skill_id: str, req: PackageRequest) -> dict[str, Any]:
         skill_dir = skill_dir_for(skill_id)
+        try:
+            origin = registry.origin_of(root, skill_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}") from None
+        spec: dict[str, Any] = {
+            "type": "package",
+            "skill_dir": str(skill_dir),
+            "targets": req.targets,
+            "cwd": str(root),
+        }
+        if origin != "seeker":
+            # Packaging must not write into a location Skill Seekers doesn't
+            # own (plugin cache, ~/.claude/skills, …); route the archive to
+            # the workspace instead. See runner.run_package for the staging.
+            spec["output_dir"] = str(root / "output" / "_packages")
         job = jobs.submit(
             "package",
             f"{skill_id} → {', '.join(req.targets)}",
             f"package {skill_dir.name} for {len(req.targets)} target(s)",
-            {
-                "type": "package",
-                "skill_dir": str(skill_dir),
-                "targets": req.targets,
-                "cwd": str(root),
-            },
+            spec,
         )
         registry.log_activity("package", f"{skill_id} packaging → {', '.join(req.targets)}")
         return {"ok": True, "job": job.to_dict()}
