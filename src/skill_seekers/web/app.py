@@ -128,10 +128,10 @@ def probe_mcp_status() -> dict[str, Any]:
         body = resp.read()
         if resp.status == 200:
             data = json.loads(body)
-            server = data["server"]
+            server = data.get("server") if isinstance(data, dict) else None
             if isinstance(server, str) and server.startswith(MCP_SERVER_NAME_PREFIX):
                 http_state = "live"
-    except (OSError, http.client.HTTPException, ValueError, KeyError, AttributeError):
+    except Exception:  # noqa: BLE001 — best-effort probe: any failure means "down", never a 500
         pass
     finally:
         conn.close()
