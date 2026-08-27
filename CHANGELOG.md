@@ -16,9 +16,11 @@ _Development version: 3.10.0.dev0_
 
 ### Changed
 - Seeker HUD: "Library" tab is now "Configs", "MCP Tools" is now "Seeker MCP".
+- Seeker HUD: externally-installed skills now report a checker-derived quality score (was a fixed 70), their real install path as source (was "external install"), and no default "external" tag.
 
 ### Fixed
-- Seeker HUD: installed-plugin scan no longer reads `~/.claude/plugins/marketplaces/` (a catalogue clone), which over-reported skills from plugins that were never installed.
+- Seeker HUD: installed-plugin scan no longer reads `~/.claude/plugins/{marketplaces,repos,data}/` (catalogue clones), which over-reported skills from plugins that were never installed.
+- Seeker HUD: MCP HTTP transport is reported live only when /health identifies Skill Seekers' own server (was any listener on the port); packaging an external skill no longer writes the archive into the plugin cache.
 
 ## [3.9.0] - 2026-07-29
 
