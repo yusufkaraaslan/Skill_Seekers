@@ -507,3 +507,39 @@ def test_mutations_rejected_for_external_skills(workspace):
         json={"ids": ["handwritten"], "cli": "kimi", "ai": False, "agent": "claude"},
     )
     assert r.status_code == 200
+
+
+# ── MCP status probe ─────────────────────────────────────────────────────────
+
+
+def test_mcp_status_probe(workspace, monkeypatch):
+    import socket
+
+    import skill_seekers.web.app as app_mod
+
+    _, client = workspace
+    monkeypatch.setattr(app_mod, "MCP_STDIO_MODULE", "definitely_not_a_module_xyz")
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    port = srv.getsockname()[1]
+    monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", port)
+    try:
+        data = client.get("/api/mcp/status").json()
+        assert data["stdio"] == {
+            "state": "missing",
+            "command": "python -m skill_seekers.mcp.server_fastmcp",
+        }
+        assert data["http"] == {
+            "state": "live",
+            "host": "127.0.0.1",
+            "port": port,
+            "url": f"http://127.0.0.1:{port}/sse",
+        }
+    finally:
+        srv.close()
+
+    monkeypatch.setattr(app_mod, "MCP_STDIO_MODULE", "json")
+    data = client.get("/api/mcp/status").json()
+    assert data["stdio"]["state"] == "installed"
+    assert data["http"]["state"] == "down"
