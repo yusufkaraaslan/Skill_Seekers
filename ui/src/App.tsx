@@ -16,6 +16,7 @@ import Mcp from '@/sections/Mcp';
 import Jobs from '@/sections/Jobs';
 import Settings from '@/sections/Settings';
 import { StoreProvider, useStore } from '@/lib/store';
+import { matchesSkillQuery } from '@/lib/data';
 import { cn } from '@/lib/utils';
 
 type View = 'overview' | 'projects' | 'skills' | 'create' | 'marketplace' | 'library' | 'mcp' | 'jobs' | 'settings';
@@ -142,16 +143,17 @@ function Hud() {
               <div className="relative w-full">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
-                  placeholder="jump to skill…  ( enter )"
+                  value={store.skillQuery}
+                  placeholder="search skills…  ( enter opens first match )"
                   className="w-full h-8 rounded border border-border bg-secondary/40 pl-8 pr-3 font-mono-hud text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
+                  onChange={(e) => {
+                    store.setSkillQuery(e.target.value);
+                    if (view !== 'skills') setView('skills');
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      const q = (e.target as HTMLInputElement).value.toLowerCase();
-                      const hit = store.skills.find((s) => s.name.toLowerCase().includes(q));
-                      if (hit) {
-                        setOpenSkillId(hit.id);
-                        setView('skills');
-                      }
+                      const hit = store.skills.find((s) => matchesSkillQuery(s, store.skillQuery));
+                      if (hit) setOpenSkillId(hit.id);
                     }
                   }}
                 />
@@ -197,6 +199,8 @@ function Hud() {
                 projects={store.projects}
                 projectFilter={projectFilter}
                 onProjectFilter={setProjectFilter}
+                query={store.skillQuery}
+                onQuery={store.setSkillQuery}
                 onOpenSkill={setOpenSkillId}
                 onMove={store.move}
                 onPort={(ids, cli, opts) => store.port(ids, cli, opts.ai, opts.agent)}

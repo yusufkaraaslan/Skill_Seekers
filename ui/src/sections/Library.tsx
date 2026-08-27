@@ -4,7 +4,7 @@ import type { ConfigEntry, ConfigSource, Workflow } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { GitBranch, Plus, RefreshCw, FileJson, ArrowUpCircle, Sparkles, Trash2, CloudDownload } from 'lucide-react';
+import { GitBranch, Plus, RefreshCw, FileJson, ArrowUpCircle, Sparkles, Trash2, CloudDownload, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ORIGIN_STYLE: Record<ConfigEntry['origin'], string> = {
@@ -36,8 +36,18 @@ export default function Library({
   const [activeSource, setActiveSource] = useState<string>('all');
   const [addOpen, setAddOpen] = useState(false);
   const [repo, setRepo] = useState('');
+  const [query, setQuery] = useState('');
 
-  const filtered = entries.filter((c) => activeSource === 'all' || c.source === activeSource);
+  const q = query.trim().toLowerCase();
+  const filtered = entries.filter((c) => {
+    if (activeSource !== 'all' && c.source !== activeSource) return false;
+    if (!q) return true;
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.framework.toLowerCase().includes(q) ||
+      (c.description ?? '').toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-5 animate-flicker">
@@ -45,9 +55,15 @@ export default function Library({
         title="Scrape configs"
         sub="recipes Skill Seekers builds skills from — presets, scanned & custom, backed by git remotes"
         right={
-          <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
-            <Plus className="mr-1.5 h-3.5 w-3.5" /> add_config_source
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative w-56">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="filter configs…" className="pl-8 h-8 font-mono-hud text-xs bg-secondary/50" />
+            </div>
+            <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> add_config_source
+            </Button>
+          </div>
         }
       />
 
@@ -163,7 +179,7 @@ export default function Library({
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center font-mono-hud text-xs text-muted-foreground">
-                  ∅ no configs found in the workspace configs/ directory — run a project scan or fetch a source
+                  ∅ no configs match — clear the filter, run a project scan, or fetch a source
                 </td>
               </tr>
             )}
