@@ -26,8 +26,8 @@ const NAV: { id: View; label: string; icon: typeof LayoutDashboard; kbd: string 
   { id: 'skills',      label: 'Skills',      icon: Layers,          kbd: '3' },
   { id: 'create',      label: 'Create',      icon: Wand2,           kbd: '4' },
   { id: 'marketplace', label: 'Marketplace', icon: Store,           kbd: '5' },
-  { id: 'library',     label: 'Library',     icon: LibraryBig,      kbd: '6' },
-  { id: 'mcp',         label: 'MCP Tools',   icon: Plug,            kbd: '7' },
+  { id: 'library',     label: 'Configs',     icon: LibraryBig,      kbd: '6' },
+  { id: 'mcp',         label: 'Seeker MCP',  icon: Plug,            kbd: '7' },
   { id: 'jobs',        label: 'Jobs',        icon: ListChecks,      kbd: '8' },
   { id: 'settings',    label: 'Settings',    icon: Settings2,       kbd: '9' },
 ];

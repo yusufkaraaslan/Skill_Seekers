@@ -42,8 +42,8 @@ export default function Library({
   return (
     <div className="space-y-5 animate-flicker">
       <SectionHeader
-        title="Config library"
-        sub="presets, scanned & custom configs — backed by git remotes (mirrors config-source MCP tools)"
+        title="Scrape configs"
+        sub="recipes Skill Seekers builds skills from — presets, scanned & custom, backed by git remotes"
         right={
           <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
             <Plus className="mr-1.5 h-3.5 w-3.5" /> add_config_source

@@ -49,6 +49,16 @@ export const cliById = (id: CliId): Cli =>
 
 export type Scope = 'global' | 'project';
 
+// Who owns a skill: built by Skill Seekers, shipped inside a Claude Code
+// plugin, or hand-installed. Only seeker-origin skills are mutable in the HUD.
+export type SkillOrigin = 'seeker' | 'plugin' | 'manual';
+
+export const ORIGIN_META: Record<SkillOrigin, { label: string; color: string }> = {
+  seeker: { label: 'seeker', color: '187 92% 50%' },
+  plugin: { label: 'plugin', color: '258 90% 66%' },
+  manual: { label: 'manual', color: '217 12% 55%' },
+};
+
 export interface SkillFile {
   path: string;
   size: string;
@@ -71,6 +81,8 @@ export interface Skill {
   files: SkillFile[];
   content: string;             // SKILL.md body
   dir?: string;                // absolute path on disk (from backend)
+  origin: SkillOrigin;
+  pluginName?: string | null;  // set when origin === 'plugin' and the path was parseable
 }
 
 export type SourceType =
