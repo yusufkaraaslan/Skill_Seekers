@@ -197,6 +197,7 @@ class JobManager:
                         job.log = job.log[-MAX_LOG_LINES:]
             code = proc.wait()
         finally:
+            proc.stdout.close()  # unclosed pipe -> ResourceWarning during later GC
             spec_file.unlink(missing_ok=True)
 
         with self._lock:
