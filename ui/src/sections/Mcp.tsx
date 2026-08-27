@@ -1,19 +1,77 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Panel, SectionHeader } from '@/components/hud';
 import { MCP_CATEGORY_COLOR } from '@/lib/data';
 import type { McpTool } from '@/lib/data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plug, Search, TerminalSquare, Play } from 'lucide-react';
+import { Plug, Search, TerminalSquare, Play, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import type { McpStatus } from '@/lib/api';
 
 const CATEGORIES = Object.keys(MCP_CATEGORY_COLOR) as McpTool['category'][];
+
+const STDIO_SNIPPET = JSON.stringify(
+  { mcpServers: { 'skill-seekers': { command: 'python', args: ['-m', 'skill_seekers.mcp.server_fastmcp'] } } },
+  null,
+  2,
+);
+const httpSnippet = (url: string) =>
+  JSON.stringify({ mcpServers: { 'skill-seekers': { url } } }, null, 2);
+
+async function copyText(label: string, text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copied`);
+  } catch {
+    toast.error('clipboard unavailable', { description: text });
+  }
+}
+
+function StatusCard({
+  title,
+  sub,
+  live,
+  liveLabel,
+  downLabel,
+  onCopy,
+}: {
+  title: string;
+  sub: string;
+  live: boolean | null;
+  liveLabel: string;
+  downLabel: string;
+  onCopy: () => void;
+}) {
+  const color = live === null ? '217 12% 55%' : live ? '152 60% 50%' : '45 93% 55%';
+  const label = live === null ? '… probing' : live ? `● ${liveLabel}` : `○ ${downLabel}`;
+  return (
+    <Panel className="p-4 flex items-center gap-3">
+      <Plug className="h-4 w-4 shrink-0" style={{ color: `hsl(${color})` }} />
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="font-mono-hud text-[10px] text-muted-foreground truncate">{sub}</div>
+      </div>
+      <span className="ml-auto font-mono-hud text-[10px] whitespace-nowrap" style={{ color: `hsl(${color})` }}>{label}</span>
+      <Button size="sm" variant="ghost" className="h-7 px-2" title="copy client config" onClick={onCopy}>
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+    </Panel>
+  );
+}
 
 export default function Mcp({ tools }: { tools: McpTool[] }) {
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<string>('all');
   const [nl, setNl] = useState('');
+
+  const [status, setStatus] = useState<McpStatus | null>(null);
+  const probe = useCallback(() => {
+    setStatus(null);
+    api.mcpStatus().then(setStatus).catch(() => setStatus(null));
+  }, []);
+  useEffect(() => { probe(); }, [probe]);
 
   const filtered = useMemo(
     () =>
@@ -37,26 +95,34 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
 
   return (
     <div className="space-y-5 animate-flicker">
-      <SectionHeader title="Seeker MCP" sub={`Skill Seekers' own MCP server — ${tools.length} tools it exposes to agents (stdio + HTTP)`} />
+      <SectionHeader
+        title="Seeker MCP"
+        sub={`Skill Seekers' own MCP server — ${tools.length} tools it exposes to agents (stdio + HTTP)`}
+        right={
+          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[10px] uppercase tracking-wider" onClick={probe}>
+            <RefreshCw className="mr-1.5 h-3 w-3" /> re-probe
+          </Button>
+        }
+      />
 
       {/* server status strip */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Panel className="p-4 flex items-center gap-3">
-          <Plug className="h-4 w-4 text-[hsl(152_60%_50%)] shrink-0" />
-          <div>
-            <div className="text-sm font-semibold">stdio transport</div>
-            <div className="font-mono-hud text-[10px] text-muted-foreground">skill-seekers-mcp · claude code + cline</div>
-          </div>
-          <span className="ml-auto font-mono-hud text-[10px] text-[hsl(152_60%_50%)]">● live</span>
-        </Panel>
-        <Panel className="p-4 flex items-center gap-3">
-          <Plug className="h-4 w-4 text-[hsl(152_60%_50%)] shrink-0" />
-          <div>
-            <div className="text-sm font-semibold">http transport</div>
-            <div className="font-mono-hud text-[10px] text-muted-foreground">:8765 · cursor + windsurf</div>
-          </div>
-          <span className="ml-auto font-mono-hud text-[10px] text-[hsl(152_60%_50%)]">● live</span>
-        </Panel>
+        <StatusCard
+          title="stdio transport"
+          sub={status?.stdio.command ?? 'python -m skill_seekers.mcp.server_fastmcp'}
+          live={status ? status.stdio.state === 'installed' : null}
+          liveLabel="installed"
+          downLabel="not installed — pip install 'skill-seekers[mcp]'"
+          onCopy={() => copyText('.mcp.json snippet', STDIO_SNIPPET)}
+        />
+        <StatusCard
+          title="http transport"
+          sub={status ? status.http.url : 'http://127.0.0.1:8000/sse'}
+          live={status ? status.http.state === 'live' : null}
+          liveLabel="live"
+          downLabel="not running — python -m skill_seekers.mcp.server_fastmcp --http"
+          onCopy={() => copyText('Cursor / Windsurf snippet', httpSnippet(status?.http.url ?? 'http://127.0.0.1:8000/sse'))}
+        />
         {/* natural language runner */}
         <Panel className="p-4">
           <div className="flex items-center gap-2 mb-2">

@@ -57,6 +57,11 @@ export interface SettingsPayload {
   root: string;
 }
 
+export interface McpStatus {
+  stdio: { state: 'installed' | 'missing'; command: string };
+  http: { state: 'live' | 'down'; host: string; port: number; url: string };
+}
+
 export interface CreateSpec {
   entries: { type: string; input: string }[];
   name: string;
@@ -72,6 +77,7 @@ export const api = {
   library: () => req<LibraryPayload>('/library'),
   marketplaces: () => req<MarketPayload>('/marketplaces'),
   mcpTools: () => req<{ tools: McpTool[]; count: number }>('/mcp/tools'),
+  mcpStatus: () => req<McpStatus>('/mcp/status'),
   settings: () => req<SettingsPayload>('/settings'),
 
   create: (spec: CreateSpec) => post<{ ok: boolean; name: string }>('/create', spec),
