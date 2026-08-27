@@ -2,6 +2,7 @@
 
 import json
 import time
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,16 @@ from skill_seekers.web.installer import (
     install_skill_to_cli,
     uninstall_skill_from_cli,
 )
+
+
+def _mk_skill(dir_: Path, name: str | None = None) -> Path:
+    """Create a minimal skill directory with a SKILL.md and return it."""
+    dir_.mkdir(parents=True, exist_ok=True)
+    (dir_ / "SKILL.md").write_text(
+        f"---\nname: {name or dir_.name}\ndescription: fixture\n---\n\n# {name or dir_.name}\n",
+        encoding="utf-8",
+    )
+    return dir_
 
 
 @pytest.fixture()
@@ -335,3 +346,53 @@ def test_registry_frontmatter():
     assert body == "hello\n"
     meta, body = registry.parse_frontmatter("no frontmatter\n")
     assert meta == {}
+
+
+# ── origin: plugin scan + path helpers ───────────────────────────────────────
+
+
+def test_plugin_scan_skips_catalogue_clones(tmp_path, monkeypatch):
+    """Only cache/ and top-level plugin dirs are installs; marketplaces/repos/data are catalogues."""
+    fake_home = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(fake_home))
+    plugins = fake_home / ".claude" / "plugins"
+    _mk_skill(
+        plugins / "cache" / "official" / "superpowers" / "abc123" / "skills" / "brainstorming"
+    )
+    _mk_skill(plugins / "my-plugin" / "skills" / "local-skill")
+    _mk_skill(
+        plugins / "marketplaces" / "official" / "plugins" / "cwc" / "skills" / "catalogue-only"
+    )
+    _mk_skill(plugins / "repos" / "x" / "skills" / "repo-only")
+    _mk_skill(plugins / "data" / "skills" / "data-only")
+
+    from skill_seekers.web.clis import invalidate_installed_cache, iter_installed_skills, spec_by_id
+
+    invalidate_installed_cache()
+    names = {n for n, _ in iter_installed_skills(spec_by_id("claude"))}
+    assert names == {"brainstorming", "local-skill"}
+
+
+def test_plugin_name_for_layouts(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(fake_home))
+    plugins = fake_home / ".claude" / "plugins"
+
+    from skill_seekers.web.clis import is_under_plugins, plugin_name_for
+
+    assert (
+        plugin_name_for(plugins / "cache" / "official" / "superpowers" / "abc" / "skills" / "x")
+        == "superpowers"
+    )
+    assert (
+        plugin_name_for(
+            plugins / "cache" / "official" / "vercel" / "0.44.0" / ".claude" / "skills" / "y"
+        )
+        == "vercel"
+    )
+    assert plugin_name_for(plugins / "architect-design" / "skills" / "z") == "architect-design"
+    assert plugin_name_for(plugins / "my-plugin" / ".claude" / "skills" / "w") == "my-plugin"
+    assert plugin_name_for(plugins / "weird-layout" / "SKILL.md") is None
+    assert plugin_name_for(fake_home / ".claude" / "skills" / "manual") is None
+    assert is_under_plugins(plugins / "weird-layout") is True
+    assert is_under_plugins(fake_home / ".claude" / "skills" / "manual") is False
