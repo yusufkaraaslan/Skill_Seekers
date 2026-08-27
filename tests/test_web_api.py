@@ -1,6 +1,7 @@
 """Tests for the Seeker HUD web API (skill_seekers.web)."""
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -53,6 +54,9 @@ def workspace(tmp_path, monkeypatch):
     for name in ("PROJECTS_FILE", "ACTIVITY_FILE", "SKILLS_META_FILE", "TRASH_DIR"):
         monkeypatch.setattr(registry, name, getattr(paths, name))
 
+    from skill_seekers.web.clis import invalidate_installed_cache
+
+    invalidate_installed_cache()
     root = tmp_path / "ws"
     (root / "output" / "demo").mkdir(parents=True)
     (root / "output" / "demo" / "references").mkdir()
@@ -396,3 +400,76 @@ def test_plugin_name_for_layouts(tmp_path, monkeypatch):
     assert plugin_name_for(fake_home / ".claude" / "skills" / "manual") is None
     assert is_under_plugins(plugins / "weird-layout") is True
     assert is_under_plugins(fake_home / ".claude" / "skills" / "manual") is False
+
+
+# ── origin classification ────────────────────────────────────────────────────
+
+
+def _seed_external_skills(home: Path) -> None:
+    _mk_skill(
+        home
+        / ".claude"
+        / "plugins"
+        / "cache"
+        / "official"
+        / "superpowers"
+        / "abc"
+        / "skills"
+        / "brainstorming"
+    )
+    _mk_skill(home / ".claude" / "skills" / "handwritten")
+    built = _mk_skill(home / ".claude" / "skills" / "built-elsewhere")
+    (built / ".seeker-meta.json").write_text('{"source_type": "github"}', encoding="utf-8")
+    from skill_seekers.web.clis import invalidate_installed_cache
+
+    invalidate_installed_cache()
+
+
+def test_skill_origins(workspace):
+    _, client = workspace
+    _seed_external_skills(Path(os.environ["HOME"]))
+    by_id = {s["id"]: s for s in client.get("/api/skills").json()}
+
+    assert by_id["demo"]["origin"] == "seeker"
+    assert by_id["demo"]["pluginName"] is None
+    assert by_id["brainstorming"]["origin"] == "plugin"
+    assert by_id["brainstorming"]["pluginName"] == "superpowers"
+    assert by_id["handwritten"]["origin"] == "manual"
+    assert by_id["handwritten"]["pluginName"] is None
+    assert by_id["built-elsewhere"]["origin"] == "seeker"
+    assert by_id["built-elsewhere"]["sourceType"] == "github"
+    assert by_id["handwritten"]["tags"] == []
+
+
+def test_external_skill_quality_and_source(workspace, monkeypatch):
+    _, client = workspace
+    home = Path(os.environ["HOME"])
+    _seed_external_skills(home)
+
+    import skill_seekers.cli.quality_checker as qc
+
+    class FakeReport:
+        quality_score = 42.0
+
+    class FakeChecker:
+        def __init__(self, _skill_dir):
+            pass
+
+        def check_all(self):
+            return FakeReport()
+
+    monkeypatch.setattr(qc, "SkillQualityChecker", FakeChecker)
+    ext = {s["id"]: s for s in client.get("/api/skills").json()}["handwritten"]
+    assert ext["quality"] == 42
+    assert ext["source"] == str(home / ".claude" / "skills" / "handwritten")
+
+
+def test_origin_of(workspace):
+    root, _ = workspace
+    _seed_external_skills(Path(os.environ["HOME"]))
+    assert registry.origin_of(root, "demo") == "seeker"
+    assert registry.origin_of(root, "brainstorming") == "plugin"
+    assert registry.origin_of(root, "handwritten") == "manual"
+    assert registry.origin_of(root, "built-elsewhere") == "seeker"
+    with pytest.raises(KeyError):
+        registry.origin_of(root, "nope")
