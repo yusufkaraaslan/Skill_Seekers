@@ -141,6 +141,11 @@ def _probe_version(binary: str) -> str | None:
 _installed_cache: dict[str, tuple[float, list[tuple[str, Path]]]] = {}
 INSTALLED_CACHE_TTL = 30.0
 
+# Top-level dirs under ~/.claude/plugins that are catalogue clones or state,
+# not installed plugins: marketplaces/ is a git clone of the whole registry.
+PLUGIN_ROOT_SKIP = frozenset({"marketplaces", "repos", "data"})
+_SKIP_ANYWHERE = frozenset({"node_modules", ".git"})
+
 
 def iter_installed_skills(spec: CliSpec) -> list[tuple[str, Path]]:
     """Yield (name, skill_dir) for every skill installed for a CLI.
@@ -167,7 +172,10 @@ def iter_installed_skills(spec: CliSpec) -> list[tuple[str, Path]]:
             if not root.is_dir():
                 continue
             for skill_md in sorted(root.rglob("SKILL.md")):
-                if any(part in ("node_modules", ".git") for part in skill_md.parts):
+                rel = skill_md.relative_to(root)
+                if rel.parts and rel.parts[0] in PLUGIN_ROOT_SKIP:
+                    continue
+                if any(part in _SKIP_ANYWHERE for part in rel.parts):
                     continue
                 found.setdefault(skill_md.parent.name, skill_md.parent)
     else:
@@ -211,3 +219,45 @@ def detect_clis() -> list[dict]:
             }
         )
     return results
+
+
+# ── plugin path helpers ───────────────────────────────────────────────────────
+
+
+def _plugins_root() -> Path:
+    return Path.home() / ".claude" / "plugins"
+
+
+def _relative_to_plugins(skill_dir: Path) -> tuple[str, ...] | None:
+    try:
+        return skill_dir.resolve().relative_to(_plugins_root().resolve()).parts
+    except ValueError:
+        return None
+
+
+def is_under_plugins(skill_dir: Path) -> bool:
+    """True when the directory lives inside ~/.claude/plugins."""
+    return _relative_to_plugins(skill_dir) is not None
+
+
+def plugin_name_for(skill_dir: Path) -> str | None:
+    """Best-effort plugin name for a skill dir under ~/.claude/plugins.
+
+    Layouts handled:
+      <plugin>/skills/<skill>
+      <plugin>/.claude/skills/<skill>
+      cache/<marketplace>/<plugin>/<version>/skills/<skill>
+      cache/<marketplace>/<plugin>/<version>/.claude/skills/<skill>
+    Returns None for anything else (caller keeps origin "plugin").
+    """
+    parts = _relative_to_plugins(skill_dir)
+    if not parts:
+        return None
+    if parts[0] == "cache":
+        return parts[2] if len(parts) > 2 else None
+    if "skills" not in parts:
+        return None
+    i = parts.index("skills") - 1
+    if i >= 0 and parts[i] == ".claude":
+        i -= 1
+    return parts[i] if i >= 0 else None
