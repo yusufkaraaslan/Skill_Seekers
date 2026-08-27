@@ -464,6 +464,34 @@ def test_external_skill_quality_and_source(workspace, monkeypatch):
     assert ext["source"] == str(home / ".claude" / "skills" / "handwritten")
 
 
+def test_sidecar_under_plugins_is_plugin(workspace):
+    """Location beats provenance: a sidecar inside a plugin bundle is still 'plugin'."""
+    _, client = workspace
+    home = Path(os.environ["HOME"])
+    skill_dir = _mk_skill(
+        home
+        / ".claude"
+        / "plugins"
+        / "cache"
+        / "official"
+        / "somepack"
+        / "v1"
+        / "skills"
+        / "republished"
+    )
+    (skill_dir / ".seeker-meta.json").write_text('{"source_type": "github"}', encoding="utf-8")
+    from skill_seekers.web.clis import invalidate_installed_cache
+
+    invalidate_installed_cache()
+
+    by_id = {s["id"]: s for s in client.get("/api/skills").json()}
+    assert by_id["republished"]["origin"] == "plugin"
+    assert by_id["republished"]["pluginName"] == "somepack"
+
+    r = client.put("/api/skills/republished/content", json={"content": "x"})
+    assert r.status_code == 403
+
+
 def test_origin_of(workspace):
     root, _ = workspace
     _seed_external_skills(Path(os.environ["HOME"]))
@@ -509,7 +537,130 @@ def test_mutations_rejected_for_external_skills(workspace):
     assert r.status_code == 200
 
 
+# ── package routing for external skills ──────────────────────────────────────
+
+
+def test_package_external_skill_routes_output(workspace, monkeypatch):
+    """Packaging a non-seeker skill routes the job's output_dir into the
+    workspace; a seeker-built skill keeps today's behaviour (no output_dir)."""
+    root, client = workspace
+    _seed_external_skills(Path(os.environ["HOME"]))
+
+    from skill_seekers.web.jobs import get_job_manager
+
+    manager = get_job_manager()
+    captured: list[dict] = []
+
+    class FakeJob:
+        def to_dict(self):
+            return {"id": "fake", "status": "queued"}
+
+    def fake_submit(_job_type, _label, _detail, spec, _meta=None):
+        captured.append(spec)
+        return FakeJob()
+
+    monkeypatch.setattr(manager, "submit", fake_submit)
+
+    r = client.post("/api/skills/brainstorming/package", json={"targets": ["claude"]})
+    assert r.status_code == 200
+    r = client.post("/api/skills/demo/package", json={"targets": ["claude"]})
+    assert r.status_code == 200
+
+    brainstorming_spec = next(s for s in captured if s["skill_dir"].endswith("brainstorming"))
+    demo_spec = next(s for s in captured if s["skill_dir"].endswith("demo"))
+    assert brainstorming_spec["output_dir"] == str(root / "output" / "_packages")
+    assert "output_dir" not in demo_spec
+
+
+def test_run_package_stages_external_skill(tmp_path, monkeypatch):
+    """run_package copies an external skill into output_dir and packages the
+    staged copy, then removes the staged copy."""
+    import skill_seekers.web.runner as runner
+
+    skill_dir = tmp_path / "plugin-cache" / "brainstorming"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("---\nname: brainstorming\n---\n\n# x\n", encoding="utf-8")
+
+    output_dir = tmp_path / "workspace" / "output" / "_packages"
+    captured_argv: list[list[str]] = []
+
+    def fake_run_cli_main(_module_name, argv):
+        captured_argv.append(argv)
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_run_cli_main)
+
+    code = runner.run_package(
+        {
+            "skill_dir": str(skill_dir),
+            "targets": ["claude"],
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert code == 0
+    staged_path = output_dir / "brainstorming"
+    assert captured_argv == [
+        [str(staged_path), "--target", "claude", "--no-open", "--yes", "--skip-quality-check"]
+    ]
+    assert not staged_path.exists()  # cleaned up after packaging
+    assert skill_dir.is_dir()  # original source untouched
+
+
 # ── MCP status probe ─────────────────────────────────────────────────────────
+
+
+class _MCPHealthHandler:
+    """Factory for BaseHTTPRequestHandler subclasses used by the probe tests."""
+
+    @staticmethod
+    def healthy():
+        from http.server import BaseHTTPRequestHandler
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802 — stdlib method name
+                if self.path == "/health":
+                    body = json.dumps({"status": "healthy", "server": "skill-seeker-mcp"}).encode(
+                        "utf-8"
+                    )
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+
+            def log_message(self, *args):  # silence stdlib request logging
+                pass
+
+        return Handler
+
+    @staticmethod
+    def not_found():
+        from http.server import BaseHTTPRequestHandler
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802 — stdlib method name
+                self.send_response(404)
+                self.end_headers()
+
+            def log_message(self, *args):  # silence stdlib request logging
+                pass
+
+        return Handler
+
+
+def _run_probe_server(handler_cls):
+    """Start a ThreadingHTTPServer with handler_cls on a free port in a daemon thread."""
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler_cls)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread
 
 
 def test_mcp_status_probe(workspace, monkeypatch):
@@ -519,10 +670,10 @@ def test_mcp_status_probe(workspace, monkeypatch):
 
     _, client = workspace
     monkeypatch.setattr(app_mod, "MCP_STDIO_MODULE", "definitely_not_a_module_xyz")
-    srv = socket.socket()
-    srv.bind(("127.0.0.1", 0))
-    srv.listen(1)
-    port = srv.getsockname()[1]
+
+    # A real Skill Seekers MCP server answering /health -> live.
+    server, thread = _run_probe_server(_MCPHealthHandler.healthy())
+    port = server.server_address[1]
     monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", port)
     try:
         data = client.get("/api/mcp/status").json()
@@ -537,9 +688,46 @@ def test_mcp_status_probe(workspace, monkeypatch):
             "url": f"http://127.0.0.1:{port}/sse",
         }
     finally:
-        srv.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    # Some other listener that doesn't speak the /health contract -> down.
+    server2, thread2 = _run_probe_server(_MCPHealthHandler.not_found())
+    port2 = server2.server_address[1]
+    monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", port2)
+    try:
+        data = client.get("/api/mcp/status").json()
+        assert data["http"]["state"] == "down"
+    finally:
+        server2.shutdown()
+        server2.server_close()
+        thread2.join(timeout=5)
+
+    # Nothing listening -> down.
+    probe_sock = socket.socket()
+    probe_sock.bind(("127.0.0.1", 0))
+    closed_port = probe_sock.getsockname()[1]
+    probe_sock.close()
+    monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", closed_port)
+    data = client.get("/api/mcp/status").json()
+    assert data["http"]["state"] == "down"
 
     monkeypatch.setattr(app_mod, "MCP_STDIO_MODULE", "json")
     data = client.get("/api/mcp/status").json()
     assert data["stdio"]["state"] == "installed"
-    assert data["http"]["state"] == "down"
+
+
+def test_mcp_status_probe_survives_broken_finder(workspace, monkeypatch):
+    """A find_spec that raises must not 500 the status route (F4)."""
+    import skill_seekers.web.app as app_mod
+
+    _, client = workspace
+
+    def boom(_name):
+        raise RuntimeError("meta-path finder exploded")
+
+    monkeypatch.setattr(app_mod.importlib.util, "find_spec", boom)
+    r = client.get("/api/mcp/status")
+    assert r.status_code == 200
+    assert r.json()["stdio"]["state"] == "missing"
