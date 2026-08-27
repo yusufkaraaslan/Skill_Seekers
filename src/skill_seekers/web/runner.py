@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -200,6 +201,18 @@ def run_scan(spec: dict[str, Any]) -> int:
     return int(code or 0)
 
 
+def _package_targets(skill_dir: str, targets: list[str]) -> int:
+    """Run the package CLI for each target against ``skill_dir`` in turn."""
+    total = len(targets)
+    for i, target in enumerate(targets):
+        progress(10 + int((i / total) * 85), f"packaging → {target}…")
+        argv = [skill_dir, "--target", target, "--no-open", "--yes", "--skip-quality-check"]
+        code = _run_cli_main("skill_seekers.cli.package_skill", argv)
+        if code != 0:
+            return code
+    return 0
+
+
 def run_package(spec: dict[str, Any]) -> int:
     """Package an existing skill dir to one or more targets.
 
@@ -208,41 +221,35 @@ def run_package(spec: dict[str, Any]) -> int:
     in the workspace's ``output/``. For an externally-installed skill (a
     plugin bundle, ``~/.claude/skills/...``) that would write into a
     location Skill Seekers doesn't own. When ``spec["output_dir"]`` is set,
-    stage a copy of the skill dir there first and package the copy, so the
-    archive lands in the workspace instead of at the real source.
+    stage a copy of the skill dir in a job-unique temp dir under
+    ``output_dir`` first, package the copy, then move the resulting
+    archive(s) up into ``output_dir`` — so concurrent packaging jobs for the
+    same skill never share a staging path, and a failed copy can't leave a
+    half-written directory sitting where the next run would collide with it.
     """
     skill_dir = Path(spec["skill_dir"])
     targets: list[str] = spec.get("targets") or ["claude"]
-    total = len(targets)
 
     output_dir = spec.get("output_dir")
-    staged: Path | None = None
-    package_dir = skill_dir
-    if output_dir:
-        out = Path(output_dir)
-        out.mkdir(parents=True, exist_ok=True)
-        staged = out / skill_dir.name
-        shutil.copytree(skill_dir, staged, dirs_exist_ok=True)
-        package_dir = staged
+    if not output_dir:
+        return _package_targets(str(skill_dir), targets)
 
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    # Unique per job: concurrent packages of the same skill must not share a path.
+    staging = Path(tempfile.mkdtemp(prefix=f".staging-{skill_dir.name}-", dir=out))
+    staged = staging / skill_dir.name
     try:
-        for i, target in enumerate(targets):
-            progress(10 + int((i / total) * 85), f"packaging → {target}…")
-            argv = [
-                str(package_dir),
-                "--target",
-                target,
-                "--no-open",
-                "--yes",
-                "--skip-quality-check",
-            ]
-            code = _run_cli_main("skill_seekers.cli.package_skill", argv)
-            if code != 0:
-                return code
-        return 0
+        shutil.copytree(skill_dir, staged)  # no dirs_exist_ok — the dir is fresh
+        code = _package_targets(str(staged), targets)
+        if code == 0:
+            # The CLI writes archives beside the skill dir, i.e. into `staging/`.
+            for artifact in staging.iterdir():
+                if artifact.is_file():
+                    shutil.move(str(artifact), str(out / artifact.name))
+        return code
     finally:
-        if staged is not None:
-            shutil.rmtree(staged, ignore_errors=True)
+        shutil.rmtree(staging, ignore_errors=True)
 
 
 def run_enhance(spec: dict[str, Any]) -> int:

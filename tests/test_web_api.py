@@ -572,9 +572,13 @@ def test_package_external_skill_routes_output(workspace, monkeypatch):
     assert "output_dir" not in demo_spec
 
 
+def _no_staging_dirs_remain(out: Path) -> bool:
+    return not any(p.name.startswith(".staging-") for p in out.iterdir()) if out.is_dir() else True
+
+
 def test_run_package_stages_external_skill(tmp_path, monkeypatch):
-    """run_package copies an external skill into output_dir and packages the
-    staged copy, then removes the staged copy."""
+    """run_package copies an external skill into a job-unique staging dir
+    under output_dir and packages the staged copy, then removes staging."""
     import skill_seekers.web.runner as runner
 
     skill_dir = tmp_path / "plugin-cache" / "brainstorming"
@@ -599,15 +603,87 @@ def test_run_package_stages_external_skill(tmp_path, monkeypatch):
     )
 
     assert code == 0
-    staged_path = output_dir / "brainstorming"
-    assert captured_argv == [
-        [str(staged_path), "--target", "claude", "--no-open", "--yes", "--skip-quality-check"]
+    assert len(captured_argv) == 1
+    argv0 = Path(captured_argv[0][0])
+    assert argv0.name == "brainstorming"
+    assert argv0.parent.parent == output_dir  # <out>/.staging-.../brainstorming
+    assert argv0.parent.name.startswith(".staging-brainstorming-")
+    assert captured_argv[0][1:] == [
+        "--target",
+        "claude",
+        "--no-open",
+        "--yes",
+        "--skip-quality-check",
     ]
-    assert not staged_path.exists()  # cleaned up after packaging
+    assert not argv0.parent.exists()  # staging dir cleaned up after packaging
+    assert _no_staging_dirs_remain(output_dir)
     assert skill_dir.is_dir()  # original source untouched
 
 
+def test_run_package_cleans_up_staging_on_copy_failure(tmp_path, monkeypatch):
+    """A copytree failure must not leave a half-written staging dir behind."""
+    import skill_seekers.web.runner as runner
+
+    skill_dir = tmp_path / "src" / "brainstorming"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# x\n", encoding="utf-8")
+    output_dir = tmp_path / "out"
+
+    def boom(*_a, **_kw):
+        raise OSError("disk exploded")
+
+    monkeypatch.setattr(runner.shutil, "copytree", boom)
+
+    with pytest.raises(OSError, match="disk exploded"):
+        runner.run_package(
+            {"skill_dir": str(skill_dir), "targets": ["claude"], "output_dir": str(output_dir)}
+        )
+
+    assert _no_staging_dirs_remain(output_dir)
+
+
+def test_run_package_concurrent_runs_use_distinct_staging_and_land_output(tmp_path, monkeypatch):
+    """Two sequential packaging runs of the same skill must not share a
+    staging path, and the resulting archive lands in output_dir."""
+    import skill_seekers.web.runner as runner
+
+    skill_dir = tmp_path / "src" / "brainstorming"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# x\n", encoding="utf-8")
+    output_dir = tmp_path / "out"
+
+    captured_argv0: list[str] = []
+
+    def fake_run_cli_main(_module_name, argv):
+        captured_argv0.append(argv[0])
+        # Simulate package_skill.py writing the archive beside the staged skill dir.
+        Path(argv[0]).parent.joinpath("brainstorming.zip").write_text("zip", encoding="utf-8")
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_run_cli_main)
+
+    spec = {"skill_dir": str(skill_dir), "targets": ["claude"], "output_dir": str(output_dir)}
+    code1 = runner.run_package(spec)
+    code2 = runner.run_package(spec)
+
+    assert code1 == 0 and code2 == 0
+    assert len(captured_argv0) == 2
+    assert captured_argv0[0] != captured_argv0[1]  # distinct staging paths
+    assert (output_dir / "brainstorming.zip").is_file()
+    assert _no_staging_dirs_remain(output_dir)
+
+
 # ── MCP status probe ─────────────────────────────────────────────────────────
+
+
+def _respond_json(handler, status: int, body_bytes: bytes) -> None:
+    """Write a JSON response and close the connection (no keep-alive to leak)."""
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/json")
+    handler.send_header("Content-Length", str(len(body_bytes)))
+    handler.send_header("Connection", "close")
+    handler.end_headers()
+    handler.wfile.write(body_bytes)
 
 
 class _MCPHealthHandler:
@@ -623,13 +699,10 @@ class _MCPHealthHandler:
                     body = json.dumps({"status": "healthy", "server": "skill-seeker-mcp"}).encode(
                         "utf-8"
                     )
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
+                    _respond_json(self, 200, body)
                 else:
                     self.send_response(404)
+                    self.send_header("Connection", "close")
                     self.end_headers()
 
             def log_message(self, *args):  # silence stdlib request logging
@@ -644,7 +717,38 @@ class _MCPHealthHandler:
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):  # noqa: N802 — stdlib method name
                 self.send_response(404)
+                self.send_header("Connection", "close")
                 self.end_headers()
+
+            def log_message(self, *args):  # silence stdlib request logging
+                pass
+
+        return Handler
+
+    @staticmethod
+    def string_body():
+        """200 OK with a JSON *string* body (not an object) — must read as down."""
+        from http.server import BaseHTTPRequestHandler
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802 — stdlib method name
+                body = json.dumps("skill-seeker").encode("utf-8")
+                _respond_json(self, 200, body)
+
+            def log_message(self, *args):  # silence stdlib request logging
+                pass
+
+        return Handler
+
+    @staticmethod
+    def non_string_server_field():
+        """200 OK with {"server": 42} — non-string server field, must read as down."""
+        from http.server import BaseHTTPRequestHandler
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802 — stdlib method name
+                body = json.dumps({"server": 42}).encode("utf-8")
+                _respond_json(self, 200, body)
 
             def log_message(self, *args):  # silence stdlib request logging
                 pass
@@ -658,9 +762,16 @@ def _run_probe_server(handler_cls):
     from http.server import ThreadingHTTPServer
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler_cls)
+    server.daemon_threads = True  # worker threads die with the process; nothing to leak
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread
+
+
+def _stop_probe_server(server, thread) -> None:
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=2)
 
 
 def test_mcp_status_probe(workspace, monkeypatch):
@@ -688,9 +799,7 @@ def test_mcp_status_probe(workspace, monkeypatch):
             "url": f"http://127.0.0.1:{port}/sse",
         }
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=5)
+        _stop_probe_server(server, thread)
 
     # Some other listener that doesn't speak the /health contract -> down.
     server2, thread2 = _run_probe_server(_MCPHealthHandler.not_found())
@@ -700,9 +809,7 @@ def test_mcp_status_probe(workspace, monkeypatch):
         data = client.get("/api/mcp/status").json()
         assert data["http"]["state"] == "down"
     finally:
-        server2.shutdown()
-        server2.server_close()
-        thread2.join(timeout=5)
+        _stop_probe_server(server2, thread2)
 
     # Nothing listening -> down.
     probe_sock = socket.socket()
@@ -716,6 +823,37 @@ def test_mcp_status_probe(workspace, monkeypatch):
     monkeypatch.setattr(app_mod, "MCP_STDIO_MODULE", "json")
     data = client.get("/api/mcp/status").json()
     assert data["stdio"]["state"] == "installed"
+
+
+def test_mcp_status_probe_rejects_non_dict_health_body(workspace, monkeypatch):
+    """A 200 body that is valid JSON but not an object (a bare string) must
+    read as down, not raise."""
+    import skill_seekers.web.app as app_mod
+
+    _, client = workspace
+    server, thread = _run_probe_server(_MCPHealthHandler.string_body())
+    port = server.server_address[1]
+    monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", port)
+    try:
+        data = client.get("/api/mcp/status").json()
+        assert data["http"]["state"] == "down"
+    finally:
+        _stop_probe_server(server, thread)
+
+
+def test_mcp_status_probe_rejects_non_string_server_field(workspace, monkeypatch):
+    """A 200 body with {"server": 42} (non-string) must read as down, not raise."""
+    import skill_seekers.web.app as app_mod
+
+    _, client = workspace
+    server, thread = _run_probe_server(_MCPHealthHandler.non_string_server_field())
+    port = server.server_address[1]
+    monkeypatch.setattr(app_mod, "MCP_HTTP_PORT", port)
+    try:
+        data = client.get("/api/mcp/status").json()
+        assert data["http"]["state"] == "down"
+    finally:
+        _stop_probe_server(server, thread)
 
 
 def test_mcp_status_probe_survives_broken_finder(workspace, monkeypatch):
