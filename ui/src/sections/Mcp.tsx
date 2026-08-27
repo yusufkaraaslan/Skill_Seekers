@@ -88,7 +88,7 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
   const dispatch = () => {
     const match = tools.find((t) => nl.toLowerCase().includes(t.name.split('_')[0]));
     toast.success(`→ ${match?.name ?? 'install_skill'}`, {
-      description: 'natural-language dispatch happens inside an MCP-connected agent — start one with: skill-seekers-mcp',
+      description: 'natural-language dispatch happens inside an MCP-connected agent — start one with: python -m skill_seekers.mcp.server_fastmcp',
     });
     setNl('');
   };
