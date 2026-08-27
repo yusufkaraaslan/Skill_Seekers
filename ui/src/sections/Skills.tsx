@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, OriginTag, usePagination, Pager } from '@/components/hud';
+import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, OriginTag, Pager } from '@/components/hud';
 import { ALL_CLI_IDS, SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
+import { usePagination } from '@/hooks/use-pagination';
 import type { CliId, Project, Skill, SkillOrigin } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

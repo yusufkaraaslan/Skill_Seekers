@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Panel, SectionHeader, usePagination, Pager } from '@/components/hud';
+import { Panel, SectionHeader, Pager } from '@/components/hud';
 import type { ConfigEntry, ConfigSource, Workflow } from '@/lib/data';
+import { usePagination } from '@/hooks/use-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
