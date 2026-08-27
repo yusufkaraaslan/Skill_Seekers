@@ -12,6 +12,9 @@ export type CliId =
   | 'codex'
   | 'opencode';
 
+// All CLIs the HUD knows how to install/port skills to.
+export const ALL_CLI_IDS: CliId[] = ['claude', 'kimi', 'cursor', 'windsurf', 'gemini', 'codex', 'opencode'];
+
 export interface Cli {
   id: CliId;
   name: string;
@@ -169,6 +172,9 @@ export const EXPORT_TARGETS = [
 
 export const fmtSize = (kb: number) =>
   kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
+
+// Client-side paging page sizes, shared by every paginated list in the HUD.
+export const PAGE_SIZES = [25, 50, 100] as const;
 
 export const qualityColor = (q: number) =>
   q >= 85 ? '187 92% 50%' : q >= 70 ? '45 93% 55%' : '0 72% 55%';

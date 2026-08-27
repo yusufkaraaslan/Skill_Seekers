@@ -67,11 +67,17 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
   const [nl, setNl] = useState('');
 
   const [status, setStatus] = useState<McpStatus | null>(null);
-  const probe = useCallback(() => {
+  const fetchStatus = useCallback(
+    () => api.mcpStatus().then(setStatus).catch(() => setStatus(null)),
+    [],
+  );
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+  const reprobe = () => {
     setStatus(null);
-    api.mcpStatus().then(setStatus).catch(() => setStatus(null));
-  }, []);
-  useEffect(() => { probe(); }, [probe]);
+    fetchStatus();
+  };
 
   const filtered = useMemo(
     () =>
@@ -99,7 +105,7 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
         title="Seeker MCP"
         sub={`Skill Seekers' own MCP server — ${tools.length} tools it exposes to agents (stdio + HTTP)`}
         right={
-          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[10px] uppercase tracking-wider" onClick={probe}>
+          <Button size="sm" variant="ghost" className="h-7 font-mono-hud text-[10px] uppercase tracking-wider" onClick={reprobe}>
             <RefreshCw className="mr-1.5 h-3 w-3" /> re-probe
           </Button>
         }
