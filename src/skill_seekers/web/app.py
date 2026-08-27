@@ -11,9 +11,11 @@ Run with: ``skill-seekers ui`` (see cli/ui_command.py).
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
+import socket
 from pathlib import Path
 from typing import Any
 
@@ -99,6 +101,36 @@ API_KEY_PROVIDERS: dict[str, str] = {
     "MINIMAX_API_KEY": "minimax",
     "GITHUB_TOKEN": "github",
 }
+
+# Skill Seekers' own MCP server. There is no `skill-seekers-mcp` entry point;
+# the server runs as a module (see the repo's .mcp.json). HTTP transport is
+# `--http --port N` (default 8000) and serves SSE at /sse.
+MCP_STDIO_MODULE = "mcp"  # the [mcp] extra — what makes the module runnable
+MCP_STDIO_COMMAND = "python -m skill_seekers.mcp.server_fastmcp"
+MCP_HTTP_HOST = "127.0.0.1"
+MCP_HTTP_PORT = 8000
+MCP_HTTP_TIMEOUT = 0.3
+
+
+def probe_mcp_status() -> dict[str, Any]:
+    """Probe stdio (module importable) and HTTP (port listening) transports."""
+    stdio_state = "installed" if importlib.util.find_spec(MCP_STDIO_MODULE) else "missing"
+    http_state = "down"
+    try:
+        with socket.create_connection((MCP_HTTP_HOST, MCP_HTTP_PORT), timeout=MCP_HTTP_TIMEOUT):
+            http_state = "live"
+    except OSError:
+        pass
+    return {
+        "stdio": {"state": stdio_state, "command": MCP_STDIO_COMMAND},
+        "http": {
+            "state": http_state,
+            "host": MCP_HTTP_HOST,
+            "port": MCP_HTTP_PORT,
+            "url": f"http://{MCP_HTTP_HOST}:{MCP_HTTP_PORT}/sse",
+        },
+    }
+
 
 MCP_TOOLS: list[dict[str, str]] = [
     # Core
@@ -952,6 +984,10 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.get("/api/mcp/tools")
     def mcp_tools() -> dict[str, Any]:
         return {"tools": MCP_TOOLS, "count": len(MCP_TOOLS)}
+
+    @app.get("/api/mcp/status")
+    def mcp_status() -> dict[str, Any]:
+        return probe_mcp_status()
 
     # ── settings ─────────────────────────────────────────────────────────
 
