@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { cliById, ORIGIN_META } from '@/lib/data';
+import { ALL_CLI_IDS, cliById, ORIGIN_META, PAGE_SIZES } from '@/lib/data';
 import type { CliId, SkillOrigin } from '@/lib/data';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -90,8 +90,6 @@ export function CliChip({
 }
 
 // ── Install dots: which CLIs carry a skill ──────────────────────────────────
-export const ALL_CLI_IDS: CliId[] = ['claude', 'kimi', 'cursor', 'windsurf', 'gemini', 'codex', 'opencode'];
-
 export function InstallSet({ installs }: { installs: CliId[] }) {
   return (
     <div className="flex items-center gap-1">
@@ -195,7 +193,6 @@ export function Kbd({ children }: { children: ReactNode }) {
 }
 
 // ── Paging ───────────────────────────────────────────────────────────────────
-export const PAGE_SIZES = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 function readPageSize(listKey: string): number {
@@ -209,18 +206,17 @@ function readPageSize(listKey: string): number {
 
 export function usePagination<T>(items: T[], listKey: string, resetKey: string) {
   const [pageSize, setPageSizeState] = useState<number>(() => readPageSize(listKey));
-  const [page, setPage] = useState(1);
-
-  // any filter change or page-size change starts over at page 1
-  useEffect(() => {
-    setPage(1);
-  }, [resetKey, pageSize]);
+  // page is remembered together with the filter key + size it was chosen for;
+  // any change to either means "start over at page 1" without an effect
+  const [pageState, setPageState] = useState({ page: 1, key: resetKey, size: pageSize });
+  const page = pageState.key === resetKey && pageState.size === pageSize ? pageState.page : 1;
 
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(page, pageCount);
   const slice = items.slice((current - 1) * pageSize, current * pageSize);
 
+  const setPage = (p: number) => setPageState({ page: p, key: resetKey, size: pageSize });
   const setPageSize = (n: number) => {
     setPageSizeState(n);
     try {

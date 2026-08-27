@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, ALL_CLI_IDS, OriginTag, usePagination, Pager } from '@/components/hud';
-import { SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
+import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, OriginTag, usePagination, Pager } from '@/components/hud';
+import { ALL_CLI_IDS, SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
 import type { CliId, Project, Skill, SkillOrigin } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,7 +80,11 @@ export default function Skills({
     setCliFilter((f) => (f.includes(id) ? f.filter((c) => c !== id) : [...f, id]));
 
   const toggleAll = () =>
-    setSelected((sel) => (sel.length === pager.slice.length ? [] : pager.slice.map((s) => s.id)));
+    setSelected((sel) => {
+      const pageIds = pager.slice.map((s) => s.id);
+      const allOnPage = pageIds.length > 0 && pageIds.every((id) => sel.includes(id));
+      return allOnPage ? sel.filter((id) => !pageIds.includes(id)) : Array.from(new Set([...sel, ...pageIds]));
+    });
 
   const toggleOne = (id: string) =>
     setSelected((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]));
