@@ -143,7 +143,9 @@ def discover_skills(root: Path, enabled_clis: list[str] | None = None) -> list[d
     # Skills installed globally but not present in this workspace's output/
     for cli_name, cli_dir in _global_only_skills(out_dir):
         skills.append(
-            _describe_global_only(cli_name, cli_dir, overrides.get(cli_name, {}), enabled_clis)
+            _describe_global_only(
+                cli_name, cli_dir, overrides.get(cli_name, {}), meta, enabled_clis, root
+            )
         )
     meta["skills"] = overrides
     write_json(SKILLS_META_FILE, meta)
@@ -205,18 +207,33 @@ def _describe_skill(
         "files": _list_files(skill_dir),
         "content": raw,
         "dir": str(skill_dir),
+        # Everything under <workspace>/output was built here.
+        "origin": "seeker",
+        "pluginName": None,
     }
 
 
 def _describe_global_only(
-    name: str, skill_dir: Path, override: dict[str, Any], enabled_clis: list[str] | None
+    name: str,
+    skill_dir: Path,
+    override: dict[str, Any],
+    meta_cache: dict[str, Any],
+    enabled_clis: list[str] | None,
+    root: Path,
 ) -> dict[str, Any]:
     skill_md = skill_dir / "SKILL.md"
     raw = skill_md.read_text(encoding="utf-8", errors="replace") if skill_md.is_file() else ""
     front, _ = parse_frontmatter(raw)
+    sidecar = _read_sidecar(skill_dir)
+    if len(raw.encode("utf-8")) > MAX_CONTENT_BYTES:
+        raw = raw[:MAX_CONTENT_BYTES]
     installs = installed_clis_for(name)
     if enabled_clis:
         installs = [c for c in installs if c in enabled_clis] or installs
+    origin, plugin_name = classify_origin(skill_dir, root)
+    source_type = override.get("source_type") or sidecar.get("source_type") or "docs"
+    if source_type not in KNOWN_SOURCE_TYPES:
+        source_type = "docs"
     return {
         "id": name,
         "name": str(front.get("name") or name),
@@ -224,19 +241,64 @@ def _describe_global_only(
         "scope": override.get("scope", "global"),
         "projectId": override.get("project_id"),
         "installs": installs,
-        "source": override.get("source") or "external install",
-        "sourceType": override.get("source_type", "docs"),
-        "version": str(front.get("version") or "1.0.0"),
+        "source": override.get("source") or sidecar.get("source") or str(skill_dir),
+        "sourceType": source_type,
+        "version": str(front.get("version") or sidecar.get("version") or "1.0.0"),
         "sizeKb": _dir_size_kb(skill_dir) if skill_dir.is_dir() else 0,
         "updatedAt": time.strftime("%Y-%m-%d", time.localtime(skill_md.stat().st_mtime))
         if skill_md.is_file()
         else "—",
-        "quality": override.get("quality", 70),
-        "tags": override.get("tags", ["external"]),
+        "quality": _quality_for(skill_dir, meta_cache) if skill_md.is_file() else 0,
+        "tags": override.get("tags", []),
         "files": _list_files(skill_dir) if skill_dir.is_dir() else [],
         "content": raw,
         "dir": str(skill_dir),
+        "origin": origin,
+        "pluginName": plugin_name,
     }
+
+
+# ── origin ────────────────────────────────────────────────────────────────────
+
+SKILL_ORIGINS = ("seeker", "plugin", "manual")
+
+
+def classify_origin(skill_dir: Path, root: Path) -> tuple[str, str | None]:
+    """(origin, plugin_name) for a skill directory.
+
+    seeker: built in this workspace (under root/output) or carries the
+            .seeker-meta.json sidecar a create job writes (copied along by
+            the installer, so builds from other workspaces still count).
+    plugin: installed under ~/.claude/plugins.
+    manual: anything else found in a CLI's skills dir.
+    """
+    from .clis import is_under_plugins, plugin_name_for
+
+    try:
+        skill_dir.resolve().relative_to((root / "output").resolve())
+        return "seeker", None
+    except ValueError:
+        pass
+    if (skill_dir / ".seeker-meta.json").is_file():
+        return "seeker", None
+    if is_under_plugins(skill_dir):
+        return "plugin", plugin_name_for(skill_dir)
+    return "manual", None
+
+
+def origin_of(root: Path, skill_id: str) -> str:
+    """Origin of a skill by id, without building the full payload.
+
+    Raises:
+        KeyError: when no skill with that id is known.
+    """
+    out_dir = root / "output"
+    if (out_dir / skill_id / "SKILL.md").is_file():
+        return "seeker"
+    for name, skill_dir in _global_only_skills(out_dir):
+        if name == skill_id:
+            return classify_origin(skill_dir, root)[0]
+    raise KeyError(skill_id)
 
 
 def set_skill_override(name: str, **fields: Any) -> None:
