@@ -152,6 +152,9 @@ function Hud() {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      // the drawer autofocuses its first button; without this the
+                      // same Enter keypress activates it (packaging the skill)
+                      e.preventDefault();
                       const hit = store.skills.find((s) => matchesSkillQuery(s, store.skillQuery));
                       if (hit) setOpenSkillId(hit.id);
                     }

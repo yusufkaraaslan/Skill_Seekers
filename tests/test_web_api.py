@@ -54,6 +54,15 @@ def workspace(tmp_path, monkeypatch):
     for name in ("PROJECTS_FILE", "ACTIVITY_FILE", "SKILLS_META_FILE", "TRASH_DIR"):
         monkeypatch.setattr(registry, name, getattr(paths, name))
 
+    # jobs.py bound JOBS_FILE at import as well, and the process-wide JobManager
+    # singleton would otherwise accumulate every test's completion hooks and
+    # persist test jobs into the developer's real ~/.skill-seekers/ui/
+    import skill_seekers.web.jobs as jobs_mod
+
+    monkeypatch.setattr(jobs_mod, "JOBS_FILE", state / "jobs.json")
+    manager = jobs_mod.JobManager()
+    monkeypatch.setattr(jobs_mod, "_manager", manager)
+
     from skill_seekers.web.clis import invalidate_installed_cache
 
     invalidate_installed_cache()
@@ -65,7 +74,18 @@ def workspace(tmp_path, monkeypatch):
     )
     (root / "output" / "demo" / "references" / "api.md").write_text("# api\n", encoding="utf-8")
     app = create_app(root)
-    return root, TestClient(app)
+    # registered after the app's hook so it runs last: once a job id lands here,
+    # every hook for that job has already fired
+    finished: set[str] = set()
+    manager.register_hook(lambda job: finished.add(job.id))
+    yield root, TestClient(app)
+    # let this test's jobs finish while the patched paths are still in place,
+    # so their hooks cannot log into the real state dir after teardown
+    deadline = time.time() + 60
+    while time.time() < deadline and any(
+        j["status"] in ("running", "queued") or j["id"] not in finished for j in manager.list()
+    ):
+        time.sleep(0.05)
 
 
 def test_health(workspace):
@@ -375,6 +395,34 @@ def test_plugin_scan_skips_catalogue_clones(tmp_path, monkeypatch):
     invalidate_installed_cache()
     names = {n for n, _ in iter_installed_skills(spec_by_id("claude"))}
     assert names == {"brainstorming", "local-skill"}
+
+
+def test_nested_skill_md_is_not_a_separate_skill(tmp_path, monkeypatch):
+    """vercel ships ai-sdk/upstream/SKILL.md — a nested file belongs to its owner."""
+    fake_home = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(fake_home))
+    plugins = fake_home / ".claude" / "plugins"
+    _mk_skill(plugins / "vercel" / "skills" / "ai-sdk")
+    _mk_skill(plugins / "vercel" / "skills" / "ai-sdk" / "upstream")
+    _mk_skill(
+        plugins / "vercel" / "skills" / "ai-sdk" / "Aardvark"
+    )  # sorts before SKILL.md by name
+
+    from skill_seekers.web.clis import invalidate_installed_cache, iter_installed_skills, spec_by_id
+
+    invalidate_installed_cache()
+    assert {n for n, _ in iter_installed_skills(spec_by_id("claude"))} == {"ai-sdk"}
+
+
+@pytest.mark.usefixtures("workspace")
+def test_jobs_are_isolated_per_test(tmp_path):
+    """The fixture must own the JobManager: no hook accumulation, no real-state writes."""
+    from skill_seekers.web import jobs as jobs_mod
+
+    assert tmp_path / "ui-state" / "jobs.json" == jobs_mod.JOBS_FILE
+    manager = jobs_mod.get_job_manager()
+    assert manager is jobs_mod._manager
+    assert len(manager._hooks) == 2  # the app's on_job_done + the fixture's sentinel
 
 
 def test_plugin_name_for_layouts(tmp_path, monkeypatch):
