@@ -32,6 +32,7 @@ async function copyText(label: string, text: string) {
 function StatusCard({
   title,
   sub,
+  hint,
   live,
   liveLabel,
   downLabel,
@@ -39,6 +40,7 @@ function StatusCard({
 }: {
   title: string;
   sub: string;
+  hint: string;          // replaces `sub` while the transport is down: how to bring it up
   live: boolean | null;
   liveLabel: string;
   downLabel: string;
@@ -50,10 +52,12 @@ function StatusCard({
     <Panel className="p-4 flex items-center gap-3">
       <Plug className="h-4 w-4 shrink-0" style={{ color: `hsl(${color})` }} />
       <div className="min-w-0">
-        <div className="text-sm font-semibold">{title}</div>
-        <div className="font-mono-hud text-[10px] text-muted-foreground truncate">{sub}</div>
+        <div className="text-sm font-semibold whitespace-nowrap">{title}</div>
+        <div className="font-mono-hud text-[10px] text-muted-foreground truncate" title={live === false ? hint : sub}>
+          {live === false ? hint : sub}
+        </div>
       </div>
-      <span className="ml-auto font-mono-hud text-[10px] whitespace-nowrap" style={{ color: `hsl(${color})` }}>{label}</span>
+      <span className="ml-auto shrink-0 font-mono-hud text-[10px] whitespace-nowrap" style={{ color: `hsl(${color})` }}>{label}</span>
       <Button size="sm" variant="ghost" className="h-7 px-2" title="copy client config" onClick={onCopy}>
         <Copy className="h-3.5 w-3.5" />
       </Button>
@@ -116,17 +120,19 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
         <StatusCard
           title="stdio transport"
           sub={status?.stdio.command ?? 'python -m skill_seekers.mcp.server_fastmcp'}
+          hint="pip install 'skill-seekers[mcp]'"
           live={status ? status.stdio.state === 'installed' : null}
           liveLabel="installed"
-          downLabel="not installed — pip install 'skill-seekers[mcp]'"
+          downLabel="not installed"
           onCopy={() => copyText('.mcp.json snippet', STDIO_SNIPPET)}
         />
         <StatusCard
           title="http transport"
           sub={status ? status.http.url : 'http://127.0.0.1:8000/sse'}
+          hint="start: python -m skill_seekers.mcp.server_fastmcp --http"
           live={status ? status.http.state === 'live' : null}
           liveLabel="live"
-          downLabel="not running — python -m skill_seekers.mcp.server_fastmcp --http"
+          downLabel="not running"
           onCopy={() => copyText('Cursor / Windsurf snippet', httpSnippet(status?.http.url ?? 'http://127.0.0.1:8000/sse'))}
         />
         {/* natural language runner */}

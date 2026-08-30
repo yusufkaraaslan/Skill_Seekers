@@ -171,13 +171,21 @@ def iter_installed_skills(spec: CliSpec) -> list[tuple[str, Path]]:
         for root in spec.scan_roots:
             if not root.is_dir():
                 continue
-            for skill_md in sorted(root.rglob("SKILL.md")):
+            # A SKILL.md nested inside a skill dir (e.g. vercel's ai-sdk/upstream/)
+            # belongs to that skill; walk shallow-first so the owner is seen before
+            # its descendants.
+            claimed: set[Path] = set()
+            for skill_md in sorted(root.rglob("SKILL.md"), key=lambda p: (len(p.parts), str(p))):
                 rel = skill_md.relative_to(root)
                 if rel.parts and rel.parts[0] in PLUGIN_ROOT_SKIP:
                     continue
                 if any(part in _SKIP_ANYWHERE for part in rel.parts):
                     continue
-                found.setdefault(skill_md.parent.name, skill_md.parent)
+                skill_dir = skill_md.parent
+                if any(parent in claimed for parent in skill_dir.parents):
+                    continue
+                claimed.add(skill_dir)
+                found.setdefault(skill_dir.name, skill_dir)
     else:
         if spec.global_path.is_dir():
             for p in sorted(spec.global_path.iterdir()):
