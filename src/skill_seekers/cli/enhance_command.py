@@ -259,6 +259,12 @@ Examples:
         print(f"❌ Error: Not a directory: {skill_dir}")
         return 1
 
+    # Level 0 explicitly disables enhancement. The scrapers forward this flag
+    # verbatim, so honour it here rather than making callers filter it out.
+    if getattr(args, "enhance_level", 1) == 0:
+        print("⏭  Enhancement skipped (--enhance-level 0)")
+        return 0
+
     mode, target = _pick_mode(args)
 
     # Dry run — just show what would happen
