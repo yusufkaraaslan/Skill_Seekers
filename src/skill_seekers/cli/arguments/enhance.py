@@ -64,6 +64,23 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "help": "Preview what would be enhanced without calling AI",
         },
     },
+    # Accepted for parity with the scrapers, which forward this flag verbatim
+    # (doc_scraper.py, video_scraper.py). This command only enhances SKILL.md,
+    # so any level above 0 behaves identically; 0 skips enhancement entirely.
+    "enhance_level": {
+        "flags": ("--enhance-level",),
+        "kwargs": {
+            "type": int,
+            "choices": [0, 1, 2, 3],
+            "default": 1,
+            "help": (
+                "AI enhancement level: 0=skip enhancement, 1-3=enhance SKILL.md "
+                "(this command only enhances SKILL.md, so 1, 2 and 3 are equivalent here; "
+                "the higher levels are honoured by the scrapers that generate the other files)"
+            ),
+            "metavar": "LEVEL",
+        },
+    },
     # Agent options — LOCAL mode only
     "agent": {
         "flags": ("--agent",),
