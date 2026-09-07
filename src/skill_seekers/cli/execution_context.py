@@ -92,6 +92,10 @@ class OutputSettings(BaseModel):
     output_dir: str | None = Field(default=None, description="Output directory override")
     doc_version: str = Field(default="", description="Documentation version tag")
     dry_run: bool = Field(default=False, description="Preview mode without execution")
+    index: bool = Field(
+        default=False,
+        description="Build an optional SQLite search index for generated reference markdown",
+    )
 
 
 class ScrapingSettings(BaseModel):
@@ -326,6 +330,7 @@ class ExecutionContext(BaseModel):
                 "output_dir": None,
                 "doc_version": output["doc_version"],
                 "dry_run": output["dry_run"],
+                "index": False,
             },
             "scraping": {
                 "max_pages": scraping["max_pages"],
@@ -382,6 +387,7 @@ class ExecutionContext(BaseModel):
             config["output"] = {
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
+                "index": bool(file_data.get("index", False)),
             }
             config["enhancement"] = {
                 "enabled": enhancement.get("enabled", True),
@@ -435,6 +441,8 @@ class ExecutionContext(BaseModel):
             config.setdefault("output", {})["doc_version"] = args.doc_version
         if getattr(args, "dry_run", False):
             config.setdefault("output", {})["dry_run"] = True
+        if getattr(args, "index", False):
+            config.setdefault("output", {})["index"] = True
 
         # Enhancement
         if hasattr(args, "enhance_level") and args.enhance_level is not None:
