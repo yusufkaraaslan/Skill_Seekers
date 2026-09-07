@@ -1186,7 +1186,7 @@ async def scrape_github_tool(args: dict) -> list[TextContent]:
 
 async def fetch_config_tool(args: dict) -> list[TextContent]:
     """Fetch config from API, git URL, or named source"""
-    from skill_seekers.services.git_repo import GitConfigRepo
+    from skill_seekers.services.git_repo import GitConfigRepo, validate_path_segment
     from skill_seekers.services.source_manager import SourceManager
 
     config_name = args.get("config_name")
@@ -1283,6 +1283,11 @@ Next steps:
                         text="❌ Error: config_name is required when using git_url parameter",
                     )
                 ]
+
+            try:
+                validate_path_segment(config_name, label="config name")
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {e}")]
 
             # Clone/pull repository
             git_repo = GitConfigRepo()
