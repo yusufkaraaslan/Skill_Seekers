@@ -25,8 +25,8 @@ class TestUniversalArguments:
     """Test universal argument definitions."""
 
     def test_universal_count(self):
-        """Should have exactly 21 universal arguments."""
-        assert len(UNIVERSAL_ARGUMENTS) == 21
+        """Should have exactly 22 universal arguments."""
+        assert len(UNIVERSAL_ARGUMENTS) == 22
 
     def test_universal_argument_names(self):
         """Universal arguments should have expected names."""
@@ -34,6 +34,7 @@ class TestUniversalArguments:
             "name",
             "description",
             "output",
+            "index",
             "enhance_level",
             "api_key",
             "dry_run",
@@ -133,9 +134,10 @@ class TestArgumentHelpers:
         names = get_universal_argument_names()
         assert isinstance(names, set)
         assert (
-            len(names) == 21
+            len(names) == 22
         )  # Phase 2: added 4 workflow arguments + local_repo_path + doc_version
         assert "name" in names
+        assert "index" in names
         assert "enhance_level" in names  # Phase 1: consolidated flag
         assert "enhance_workflow" in names  # Phase 2: workflow support
         assert "enhance_stage" in names

@@ -4,6 +4,8 @@ Tests that the create command properly detects source types
 and routes to the correct scrapers without actually scraping.
 """
 
+import json
+
 import pytest
 
 
@@ -182,6 +184,34 @@ class TestExecutionContextIntegration:
         # Getting context again returns same values
         ctx2 = ExecutionContext.get()
         assert ctx2.output.name == "test_skill"
+
+        ExecutionContext.reset()
+
+    def test_execution_context_preserves_index_flag(self):
+        """The universal --index setting is available to the centralized flow."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+        import argparse
+
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(index=True))
+
+        assert ctx.output.index is True
+
+        ExecutionContext.reset()
+
+    def test_execution_context_reads_unified_config_index_flag(self, tmp_path):
+        """A unified config can opt in without changing its default output path."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        config_path = tmp_path / "skill.json"
+        config_path.write_text(
+            json.dumps({"name": "example", "index": True, "sources": []}),
+            encoding="utf-8",
+        )
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(config_path=str(config_path))
+
+        assert ctx.output.index is True
 
         ExecutionContext.reset()
 
