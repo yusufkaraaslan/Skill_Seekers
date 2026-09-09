@@ -111,7 +111,7 @@ DEFAULT_MODELS = {
 # "protocol" is the wire format (see WIRE_PROTOCOLS) — _call_api branches on it,
 #   NOT on provider name, so an OpenAI/Anthropic-compatible provider needs no new
 #   _call_api branch. Providers may declare "protocol_env" for a runtime override.
-# "supports_images" gates multimodal (call_with_image); "endpoints"/"region_env"
+# "supports_images"/"supports_video" gate multimodal calls; "endpoints"/"region_env"
 #   describe a region→protocol→URL map for providers with regional base URLs.
 WIRE_PROTOCOLS = ("anthropic", "openai", "google")
 API_PROVIDERS: tuple[dict[str, Any], ...] = (
@@ -152,6 +152,7 @@ API_PROVIDERS: tuple[dict[str, Any], ...] = (
         "endpoints": MINIMAX_ENDPOINTS,
         "region_env": "MINIMAX_API_REGION",
         "supports_images": True,
+        "supports_video": True,
     },
 )
 
@@ -171,6 +172,30 @@ API_KEY_MAP = {var: p["provider"] for p in API_PROVIDERS for var in p["env_vars"
 def provider_supports_images(provider: str) -> bool:
     """Whether a provider accepts image input (registry-declared capability)."""
     return bool(PROVIDER_META.get(provider, {}).get("supports_images"))
+
+
+def provider_supports_video(provider: str) -> bool:
+    """Whether a provider accepts video input."""
+    return bool(PROVIDER_META.get(provider, {}).get("supports_video"))
+
+
+def _media_type(path: Path, fallback: str) -> str:
+    """Resolve a media type even when the host MIME database is incomplete."""
+    detected = mimetypes.guess_type(path.name)[0]
+    if detected:
+        return detected
+    common_types = {
+        ".avi": "video/avi",
+        ".mkv": "video/x-matroska",
+        ".mov": "video/quicktime",
+        ".mp4": "video/mp4",
+        ".gif": "image/gif",
+        ".jpeg": "image/jpeg",
+        ".jpg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+    }
+    return common_types.get(path.suffix.lower(), fallback)
 
 
 def get_provider_api_keys() -> dict[str, str | None]:
@@ -509,6 +534,7 @@ class AgentClient:
         timeout: int | None = None,
         system: str | None = None,
         temperature: float | None = None,
+        thinking: str | None = None,
     ) -> str | None:
         """Call an API provider with a local image and text prompt.
 
@@ -519,6 +545,7 @@ class AgentClient:
             timeout: Request timeout in seconds.
             system: Optional system prompt.
             temperature: Optional sampling temperature.
+            thinking: MiniMax reasoning mode (``adaptive`` or ``disabled``).
 
         Returns:
             Response text, or None when the image cannot be read or the call fails.
@@ -537,13 +564,14 @@ class AgentClient:
             logger.error(f"Could not read image {path}: {e}")
             return None
 
-        media_type = mimetypes.guess_type(path.name)[0] or "image/png"
+        media_type = _media_type(path, "image/png")
         result = self._call_api(
             prompt,
             max_tokens,
             timeout,
             system=system,
             temperature=temperature,
+            thinking=thinking,
             image=(media_type, image_data),
         )
         if result is None and self._last_truncated:
@@ -557,7 +585,59 @@ class AgentClient:
                 timeout,
                 system=system,
                 temperature=temperature,
+                thinking=thinking,
                 image=(media_type, image_data),
+            )
+        return result
+
+    def call_with_video(
+        self,
+        prompt: str,
+        video_path: str | Path,
+        max_tokens: int = 4096,
+        timeout: int | None = None,
+        system: str | None = None,
+        temperature: float | None = None,
+        thinking: str | None = None,
+    ) -> str | None:
+        """Call MiniMax M3 with a local video through its OpenAI wire format."""
+        if self.mode != "api" or self.api_protocol != "openai":
+            logger.warning("Video requests require an OpenAI-compatible API mode")
+            return None
+        if not provider_supports_video(self.provider):
+            logger.warning("Provider %r does not support video requests", self.provider)
+            return None
+        model = self.model or self.get_model(self.provider)
+        if self.provider == "minimax" and model != MINIMAX_DEFAULT_MODEL:
+            logger.warning("MiniMax video requests require MiniMax-M3")
+            return None
+
+        path = Path(video_path)
+        try:
+            video_data = base64.standard_b64encode(path.read_bytes()).decode("ascii")
+        except OSError as e:
+            logger.error(f"Could not read video {path}: {e}")
+            return None
+
+        media_type = _media_type(path, "video/mp4")
+        result = self._call_api(
+            prompt,
+            max_tokens,
+            timeout,
+            system=system,
+            temperature=temperature,
+            thinking=thinking,
+            video=(media_type, video_data),
+        )
+        if result is None and self._last_truncated:
+            result = self._call_api(
+                prompt,
+                max_tokens * 2,
+                timeout,
+                system=system,
+                temperature=temperature,
+                thinking=thinking,
+                video=(media_type, video_data),
             )
         return result
 
@@ -570,6 +650,7 @@ class AgentClient:
         cwd: str | Path | None = None,
         system: str | None = None,
         temperature: float | None = None,
+        thinking: str | None = None,
     ) -> str | None:
         """
         Call the AI agent (API or LOCAL mode).
@@ -583,6 +664,7 @@ class AgentClient:
             system: Optional system prompt (API mode only)
             temperature: Optional sampling temperature (API mode only;
                 None = provider default)
+            thinking: MiniMax reasoning mode (``adaptive`` or ``disabled``).
 
         Returns:
             Response text, or None on failure
@@ -592,7 +674,12 @@ class AgentClient:
         # two places to update when the policy changes.
         if self.mode == "api":
             result = self._call_api(
-                prompt, max_tokens, timeout, system=system, temperature=temperature
+                prompt,
+                max_tokens,
+                timeout,
+                system=system,
+                temperature=temperature,
+                thinking=thinking,
             )
             # The truncation gate returns None rather than corrupt callers'
             # output with a cut-off body. Before giving up, retry ONCE with
@@ -603,7 +690,12 @@ class AgentClient:
                     max_tokens * 2,
                 )
                 result = self._call_api(
-                    prompt, max_tokens * 2, timeout, system=system, temperature=temperature
+                    prompt,
+                    max_tokens * 2,
+                    timeout,
+                    system=system,
+                    temperature=temperature,
+                    thinking=thinking,
                 )
             return result
         elif self.mode == "local":
@@ -617,7 +709,9 @@ class AgentClient:
         timeout: int | None = None,
         system: str | None = None,
         temperature: float | None = None,
+        thinking: str | None = None,
         image: tuple[str, str] | None = None,
+        video: tuple[str, str] | None = None,
     ) -> str | None:
         """Call via API using the detected provider."""
         self._last_truncated = False
@@ -681,21 +775,39 @@ class AgentClient:
                 if system is not None:
                     messages.append({"role": "system", "content": system})
                 openai_content: str | list[dict[str, Any]] = prompt
-                if image:
-                    media_type, image_data = image
-                    openai_content = [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{media_type};base64,{image_data}",
-                            },
-                        },
-                    ]
+                if image or video:
+                    openai_content = [{"type": "text", "text": prompt}]
+                    if image:
+                        media_type, image_data = image
+                        openai_content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{media_type};base64,{image_data}",
+                                },
+                            }
+                        )
+                    if video:
+                        media_type, video_data = video
+                        openai_content.append(
+                            {
+                                "type": "video_url",
+                                "video_url": {
+                                    "url": f"data:{media_type};base64,{video_data}",
+                                },
+                            }
+                        )
                 messages.append({"role": "user", "content": openai_content})
                 kwargs = {}
                 if temperature is not None:
                     kwargs["temperature"] = temperature
+                thinking_mode = thinking
+                if self.provider == "minimax" and thinking_mode is None:
+                    thinking_mode = os.environ.get("MINIMAX_THINKING", "").strip() or None
+                if self.provider == "minimax" and thinking_mode is not None:
+                    if thinking_mode not in ("adaptive", "disabled"):
+                        raise ValueError("MiniMax thinking must be adaptive or disabled")
+                    kwargs["extra_body"] = {"thinking": {"type": thinking_mode}}
                 response = self.client.chat.completions.create(
                     model=model,
                     max_tokens=max_tokens,
