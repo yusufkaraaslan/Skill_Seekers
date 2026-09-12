@@ -33,6 +33,9 @@ env/
 
 # Output directory
 output/
+
+# Default output of `skill-seekers scan` (generated, holds machine-specific absolute paths)
+configs/scanned/
 *.zip
 
 # Skill Seekers cache (intermediate files)
