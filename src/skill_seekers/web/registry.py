@@ -131,6 +131,24 @@ def _quality_for(skill_dir: Path, meta_cache: dict[str, Any]) -> int:
     return score
 
 
+def skill_quality_breakdown(skill_dir: Path) -> list[dict[str, Any]]:
+    """Per-dimension scores the skill page charts; falls back to neutral values."""
+    try:
+        from skill_seekers.cli.quality_checker import SkillQualityChecker
+
+        report = SkillQualityChecker(skill_dir).check_all()
+        issues = report.errors + report.warnings
+        by_cat: dict[str, int] = {}
+        for issue in issues:
+            by_cat[issue.category] = by_cat.get(issue.category, 0) + 1
+        dims = ["frontmatter", "structure", "examples", "links"]
+        return [{"label": d, "score": max(0, 100 - 12 * by_cat.get(d, 0))} for d in dims]
+    except Exception:  # noqa: BLE001 — quality is best-effort metadata
+        return [
+            {"label": d, "score": 75} for d in ("frontmatter", "structure", "examples", "links")
+        ]
+
+
 def discover_skills(root: Path, enabled_clis: list[str] | None = None) -> list[dict[str, Any]]:
     """Find all built skills under ``root/output`` and describe them for the UI."""
     out_dir = workspace_dir(root, "output")
