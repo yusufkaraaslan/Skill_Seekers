@@ -33,6 +33,17 @@ def slug_for(value: str) -> str:
     return f"{stem}-{hashlib.sha256(value.encode('utf-8')).hexdigest()[:8]}"
 
 
+def read_manifest(root: Path, slug: str) -> dict[str, Any]:
+    """The manifest already recorded for ``slug``, or ``{}`` if there is none.
+
+    A run of one tool merges into whatever earlier runs of the other tools
+    recorded, so the reader has to tolerate a missing or malformed file.
+    """
+    safe_name(slug)
+    data = read_json(analysis_root(root) / slug / "manifest.json", {})
+    return data if isinstance(data, dict) else {}
+
+
 def write_manifest(root: Path, slug: str, data: dict[str, Any]) -> Path:
     """Record one analysis run; ``slug`` must be a single path component."""
     safe_name(slug)

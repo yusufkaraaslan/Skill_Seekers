@@ -5,19 +5,23 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 from tests.test_web_api import _mk_skill, workspace  # noqa: F401
 from skill_seekers.cli import estimate_pages as estimate_pages_mod
 from skill_seekers.web import analysis_store, runner
 
 
 def test_run_upload_packages_then_uploads(workspace, monkeypatch):
+    """The vector/RAG adaptors write <name>-<target>.json, never an archive."""
     root, _ = workspace
     calls = []
 
     def fake_cli(module, argv):
         calls.append((module, argv))
         if module.endswith("package_skill"):
-            Path(argv[0]).with_suffix(".zip").write_text("zip")
+            staged = Path(argv[0])
+            staged.with_name(f"{staged.name}-chroma.json").write_text("{}")
         return 0
 
     monkeypatch.setattr(runner, "_run_cli_main", fake_cli)
@@ -30,8 +34,23 @@ def test_run_upload_packages_then_uploads(workspace, monkeypatch):
     }
     assert runner.run_upload(spec) == 0
     upload = next(c for c in calls if c[0].endswith("upload_skill"))
-    assert upload[1][0].endswith("chroma/demo.zip")
+    assert upload[1][0].endswith("chroma/demo-chroma.json")
     assert upload[1][1:5] == ["--target", "chroma", "--persist-directory", "./chroma_db"]
+
+
+def test_run_upload_fails_cleanly_when_packaging_wrote_nothing(workspace, monkeypatch):
+    """No target directory at all must raise the same RuntimeError, not an OSError."""
+    root, _ = workspace
+    monkeypatch.setattr(runner, "run_package", lambda _spec: 0)
+    spec = {
+        "skill_dir": str(root / "output/demo"),
+        "output_dir": str(root / "output/_packages"),
+        "target": "chroma",
+        "options": {},
+        "cwd": str(root),
+    }
+    with pytest.raises(RuntimeError, match="produced no output"):
+        runner.run_upload(spec)
 
 
 def test_run_upload_picks_newest_archive_by_mtime(workspace, monkeypatch):
@@ -216,7 +235,53 @@ def test_run_analyze_never_reports_a_previous_runs_files(workspace, monkeypatch)
     manifest = analysis_store.list_recent(root)[0]
     assert "guides" not in manifest["results"]
     assert manifest["tools"] == [] and manifest["skipped"] == ["guides"]
-    assert not (stale / "tests.json").exists()
+    # Cleanup is per tool now, so a sibling tool's file survives this run — but
+    # it is still neither an input for `guides` nor a result of this run.
+    assert (stale / "tests.json").exists()
+
+
+def _patterns_cli(_module, argv):
+    """Stand-in for pattern_recognizer: --output is a directory."""
+    out = Path(argv[argv.index("--output") + 1])
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "detected_patterns.json").write_text(json.dumps({"total_patterns_detected": 5}))
+    return 0
+
+
+def test_run_analyze_merges_results_across_per_tool_runs(workspace, monkeypatch):
+    """Re-running one tool must not erase the sibling results already recorded."""
+    root, _ = workspace
+
+    def fake_cli(module, argv):
+        if module.endswith("pattern_recognizer"):
+            return _patterns_cli(module, argv)
+        Path(argv[argv.index("--output") + 1]).write_text(json.dumps({"metrics": {"overall": 88}}))
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_cli)
+    assert runner.run_analyze(_analyze_spec(root, root, ["patterns"])) == 0
+    assert runner.run_analyze(_analyze_spec(root, root, ["quality"])) == 0
+    manifest = analysis_store.list_recent(root)[0]
+    assert set(manifest["results"]) == {"patterns", "quality"}
+    assert manifest["results"]["patterns"]["count"] == 5
+    assert manifest["results"]["quality"]["count"] == 88
+    assert sorted(manifest["tools"]) == ["patterns", "quality"]
+    assert "error" not in manifest
+
+
+def test_run_analyze_records_a_failing_tool_and_keeps_prior_results(workspace, monkeypatch):
+    """A tool that exits non-zero must still leave a manifest behind."""
+    root, _ = workspace
+    monkeypatch.setattr(runner, "_run_cli_main", _patterns_cli)
+    assert runner.run_analyze(_analyze_spec(root, root, ["patterns"])) == 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", lambda _m, _a: 3)
+    assert runner.run_analyze(_analyze_spec(root, root, ["quality"])) == 3
+    manifest = analysis_store.list_recent(root)[0]
+    assert manifest["error"] == "quality exited 3"
+    assert manifest["results"]["patterns"]["count"] == 5
+    assert "quality" not in manifest["results"]
+    assert manifest["tools"] == ["patterns"]
 
 
 def test_slug_for_separates_targets_sharing_a_basename():

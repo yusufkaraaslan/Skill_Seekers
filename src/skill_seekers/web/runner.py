@@ -508,10 +508,16 @@ def run_upload(spec: dict[str, Any]) -> int:
     )
     if code != 0:
         return code
-    archives = [p for p in (out / target).iterdir() if p.suffix in (".zip", ".gz")]
-    if not archives:
-        raise RuntimeError(f"packaging for {target} produced no archive under {out / target}")
-    newest = max(archives, key=lambda p: p.stat().st_mtime)
+    # Not every target produces an archive: the vector/RAG adaptors (chroma,
+    # weaviate, pinecone…) write <name>-<target>.json. run_package gives each
+    # target a directory holding exactly this run's output, so take the newest
+    # regular file in it whatever the extension — filtering on .zip/.gz made
+    # every vector upload fail with "produced no archive".
+    target_dir = out / target
+    outputs = [p for p in target_dir.iterdir() if p.is_file()] if target_dir.is_dir() else []
+    if not outputs:
+        raise RuntimeError(f"packaging for {target} produced no output under {target_dir}")
+    newest = max(outputs, key=lambda p: p.stat().st_mtime)
     argv = [str(newest), "--target", target]
     for key, flag in UPLOAD_OPTION_FLAGS.items():
         value = (spec.get("options") or {}).get(key)
@@ -587,6 +593,28 @@ def _analysis_count(tool: str, path: Path) -> float | None:
     return None
 
 
+def _analysis_output(tool: str, out_dir: Path) -> Path:
+    """The file or directory ``tool`` owns inside an analysis run directory."""
+    if tool in ("patterns", "router"):
+        return out_dir / tool
+    return out_dir / f"{tool}.json"
+
+
+def _clear_analysis_outputs(tools: list[str], out_dir: Path) -> None:
+    """Remove only what this run rewrites.
+
+    Clearing the whole directory would delete the results of tools this run did
+    not select, which the merged manifest still points at; leaving a re-run
+    tool's own file behind would let it be recorded as a fresh result.
+    """
+    for tool in tools:
+        path = _analysis_output(tool, out_dir)
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            path.unlink(missing_ok=True)
+
+
 def _tool_output(path: Path, nested: str | None = None) -> Path | None:
     """Resolve a tool's result: the path itself, or a known file inside it."""
     if path.is_file():
@@ -642,115 +670,128 @@ def _analysis_target(spec: dict[str, Any]):
 
 def run_analyze(spec: dict[str, Any]) -> int:
     """Run the selected C3.x tools over a target and record a manifest."""
-    from .analysis_store import slug_for, write_manifest
+    from .analysis_store import read_manifest, slug_for, write_manifest
 
     root = Path(spec["cwd"])
     slug = slug_for(spec["target"]["value"])
     out_dir = Path(spec["output_dir"]) / "_analysis" / slug
-    # Start from an empty run directory: otherwise a file left by an earlier run
-    # (say tests.json when only `guides` was selected) is picked up and recorded
-    # as a fresh result under this run's timestamp.
-    shutil.rmtree(out_dir, ignore_errors=True)
-    out_dir.mkdir(parents=True, exist_ok=True)
     depth = ANALYZE_DEPTH.get(spec.get("depth", "basic"), "surface")
     ai_mode = spec.get("ai_mode", "off")
     no_ai = ai_mode == "off"
-    results: dict[str, Any] = {}
-    ran: list[str] = []
-    skipped: list[str] = []
     tools = sorted(
         spec["tools"],
         key=lambda t: (
             ANALYZE_TOOL_ORDER.index(t) if t in ANALYZE_TOOL_ORDER else len(ANALYZE_TOOL_ORDER)
         ),
     )
-    with _analysis_target(spec) as target:
-        for i, tool in enumerate(tools):
-            progress(10 + int((i / len(tools)) * 85), f"{tool}…")
-            out = out_dir / f"{tool}.json"
-            nested = None
-            if tool == "patterns":
-                out, nested = out_dir / "patterns", PATTERN_RESULT_NAME
-                code = _run_cli_main(
-                    "skill_seekers.cli.pattern_recognizer",
-                    ["--directory", target, "--output", str(out), "--depth", depth, "--json"],
-                )
-            elif tool == "tests":
-                code = _capture_json(
-                    "skill_seekers.cli.test_example_extractor",
-                    [
-                        target,
-                        "--json",
-                        "--recursive",
-                        "--min-confidence",
-                        str(spec.get("min_confidence", 0.7)),
-                    ],
-                    out,
-                )
-            elif tool == "guides":
-                # Gate on what THIS run produced, never on a leftover file.
-                if "tests" not in ran:
-                    print("skipping guides: select the tests tool to feed it", flush=True)
-                    skipped.append(tool)
-                    continue
-                # --json-output makes the builder print the collection and
-                # ignore --output, so capture stdout instead.
-                argv = ["--input", str(out_dir / "tests.json"), "--json-output"]
-                code = _capture_json(
-                    "skill_seekers.cli.how_to_guide_builder",
-                    argv + (["--no-ai"] if no_ai else []),
-                    out,
-                )
-            elif tool == "config":
-                code = _run_cli_main(
-                    "skill_seekers.cli.config_extractor",
-                    [target, "--output", str(out), "--ai-mode", "none" if no_ai else ai_mode],
-                )
-            elif tool == "quality":
-                code = _run_cli_main(
-                    "skill_seekers.cli.quality_metrics", [target, "--report", "--output", str(out)]
-                )
-            elif tool == "router":
-                configs = _router_configs(spec, target)
-                if not configs:
-                    print(
-                        "skipping router: target is not a skill with sub-skill configs", flush=True
+    _clear_analysis_outputs(tools, out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # A run of one tool updates that tool's entry and leaves every other tool's
+    # result from earlier runs in place, so the Analysis cards stay populated.
+    previous = read_manifest(root, slug)
+    requested = set(tools)
+    results: dict[str, Any] = {
+        name: value
+        for name, value in (previous.get("results") or {}).items()
+        if name not in requested
+    }
+    ran: list[str] = []
+    skipped: list[str] = []
+    error: str | None = None
+    code = 0
+    try:
+        with _analysis_target(spec) as target:
+            for i, tool in enumerate(tools):
+                progress(10 + int((i / len(tools)) * 85), f"{tool}…")
+                out = out_dir / f"{tool}.json"
+                nested = None
+                if tool == "patterns":
+                    out, nested = out_dir / "patterns", PATTERN_RESULT_NAME
+                    code = _run_cli_main(
+                        "skill_seekers.cli.pattern_recognizer",
+                        ["--directory", target, "--output", str(out), "--depth", depth, "--json"],
                     )
+                elif tool == "tests":
+                    code = _capture_json(
+                        "skill_seekers.cli.test_example_extractor",
+                        [
+                            target,
+                            "--json",
+                            "--recursive",
+                            "--min-confidence",
+                            str(spec.get("min_confidence", 0.7)),
+                        ],
+                        out,
+                    )
+                elif tool == "guides":
+                    # Gate on what THIS run produced, never on a leftover file.
+                    if "tests" not in ran:
+                        print("skipping guides: select the tests tool to feed it", flush=True)
+                        skipped.append(tool)
+                        continue
+                    # --json-output makes the builder print the collection and
+                    # ignore --output, so capture stdout instead.
+                    argv = ["--input", str(out_dir / "tests.json"), "--json-output"]
+                    code = _capture_json(
+                        "skill_seekers.cli.how_to_guide_builder",
+                        argv + (["--no-ai"] if no_ai else []),
+                        out,
+                    )
+                elif tool == "config":
+                    code = _run_cli_main(
+                        "skill_seekers.cli.config_extractor",
+                        [target, "--output", str(out), "--ai-mode", "none" if no_ai else ai_mode],
+                    )
+                elif tool == "quality":
+                    code = _run_cli_main(
+                        "skill_seekers.cli.quality_metrics",
+                        [target, "--report", "--output", str(out)],
+                    )
+                elif tool == "router":
+                    configs = _router_configs(spec, target)
+                    if not configs:
+                        print(
+                            "skipping router: target is not a skill with sub-skill configs",
+                            flush=True,
+                        )
+                        skipped.append(tool)
+                        continue
+                    # generate_router writes <output-dir>/<name>.json and, beside
+                    # it, <output-dir>/../output/<name>/SKILL.md — give it a
+                    # directory of its own so neither escapes this run's folder.
+                    out = out_dir / "router" / f"{slug}.json"
+                    out.parent.mkdir(parents=True, exist_ok=True)  # generate_router will not
+                    code = _run_cli_main(
+                        "skill_seekers.cli.generate_router",
+                        [*configs, "--output-dir", str(out.parent), "--name", slug],
+                    )
+                else:
+                    print(f"skipping unsupported tool {tool}", flush=True)
                     skipped.append(tool)
                     continue
-                # generate_router writes <output-dir>/<name>.json and, beside it,
-                # <output-dir>/../output/<name>/SKILL.md — give it a directory of
-                # its own so neither escapes this run's folder.
-                out = out_dir / "router" / f"{slug}.json"
-                out.parent.mkdir(parents=True, exist_ok=True)  # generate_router will not
-                code = _run_cli_main(
-                    "skill_seekers.cli.generate_router",
-                    [*configs, "--output-dir", str(out.parent), "--name", slug],
-                )
-            else:
-                print(f"skipping unsupported tool {tool}", flush=True)
-                skipped.append(tool)
-                continue
-            if code != 0:
-                return code
-            ran.append(tool)
-            found = _tool_output(out, nested)
-            if found:
-                artifact(found)
-                results[tool] = {"count": _analysis_count(tool, found), "path": str(found)}
-    write_manifest(
-        root,
-        slug,
-        {
+                if code != 0:
+                    error = f"{tool} exited {code}"
+                    break
+                ran.append(tool)
+                found = _tool_output(out, nested)
+                if found:
+                    artifact(found)
+                    results[tool] = {"count": _analysis_count(tool, found), "path": str(found)}
+    finally:
+        # In a finally so a failing tool still records what did run: without it
+        # the manifest the Analysis cards read would be gone until a clean run.
+        manifest = {
             "target": spec["target"]["value"],
-            "tools": ran,
-            "skipped": skipped,
+            "tools": [t for t in previous.get("tools") or [] if t not in requested] + ran,
+            "skipped": [t for t in previous.get("skipped") or [] if t not in requested] + skipped,
             "startedAt": time.strftime("%Y-%m-%d %H:%M:%S"),
             "attachedTo": spec.get("attach_to"),
             "results": results,
-        },
-    )
-    return 0
+        }
+        if error:
+            manifest["error"] = error
+        write_manifest(root, slug, manifest)
+    return code
 
 
 def run_split(spec: dict[str, Any]) -> int:

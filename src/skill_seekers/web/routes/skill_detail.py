@@ -10,17 +10,17 @@ from pydantic import BaseModel
 from .. import registry
 from ..context import HudContext
 
-UPLOAD_TARGETS = {
-    "claude",
-    "gemini",
-    "openai",
-    "kimi",
-    "chroma",
-    "faiss",
-    "qdrant",
-    "weaviate",
-    "pinecone",
-}
+
+def upload_targets() -> set[str]:
+    """Targets whose adaptor actually uploads.
+
+    Derived from the adaptor registry rather than hand-listed: faiss and qdrant
+    package fine but have no uploading adaptor, so accepting them here queued a
+    job that died in ``upload_skill``'s argparse.
+    """
+    from skill_seekers.cli.adaptors import get_upload_platforms
+
+    return set(get_upload_platforms())
 
 
 class UploadRequest(BaseModel):
@@ -109,7 +109,7 @@ def register(app: FastAPI, ctx: HudContext) -> None:
     def upload_skill(skill_id: str, req: UploadRequest) -> dict[str, Any]:
         from ..paths import workspace_dir
 
-        if req.target not in UPLOAD_TARGETS:
+        if req.target not in upload_targets():
             raise HTTPException(400, f"Unsupported upload target: {req.target}")
         skill_dir = ctx.skill_dir_for(skill_id)
         job = ctx.submit_job(

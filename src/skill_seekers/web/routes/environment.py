@@ -9,7 +9,6 @@ Skill Seekers skill into an AI coding agent's skill directory.
 from __future__ import annotations
 
 import time
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -25,7 +24,9 @@ STARTABLE = {"mcp-http", "embedding"}
 # Module level on purpose: this file uses `from __future__ import annotations`,
 # and FastAPI cannot resolve a request model defined inside register().
 class InstallAgentRequest(BaseModel):
-    skill_dir: str | None = None
+    # No skill_dir field on purpose: the source is always the workspace's own
+    # bootstrap output, so a request body can never point the installer at an
+    # arbitrary directory on this machine.
     force: bool = False
 
 
@@ -160,16 +161,10 @@ def register(app: FastAPI, ctx: HudContext) -> None:
 
         if agent not in get_available_agents():
             raise HTTPException(400, "Unsupported agent")
-        skill_dir = (
-            Path(req.skill_dir).expanduser()
-            if req.skill_dir
-            else workspace_dir(ctx.root, "output") / "skill-seekers"
-        )
+        skill_dir = workspace_dir(ctx.root, "output") / "skill-seekers"
         if not (skill_dir / "SKILL.md").is_file():
             raise HTTPException(
-                409,
-                "Build the Skill Seekers skill first (scripts/bootstrap_skill.sh) "
-                "or choose a skill directory",
+                409, "Build the Skill Seekers skill first (scripts/bootstrap_skill.sh)"
             )
         job = ctx.submit_job(
             "install-agent",

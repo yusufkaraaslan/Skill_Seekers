@@ -59,13 +59,19 @@ function Hud() {
   const candidate = segment === 'configs' ? 'library' : segment === 'mcp' ? 'environment' : segment;
   const view: View = NAV.find(n => n.id === candidate)?.id ?? 'overview';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Every client-side navigation out of a detail page runs through these two,
+  // so both ask the store whether an editor is holding unsaved edits first.
+  const { confirmLeave } = store;
   const setView = useCallback((next: View) => {
+    if (!confirmLeave()) return;
     navigate(next === 'overview' ? '/' : `/${next === 'library' ? 'configs' : next}`);
     setSidebarOpen(false);
-  }, [navigate]);
+  }, [navigate, confirmLeave]);
   useEffect(() => { if (segment === 'mcp') navigate('/environment', { replace: true }); }, [segment, navigate]);
   const detailId = param ? decodeURIComponent(param) : null;
-  const openSkill = useCallback((id: string) => navigate(`/skills/${encodeURIComponent(id)}`), [navigate]);
+  const openSkill = useCallback((id: string) => {
+    if (confirmLeave()) navigate(`/skills/${encodeURIComponent(id)}`);
+  }, [navigate, confirmLeave]);
   const [projectFilter, setProjectFilter] = useState<string>('all');
 
   const runningCount = store.jobs.filter((j) => j.status === 'running').length;
@@ -169,10 +175,13 @@ function Hud() {
                   placeholder="search skills…  ( enter opens first match )"
                   className="w-full h-8 rounded border border-border bg-secondary/40 pl-8 pr-3 font-mono-hud text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
                   onChange={(e) => {
+                    // Typing here also leaves a detail page: the query filters
+                    // the list, which /skills/:id does not show. Confirm before
+                    // the keystroke lands, so a dismissed prompt changes nothing.
+                    const leaves = view !== 'skills' || !!detailId;
+                    if (leaves && !confirmLeave()) return;
                     store.setSkillQuery(e.target.value);
-                    // also leaves a skill detail page: the query filters the
-                    // list, which /skills/:id does not show
-                    if (view !== 'skills' || detailId) setView('skills');
+                    if (leaves) setView('skills');
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

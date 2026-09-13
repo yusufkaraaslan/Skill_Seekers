@@ -23,8 +23,8 @@ _Development version: 3.10.0.dev0_
 - Seeker HUD: `GET /api/mcp/status` probes the stdio/HTTP transports; the Seeker MCP tab shows real status and copyable client config.
 - Seeker HUD: live skill search shared between the top bar and the grid; configs search; 25/50/100 paging on the skills, configs and workflows lists.
 - Seeker HUD: routed skill page at `/skills/<id>` with Overview, SKILL.md, Files, Installs, Enhance, Analysis, Export, and History tabs, replacing the skill drawer.
-- Seeker HUD: routed config page at `/configs/<id>` with Overview, JSON, Validate, Estimate, Sync, Push/Submit, and Generate tabs, replacing the config drawer.
-- Seeker HUD: Workflows screen at `/workflows/<name>` lists, views, copies, edits, validates, and deletes enhancement-workflow YAML.
+- Seeker HUD: routed config page at `/configs/<id>` with Overview, JSON, Validate, Estimate, Sync, Push/Submit, and Generate tabs.
+- Seeker HUD: Workflows screen at `/workflows` (rows select `/workflows/<name>`) lists, views, copies, edits, validates, and deletes enhancement-workflow YAML.
 - Seeker HUD: Analyze screen at `/analyze` runs the C3.x codebase-analysis tools against a directory, skill, or owner/repo target and records manifests under `output/_analysis/`.
 - Seeker HUD: Environment screen at `/environment` adds Doctor, Servers (start/stop the MCP HTTP and embedding servers), and Agents (install/reinstall a skill) panels alongside the MCP tools catalogue.
 - Seeker HUD: twelve new job types — `upload`, `translate`, `update`, `quality`, `analyze`, `split`, `push`, `submit`, `sync-check`, `generate-config`, `install-agent`, `server` — back the new page actions; servers started from Environment run as jobs, and stopping the server cancels the job.
@@ -41,7 +41,10 @@ _Development version: 3.10.0.dev0_
 - Seeker HUD: a `SKILL.md` nested inside a skill directory (e.g. vercel's `ai-sdk/upstream/`) no longer shows up as a separate skill; pressing Enter in the top-bar search no longer triggers the opened drawer's first action; the Seeker MCP status cards no longer overflow; the web API test fixture now owns its own `JobManager`, so test jobs stop leaking into `~/.skill-seekers/ui/`.
 - Seeker HUD: config sync-state paths are read and written through one sanitised `sync_state_path()` helper, closing a path-traversal read of arbitrary `*_sync.json` files via an unsanitised config `name`.
 - Seeker HUD: sync checks now detect and report unreachable pages (non-zero exit, `status: "error"`, unreachable-page count) instead of silently recording a down docs site as zero changes.
-- Seeker HUD: analysis runs are isolated per target by a hashed run directory, so concurrent runs no longer share state, and a stale previous run's leftover test output no longer falsely triggers the guides step.
+- Seeker HUD: analysis runs are isolated per target by a hashed run directory, so concurrent runs no longer share state, and a stale previous run's leftover test output no longer falsely triggers the guides step. Running one tool now merges into the target's manifest instead of replacing it (a re-run clears only that tool's own output), and the manifest is written even when a tool exits non-zero, recording the failure alongside the results that survived.
+- Seeker HUD: uploads to the vector/RAG targets work again — the packager's `<name>-<target>.json` output was filtered out by an archive-only extension check, so every Chroma/Weaviate/Pinecone upload failed with "produced no archive".
+- Seeker HUD: `POST /api/environment/agents/{agent}/install` no longer accepts a caller-supplied `skill_dir`; the install source is always the workspace's own bootstrap output. Upload targets are derived from the adaptor registry, so `faiss`/`qdrant` are rejected up front instead of queueing a job that dies in argparse.
+- Seeker HUD: leaving a skill or config page with unsaved SKILL.md / JSON edits now asks for confirmation — the sidebar, header search and breadcrumbs used to discard the draft silently, since `BrowserRouter` has no `useBlocker`.
 - Seeker HUD: unmatched `/api/*` paths now 404 for every HTTP method, without widening the SPA catch-all route's accepted methods.
 - Seeker HUD: Doctor check levels are normalised (`pass`/`warn`/`fail` → `ok`/`warning`/`error`) so the status pill reflects real failures, and agent install paths resolve under the HUD's workspace root instead of the server process's working directory.
 

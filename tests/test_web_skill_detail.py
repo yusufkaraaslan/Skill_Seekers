@@ -131,6 +131,14 @@ def test_skill_job_endpoints_validate_and_submit(workspace, monkeypatch):
     assert (
         client.post(f"/api/skills/{skill_id}/upload", json={"target": "cursor"}).status_code == 400
     )
+    # faiss/qdrant package fine but have no uploading adaptor: accepting them
+    # here queues a job that dies in upload_skill's argparse.
+    assert (
+        client.post(f"/api/skills/{skill_id}/upload", json={"target": "faiss"}).status_code == 400
+    )
+    assert (
+        client.post(f"/api/skills/{skill_id}/upload", json={"target": "qdrant"}).status_code == 400
+    )
     assert (
         client.post(
             f"/api/skills/{skill_id}/upload",

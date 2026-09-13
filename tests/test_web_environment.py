@@ -63,3 +63,19 @@ def test_server_start_stop_and_agent_install_jobs(workspace, monkeypatch):
     assert client.post("/api/environment/agents/claude/install", json={}).status_code == 200
     assert submitted[-1][3]["type"] == "install-agent" and submitted[-1][3]["agent"] == "claude"
     assert client.post("/api/environment/agents/nope/install", json={}).status_code == 400
+
+
+def test_agent_install_ignores_a_caller_supplied_skill_dir(workspace, monkeypatch):
+    """The install source is the workspace bootstrap output, never request input."""
+    root, client = workspace
+    submitted = []
+    monkeypatch.setattr(
+        get_job_manager(),
+        "submit",
+        lambda *a: submitted.append(a) or Job("srv", a[0], a[1], a[2], status="running", spec=a[3]),
+    )
+    _mk_skill(root / "output/skill-seekers")
+    response = client.post("/api/environment/agents/claude/install", json={"skill_dir": "/etc"})
+    assert response.status_code in (200, 422)
+    if response.status_code == 200:
+        assert submitted[-1][3]["skill_dir"] == str(root / "output" / "skill-seekers")

@@ -208,6 +208,11 @@ export default function SkillPage({ id }: { id: string }) {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
+  // beforeunload only covers a full page load. Client-side navigation (sidebar,
+  // header search, breadcrumb) reads this instead.
+  const { setDirty } = store;
+  useEffect(() => { setDirty(dirty); }, [dirty, setDirty]);
+  useEffect(() => () => setDirty(false), [setDirty]);
 
   // A config path in the sidecar is only a link when the library actually holds
   // that config; otherwise it stays plain text.
@@ -262,7 +267,7 @@ export default function SkillPage({ id }: { id: string }) {
   return (
     <div className="space-y-4 animate-flicker">
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 font-mono-hud text-[11px] uppercase tracking-[0.15em]">
-        <button onClick={() => navigate('/skills')} className="text-primary hover:underline">‹ Skills</button>
+        <button onClick={() => { if (store.confirmLeave()) navigate('/skills'); }} className="text-primary hover:underline">‹ Skills</button>
         <span className="text-muted-foreground">/ {detail.name}</span>
       </nav>
 
@@ -932,8 +937,8 @@ function AnalysisTab({ id, detail }: { id: string; detail: SkillDetail }) {
         <div className="min-w-0 flex-1">
           <CardTitle>Codebase analysis (C3.x)</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Runs against this skill's directory and attaches the results here. Each run replaces the previous manifest for this target, so
-            “Run all” keeps every card populated.
+            Runs against this skill's directory and attaches the results here. Each run updates this tool's result and leaves the others
+            alone; “Run all” refreshes every card.
           </p>
         </div>
         <Button

@@ -33,6 +33,15 @@ export interface StoreState {
   skillQuery: string;
   setSkillQuery: (q: string) => void;
 
+  // ── unsaved-edit guard ──
+  // BrowserRouter has no useBlocker, so client-side navigation cannot be
+  // intercepted by the router. The page holding an editor publishes its
+  // dirtiness here, and everything that navigates away (sidebar, header
+  // search, breadcrumbs) asks confirmLeave() first and aborts on false.
+  dirty: boolean;
+  setDirty: (v: boolean) => void;
+  confirmLeave: () => boolean;
+
   refresh: () => Promise<void>;
   refreshLibrary: () => Promise<void>;
   refreshMarket: () => Promise<void>;
@@ -95,7 +104,7 @@ export interface StoreState {
   rerunDoctor: () => Promise<boolean>;
   startServer: (id: string) => Promise<boolean>;
   stopServer: (id: string) => Promise<boolean>;
-  installAgent: (agent: string, body: { skill_dir?: string; force: boolean }) => Promise<boolean>;
+  installAgent: (agent: string, body: { force: boolean }) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreState | null>(null);
@@ -127,6 +136,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SettingsPayload | null>(null);
   const [skillQuery, setSkillQuery] = useState('');
   const runningRef = useRef(0);
+
+  // Mirrored in a ref: confirmLeave runs inside a click handler that may have
+  // been created before the last setDirty commit, and it must read the value
+  // that is true *now*, not the one captured at render time.
+  const [dirty, setDirtyState] = useState(false);
+  const dirtyRef = useRef(false);
+  const setDirty = useCallback((v: boolean) => { dirtyRef.current = v; setDirtyState(v); }, []);
+  const confirmLeave = useCallback(() => {
+    if (!dirtyRef.current) return true;
+    if (!window.confirm('Discard unsaved edits?')) return false;
+    setDirty(false);
+    return true;
+  }, [setDirty]);
 
   const inflightRef = useRef<Promise<void> | null>(null);
   const refresh = useCallback(async (): Promise<void> => {
@@ -239,6 +261,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     sources, entries, markets, marketSkills, settings,
     root: settings?.root ?? '',
     skillQuery, setSkillQuery,
+    dirty, setDirty, confirmLeave,
     refresh, refreshLibrary, refreshMarket, refreshSettings, refreshMcp,
 
     create: (spec) =>

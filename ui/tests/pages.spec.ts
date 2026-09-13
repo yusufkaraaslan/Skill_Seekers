@@ -93,6 +93,26 @@ test('editor loads full content and preserves a conflicted draft', async ({ page
   await expect(editor).toHaveValue('My unsaved edit');
 });
 
+test('sidebar navigation confirms before discarding an unsaved SKILL.md draft', async ({ page }) => {
+  // BrowserRouter has no useBlocker: without the store's confirmLeave() guard
+  // a click on the sidebar silently drops the draft.
+  await page.goto('/skills/sk-1');
+  await page.getByRole('tab', { name: 'SKILL.md' }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const editor = page.getByRole('textbox', { name: 'SKILL.md content' });
+  await editor.fill('My unsaved edit');
+  const skillsNav = page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Skills' });
+
+  page.once('dialog', d => d.dismiss());
+  await skillsNav.click();
+  await expect(page).toHaveURL(/\/skills\/sk-1$/);
+  await expect(editor).toHaveValue('My unsaved edit');
+
+  page.once('dialog', d => d.accept());
+  await skillsNav.click();
+  await expect(page).toHaveURL(/\/skills$/);
+});
+
 test('vector export only offers the databases upload can reach', async ({ page }) => {
   let uploaded: unknown = null;
   await page.route('**/api/skills/sk-1/upload', route => { uploaded = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'u' } } }); });
@@ -141,7 +161,9 @@ test('sync toggle updates the stats strip and survives a tab switch', async ({ p
   await page.goto('/configs/cfg-1');
   await page.getByRole('tab', { name: 'Sync' }).click();
   await page.getByRole('switch', { name: 'Watch upstream docs for changes' }).click();
-  await expect(page.getByText(/watching/i).first()).toBeVisible();
+  // No scheduler executes the interval yet, so the panel says what it really
+  // did — saved the setting — instead of claiming it is watching upstream.
+  await expect(page.getByText(/watch setting saved/i).first()).toBeVisible();
   await page.getByRole('tab', { name: 'JSON' }).click();
   await page.getByRole('tab', { name: 'Sync' }).click();
   await expect(page.getByRole('switch', { name: 'Watch upstream docs for changes' })).toBeChecked();

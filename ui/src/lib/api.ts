@@ -305,6 +305,6 @@ export const api = {
   rerunDoctor: () => post<EnvironmentPayload['doctor']>('/environment/doctor'),
   startServer: (id: string) => post<JobAck>(`/environment/servers/${id}/start`),
   stopServer: (id: string) => post(`/environment/servers/${id}/stop`),
-  installAgent: (agent: string, body: { skill_dir?: string; force: boolean }) =>
+  installAgent: (agent: string, body: { force: boolean }) =>
     post<JobAck>(`/environment/agents/${agent}/install`, body),
 };

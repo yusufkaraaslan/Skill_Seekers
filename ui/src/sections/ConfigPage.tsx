@@ -136,6 +136,11 @@ export default function ConfigPage({ id }: { id: string }) {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
+  // beforeunload only covers a full page load. Client-side navigation (sidebar,
+  // header search, breadcrumb) reads this instead.
+  const { setDirty } = store;
+  useEffect(() => { setDirty(dirty); }, [dirty, setDirty]);
+  useEffect(() => () => setDirty(false), [setDirty]);
 
   // Estimate/sync-check/push/submit/generate all run as background jobs whose
   // results only land once the job finishes and rewrites the config's
@@ -204,7 +209,7 @@ export default function ConfigPage({ id }: { id: string }) {
   return (
     <div className="space-y-4 animate-flicker">
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 font-mono-hud text-[11px] uppercase tracking-[0.15em]">
-        <button onClick={() => navigate('/configs')} className="text-primary hover:underline">‹ Configs</button>
+        <button onClick={() => { if (store.confirmLeave()) navigate('/configs'); }} className="text-primary hover:underline">‹ Configs</button>
         <span className="text-muted-foreground">/ {data.name}</span>
       </nav>
 
@@ -672,7 +677,9 @@ function SyncTab({ id, syncSettings, sync, onChanged }: {
         <CardTitle>Watch upstream</CardTitle>
         <div className="flex flex-wrap items-center gap-3">
           <Switch aria-label="Watch upstream docs for changes" checked={enabled} disabled={store.pending} onCheckedChange={toggle} />
-          <span className="text-[13px]">{enabled ? 'Watching for upstream changes' : 'Not watching upstream'}</span>
+          {/* No scheduler runs these settings yet — the wording must not imply
+              a background watcher exists. Checks happen on "Check now". */}
+          <span className="text-[13px]">{enabled ? 'Watch setting saved' : 'Not watching upstream'}</span>
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -694,11 +701,19 @@ function SyncTab({ id, syncSettings, sync, onChanged }: {
                 </button>
               ))}
             </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Schedule is saved for a future scheduler; checks run when you press Check now.
+            </p>
           </div>
-          <label className="flex items-center gap-2.5 font-mono-hud text-[11px] text-foreground/80 cursor-pointer select-none">
-            <Checkbox checked={autoRebuild} disabled={!enabled || store.pending} onCheckedChange={(v) => toggleAutoRebuild(v === true)} />
-            auto-rebuild the skill when upstream changes
-          </label>
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2.5 font-mono-hud text-[11px] text-foreground/80 cursor-pointer select-none">
+              <Checkbox checked={autoRebuild} disabled={!enabled || store.pending} onCheckedChange={(v) => toggleAutoRebuild(v === true)} />
+              auto-rebuild the skill when upstream changes
+            </label>
+            <p className="text-[11px] text-muted-foreground">
+              Saved for a future scheduler; checks run when you press Check now.
+            </p>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-3">
