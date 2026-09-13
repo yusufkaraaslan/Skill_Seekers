@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from tests.test_web_api import _mk_skill, workspace  # noqa: F401
+from skill_seekers.cli import estimate_pages as estimate_pages_mod
 from skill_seekers.web import analysis_store, runner
 
 
@@ -221,3 +222,66 @@ def test_run_analyze_never_reports_a_previous_runs_files(workspace, monkeypatch)
 def test_slug_for_separates_targets_sharing_a_basename():
     assert analysis_store.slug_for("/a/src") != analysis_store.slug_for("/b/src")
     assert analysis_store.slug_for("/a/src").startswith("src-")
+
+
+def test_run_estimate_writes_result_and_emits_artifact(workspace, monkeypatch, capsys):
+    root, _ = workspace
+    config_path = root / "configs" / "react.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "name": "react",
+                "description": "d",
+                "sources": [{"type": "documentation", "base_url": "https://example.invalid/docs"}],
+            }
+        )
+    )
+    seen = {}
+
+    def fake_estimate_pages(_config, max_discovery, timeout):
+        seen["max_discovery"] = max_discovery
+        seen["timeout"] = timeout
+        return {"discovered": 3, "estimated_total": 12, "hit_limit": False}
+
+    # run_estimate does `from skill_seekers.cli.estimate_pages import estimate_pages`
+    # inside the function body, so it re-reads the module attribute on every
+    # call — patching the module attribute (not `runner.estimate_pages`, which
+    # doesn't exist) is what actually takes effect.
+    monkeypatch.setattr(estimate_pages_mod, "estimate_pages", fake_estimate_pages)
+    result_path = config_path.with_name(".react.json.estimate.json")
+    spec = {
+        "config_path": str(config_path),
+        "max_discovery": 50,
+        "timeout": 7,
+        "result_path": str(result_path),
+    }
+
+    assert runner.run_estimate(spec) == 0
+    assert seen == {"max_discovery": 50, "timeout": 7}
+    assert result_path.is_file()
+    assert json.loads(result_path.read_text())["estimated_total"] == 12
+    out = capsys.readouterr().out
+    assert "[[ARTIFACT]]" in out
+    assert str(result_path.resolve()) in out
+
+
+def test_run_estimate_fails_cleanly_without_documentation_source(workspace):
+    root, _ = workspace
+    config_path = root / "configs" / "gh.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {"name": "gh", "description": "d", "sources": [{"type": "github", "repo": "o/r"}]}
+        )
+    )
+    result_path = config_path.with_name(".gh.json.estimate.json")
+    spec = {
+        "config_path": str(config_path),
+        "max_discovery": 50,
+        "timeout": 7,
+        "result_path": str(result_path),
+    }
+
+    assert runner.run_estimate(spec) == 1
+    assert not result_path.is_file()
