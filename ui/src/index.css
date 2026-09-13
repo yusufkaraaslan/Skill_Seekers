@@ -129,7 +129,7 @@
 
   @keyframes radar-sweep {
     from { transform: rotate(0deg); }
-    to { transform: rotate(-360deg); }
+    to { transform: rotate(360deg); }
   }
   .animate-radar {
     animation: radar-sweep 4s linear infinite;
