@@ -41,7 +41,7 @@ _Development version: 3.10.0.dev0_
 - Seeker HUD: a `SKILL.md` nested inside a skill directory (e.g. vercel's `ai-sdk/upstream/`) no longer shows up as a separate skill; pressing Enter in the top-bar search no longer triggers the opened drawer's first action; the Seeker MCP status cards no longer overflow; the web API test fixture now owns its own `JobManager`, so test jobs stop leaking into `~/.skill-seekers/ui/`.
 - Seeker HUD: config sync-state paths are read and written through one sanitised `sync_state_path()` helper, closing a path-traversal read of arbitrary `*_sync.json` files via an unsanitised config `name`.
 - Seeker HUD: sync checks now detect and report unreachable pages (non-zero exit, `status: "error"`, unreachable-page count) instead of silently recording a down docs site as zero changes.
-- Seeker HUD: analysis runs are isolated per target by a hashed run directory, so concurrent runs no longer share state and a stale previous run's output no longer falsely triggers or skips a dependent tool.
+- Seeker HUD: analysis runs are isolated per target by a hashed run directory, so concurrent runs no longer share state, and a stale previous run's leftover test output no longer falsely triggers the guides step.
 - Seeker HUD: unmatched `/api/*` paths now 404 for every HTTP method, without widening the SPA catch-all route's accepted methods.
 - Seeker HUD: Doctor check levels are normalised (`pass`/`warn`/`fail` → `ok`/`warning`/`error`) so the status pill reflects real failures, and agent install paths resolve under the HUD's workspace root instead of the server process's working directory.
 
