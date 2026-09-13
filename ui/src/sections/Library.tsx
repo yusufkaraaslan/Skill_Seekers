@@ -6,7 +6,8 @@ import { usePagination } from '@/hooks/use-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { GitBranch, Plus, RefreshCw, FileJson, ArrowUpCircle, Trash2, CloudDownload, Search } from 'lucide-react';
+import { GenerateConfigForm } from '@/components/generate-config-form';
+import { GitBranch, Plus, RefreshCw, FileJson, ArrowUpCircle, Sparkles, Trash2, CloudDownload, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ORIGIN_STYLE: Record<ConfigEntry['origin'], string> = {
@@ -38,6 +39,7 @@ export default function Library({
   const { pending } = useStore();
   const [activeSource, setActiveSource] = useState<string>('all');
   const [addOpen, setAddOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const [repo, setRepo] = useState('');
   const [query, setQuery] = useState('');
 
@@ -65,6 +67,9 @@ export default function Library({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="filter configs…" className="pl-8 h-8 font-mono-hud text-xs bg-secondary/50" />
             </div>
+            <Button size="sm" variant="outline" onClick={() => setGenerateOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Generate with AI
+            </Button>
             <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
               <Plus className="mr-1.5 h-3.5 w-3.5" /> Add config source
             </Button>
@@ -199,6 +204,20 @@ export default function Library({
         </table></div>
         <Pager page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} total={pager.total} onPage={pager.setPage} onPageSize={pager.setPageSize} />
       </Panel>
+
+      {/* generate with AI dialog */}
+      <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
+        <DialogContent className="!fixed hud-panel border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// Generate with AI</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Draft a new unified config from a docs URL, a framework name, or a local project directory. Runs as a background job and
+              lands in this library when it finishes.
+            </DialogDescription>
+          </DialogHeader>
+          <GenerateConfigForm onGenerated={() => setGenerateOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       {/* add source dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

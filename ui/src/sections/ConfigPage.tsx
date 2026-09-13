@@ -9,13 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GenerateConfigForm } from '@/components/generate-config-form';
 import { usePayload } from '@/hooks/use-payload';
 import { api } from '@/lib/api';
 import type { ConfigDetail, Validation } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import {
-  CheckCircle2, Copy, FileJson, Gauge, GitBranch, Pencil, RefreshCw, Rocket, Scissors, Sparkles, UploadCloud, Wand2,
+  CheckCircle2, Copy, FileJson, Gauge, GitBranch, Pencil, RefreshCw, Rocket, Scissors, UploadCloud, Wand2,
 } from 'lucide-react';
 
 // ── static tables ───────────────────────────────────────────────────────────
@@ -34,12 +35,6 @@ const TABS: [string, string][] = [
 const SPLIT_STRATEGIES = ['auto', 'none', 'source', 'category', 'router', 'size'] as const;
 // PUT .../sync's argparse-equivalent choices (routes/configs.py:SYNC_INTERVALS).
 const SYNC_INTERVALS = ['hourly', 'daily', 'weekly', 'manual'] as const;
-
-const GENERATE_KINDS: { id: 'url' | 'name' | 'dir'; label: string; placeholder: string }[] = [
-  { id: 'url', label: 'Docs URL', placeholder: 'https://docs.example.com/' },
-  { id: 'name', label: 'Framework name', placeholder: 'react' },
-  { id: 'dir', label: 'Project directory', placeholder: './my-project' },
-];
 
 // registry.list_config_entries origins — same palette as sections/Library.tsx
 // (not exported from there, so this is the one deliberate duplicate).
@@ -121,14 +116,37 @@ export default function ConfigPage({ id }: { id: string }) {
   const [splitStrategy, setSplitStrategy] = useState<(typeof SPLIT_STRATEGIES)[number]>('auto');
   const [splitTarget, setSplitTarget] = useState(5000);
 
+  // JSON editor state lives here, not in JsonTab, so a tab change (or the
+  // header's Validate/Estimate shortcuts, which also change tabs) can guard
+  // against silently discarding a draft — mirrors SkillPage.tsx's
+  // editing/draft/dirty/beforeunload pattern (SkillPage.tsx:172-231).
+  const [editingJson, setEditingJson] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState('');
+  const [jsonError, setJsonError] = useState('');
+  // The revision sent on save is pinned at the moment editing starts, not
+  // re-read from `data.revision` at save time — `data` can be refreshed from
+  // under an open editor (job polling, a manual reload), which would silently
+  // swap in a fresher revision and defeat the 409 conflict check.
+  const [pinnedRevision, setPinnedRevision] = useState('');
+
+  const dirty = editingJson && data !== null && jsonDraft !== JSON.stringify(data.data, null, 2);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
   // Estimate/sync-check/push/submit/generate all run as background jobs whose
   // results only land once the job finishes and rewrites the config's
   // sidecar files, so re-read the detail whenever a job's signature changes
   // (mirrors SkillPage's jobsKey effect). Skipped while no job has ever run
-  // for this workspace, so a quiet page does not double-fetch on mount.
+  // for this workspace (so a quiet page does not double-fetch on mount) and
+  // while the JSON editor is open (a background reload would replace `data`
+  // out from under an in-progress edit).
   const jobsKey = store.jobs.map((j) => `${j.id}:${j.status}:${j.progress}`).join(',');
   useEffect(() => {
-    if (jobsKey) reload();
+    if (jobsKey && !editingJson) reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobsKey]);
 
@@ -145,6 +163,43 @@ export default function ConfigPage({ id }: { id: string }) {
   const estimatedTotal = readNumber(data.lastEstimate, 'estimated_total');
   const syncStatus = readString(data.sync, 'status');
   const description = typeof data.data.description === 'string' ? data.data.description : '';
+
+  const startEditJson = () => {
+    setJsonDraft(JSON.stringify(data.data, null, 2));
+    setPinnedRevision(data.revision);
+    setJsonError('');
+    setEditingJson(true);
+  };
+
+  // Also used as the JSON tab's "Cancel" button — discarding an edit in
+  // progress goes through the same confirm-if-dirty gate as navigating away.
+  const leaveJsonEditor = () => {
+    if (dirty && !window.confirm('Discard unsaved config edits?')) return false;
+    setJsonDraft(JSON.stringify(data.data, null, 2));
+    setJsonError('');
+    setEditingJson(false);
+    return true;
+  };
+
+  const changeTab = (next: string) => {
+    if (dirty && !leaveJsonEditor()) return;
+    setTab(next);
+  };
+
+  const saveJson = async () => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonDraft);
+    } catch (e) {
+      setJsonError(`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
+      return;
+    }
+    setJsonError('');
+    if (await store.saveConfig(id, parsed, pinnedRevision)) {
+      setEditingJson(false);
+      reload();
+    }
+  };
 
   return (
     <div className="space-y-4 animate-flicker">
@@ -174,10 +229,10 @@ export default function ConfigPage({ id }: { id: string }) {
             <Button size="sm" disabled={store.pending} onClick={() => store.buildConfig(data.path, data.name)} className="font-mono-hud text-[11px] uppercase tracking-wider">
               <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Build skill
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setTab('validate')} className="font-mono-hud text-[11px] uppercase tracking-wider">
+            <Button size="sm" variant="outline" onClick={() => changeTab('validate')} className="font-mono-hud text-[11px] uppercase tracking-wider">
               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Validate
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setTab('estimate')} className="font-mono-hud text-[11px] uppercase tracking-wider">
+            <Button size="sm" variant="outline" onClick={() => changeTab('estimate')} className="font-mono-hud text-[11px] uppercase tracking-wider">
               <Gauge className="mr-1.5 h-3.5 w-3.5" /> Estimate
             </Button>
             <Button size="sm" variant="outline" onClick={() => setSplitOpen(true)} className="font-mono-hud text-[11px] uppercase tracking-wider">
@@ -204,7 +259,7 @@ export default function ConfigPage({ id }: { id: string }) {
           <div className="bg-card">
             <Stat label="sync">
               {data.syncSettings?.enabled
-                ? <span className="text-[hsl(152_60%_50%)]">on · {data.syncSettings.interval}</span>
+                ? <span className="text-[hsl(152_60%_50%)]">watching · {data.syncSettings.interval}</span>
                 : <span className="text-muted-foreground">off</span>}
             </Stat>
           </div>
@@ -214,7 +269,7 @@ export default function ConfigPage({ id }: { id: string }) {
         </div>
 
         {/* ── tabs ── */}
-        <Tabs value={tab} onValueChange={setTab} className="mt-5">
+        <Tabs value={tab} onValueChange={changeTab} className="mt-5">
           <div className="overflow-x-auto">
             <TabsList className="h-auto w-full justify-start gap-1 rounded-none border-b border-border bg-transparent p-0">
               {TABS.map(([value, label]) => (
@@ -234,7 +289,16 @@ export default function ConfigPage({ id }: { id: string }) {
           </TabsContent>
 
           <TabsContent value="json" className="py-4">
-            <JsonTab id={id} config={data} onSaved={reload} />
+            <JsonTab
+              config={data}
+              editing={editingJson}
+              draft={jsonDraft}
+              jsonError={jsonError}
+              onDraft={setJsonDraft}
+              onEdit={startEditJson}
+              onCancel={leaveJsonEditor}
+              onSave={saveJson}
+            />
           </TabsContent>
 
           <TabsContent value="validate" className="py-4">
@@ -246,7 +310,7 @@ export default function ConfigPage({ id }: { id: string }) {
           </TabsContent>
 
           <TabsContent value="sync" className="py-4">
-            <SyncTab id={id} syncSettings={data.syncSettings} sync={data.sync} />
+            <SyncTab id={id} syncSettings={data.syncSettings} sync={data.sync} onChanged={reload} />
           </TabsContent>
 
           <TabsContent value="push" className="py-4">
@@ -393,35 +457,17 @@ function OverviewTab({ config, onNavigate }: { config: ConfigDetail; onNavigate:
 
 // ── JSON ────────────────────────────────────────────────────────────────────
 
-function JsonTab({ id, config, onSaved }: { id: string; config: ConfigDetail; onSaved: () => void }) {
-  const store = useStore();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(() => JSON.stringify(config.data, null, 2));
-  const [jsonError, setJsonError] = useState('');
-
-  const startEdit = () => {
-    setDraft(JSON.stringify(config.data, null, 2));
-    setJsonError('');
-    setEditing(true);
-  };
-  const cancel = () => {
-    setJsonError('');
-    setEditing(false);
-  };
-  const save = async () => {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(draft);
-    } catch (e) {
-      setJsonError(`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
-      return;
-    }
-    setJsonError('');
-    if (await store.saveConfig(id, parsed, config.revision)) {
-      setEditing(false);
-      onSaved();
-    }
-  };
+function JsonTab({ config, editing, draft, jsonError, onDraft, onEdit, onCancel, onSave }: {
+  config: ConfigDetail;
+  editing: boolean;
+  draft: string;
+  jsonError: string;
+  onDraft: (value: string) => void;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const { pending } = useStore();
 
   return (
     <Panel corners={false} className="p-4">
@@ -433,14 +479,14 @@ function JsonTab({ id, config, onSaved }: { id: string; config: ConfigDetail; on
             <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
           </Button>
           {!editing && (
-            <Button size="sm" disabled={store.pending} onClick={startEdit} className="font-mono-hud text-[11px] uppercase tracking-wider">
+            <Button size="sm" disabled={pending} onClick={onEdit} className="font-mono-hud text-[11px] uppercase tracking-wider">
               <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
             </Button>
           )}
           {editing && (
             <>
-              <Button size="sm" variant="outline" disabled={store.pending} onClick={cancel} className="font-mono-hud text-[11px] uppercase tracking-wider">Cancel</Button>
-              <Button size="sm" disabled={store.pending} onClick={save} className="font-mono-hud text-[11px] uppercase tracking-wider">Save</Button>
+              <Button size="sm" variant="outline" disabled={pending} onClick={onCancel} className="font-mono-hud text-[11px] uppercase tracking-wider">Cancel</Button>
+              <Button size="sm" disabled={pending} onClick={onSave} className="font-mono-hud text-[11px] uppercase tracking-wider">Save</Button>
             </>
           )}
         </div>
@@ -451,7 +497,7 @@ function JsonTab({ id, config, onSaved }: { id: string; config: ConfigDetail; on
         <textarea
           aria-label="Config JSON"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => onDraft(e.target.value)}
           spellCheck={false}
           className="min-h-96 w-full rounded border border-border bg-background p-3 font-mono-hud text-sm outline-none focus:border-primary/50"
         />
@@ -584,10 +630,11 @@ function EstimateTab({ id, lastEstimate }: { id: string; lastEstimate: Record<st
 
 // ── Sync ─────────────────────────────────────────────────────────────────────
 
-function SyncTab({ id, syncSettings, sync }: {
+function SyncTab({ id, syncSettings, sync, onChanged }: {
   id: string;
   syncSettings: ConfigDetail['syncSettings'];
   sync: ConfigDetail['sync'];
+  onChanged: () => void;
 }) {
   const store = useStore();
   const [enabled, setEnabled] = useState(syncSettings?.enabled ?? false);
@@ -596,12 +643,21 @@ function SyncTab({ id, syncSettings, sync }: {
   );
   const [autoRebuild, setAutoRebuild] = useState(syncSettings?.auto_rebuild ?? false);
 
-  const push = (next: Partial<{ enabled: boolean; interval: string; auto_rebuild: boolean }>) =>
-    store.setSync(id, { enabled, interval: intervalChoice, auto_rebuild: autoRebuild, ...next });
+  // Reloads the page's config detail on every successful change so the stats
+  // strip and Overview's Lifecycle bullet (both driven by the parent's copy
+  // of `syncSettings`/`sync`) stay current, and so a later remount of this
+  // tab (switching away and back) re-seeds from fresh data instead of the
+  // props this tab mounted with.
+  const push = async (next: Partial<{ enabled: boolean; interval: string; auto_rebuild: boolean }>) => {
+    const ok = await store.setSync(id, { enabled, interval: intervalChoice, auto_rebuild: autoRebuild, ...next });
+    if (ok) onChanged();
+    return ok;
+  };
 
   const toggle = async (checked: boolean) => { if (await push({ enabled: checked })) setEnabled(checked); };
   const changeInterval = async (next: (typeof SYNC_INTERVALS)[number]) => { if (await push({ interval: next })) setIntervalChoice(next); };
   const toggleAutoRebuild = async (checked: boolean) => { if (await push({ auto_rebuild: checked })) setAutoRebuild(checked); };
+  const checkNow = async () => { if (await store.syncCheck(id)) onChanged(); };
 
   const status = readString(sync, 'status');
   const checkedAt = readString(sync, 'checkedAt') || readString(sync, 'last_check');
@@ -646,7 +702,7 @@ function SyncTab({ id, syncSettings, sync }: {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-3">
-          <Button size="sm" variant="outline" disabled={store.pending} onClick={() => store.syncCheck(id)} className="font-mono-hud text-[11px] uppercase tracking-wider">
+          <Button size="sm" variant="outline" disabled={store.pending} onClick={checkNow} className="font-mono-hud text-[11px] uppercase tracking-wider">
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Check now
           </Button>
           <span className="font-mono-hud text-[10px] text-muted-foreground">
@@ -785,70 +841,11 @@ function PushSubmitTab({ id, valid }: { id: string; valid: boolean }) {
 // ── Generate ──────────────────────────────────────────────────────────────────
 
 function GenerateTab() {
-  const store = useStore();
-  const [kind, setKind] = useState<'url' | 'name' | 'dir'>('url');
-  const [value, setValue] = useState('');
-  const [probe, setProbe] = useState(true);
-  const agents = store.settings?.capabilities.agents ?? [];
-  const [agent, setAgent] = useState(String(store.settings?.defaults.default_agent ?? 'claude'));
-  const active = GENERATE_KINDS.find((k) => k.id === kind) ?? GENERATE_KINDS[0];
-
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <Panel corners={false} className="p-4">
         <CardTitle>Generate a config with AI</CardTitle>
-        <p className="mb-3 text-xs text-muted-foreground">
-          Writes a new unified config by inspecting a documentation site, resolving a framework name against the registry, or scanning a
-          local project directory. Runs as a background job — check Jobs for progress.
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {GENERATE_KINDS.map((k) => (
-            <button
-              key={k.id}
-              aria-pressed={kind === k.id}
-              onClick={() => setKind(k.id)}
-              className={cn(
-                'rounded border px-2.5 py-1 font-mono-hud text-[11px] transition-colors',
-                kind === k.id ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {k.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-3 space-y-1">
-          <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{active.label}</div>
-          <Input
-            aria-label={active.label}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={active.placeholder}
-            className="h-8 font-mono-hud text-xs"
-          />
-        </div>
-        <div className="mt-3 space-y-1">
-          <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground">enhancement agent (display only)</div>
-          <select
-            aria-label="Enhancement agent"
-            value={agent}
-            onChange={(e) => setAgent(e.target.value)}
-            className="h-8 w-full rounded border border-border bg-secondary/40 px-2 font-mono-hud text-xs outline-none focus:border-primary/50"
-          >
-            {agents.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <p className="text-[10px] text-muted-foreground">Config generation is not agent-driven — this only previews which agent later enhancement passes would use.</p>
-        </div>
-        <label className="mt-3 flex items-center gap-2.5 font-mono-hud text-[11px] text-foreground/80 cursor-pointer select-none">
-          <Checkbox checked={probe} onCheckedChange={(v) => setProbe(v === true)} />
-          probe discovered URLs before writing the config
-        </label>
-        <Button
-          className="mt-3 w-full font-mono-hud text-[11px] uppercase tracking-wider"
-          disabled={store.pending || !value.trim()}
-          onClick={() => store.generateConfig({ kind, value: value.trim(), probe_urls: probe })}
-        >
-          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Generate config
-        </Button>
+        <GenerateConfigForm />
       </Panel>
 
       <Panel corners={false} className="p-4">

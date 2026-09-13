@@ -116,6 +116,41 @@ test('config page validates, edits with revision, and toggles sync', async ({ pa
   await expect(page.getByText(/valid/i).first()).toBeVisible();
 });
 
+test('sync toggle updates the stats strip and survives a tab switch', async ({ page }) => {
+  let syncSettings: unknown = null;
+  await page.route('**/api/configs/cfg-1', route => route.fulfill({ json: { id: 'cfg-1', name: 'react.json', path: '/ws/configs/react.json', source: 'official', origin: 'preset', framework: 'react', version: '2.1', data: { name: 'react', sources: [] }, revision: 'c1', validation: { valid: true, errors: [], warnings: [] }, usedBy: [], sync: null, syncSettings, lastEstimate: null } }));
+  await page.route('**/api/configs/cfg-1/sync', route => { syncSettings = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, syncSettings } }); });
+  await page.goto('/configs/cfg-1');
+  await page.getByRole('tab', { name: 'Sync' }).click();
+  await page.getByRole('switch', { name: 'Watch upstream docs for changes' }).click();
+  await expect(page.getByText(/watching/i).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'JSON' }).click();
+  await page.getByRole('tab', { name: 'Sync' }).click();
+  await expect(page.getByRole('switch', { name: 'Watch upstream docs for changes' })).toBeChecked();
+});
+
+test('json edits ask before discarding on tab change', async ({ page }) => {
+  await page.goto('/configs/cfg-1');
+  await page.getByRole('tab', { name: 'JSON' }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const editor = page.getByRole('textbox', { name: 'Config JSON' });
+  await editor.fill('{"name":"changed","sources":[]}');
+  page.once('dialog', d => d.dismiss());
+  await page.getByRole('tab', { name: 'Validate' }).click();
+  await expect(editor).toHaveValue('{"name":"changed","sources":[]}');
+});
+
+test('library generates a config with AI from a docs URL', async ({ page }) => {
+  let generated: unknown = null;
+  await page.route('**/api/configs/generate', route => { generated = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'g1' } } }); });
+  await page.goto('/configs');
+  await page.getByRole('button', { name: 'Generate with AI' }).click();
+  await page.getByRole('textbox', { name: 'Docs URL' }).fill('https://docs.example.com/start');
+  await page.getByRole('button', { name: 'Generate config' }).click();
+  await expect.poll(() => generated).toEqual({ kind: 'url', value: 'https://docs.example.com/start', probe_urls: true });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
 // The skill page packs eight tabs of tables, chip rows and card grids into the
 // same column the nav sections use; every one of them has to fit the narrow
 // viewports hud.spec.ts pins for the rest of the HUD.
