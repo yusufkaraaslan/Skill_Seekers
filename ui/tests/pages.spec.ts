@@ -42,3 +42,53 @@ test('new sections are routable and mcp redirects to environment', async ({ page
   await expect(page).toHaveURL(/\/environment$/);
   await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button')).toHaveCount(11);
 });
+
+test('skill page tabs cover enhance, analysis, export and history', async ({ page }) => {
+  let uploaded: unknown = null;
+  await page.route('**/api/skills/sk-1/upload', route => { uploaded = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'u' } } }); });
+  await page.goto('/skills/sk-1');
+  await page.getByRole('tab', { name: 'Export' }).click();
+  await page.getByRole('radio', { name: 'ChromaDB' }).check();
+  await page.getByRole('textbox', { name: 'persist directory' }).fill('./chroma_db');
+  await page.getByRole('button', { name: /Export to ChromaDB/ }).click();
+  await expect.poll(() => uploaded).toEqual({ target: 'chroma', options: { persist_directory: './chroma_db' } });
+  await page.getByRole('tab', { name: 'Enhance' }).click();
+  await expect(page.getByRole('button', { name: 'Run enhancement' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Installs' }).click();
+  await expect(page.getByText('/home/t/.claude/skills/react-docs')).toBeVisible();
+  await page.getByRole('tab', { name: 'History' }).click();
+  await expect(page.getByText('No jobs have touched this skill yet.')).toBeVisible();
+});
+
+test('editor loads full content and preserves a conflicted draft', async ({ page }) => {
+  await page.route('**/api/skills/sk-1/content', route => route.request().method() === 'PUT'
+    ? route.fulfill({ status: 409, json: { detail: 'Skill changed since it was opened; reload before saving' } })
+    : route.fulfill({ json: { content: '# Full text\nEND OF DOCUMENT', revision: 'revision-1', files: [] } }));
+  await page.goto('/skills/sk-1');
+  await page.getByRole('tab', { name: 'SKILL.md' }).click();
+  await expect(page.getByText(/END OF DOCUMENT/)).toBeVisible();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const editor = page.getByRole('textbox', { name: 'SKILL.md content' });
+  await editor.fill('My unsaved edit');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText(/Skill changed since/)).toBeVisible();
+  await expect(editor).toHaveValue('My unsaved edit');
+});
+
+// The skill page packs eight tabs of tables, chip rows and card grids into the
+// same column the nav sections use; every one of them has to fit the narrow
+// viewports hud.spec.ts pins for the rest of the HUD.
+for (const width of [390, 768]) {
+  test(`skill page tabs fit ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/skills/sk-1');
+    for (const name of ['Overview', 'SKILL.md', 'Files', 'Installs', 'Enhance', 'Analysis', 'Export', 'History']) {
+      await page.getByRole('tab', { name }).click();
+      const delta = await page.locator('main').evaluate(el => el.scrollWidth - el.clientWidth);
+      expect(delta, `${name} tab overflows by ${delta}px`).toBeLessThanOrEqual(0);
+    }
+    expect(errors).toEqual([]);
+  });
+}

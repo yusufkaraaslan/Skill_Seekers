@@ -152,7 +152,12 @@ export interface Project {
 
 // ── Jobs ────────────────────────────────────────────────────────────────────
 
-export type JobType = 'create' | 'scan' | 'package' | 'enhance' | 'port' | 'fetch' | 'publish' | 'install' | 'market-sync';
+// Every `type` the backend hands to submit_job (web/app.py + web/routes/*).
+export type JobType =
+  | 'create' | 'scan' | 'package' | 'enhance' | 'port' | 'fetch' | 'publish' | 'install' | 'market-sync'
+  | 'upload' | 'translate' | 'update' | 'quality' | 'analyze'
+  | 'estimate' | 'split' | 'push' | 'submit' | 'sync-check' | 'generate-config'
+  | 'server' | 'install-agent';
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelling' | 'cancelled';
 
 export interface Job {

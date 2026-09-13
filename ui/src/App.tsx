@@ -170,7 +170,9 @@ function Hud() {
                   className="w-full h-8 rounded border border-border bg-secondary/40 pl-8 pr-3 font-mono-hud text-xs text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/50"
                   onChange={(e) => {
                     store.setSkillQuery(e.target.value);
-                    if (view !== 'skills') setView('skills');
+                    // also leaves a skill detail page: the query filters the
+                    // list, which /skills/:id does not show
+                    if (view !== 'skills' || detailId) setView('skills');
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

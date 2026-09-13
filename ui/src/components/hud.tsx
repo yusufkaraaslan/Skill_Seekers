@@ -91,7 +91,7 @@ export function CliChip({
 // ── Install dots: which CLIs carry a skill ──────────────────────────────────
 export function InstallSet({ installs }: { installs: CliId[] }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {ALL_CLI_IDS.map((id) => (
         <CliChip key={id} id={id} size="sm" dim={!installs.includes(id)} />
       ))}
