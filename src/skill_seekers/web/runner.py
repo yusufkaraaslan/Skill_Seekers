@@ -753,6 +753,159 @@ def run_analyze(spec: dict[str, Any]) -> int:
     return 0
 
 
+def run_split(spec: dict[str, Any]) -> int:
+    """Split one oversized config into focused sub-configs."""
+    argv = [
+        spec["config_path"],
+        "--strategy",
+        spec.get("strategy", "auto"),
+        "--target-pages",
+        str(spec.get("target_pages", 5000)),
+        "--output-dir",
+        spec["output_dir"],
+    ]
+    code = _run_cli_main("skill_seekers.cli.split_config", argv)
+    if code == 0:
+        artifact(Path(spec["output_dir"]))
+    return code
+
+
+def run_push(spec: dict[str, Any]) -> int:
+    """Commit and push a config to a registered config source repository."""
+    from skill_seekers.services.config_publisher import ConfigPublisher
+
+    progress(20, f"pushing {Path(spec['config_path']).name} → {spec['source']}…")
+    if spec.get("message"):
+        # ConfigPublisher composes its own commit message from the config; the
+        # note the user typed in the UI is recorded in the job log only.
+        print(f"note: {spec['message']}", flush=True)
+    result = ConfigPublisher().publish(
+        spec["config_path"],
+        spec["source"],
+        category=spec.get("category", "auto"),
+        create_branch=bool(spec.get("branch")),
+        force=bool(spec.get("force")),
+    )
+    print(json.dumps(result, indent=2, default=str), flush=True)
+    return 0 if result.get("success") else 1
+
+
+def run_submit(spec: dict[str, Any]) -> int:
+    """Submit a config to the community registry as a GitHub issue."""
+    from skill_seekers.services.source_manager import submit_config
+
+    config_path = Path(spec["config_path"])
+    if spec.get("probe_urls"):
+        # submit_config itself has no probe switch (it validates and files the
+        # issue), so reuse the scan generator's HEAD-prober before submitting.
+        from skill_seekers.cli.scan_command import _probe_urls
+
+        progress(10, "probing the config's URLs…")
+        unreachable = _probe_urls(json.loads(config_path.read_text(encoding="utf-8")))
+        if unreachable:
+            print("✗ unreachable URLs, not submitting:", flush=True)
+            for url in unreachable:
+                print(f"  {url}", flush=True)
+            return 1
+    progress(40, "opening registry submission…")
+    # github_token falls back to $GITHUB_TOKEN inside submit_config.
+    result = submit_config(str(config_path))
+    print(result.get("message", ""), flush=True)
+    return 0 if result.get("ok") else 1
+
+
+def run_sync_check(spec: dict[str, Any]) -> int:
+    """Hash a config's documentation URLs and report upstream changes."""
+    from datetime import datetime, timezone
+
+    from skill_seekers.sync.detector import ChangeDetector
+
+    from .paths import atomic_write, read_json
+
+    config_path = Path(spec["config_path"])
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    urls: list[str] = []
+    for source in config.get("sources", []):
+        if isinstance(source, dict) and source.get("type") == "documentation":
+            urls += source.get("start_urls") or [source.get("base_url")]
+    urls = [u for u in dict.fromkeys(urls) if u]
+    if not urls:
+        print("No documentation source with a URL to watch", flush=True)
+        return 1
+    state_path = Path(spec["state_path"])
+    previous = read_json(state_path, {})
+    hashes = dict(previous.get("page_hashes") or {})
+    progress(10, f"checking {len(urls)} page(s)…")
+    report = ChangeDetector().check_pages(urls, hashes)
+    changes = [*report.added, *report.modified, *report.deleted]
+    for change in report.added + report.modified:
+        if change.new_hash:
+            hashes[change.url] = change.new_hash
+    for change in report.deleted:
+        hashes.pop(change.url, None)
+    now = datetime.now(timezone.utc).isoformat()
+    payload = {
+        # This file is also sync.monitor's SyncState store — keep those keys
+        # exactly as SyncState spells them; the UI-only keys below are extra
+        # (pydantic ignores them) so both readers stay happy.
+        "skill_name": config.get("name") or config_path.stem,
+        "last_check": now,
+        "last_change": now if changes else previous.get("last_change"),
+        "total_checks": int(previous.get("total_checks") or 0) + 1,
+        "total_changes": int(previous.get("total_changes") or 0) + len(changes),
+        "page_hashes": hashes,
+        "status": "idle",
+        "error": None,
+        "checkedAt": now,
+        "changes": [c.model_dump(mode="json") for c in changes],
+    }
+    atomic_write(state_path, json.dumps(payload, indent=2, default=str).encode("utf-8"))
+    artifact(state_path)
+    progress(90, f"{len(changes)} change(s) in {len(urls)} page(s)")
+    return 0
+
+
+def _generate_with_ai(detection, probe: bool):
+    """Single seam for the AI config generation call (stubbed in tests)."""
+    from skill_seekers.cli.agent_client import AgentClient
+    from skill_seekers.cli.scan_command import generate_config_with_ai
+
+    return generate_config_with_ai(detection, AgentClient(mode="auto"), probe_urls=probe)
+
+
+def run_generate_config(spec: dict[str, Any]) -> int:
+    """Generate a unified config from a docs URL, framework name or directory."""
+    import re
+
+    from skill_seekers.cli.scan_command import Detection
+
+    from .paths import atomic_write
+
+    kind, value = spec["kind"], spec["value"]
+    # The generation prompt only shows name/version/ecosystem/kind, so a docs
+    # URL is passed through as the name — that is the one fact we have.
+    detection = Detection(
+        name=Path(value).name if kind == "dir" else value,
+        ecosystem="other",
+        version=None,
+        kind="framework",
+        confidence=1.0,
+        evidence=f"requested in the web UI ({kind}: {value})",
+    )
+    progress(20, "asking the agent for a config…")
+    config = _generate_with_ai(detection, bool(spec.get("probe_urls")))
+    if not config:
+        raise RuntimeError("the agent returned no usable config")
+    stem = str(config.get("name") or detection.name).lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", stem).strip("-") or "generated"
+    dest = Path(spec["configs_dir"]) / f"{slug}.json"
+    if dest.exists():
+        dest = dest.with_name(f"{slug}-{int(time.time())}.json")
+    atomic_write(dest, json.dumps(config, indent=2).encode("utf-8"))
+    artifact(dest)
+    return 0
+
+
 DISPATCH = {
     "create": run_create,
     "scan": run_scan,
@@ -769,6 +922,11 @@ DISPATCH = {
     "update": run_update,
     "quality": run_quality,
     "analyze": run_analyze,
+    "split": run_split,
+    "push": run_push,
+    "submit": run_submit,
+    "sync-check": run_sync_check,
+    "generate-config": run_generate_config,
 }
 
 

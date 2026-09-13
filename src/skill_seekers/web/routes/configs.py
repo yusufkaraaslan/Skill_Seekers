@@ -40,6 +40,46 @@ class EstimateRequest(BaseModel):
     timeout: int = 10
 
 
+class SplitRequest(BaseModel):
+    strategy: str = "auto"
+    target_pages: int = 5000
+
+
+class PushRequest(BaseModel):
+    source: str
+    message: str = ""
+    branch: bool = False
+    force: bool = False
+
+
+class SubmitRequest(BaseModel):
+    probe_urls: bool = True
+
+
+class SyncSettings(BaseModel):
+    enabled: bool
+    interval: str = "daily"
+    auto_rebuild: bool = False
+
+
+class GenerateRequest(BaseModel):
+    kind: str
+    value: str
+    probe_urls: bool = True
+
+
+SYNC_FILE = "sync.json"
+SPLIT_STRATEGIES = ("auto", "none", "source", "category", "router", "size")
+SYNC_INTERVALS = ("hourly", "daily", "weekly", "manual")
+
+
+def sync_settings_all() -> dict[str, Any]:
+    """Per-config sync preferences, keyed by config id."""
+    from ..paths import UI_STATE_DIR
+
+    return read_json(UI_STATE_DIR / SYNC_FILE, {})
+
+
 def register(app: FastAPI, ctx: HudContext) -> None:
     def path_for(cfg_id: str) -> Path:
         try:
@@ -68,6 +108,29 @@ def register(app: FastAPI, ctx: HudContext) -> None:
             },
         )
 
+    @app.post("/api/configs/generate")
+    def generate(req: GenerateRequest) -> dict[str, Any]:
+        # Registered before the /{cfg_id} routes so "generate" is never read
+        # as a config id.
+        if req.kind not in ("url", "name", "dir") or not req.value.strip():
+            raise HTTPException(400, "Choose a URL, framework name or directory")
+        if req.kind == "url" and not req.value.startswith(("http://", "https://")):
+            raise HTTPException(400, "Enter a documentation URL")
+        if req.kind == "dir" and not (ctx.root / Path(req.value).expanduser()).resolve().is_dir():
+            raise HTTPException(400, "Directory not found")
+        job = ctx.submit_job(
+            "generate-config",
+            req.value.strip(),
+            "AI config generation",
+            {
+                "type": "generate-config",
+                "kind": req.kind,
+                "value": req.value.strip(),
+                "probe_urls": req.probe_urls,
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
+
     @app.get("/api/configs/{cfg_id}")
     def config_detail(cfg_id: str) -> dict[str, Any]:
         from ..paths import load_settings
@@ -94,6 +157,7 @@ def register(app: FastAPI, ctx: HudContext) -> None:
             "validation": _validate(path),
             "usedBy": used_by,
             "sync": sync_state,
+            "syncSettings": sync_settings_all().get(cfg_id),
             "lastEstimate": estimate,
         }
 
@@ -134,3 +198,89 @@ def register(app: FastAPI, ctx: HudContext) -> None:
             },
         )
         return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/configs/{cfg_id}/split")
+    def split_config(cfg_id: str, req: SplitRequest) -> dict[str, Any]:
+        from ..paths import workspace_dir
+
+        if req.strategy not in SPLIT_STRATEGIES or not 100 <= req.target_pages <= 100_000:
+            raise HTTPException(400, "Unsupported split strategy or target size")
+        path = path_for(cfg_id)
+        job = ctx.submit_job(
+            "split",
+            path.name,
+            f"split · {req.strategy}",
+            {
+                "type": "split",
+                "config_path": str(path),
+                "strategy": req.strategy,
+                "target_pages": req.target_pages,
+                "output_dir": str(workspace_dir(ctx.root, "configs")),
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/configs/{cfg_id}/push")
+    def push_config(cfg_id: str, req: PushRequest) -> dict[str, Any]:
+        from skill_seekers.services.source_manager import SourceManager
+
+        from ..paths import safe_name
+
+        safe_name(req.source)
+        try:
+            SourceManager().get_source(req.source)
+        except KeyError:
+            raise HTTPException(404, "unknown config source") from None
+        path = path_for(cfg_id)
+        job = ctx.submit_job(
+            "push",
+            path.name,
+            f"push → {req.source}",
+            {
+                "type": "push",
+                "config_path": str(path),
+                "source": req.source,
+                "message": req.message,
+                "branch": req.branch,
+                "force": req.force,
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/configs/{cfg_id}/submit")
+    def submit_config(cfg_id: str, req: SubmitRequest) -> dict[str, Any]:
+        path = path_for(cfg_id)
+        job = ctx.submit_job(
+            "submit",
+            path.name,
+            "submit to community registry",
+            {"type": "submit", "config_path": str(path), "probe_urls": req.probe_urls},
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/configs/{cfg_id}/sync/check")
+    def sync_check(cfg_id: str) -> dict[str, Any]:
+        from ..paths import safe_name
+
+        path = path_for(cfg_id)
+        name = json.loads(path.read_text(encoding="utf-8")).get("name") or path.stem
+        state = Path.home() / ".skill-seekers" / "sync" / f"{safe_name(str(name))}_sync.json"
+        job = ctx.submit_job(
+            "sync-check",
+            path.name,
+            "check upstream pages for changes",
+            {"type": "sync-check", "config_path": str(path), "state_path": str(state)},
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.put("/api/configs/{cfg_id}/sync")
+    def set_sync(cfg_id: str, req: SyncSettings) -> dict[str, Any]:
+        from ..paths import UI_STATE_DIR, update_json
+
+        if req.interval not in SYNC_INTERVALS:
+            raise HTTPException(400, "Unsupported interval")
+        path_for(cfg_id)
+        data = update_json(
+            UI_STATE_DIR / SYNC_FILE, lambda cur: {**cur, cfg_id: req.model_dump()}, {}
+        )
+        return {"ok": True, "syncSettings": data[cfg_id]}

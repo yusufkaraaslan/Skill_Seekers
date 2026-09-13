@@ -83,3 +83,75 @@ def test_estimate_submits_job(workspace, monkeypatch):
         == 200
     )
     assert submitted[0]["type"] == "estimate" and submitted[0]["config_path"] == str(path)
+
+
+def test_lifecycle_jobs_submit_with_expected_specs(workspace, monkeypatch):
+    root, client = workspace
+    path = _write_config(root)
+    cfg_id = registry.config_id_for(path)
+    from skill_seekers.services.source_manager import SourceManager
+
+    SourceManager().add_source("team", "https://github.com/example/configs.git")
+    submitted = []
+    monkeypatch.setattr(
+        get_job_manager(),
+        "submit",
+        lambda *a: submitted.append(a[3]) or Job("j", a[0], a[1], a[2], spec=a[3]),
+    )
+    assert (
+        client.post(f"/api/configs/{cfg_id}/split", json={"strategy": "weird"}).status_code == 400
+    )
+    assert (
+        client.post(
+            f"/api/configs/{cfg_id}/split", json={"strategy": "category", "target_pages": 500}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(f"/api/configs/{cfg_id}/push", json={"source": "nope", "message": "m"})
+    ).status_code == 404
+    assert (
+        client.post(f"/api/configs/{cfg_id}/push", json={"source": "team", "message": "m"})
+    ).status_code == 200
+    assert client.post(f"/api/configs/{cfg_id}/submit", json={}).status_code == 200
+    assert client.post(f"/api/configs/{cfg_id}/sync/check").status_code == 200
+    assert (
+        client.post("/api/configs/generate", json={"kind": "url", "value": "not a url"}).status_code
+        == 400
+    )
+    assert (
+        client.post(
+            "/api/configs/generate", json={"kind": "url", "value": "https://docs.example.invalid/"}
+        ).status_code
+        == 200
+    )
+    assert [s["type"] for s in submitted] == [
+        "split",
+        "push",
+        "submit",
+        "sync-check",
+        "generate-config",
+    ]
+
+
+def test_sync_settings_persist(workspace):
+    root, client = workspace
+    cfg_id = registry.config_id_for(_write_config(root))
+    assert (
+        client.put(
+            f"/api/configs/{cfg_id}/sync", json={"enabled": True, "interval": "yearly"}
+        ).status_code
+        == 400
+    )
+    assert (
+        client.put(
+            f"/api/configs/{cfg_id}/sync",
+            json={"enabled": True, "interval": "daily", "auto_rebuild": True},
+        ).status_code
+        == 200
+    )
+    assert client.get(f"/api/configs/{cfg_id}").json()["syncSettings"] == {
+        "enabled": True,
+        "interval": "daily",
+        "auto_rebuild": True,
+    }

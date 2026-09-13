@@ -285,3 +285,160 @@ def test_run_estimate_fails_cleanly_without_documentation_source(workspace):
 
     assert runner.run_estimate(spec) == 1
     assert not result_path.is_file()
+
+
+def test_run_split_and_generate_config_argv(workspace, monkeypatch):
+    root, _ = workspace
+    calls = []
+    monkeypatch.setattr(runner, "_run_cli_main", lambda m, a: calls.append((m, a)) or 0)
+    cfg = root / "configs/react.json"
+    cfg.parent.mkdir(exist_ok=True)
+    cfg.write_text('{"name":"react","sources":[]}')
+    assert (
+        runner.run_split(
+            {
+                "config_path": str(cfg),
+                "strategy": "category",
+                "target_pages": 500,
+                "output_dir": str(root / "configs"),
+            }
+        )
+        == 0
+    )
+    assert calls[0] == (
+        "skill_seekers.cli.split_config",
+        [
+            str(cfg),
+            "--strategy",
+            "category",
+            "--target-pages",
+            "500",
+            "--output-dir",
+            str(root / "configs"),
+        ],
+    )
+
+    import skill_seekers.web.runner as r
+
+    monkeypatch.setattr(
+        r,
+        "_generate_with_ai",
+        lambda _detection, _probe: {
+            "name": "svelte",
+            "sources": [{"type": "documentation", "base_url": "https://svelte.dev/docs"}],
+        },
+    )
+    assert (
+        runner.run_generate_config(
+            {
+                "kind": "name",
+                "value": "Svelte",
+                "probe_urls": False,
+                "configs_dir": str(root / "configs"),
+            }
+        )
+        == 0
+    )
+    assert (root / "configs/svelte.json").is_file()
+
+
+def test_run_sync_check_round_trips_a_syncstate_file(workspace, monkeypatch):
+    """The report doubles as sync.monitor's SyncState store, so it must stay
+    loadable by SyncState while carrying the flat ``changes`` list the config
+    page renders."""
+    from skill_seekers.sync import detector as detector_mod
+    from skill_seekers.sync.models import ChangeReport, ChangeType, PageChange, SyncState
+
+    root, _ = workspace
+    cfg = root / "configs" / "react.json"
+    cfg.parent.mkdir(exist_ok=True)
+    cfg.write_text(
+        json.dumps(
+            {
+                "name": "react",
+                "sources": [
+                    {"type": "documentation", "base_url": "https://react.invalid/docs"},
+                    {"type": "github", "repo": "facebook/react"},
+                ],
+            }
+        )
+    )
+    state = root / "sync" / "react_sync.json"
+    seen = []
+
+    class FakeDetector:
+        def check_pages(self, urls, previous_hashes, generate_diffs=False):
+            seen.append((list(urls), dict(previous_hashes)))
+            return ChangeReport(
+                skill_name="unknown",
+                total_pages=len(urls),
+                modified=[
+                    PageChange(
+                        url=urls[0],
+                        change_type=ChangeType.MODIFIED,
+                        old_hash="a",
+                        new_hash="b",
+                    )
+                ],
+            )
+
+    monkeypatch.setattr(detector_mod, "ChangeDetector", FakeDetector)
+    spec = {"config_path": str(cfg), "state_path": str(state)}
+    assert runner.run_sync_check(spec) == 0
+    payload = json.loads(state.read_text())
+    # Only documentation sources are watched; the github source is skipped.
+    assert seen[0] == (["https://react.invalid/docs"], {})
+    assert payload["page_hashes"] == {"https://react.invalid/docs": "b"}
+    assert [c["change_type"] for c in payload["changes"]] == ["modified"]
+    assert payload["checkedAt"] == payload["last_check"]
+    assert SyncState(**payload).total_checks == 1
+
+    # Second run resumes from the stored hashes and accumulates the counters.
+    assert runner.run_sync_check(spec) == 0
+    assert seen[1][1] == {"https://react.invalid/docs": "b"}
+    assert json.loads(state.read_text())["total_checks"] == 2
+
+
+def test_run_sync_check_without_a_documentation_url_fails(workspace):
+    root, _ = workspace
+    cfg = root / "configs" / "cli.json"
+    cfg.parent.mkdir(exist_ok=True)
+    cfg.write_text(json.dumps({"name": "cli", "sources": [{"type": "manpage", "path": "ls"}]}))
+    assert runner.run_sync_check({"config_path": str(cfg), "state_path": str(root / "s.json")}) == 1
+
+
+def test_run_push_and_submit_map_service_results_to_exit_codes(workspace, monkeypatch):
+    from skill_seekers.cli import scan_command as scan_mod
+    from skill_seekers.services import config_publisher as publisher_mod
+    from skill_seekers.services import source_manager as source_mod
+
+    root, _ = workspace
+    cfg = root / "configs" / "react.json"
+    cfg.parent.mkdir(exist_ok=True)
+    cfg.write_text(json.dumps({"name": "react", "sources": []}))
+    published = []
+
+    class FakePublisher:
+        def publish(
+            self, config_path, source_name, category="auto", create_branch=False, force=False
+        ):
+            published.append((config_path, source_name, category, create_branch, force))
+            return {"success": True, "commit_sha": "abc1234"}
+
+    monkeypatch.setattr(publisher_mod, "ConfigPublisher", FakePublisher)
+    spec = {"config_path": str(cfg), "source": "team", "message": "note", "branch": True}
+    assert runner.run_push(spec) == 0
+    assert published == [(str(cfg), "team", "auto", True, False)]
+
+    # submit_config answers {"ok": ..., "message": ...} — not {"success": ...}
+    monkeypatch.setattr(source_mod, "submit_config", lambda _path: {"ok": False, "message": "no"})
+    assert runner.run_submit({"config_path": str(cfg)}) == 1
+    monkeypatch.setattr(source_mod, "submit_config", lambda _path: {"ok": True, "message": "filed"})
+    assert runner.run_submit({"config_path": str(cfg)}) == 0
+
+    def _never(_path):
+        raise AssertionError("a config with dead URLs must not be submitted")
+
+    monkeypatch.setattr(scan_mod, "_probe_urls", lambda _config: ["https://react.invalid/docs"])
+    monkeypatch.setattr(source_mod, "submit_config", _never)
+    assert runner.run_submit({"config_path": str(cfg), "probe_urls": True}) == 1
