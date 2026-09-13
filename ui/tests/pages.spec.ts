@@ -199,8 +199,17 @@ test('analyze submits the selected tools for a directory', async ({ page }) => {
   await page.getByRole('textbox', { name: 'local path' }).fill('~/dev/lazy-bird');
   await page.getByRole('checkbox', { name: /Design patterns/ }).check();
   await page.getByRole('checkbox', { name: /Quality check/ }).check();
-  await page.getByRole('button', { name: 'Run analysis' }).click();
-  await expect.poll(() => body).toMatchObject({ target: { kind: 'dir', value: '~/dev/lazy-bird' }, tools: ['patterns', 'quality'], depth: 'basic' });
+  const runButton = page.getByRole('button', { name: 'Run analysis' });
+  const confidence = page.getByRole('spinbutton', { name: 'Minimum confidence' });
+  // The number input's min/max only constrain the spinner, not typed text —
+  // a typed 2 must disable the run rather than reach the backend, which
+  // rejects min_confidence outside 0-1 with a 400.
+  await confidence.fill('2');
+  await expect(runButton).toBeDisabled();
+  await confidence.fill('0.5');
+  await expect(runButton).toBeEnabled();
+  await runButton.click();
+  await expect.poll(() => body).toMatchObject({ target: { kind: 'dir', value: '~/dev/lazy-bird' }, tools: ['patterns', 'quality'], depth: 'basic', min_confidence: 0.5 });
 });
 
 // The skill page packs eight tabs of tables, chip rows and card grids into the

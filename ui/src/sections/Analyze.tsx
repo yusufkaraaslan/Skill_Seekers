@@ -85,14 +85,20 @@ export default function Analyze() {
     ...(tools.includes('quality') ? ['--quality-check'] : []),
   ].join(' ');
 
-  const runDisabled = store.pending || selectedTools.length === 0 || !targetValue.trim();
+  // The number input's min/max only constrain the spinner, not typed text —
+  // a typed 2 must disable the run rather than reach the backend, which
+  // rejects min_confidence outside 0–1 with a 400.
+  const minConfidenceNumber = Number(minConfidence);
+  const minConfidenceInvalid = minConfidence.trim() === '' || Number.isNaN(minConfidenceNumber) || minConfidenceNumber < 0 || minConfidenceNumber > 1;
+
+  const runDisabled = store.pending || selectedTools.length === 0 || !targetValue.trim() || minConfidenceInvalid;
 
   const run = async () => {
     const body: AnalyzeBody = {
       target: { kind: targetKind, value: targetValue.trim() },
       tools: selectedTools,
       depth,
-      min_confidence: Number(minConfidence) || 0,
+      min_confidence: Math.min(1, Math.max(0, Number(minConfidence) || 0)),
       ai_mode: aiMode,
       attach_to: attachTo || null,
     };
@@ -224,8 +230,10 @@ export default function Analyze() {
                   step={0.05}
                   value={minConfidence}
                   onChange={(e) => setMinConfidence(e.target.value)}
+                  aria-invalid={minConfidenceInvalid}
                   className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50"
                 />
+                {minConfidenceInvalid && <p className="mt-1 text-[10px] text-destructive">must be between 0 and 1</p>}
               </div>
               <div>
                 <FL>AI enhancement</FL>
@@ -274,7 +282,7 @@ export default function Analyze() {
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
                   <tr className="border-b border-border font-mono-hud text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-                    <th className="px-3 py-2.5 text-left font-medium">target</th>
+                    <th className="px-3 py-2.5 text-left font-medium">slug</th>
                     <th className="px-3 py-2.5 text-left font-medium">tools</th>
                     <th className="px-3 py-2.5 text-left font-medium">started</th>
                     <th className="px-3 py-2.5 text-left font-medium">attached to</th>
