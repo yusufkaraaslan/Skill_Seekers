@@ -17,7 +17,7 @@ Choose sources in **Create**, set options, then select package formats. Leave fo
 
 Create drafts survive navigation and refresh within the same browser tab. Failed submissions retain entered values. The job preview shows the actual submitted options and saved directories. Settings defaults apply to new jobs; an existing draft keeps its selected agent. Relative output/config directories resolve against the workspace root. Changing these directories changes the inventory being viewed; it does not move existing files.
 
-Open a skill to load its complete `SKILL.md` and supporting-file list. Saves require the revision originally loaded. If another process changes the file, the save fails and your draft stays open. Copy your draft before reloading to resolve a conflict. Plugin and manually managed skills can be copied or packaged, but cannot be edited, enhanced, or archived through the HUD.
+Open a skill to go to its page at `/skills/<id>`, which loads the complete `SKILL.md` and supporting-file list on the SKILL.md and Files tabs. Saves require the revision originally loaded. If another process changes the file, the save fails and your draft stays open. Copy your draft before reloading to resolve a conflict. Plugin and manually managed skills can be copied or packaged, but cannot be edited, enhanced, or archived through the HUD. The page URL is bookmarkable and shareable; opening a skill from any table, card, or job output goes to the same page.
 
 ## Install, organize, and recover
 
@@ -33,9 +33,17 @@ Current installation destinations follow the documented user skill locations for
 
 **Jobs** retains the latest 100 finished jobs plus active jobs, with full timestamps, streamed logs, cancellation, retry, output paths, and file downloads. Package jobs always write to `output/_packages/<target>/`, one directory per format, and a repeat run of the same skill keeps both archives. Multi-source creates write a stable `configs/<name>-unified.json` that later runs overwrite. Interrupted jobs become failed after restart. Retry repeats the saved specification; it may require resolving a destination conflict first.
 
-Project scans accept local directories and expose failure/retry states. The config library indexes both the configured workspace directory and fetched source caches. Marketplace browsing reads cached data; **Sync all** refreshes it through background jobs. Install first copies to the workspace, with additional CLI destinations explicitly selected. Existing workspace skills must be archived or renamed before another install with the same directory name.
+Project scans accept local directories and expose failure/retry states. The config library indexes both the configured workspace directory and fetched source caches; opening a config goes to its page at `/configs/<id>` (Overview, JSON, Validate, Estimate, Sync, Push / Submit, Generate tabs) instead of a drawer. Marketplace browsing reads cached data; **Sync all** refreshes it through background jobs. Install first copies to the workspace, with additional CLI destinations explicitly selected. Existing workspace skills must be archived or renamed before another install with the same directory name.
 
-The MCP screen reports real probe results and connection instructions. It does not simulate tool execution.
+The MCP screen was folded into **Environment**, which reports real probe results and connection instructions for the MCP tools catalogue alongside Doctor, Servers, and Agents panels. It does not simulate tool execution.
+
+## Pages
+
+Every entity has a URL you can bookmark: `/skills/<id>` (Overview, SKILL.md, Files, Installs, Enhance, Analysis, Export, History), `/configs/<id>` (Overview, JSON, Validate, Estimate, Sync, Push / Submit, Generate), `/workflows/<name>`, `/analyze`, and `/environment` (Doctor, Servers, Agents, MCP tools). Opening a skill from any table, card, or job output goes to its page.
+
+## Job types
+
+`create`, `scan`, `package`, `enhance`, `port`, `fetch`, `publish`, `estimate`, `market-sync`, `install`, `upload`, `translate`, `update`, `quality`, `analyze`, `split`, `push`, `submit`, `sync-check`, `generate-config`, `install-agent`, `server`. Servers started from Environment run as jobs; stopping the server cancels the job.
 
 ## Contributor checks
 

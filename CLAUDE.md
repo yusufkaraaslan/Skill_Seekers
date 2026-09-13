@@ -190,6 +190,7 @@ Local codebase analysis features, all opt-out (`--skip-*` flags):
 - **Tools run in-process** via `run_cli_main()` in `mcp/tools/_common.py`: same argv parsed by the command's REAL parser (sys.argv patch under a lock), stdout/stderr capture + contextvar log capture, identical `(stdout, stderr, returncode)` contract. No subprocess startup; old hard timeouts are advisory.
 - **Exceptions BY DESIGN**: `enhance_skill` (LOCAL agent) and `install_skill`'s enhancement step stay subprocess — the agent must be a real child process for the fork-bomb-guard env semantics (`SKILL_SEEKER_ENHANCE_ACTIVE`). Never make these in-process.
 - **Domain logic lives in `skill_seekers.services/`** (marketplace_manager, marketplace_publisher, config_publisher, source_manager, git_repo) — importable by CLI without the `[mcp]` extra; old `skill_seekers.mcp.*` paths are back-compat shims. No `sys.path` hacks anywhere in `mcp/`.
+- HUD routes live in `src/skill_seekers/web/routes/` (one module per screen, `register(app, ctx)`); `app.py` keeps the original routes.
 
 ### Enhancement (AgentClient is the single AI transport)
 
