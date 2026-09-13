@@ -490,3 +490,21 @@ def test_run_sync_check_reports_unreachable_pages(workspace, monkeypatch, capsys
     assert payload["status"] == "error" and payload["error"] == "1 page(s) unreachable"
     # The page that was reached keeps its hash for the next run.
     assert payload["page_hashes"] == {"https://react.invalid/a": "b"}
+
+
+def test_run_install_agent_argv(workspace, monkeypatch):
+    root, _ = workspace
+    calls = []
+    monkeypatch.setattr(runner, "_run_cli_main", lambda m, a: calls.append((m, a)) or 0)
+    assert (
+        runner.run_install_agent(
+            {"agent": "codex", "skill_dir": str(root / "output/skill-seekers"), "force": True}
+        )
+        == 0
+    )
+    assert calls == [
+        (
+            "skill_seekers.cli.install_agent",
+            [str(root / "output/skill-seekers"), "--agent", "codex", "--force"],
+        )
+    ]

@@ -919,6 +919,35 @@ def run_generate_config(spec: dict[str, Any]) -> int:
     return 0
 
 
+SERVER_COMMANDS = {
+    "mcp-http": [sys.executable, "-m", "skill_seekers.mcp.server_fastmcp", "--http"],
+    "embedding": [sys.executable, "-m", "skill_seekers.embedding.server"],
+}
+
+
+def run_server(spec: dict[str, Any]) -> int:
+    """Run a long-lived server inside this job; cancelling the job stops it."""
+    argv = SERVER_COMMANDS[spec["server"]]
+    env = {
+        **os.environ,
+        "EMBEDDING_PORT": str(spec.get("port") or 8001),
+        "EMBEDDING_HOST": "127.0.0.1",
+    }
+    progress(5, f"starting {spec['server']}…")
+    with subprocess.Popen(argv, env=env) as child:
+        progress(10, f"{spec['server']} running (pid {child.pid})")
+        return child.wait()
+
+
+def run_install_agent(spec: dict[str, Any]) -> int:
+    """Install a built skill into an AI coding agent's skill directory."""
+    argv = [spec["skill_dir"], "--agent", spec["agent"]] + (
+        ["--force"] if spec.get("force") else []
+    )
+    progress(10, f"installing Skill Seekers skill into {spec['agent']}…")
+    return _run_cli_main("skill_seekers.cli.install_agent", argv)
+
+
 DISPATCH = {
     "create": run_create,
     "scan": run_scan,
@@ -940,6 +969,8 @@ DISPATCH = {
     "submit": run_submit,
     "sync-check": run_sync_check,
     "generate-config": run_generate_config,
+    "server": run_server,
+    "install-agent": run_install_agent,
 }
 
 
