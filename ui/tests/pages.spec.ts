@@ -151,6 +151,29 @@ test('library generates a config with AI from a docs URL', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
+test('workflows list selects and copies a bundled workflow', async ({ page }) => {
+  let copied = false;
+  await page.route('**/api/workflows/default/copy', route => { copied = true; return route.fulfill({ json: { ok: true } }); });
+  await page.goto('/workflows');
+  await page.getByRole('row', { name: /default/ }).click();
+  await expect(page).toHaveURL(/\/workflows\/default$/);
+  await expect(page.getByText('name: default')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy to user dir' }).click();
+  await expect.poll(() => copied).toBe(true);
+});
+
+test('workflows install dialog PUTs a new user workflow and closes on success', async ({ page }) => {
+  let saved: unknown = null;
+  await page.route('**/api/workflows/custom', route => { saved = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, path: '/ws/workflows/custom.yaml' } }); });
+  await page.goto('/workflows');
+  await page.getByRole('button', { name: 'Install YAML file…' }).click();
+  await page.getByRole('textbox', { name: 'Workflow name' }).fill('custom');
+  await page.getByRole('textbox', { name: 'YAML' }).fill('name: custom\nstages: []');
+  await page.getByRole('button', { name: 'Install', exact: true }).click();
+  await expect.poll(() => saved).toEqual({ yaml: 'name: custom\nstages: []' });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
 // The skill page packs eight tabs of tables, chip rows and card grids into the
 // same column the nav sections use; every one of them has to fit the narrow
 // viewports hud.spec.ts pins for the rest of the HUD.
