@@ -25,6 +25,7 @@ export default function Library({
   onFetchOfficial,
   onRemoveSource,
   onBuild,
+  onOpenConfig,
 }: {
   sources: ConfigSource[];
   entries: ConfigEntry[];
@@ -34,6 +35,7 @@ export default function Library({
   onFetchOfficial: (name: string) => void;
   onRemoveSource: (name: string) => void;
   onBuild: (path: string, name: string) => void;
+  onOpenConfig: (id: string) => void;
 }) {
   const { pending } = useStore();
   const [activeSource, setActiveSource] = useState<string>('all');
@@ -138,11 +140,16 @@ export default function Library({
           </thead>
           <tbody>
             {pager.slice.map((c) => (
-              <tr key={c.id} className="border-b border-border/60 hover:bg-secondary/40 transition-colors" title={c.description}>
+              <tr
+                key={c.id}
+                className="border-b border-border/60 hover:bg-secondary/40 transition-colors cursor-pointer"
+                title={c.description}
+                onClick={() => onOpenConfig(c.id)}
+              >
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
                     <FileJson className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                    <span className="font-mono-hud text-[13px]">{c.name}</span>
+                    <button className="font-mono-hud text-[13px] text-left" onClick={(e) => { e.stopPropagation(); onOpenConfig(c.id); }}>{c.name}</button>
                     {c.status === 'update-available' && (
                       <span className="flex items-center gap-1 font-mono-hud text-[9px] text-[hsl(45_93%_60%)]">
                         <ArrowUpCircle className="h-3 w-3" /> update
@@ -167,7 +174,7 @@ export default function Library({
                 <td className="px-3 py-2.5 font-mono-hud text-[11px] text-muted-foreground">
                   {c.usedIn.length ? c.usedIn.join(', ') : '—'}
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     {c.remote ? (
                       <Button size="sm" variant="ghost" className="h-7 px-2 font-mono-hud text-[10px] uppercase tracking-wider text-primary"

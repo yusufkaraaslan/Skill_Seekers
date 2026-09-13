@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Panel, SectionHeader, ScopeTag, InstallSet, QualityMeter, CliChip, OriginTag, Pager } from '@/components/hud';
 import { ALL_CLI_IDS, SOURCE_META, cliById, fmtSize, matchesSkillQuery } from '@/lib/data';
 import { usePagination } from '@/hooks/use-pagination';
@@ -13,8 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, MoreHorizontal, ArrowLeftRight, FolderInput, Trash2, Eye, Pencil, Sparkles, Package, X, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -413,59 +411,4 @@ function MoveOption({ label, desc, onClick }: { label: string; desc: string; onC
       <FolderInput className="h-3.5 w-3.5 text-muted-foreground" />
     </button>
   );
-}
-
-// ── Detail drawer (rendered by App so table rows + drawer share state) ───────
-
-export function SkillDrawer({ skill, onClose, onEnhance, onPackage, onSave }: {
-  skill: Skill; onClose: () => void;
-  onEnhance: (id: string) => Promise<boolean>;
-  onPackage: (id: string, targets?: string[]) => Promise<boolean>;
-  onSave: (id: string, content: string, revision: string) => Promise<boolean>;
-}) {
-  const { pending } = useStore();
-  const [loaded, setLoaded] = useState<{ content: string; revision: string; files?: { path: string; size: string }[] } | null>(null);
-  const [draft, setDraft] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [error, setError] = useState('');
-  const [packaging, setPackaging] = useState(false);
-  const dirty = loaded !== null && draft !== loaded.content;
-  useEffect(() => {
-    let active = true;
-    api.skillContent(skill.id).then(data => { if (active) { setLoaded(data); setDraft(data.content); } }).catch(e => { if (active) setError(String(e)); });
-    return () => { active = false; };
-  }, [skill.id]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
-  const close = () => { if (!pending && (!dirty || window.confirm('Discard unsaved skill edits?'))) onClose(); };
-  const save = async () => {
-    if (!loaded) return;
-    if (await onSave(skill.id, draft, loaded.revision)) {
-      // Reload the authoritative revision only after a successful save.
-      try { const data = await api.skillContent(skill.id); setLoaded(data); setDraft(data.content); setEditing(false); setError(''); }
-      catch (e) { setError(`Saved, but reload failed: ${String(e)}`); }
-    }
-  };
-  return <Sheet open onOpenChange={open => { if (!open) close(); }}>
-    <SheetContent className="w-full sm:max-w-[640px] hud-panel p-0 flex flex-col">
-      <SheetHeader className="border-b p-5 pr-10"><div className="flex gap-2"><ScopeTag scope={skill.scope} /><OriginTag origin={skill.origin} pluginName={skill.pluginName} /></div><SheetTitle>{skill.name}</SheetTitle><SheetDescription>{skill.description}</SheetDescription></SheetHeader>
-      <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
-        {skill.editable !== false && skill.origin === 'seeker' && <><Button size="sm" disabled={pending || !loaded} onClick={() => editing ? save() : setEditing(true)}>{editing ? 'Save' : 'Edit'}</Button>{editing && <Button variant="outline" size="sm" disabled={pending} onClick={() => { if (!dirty || window.confirm('Discard unsaved edits?')) { setDraft(loaded?.content ?? ''); setEditing(false); } }}>Cancel edit</Button>}<Button variant="outline" size="sm" disabled={pending || dirty} onClick={() => onEnhance(skill.id)}>Enhance</Button></>}
-        <Button variant="outline" size="sm" disabled={pending || dirty} onClick={() => setPackaging(true)}>Package</Button>
-        <span className="ml-auto text-xs text-muted-foreground">{fmtSize(skill.sizeKb)}</span>
-      </div>
-      <ScrollArea className="flex-1 min-h-0"><div className="p-5 space-y-4">
-        {error && <p role="alert" className="text-destructive">{error}</p>}
-        {!loaded && !error && <p role="status">Loading complete SKILL.md…</p>}
-        {!!loaded?.files?.length && <details><summary className="cursor-pointer text-sm">Files (up to 200)</summary><ul className="mt-2 text-xs space-y-1">{loaded.files.map(file => <li key={file.path} className="flex gap-2 justify-between"><span className="break-all">{file.path}</span><span className="shrink-0 text-muted-foreground">{file.size}</span></li>)}</ul></details>}
-        {loaded && (editing ? <textarea aria-label="SKILL.md content" value={draft} onChange={e => setDraft(e.target.value)} spellCheck={false} className="w-full min-h-96 rounded border bg-background p-3 font-mono-hud text-sm" /> : <pre className="whitespace-pre-wrap break-words rounded border bg-black/30 p-4 font-mono-hud text-sm">{loaded.content}</pre>)}
-        <div className="space-y-2 text-sm"><p className="break-all"><strong>Location:</strong> {skill.dir}</p><p className="break-all"><strong>Source:</strong> {skill.source}</p><p>Updated: {skill.updatedAt}</p><InstallSet installs={skill.installs} />{skill.installations?.map(i => <p key={i.path + i.cli} className="break-all text-xs">{i.cli}: {i.path}</p>)}</div>
-      </div></ScrollArea>
-      {packaging && <PackageDialog id={skill.id} onClose={() => setPackaging(false)} onPackage={onPackage} />}
-    </SheetContent>
-  </Sheet>;
 }

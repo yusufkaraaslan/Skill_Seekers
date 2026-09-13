@@ -10,7 +10,7 @@ import type {
   Activity, Cli, Job, MarketSkill, Marketplace, McpTool, Project, Skill, Workflow, ConfigEntry, ConfigSource,
 } from '@/lib/data';
 import { api as client } from '@/lib/api';
-import type { CreateSpec, SettingsPayload } from '@/lib/api';
+import type { AnalyzeBody, CreateSpec, SettingsPayload, SyncSettings } from '@/lib/api';
 
 export interface StoreState {
   ready: boolean;
@@ -65,6 +65,37 @@ export interface StoreState {
   cancelJob: (id: string) => Promise<boolean>;
   retryJob: (id: string) => Promise<boolean>;
   restoreSkill: (id: string) => Promise<boolean>;
+
+  // ── page mutations (Tasks 10–14) ──
+  // Read-only endpoints (skillDetail, configDetail, workflows, environment,
+  // recentAnalyses) are called straight from the page that needs them; only
+  // state-changing calls go through the store so they share `act`'s single
+  // in-flight guard, error toast and post-mutation refresh. The endpoints that
+  // return a fresh check result (validateConfig / validateWorkflow /
+  // rerunDoctor) are mutations here too: the page re-reads its own payload
+  // afterwards, which carries the new result.
+  uploadSkill: (id: string, target: string, options: Record<string, string>) => Promise<boolean>;
+  translateSkill: (id: string, languages: string[]) => Promise<boolean>;
+  updateSkill: (id: string, apply: boolean) => Promise<boolean>;
+  qualitySkill: (id: string) => Promise<boolean>;
+  saveConfig: (id: string, data: unknown, revision: string) => Promise<boolean>;
+  validateConfig: (id: string) => Promise<boolean>;
+  estimateConfig: (id: string, body: { max_discovery: number; timeout: number }) => Promise<boolean>;
+  splitConfig: (id: string, body: { strategy: string; target_pages: number }) => Promise<boolean>;
+  pushConfig: (id: string, body: { source: string; message: string; branch: boolean }) => Promise<boolean>;
+  submitConfig: (id: string, probeUrls: boolean) => Promise<boolean>;
+  syncCheck: (id: string) => Promise<boolean>;
+  setSync: (id: string, body: SyncSettings) => Promise<boolean>;
+  generateConfig: (body: { kind: string; value: string; probe_urls: boolean }) => Promise<boolean>;
+  copyWorkflow: (name: string) => Promise<boolean>;
+  saveWorkflow: (name: string, yaml: string) => Promise<boolean>;
+  validateWorkflow: (name: string) => Promise<boolean>;
+  deleteWorkflow: (name: string) => Promise<boolean>;
+  analyze: (body: AnalyzeBody) => Promise<boolean>;
+  rerunDoctor: () => Promise<boolean>;
+  startServer: (id: string) => Promise<boolean>;
+  stopServer: (id: string) => Promise<boolean>;
+  installAgent: (agent: string, body: { skill_dir?: string; force: boolean }) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreState | null>(null);
@@ -264,6 +295,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const r = await client.reprobe();
         setClis(r.clis);
       }, 'Reprobed CLIs', refreshSettings),
+
+    // ── skill page ──
+    uploadSkill: (id, target, options) =>
+      act(() => client.uploadSkill(id, target, options), `Upload → ${target} queued`),
+    translateSkill: (id, languages) =>
+      act(() => client.translateSkill(id, languages), `Translating → ${languages.join(', ')}`),
+    updateSkill: (id, apply) =>
+      act(() => client.updateSkill(id, apply), apply ? 'Applying upstream changes' : 'Checking upstream for changes'),
+    qualitySkill: (id) =>
+      act(() => client.qualitySkill(id), 'Quality report queued'),
+
+    // ── config page ──
+    saveConfig: (id, data, revision) =>
+      act(() => client.saveConfig(id, data, revision), 'Config saved'),
+    // Neutral wording on purpose: the call succeeding says nothing about the
+    // config being valid — the page shows the result it re-reads.
+    validateConfig: (id) =>
+      act(() => client.validateConfig(id), 'Validation re-run'),
+    estimateConfig: (id, body) =>
+      act(() => client.estimateConfig(id, body), 'Page estimate queued'),
+    splitConfig: (id, body) =>
+      act(() => client.splitConfig(id, body), `Split queued · ${body.strategy}`),
+    pushConfig: (id, body) =>
+      act(() => client.pushConfig(id, body), `Push → ${body.source} queued`),
+    submitConfig: (id, probeUrls) =>
+      act(() => client.submitConfig(id, probeUrls), 'Registry submission queued'),
+    syncCheck: (id) =>
+      act(() => client.syncCheck(id), 'Upstream check queued'),
+    setSync: (id, body) =>
+      act(() => client.setSync(id, body), body.enabled ? `Sync on · ${body.interval}` : 'Sync off'),
+    generateConfig: (body) =>
+      act(() => client.generateConfig(body), `AI config generation queued: ${body.value}`),
+
+    // ── workflows ──
+    copyWorkflow: (name) =>
+      act(() => client.copyWorkflow(name), `Copied ${name} to your workflow directory`, refreshLibrary),
+    saveWorkflow: (name, yaml) =>
+      act(() => client.saveWorkflow(name, yaml), `Saved ${name}.yaml`, refreshLibrary),
+    validateWorkflow: (name) =>
+      act(() => client.validateWorkflow(name), `Validation re-run: ${name}`),
+    deleteWorkflow: (name) =>
+      act(() => client.deleteWorkflow(name), `Removed ${name}.yaml`, refreshLibrary),
+
+    // ── analyze ──
+    analyze: (body) =>
+      act(() => client.analyze(body), `Analysis queued: ${body.tools.join(', ')}`),
+
+    // ── environment ──
+    rerunDoctor: () => act(() => client.rerunDoctor(), 'Doctor re-run'),
+    startServer: (id) => act(() => client.startServer(id), `Starting ${id}`),
+    stopServer: (id) => act(() => client.stopServer(id), `Stopping ${id}`),
+    installAgent: (agent, body) =>
+      act(() => client.installAgent(agent, body), `Installing Skill Seekers skill → ${agent}`),
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

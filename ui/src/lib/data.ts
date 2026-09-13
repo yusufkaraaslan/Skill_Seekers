@@ -3,6 +3,23 @@
 // Skill Seekers backend (see lib/api.ts + lib/store.tsx). This module keeps
 // the shared types and static lookup tables only.
 
+// ── Navigation ──────────────────────────────────────────────────────────────
+// One id per sidebar entry (App's NAV table is typed against this). Detail
+// screens are not views of their own: /skills/:id and /configs/:id render
+// under the 'skills' and 'library' views with a detail id.
+export type View =
+  | 'overview'
+  | 'projects'
+  | 'skills'
+  | 'create'
+  | 'marketplace'
+  | 'library'
+  | 'workflows'
+  | 'analyze'
+  | 'environment'
+  | 'jobs'
+  | 'settings';
+
 export type CliId =
   | 'claude'
   | 'kimi'

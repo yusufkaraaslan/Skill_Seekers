@@ -4,23 +4,25 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   LayoutDashboard, FolderGit2, Layers, Wand2, ListChecks, Settings2, Radar as RadarIcon, Search,
-  Store, LibraryBig, Plug, Menu, X,
+  Store, LibraryBig, Workflow, ScanSearch, HeartPulse, Menu, X,
 } from 'lucide-react';
 const Overview = lazy(() => import('@/sections/Overview'));
 const Projects = lazy(() => import('@/sections/Projects'));
 const Skills = lazy(() => import('@/sections/Skills'));
-const SkillDrawer = lazy(() => import('@/sections/Skills').then(m => ({ default: m.SkillDrawer })));
+const SkillPage = lazy(() => import('@/sections/SkillPage'));
 const Create = lazy(() => import('@/sections/Create'));
 const Marketplace = lazy(() => import('@/sections/Marketplace'));
 const Library = lazy(() => import('@/sections/Library'));
-const Mcp = lazy(() => import('@/sections/Mcp'));
+const ConfigPage = lazy(() => import('@/sections/ConfigPage'));
+const Workflows = lazy(() => import('@/sections/Workflows'));
+const Analyze = lazy(() => import('@/sections/Analyze'));
+const Environment = lazy(() => import('@/sections/Environment'));
 const Jobs = lazy(() => import('@/sections/Jobs'));
 const Settings = lazy(() => import('@/sections/Settings'));
 import { StoreProvider, useStore } from '@/lib/store';
 import { matchesSkillQuery } from '@/lib/data';
+import type { View } from '@/lib/data';
 import { cn } from '@/lib/utils';
-
-type View = 'overview' | 'projects' | 'skills' | 'create' | 'marketplace' | 'library' | 'mcp' | 'jobs' | 'settings';
 
 const NAV: { id: View; label: string; icon: typeof LayoutDashboard; kbd: string }[] = [
   { id: 'overview',    label: 'Overview',    icon: LayoutDashboard, kbd: '1' },
@@ -29,9 +31,11 @@ const NAV: { id: View; label: string; icon: typeof LayoutDashboard; kbd: string 
   { id: 'create',      label: 'Create',      icon: Wand2,           kbd: '4' },
   { id: 'marketplace', label: 'Marketplace', icon: Store,           kbd: '5' },
   { id: 'library',     label: 'Configs',     icon: LibraryBig,      kbd: '6' },
-  { id: 'mcp',         label: 'Seeker MCP',  icon: Plug,            kbd: '7' },
-  { id: 'jobs',        label: 'Jobs',        icon: ListChecks,      kbd: '8' },
-  { id: 'settings',    label: 'Settings',    icon: Settings2,       kbd: '9' },
+  { id: 'workflows',   label: 'Workflows',   icon: Workflow,        kbd: '7' },
+  { id: 'analyze',     label: 'Analyze',     icon: ScanSearch,      kbd: '8' },
+  { id: 'environment', label: 'Environment', icon: HeartPulse,      kbd: '9' },
+  { id: 'jobs',        label: 'Jobs',        icon: ListChecks,      kbd: '' },
+  { id: 'settings',    label: 'Settings',    icon: Settings2,       kbd: '0' },
 ];
 
 export default function App() {
@@ -48,18 +52,22 @@ function Hud() {
   const store = useStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const segment = location.pathname.split('/')[1];
-  const candidate = segment === 'configs' ? 'library' : segment;
+  // One catch-all route: /<section>/<detail id?>. 'configs' is the public
+  // spelling of the library view; '/mcp' is the retired Seeker MCP screen,
+  // which now lives inside Environment.
+  const [, segment = '', param = ''] = location.pathname.split('/');
+  const candidate = segment === 'configs' ? 'library' : segment === 'mcp' ? 'environment' : segment;
   const view: View = NAV.find(n => n.id === candidate)?.id ?? 'overview';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const setView = useCallback((next: View) => {
     navigate(next === 'overview' ? '/' : `/${next === 'library' ? 'configs' : next}`);
     setSidebarOpen(false);
   }, [navigate]);
-  const [openSkillId, setOpenSkillId] = useState<string | null>(null);
+  useEffect(() => { if (segment === 'mcp') navigate('/environment', { replace: true }); }, [segment, navigate]);
+  const detailId = param ? decodeURIComponent(param) : null;
+  const openSkill = useCallback((id: string) => navigate(`/skills/${encodeURIComponent(id)}`), [navigate]);
   const [projectFilter, setProjectFilter] = useState<string>('all');
 
-  const openSkill = store.skills.find((s) => s.id === openSkillId) ?? null;
   const runningCount = store.jobs.filter((j) => j.status === 'running').length;
   const installCount = store.skills.reduce((a, s) => a + s.installs.length, 0);
 
@@ -166,11 +174,11 @@ function Hud() {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      // the drawer autofocuses its first button; without this the
-                      // same Enter keypress activates it (packaging the skill)
+                      // the skill page autofocuses its first control; without this
+                      // the same Enter keypress would activate it
                       e.preventDefault();
                       const hit = store.skills.find((s) => matchesSkillQuery(s, store.skillQuery));
-                      if (hit) setOpenSkillId(hit.id);
+                      if (hit) openSkill(hit.id);
                     }
                   }}
                 />
@@ -191,7 +199,7 @@ function Hud() {
           {/* content */}
           <main id="main-content" className="flex-1 min-w-0 overflow-y-auto p-3 md:p-5 bg-grid">
             {store.backendDown && <div role="alert" className="mb-4 rounded border border-destructive p-3">Backend unavailable. <button className="underline" onClick={() => store.refresh()}>Retry connection</button></div>}
-            {store.sectionErrors[view === 'create' ? 'settings' : view] && <div role="alert" className="mb-4 rounded border border-destructive p-3">{store.sectionErrors[view === 'create' ? 'settings' : view]} <button className="underline" onClick={() => { if (view === 'library') store.refreshLibrary(); if (view === 'marketplace') store.refreshMarket(); if (view === 'settings' || view === 'create') store.refreshSettings(); if (view === 'mcp') store.refreshMcp(); }}>Retry</button></div>}
+            {store.sectionErrors[view === 'create' ? 'settings' : view] && <div role="alert" className="mb-4 rounded border border-destructive p-3">{store.sectionErrors[view === 'create' ? 'settings' : view]} <button className="underline" onClick={() => { if (view === 'library') store.refreshLibrary(); if (view === 'marketplace') store.refreshMarket(); if (view === 'settings' || view === 'create') store.refreshSettings(); }}>Retry</button></div>}
             {store.pending && <p role="status" className="mb-2 text-sm text-primary">Saving request…</p>}
             {!store.ready && <p role="status">Loading workspace…</p>}
             <Suspense fallback={<p role="status">Loading screen…</p>}>
@@ -217,7 +225,8 @@ function Hud() {
                 onViewSkills={(pid) => { setProjectFilter(pid); setView('skills'); }}
               />
             )}
-            {view === 'skills' && (
+            {view === 'skills' && detailId && <SkillPage key={detailId} id={detailId} />}
+            {view === 'skills' && !detailId && (
               <Skills
                 skills={store.skills}
                 projects={store.projects}
@@ -225,7 +234,7 @@ function Hud() {
                 onProjectFilter={setProjectFilter}
                 query={store.skillQuery}
                 onQuery={store.setSkillQuery}
-                onOpenSkill={setOpenSkillId}
+                onOpenSkill={openSkill}
                 onMove={store.move}
                 onPort={(ids, cli, replace) => store.port(ids, cli, replace)}
                 onDelete={store.remove}
@@ -258,7 +267,8 @@ function Hud() {
                 localSkills={store.skills}
               />
             )}
-            {view === 'library' && (
+            {view === 'library' && detailId && <ConfigPage key={detailId} id={detailId} />}
+            {view === 'library' && !detailId && (
               <Library
                 sources={store.sources}
                 entries={store.entries}
@@ -268,9 +278,12 @@ function Hud() {
                 onFetchOfficial={store.fetchOfficial}
                 onRemoveSource={store.removeSource}
                 onBuild={store.buildConfig}
+                onOpenConfig={(id) => navigate(`/configs/${encodeURIComponent(id)}`)}
               />
             )}
-            {view === 'mcp' && <Mcp tools={store.mcpTools} />}
+            {view === 'workflows' && <Workflows selected={detailId} />}
+            {view === 'analyze' && <Analyze />}
+            {view === 'environment' && <Environment />}
             {view === 'jobs' && <Jobs jobs={store.jobs} onCancel={store.cancelJob} onRetry={store.retryJob} />}
             {view === 'settings' && (
               <Settings
@@ -295,14 +308,6 @@ function Hud() {
         </div>
       </div>
 
-      {openSkill && <Suspense fallback={<p role="status">Loading skill…</p>}><SkillDrawer
-        key={openSkill.id}
-        skill={openSkill}
-        onClose={() => setOpenSkillId(null)}
-        onEnhance={store.enhance}
-        onPackage={store.packageSkill}
-        onSave={store.saveContent}
-      /></Suspense>}
       <Toaster position="bottom-right" theme="dark" />
     </TooltipProvider>
   );

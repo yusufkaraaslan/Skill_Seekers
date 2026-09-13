@@ -11,6 +11,9 @@ const payloads: Record<string, unknown> = {
   '/api/library': { sources, entries, workflows: [] },
   '/api/settings': { clis, keys: [], defaults: { default_agent: 'kimi', output_dir: 'custom-output', configs_dir: 'custom-configs' }, root: '/workspace', capabilities: { targets: ['claude', 'markdown'], agents: ['claude', 'kimi'] } },
   '/api/marketplaces': { markets: [], skills: [] },
+  '/api/workflows': [{ name: 'default', origin: 'bundled', file: 'bundled/default.yaml', yaml: 'name: default\nstages: []', steps: 4, description: 'Balanced', validation: { valid: true, error: null } }],
+  '/api/analyze/recent': [],
+  '/api/environment': { doctor: { checks: [{ name: 'Python', ok: true, level: 'ok', found: '3.14', hint: '', fix: '' }], ranAt: '2026-09-13 12:34:56' }, servers: [], agents: [] },
   '/api/mcp/tools': { tools: [{ name: 'extract_config_patterns', category: 'Extended', desc: 'Extract patterns' }], count: 1 },
   '/api/mcp/status': { stdio: { state: 'installed', command: 'skill-seekers-mcp' }, http: { state: 'down', host: '127.0.0.1', port: 8000, url: 'http://127.0.0.1:8000/sse' } },
 };
@@ -63,24 +66,6 @@ test('failed project submission keeps dialog and input', async ({ page }) => {
   await expect(dialog.getByRole('textbox')).toHaveValue('/missing/project');
 });
 
-test('editor loads full content and preserves a conflicted draft', async ({ page }) => {
-  await page.route('**/api/skills/sk-0/content', route => route.request().method() === 'PUT'
-    ? route.fulfill({ status: 409, json: { detail: 'Skill changed since it was opened; reload before saving' } })
-    : route.fulfill({ json: { content: '# Full text\nEND OF DOCUMENT', revision: 'revision-1' } }));
-  await page.goto('/skills');
-  await page.getByRole('button', { name: 'skill-0', exact: true }).click();
-  await expect(page.getByText(/END OF DOCUMENT/)).toBeVisible();
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  const editor = page.getByRole('textbox', { name: 'SKILL.md content' });
-  await editor.fill('My unsaved edit');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText(/Skill changed since/)).toBeVisible();
-  await expect(editor).toHaveValue('My unsaved edit');
-  page.once('dialog', dialog => dialog.dismiss());
-  await page.keyboard.press('Escape');
-  await expect(editor).toBeVisible();
-});
-
 test('job history, timestamps, cancellation, and only file download links', async ({ page }) => {
   let cancelled = false;
   await page.route('**/api/jobs/job-0/cancel', route => { cancelled = true; return route.fulfill({ json: { ok: true } }); });
@@ -101,7 +86,7 @@ for (const width of [390, 768, 1024]) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
-    for (const name of ['Overview', 'Skills', 'Create', 'Projects', 'Marketplace', 'Configs', 'Seeker MCP', 'Jobs', 'Settings']) {
+    for (const name of ['Overview', 'Skills', 'Create', 'Projects', 'Marketplace', 'Configs', 'Workflows', 'Analyze', 'Environment', 'Jobs', 'Settings']) {
       await nav(page, name);
       await expect(page.locator('main')).not.toContainText('Loading screen');
       const widthDelta = await page.locator('main').evaluate(el => el.scrollWidth - el.clientWidth);
@@ -110,13 +95,6 @@ for (const width of [390, 768, 1024]) {
     expect(errors).toEqual([]);
   });
 }
-
-test('MCP failures show an error and do not offer a simulated execution', async ({ page }) => {
-  await page.route('**/api/mcp/status', route => route.fulfill({ status: 503, json: { detail: 'Probe unavailable' } }));
-  await page.goto('/mcp');
-  await expect(page.getByText(/Probe unavailable/)).toBeVisible();
-  await expect(page.getByRole('button', { name: /play|try it/i })).toHaveCount(0);
-});
 
 test('install dialog only offers detected CLIs', async ({ page }) => {
   await page.goto('/skills');
