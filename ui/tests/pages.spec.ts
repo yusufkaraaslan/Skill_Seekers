@@ -99,6 +99,23 @@ test('skill history opens the worker log of a failed job', async ({ page }) => {
   await expect(page.getByText('line one')).toBeVisible();
 });
 
+test('config page validates, edits with revision, and toggles sync', async ({ page }) => {
+  let saved: unknown = null; let sync: unknown = null;
+  await page.route('**/api/configs/cfg-1', route => route.request().method() === 'PUT' ? (saved = route.request().postDataJSON(), route.fulfill({ json: { ok: true, revision: 'c2' } })) : route.fulfill({ json: payloads['/api/configs/cfg-1'] }));
+  await page.route('**/api/configs/cfg-1/sync', route => { sync = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, syncSettings: sync } }); });
+  await page.goto('/configs/cfg-1');
+  await page.getByRole('tab', { name: 'JSON' }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Config JSON' }).fill('{"name":"react","sources":[],"description":"edited"}');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect.poll(() => saved).toEqual({ data: { name: 'react', sources: [], description: 'edited' }, revision: 'c1' });
+  await page.getByRole('tab', { name: 'Sync' }).click();
+  await page.getByRole('switch', { name: 'Watch upstream docs for changes' }).click();
+  await expect.poll(() => sync).toMatchObject({ enabled: true, interval: 'daily' });
+  await page.getByRole('tab', { name: 'Validate' }).click();
+  await expect(page.getByText(/valid/i).first()).toBeVisible();
+});
+
 // The skill page packs eight tabs of tables, chip rows and card grids into the
 // same column the nav sections use; every one of them has to fit the narrow
 // viewports hud.spec.ts pins for the rest of the HUD.

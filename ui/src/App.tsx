@@ -274,7 +274,6 @@ function Hud() {
               <Library
                 sources={store.sources}
                 entries={store.entries}
-                workflows={store.workflows}
                 onAddSource={store.addSource}
                 onFetchSource={store.fetchSource}
                 onFetchOfficial={store.fetchOfficial}
