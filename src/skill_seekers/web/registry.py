@@ -626,6 +626,29 @@ def update_project_scan(
 # ── config library ────────────────────────────────────────────────────────────
 
 
+def config_id_for(path: Path) -> str:
+    """Stable identity for a config file location, independent of its name."""
+    return "cfg-" + hashlib.sha256(str(path.resolve()).encode()).hexdigest()[:20]
+
+
+def resolve_config(root: Path, cfg_id: str) -> Path:
+    """Map a cfg-… id back to a file in the workspace or a fetched source cache."""
+    safe_name(cfg_id)
+    from skill_seekers.services.git_repo import GitConfigRepo
+
+    roots = [workspace_dir(root, "configs")]
+    cache = GitConfigRepo().cache_dir
+    if cache.is_dir():
+        roots.extend(p for p in cache.iterdir() if p.is_dir())
+    for base in roots:
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*.json"):
+            if config_id_for(path) == cfg_id:
+                return path
+    raise KeyError(cfg_id)
+
+
 def list_config_entries(
     root: Path, config_dir: Path | None = None, source_id: str = "local"
 ) -> list[dict[str, Any]]:
@@ -657,7 +680,7 @@ def list_config_entries(
         )
         entries.append(
             {
-                "id": "cfg-" + hashlib.sha256(str(path.resolve()).encode()).hexdigest()[:20],
+                "id": config_id_for(path),
                 "name": path.name,
                 "path": str(path),
                 "framework": str(data.get("name") or path.stem),

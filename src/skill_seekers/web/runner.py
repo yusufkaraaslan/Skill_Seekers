@@ -455,8 +455,33 @@ def run_publish(spec: dict[str, Any]) -> int:
 
 
 def run_estimate(spec: dict[str, Any]) -> int:
-    """Estimate page count for a source."""
-    return _run_cli_main("skill_seekers.cli.estimate_pages", [spec["source"]])
+    """Estimate page count for a documentation-like source in a unified config."""
+    from skill_seekers.cli.estimate_pages import estimate_pages
+
+    from .paths import atomic_write
+
+    config_path = Path(spec["config_path"])
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    source = next(
+        (s for s in data.get("sources", []) if isinstance(s, dict) and s.get("base_url")),
+        None,
+    )
+    if source is None:
+        print("No source with a base_url to estimate (documentation/wiki sources only)", flush=True)
+        return 1
+    config = {**source, "name": data.get("name") or config_path.stem}
+    progress(10, f"estimating {config['name']}…")
+    try:
+        result = estimate_pages(config, spec.get("max_discovery", 100), spec.get("timeout", 10))
+    except Exception as exc:  # noqa: BLE001 — surfaced through the job log, not a crash
+        print(f"estimate failed: {exc}", flush=True)
+        return 1
+    progress(90, "writing result…")
+    result_path = spec.get("result_path")
+    if result_path:
+        atomic_write(Path(result_path), json.dumps(result, indent=2).encode("utf-8"))
+        artifact(Path(result_path))
+    return 0
 
 
 UPLOAD_OPTION_FLAGS = {

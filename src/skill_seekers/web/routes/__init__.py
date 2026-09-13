@@ -8,7 +8,8 @@ from ..context import HudContext
 
 
 def register_all(app: FastAPI, ctx: HudContext) -> None:
-    from . import analyze, skill_detail
+    from . import analyze, configs, skill_detail
 
     skill_detail.register(app, ctx)
     analyze.register(app, ctx)
+    configs.register(app, ctx)
