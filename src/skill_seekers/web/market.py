@@ -12,11 +12,20 @@ from __future__ import annotations
 import shutil
 import subprocess
 import time
+import hashlib
+import tempfile
 from pathlib import Path
 from typing import Any
 
-from .installer import install_skill_to_cli
-from .paths import MARKET_CACHE_DIR
+from .installer import install_skill_to_cli, installation_path
+from .paths import (
+    MARKET_CACHE_DIR,
+    workspace_dir,
+    state_transaction,
+    write_json,
+    read_json,
+    atomic_write,
+)
 from .registry import parse_frontmatter
 
 CLONE_TIMEOUT = 120
@@ -29,26 +38,74 @@ def _git_url_to_dirname(git_url: str) -> str:
 
 def sync_marketplace(git_url: str, branch: str = "main") -> Path:
     """Clone or pull a marketplace repo into the cache; returns local path."""
-    dest = MARKET_CACHE_DIR / _git_url_to_dirname(git_url)
+    dest = cache_path(git_url, branch)
+    status = status_path(git_url, branch)
     if dest.is_dir():
-        import contextlib
-
-        with contextlib.suppress(OSError, subprocess.TimeoutExpired):
+        try:
             subprocess.run(
                 ["git", "-C", str(dest), "pull", "--ff-only"],
                 capture_output=True,
                 timeout=CLONE_TIMEOUT,
-                check=False,
+                check=True,
             )
+        except (OSError, subprocess.SubprocessError) as exc:
+            write_json(
+                status,
+                {
+                    "connected": False,
+                    "error": str(exc),
+                    "lastSync": read_json(status, {}).get("lastSync", "—"),
+                },
+            )
+            raise
+        write_json(status, {"connected": True, "lastSync": time.strftime("%Y-%m-%d %H:%M:%S")})
         return dest
     MARKET_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        ["git", "clone", "--depth", "1", "--branch", branch, git_url, str(dest)],
-        capture_output=True,
-        timeout=CLONE_TIMEOUT,
-        check=True,
-    )
+    staging = Path(tempfile.mkdtemp(prefix=".clone-", dir=MARKET_CACHE_DIR))
+    try:
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                branch,
+                "--",
+                git_url,
+                str(staging / "repo"),
+            ],
+            capture_output=True,
+            timeout=CLONE_TIMEOUT,
+            check=True,
+        )
+        with state_transaction():
+            if not dest.exists():
+                (staging / "repo").rename(dest)
+        write_json(status, {"connected": True, "lastSync": time.strftime("%Y-%m-%d %H:%M:%S")})
+    except (OSError, subprocess.SubprocessError) as exc:
+        write_json(status, {"connected": False, "error": str(exc), "lastSync": "—"})
+        raise
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
     return dest
+
+
+def cache_path(git_url: str, branch: str = "main") -> Path:
+    """Stable cache identity including the requested branch."""
+    digest = hashlib.sha256(f"{git_url}\n{branch}".encode()).hexdigest()[:12]
+    return MARKET_CACHE_DIR / f"{_git_url_to_dirname(git_url)}-{digest}"
+
+
+def status_path(git_url: str, branch: str = "main") -> Path:
+    """Status sidecar beside the cache dir (with_suffix would truncate at the first dot)."""
+    cache = cache_path(git_url, branch)
+    return cache.with_name(cache.name + ".status.json")
+
+
+def cache_status(git_url: str, branch: str = "main") -> dict:
+    """Last completed synchronization, without network access."""
+    return read_json(status_path(git_url, branch), {"connected": False, "lastSync": "never"})
 
 
 def browse_marketplace(repo_path: Path, marketplace_id: str) -> list[dict[str, Any]]:
@@ -59,6 +116,8 @@ def browse_marketplace(repo_path: Path, marketplace_id: str) -> list[dict[str, A
     seen = set()
     for skill_md in sorted(repo_path.rglob("SKILL.md")):
         skill_dir = skill_md.parent
+        if not skill_md.resolve().is_relative_to(repo_path.resolve()):
+            continue
         if any(part.startswith(".git") for part in skill_dir.parts):
             continue
         try:
@@ -92,6 +151,8 @@ def browse_marketplace(repo_path: Path, marketplace_id: str) -> list[dict[str, A
             }
         )
     for cfg in sorted(repo_path.rglob("*.json")):
+        if not cfg.resolve().is_relative_to(repo_path.resolve()):
+            continue
         if any(part.startswith(".git") for part in cfg.parts):
             continue
         import json
@@ -124,24 +185,42 @@ def browse_marketplace(repo_path: Path, marketplace_id: str) -> list[dict[str, A
     return items
 
 
-def install_marketplace_item(item_path: Path, kind: str, root: Path, clis: list[str]) -> Path:
+@state_transaction()
+def install_marketplace_item(
+    item_path: Path, kind: str, root: Path, clis: list[str], replace: bool = False
+) -> Path:
     """Install a marketplace item into the workspace (and CLIs for skills).
 
     Returns:
         Path to the installed artifact in the workspace.
     """
     if kind == "config":
-        dest_dir = root / "configs"
+        dest_dir = workspace_dir(root, "configs")
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / item_path.name
-        shutil.copy2(item_path, dest)
+        if dest.exists() and not replace:
+            raise FileExistsError(f"{dest} already exists; enable replacement to overwrite it")
+        atomic_write(dest, item_path.read_bytes())
         return dest
-    out_dir = root / "output"
+    out_dir = workspace_dir(root, "output")
     out_dir.mkdir(parents=True, exist_ok=True)
     dest = out_dir / item_path.name
     if dest.exists():
-        shutil.rmtree(dest)
-    shutil.copytree(item_path, dest)
+        # Replacing a local build is separate from replacing a CLI installation.
+        raise FileExistsError(f"{dest} already exists; archive or rename the local skill first")
+    for file in item_path.rglob("*"):
+        if file.is_symlink():
+            raise ValueError("Marketplace skills containing symlinks cannot be installed")
     for cli in clis:
-        install_skill_to_cli(dest, cli)
+        target = installation_path(item_path.name, cli)
+        if target.is_symlink() or (target.exists() and not replace):
+            raise FileExistsError(f"{target} already exists; enable replacement to overwrite it")
+    staging = Path(tempfile.mkdtemp(prefix=".market-install-", dir=out_dir))
+    try:
+        shutil.copytree(item_path, staging / "skill")
+        (staging / "skill").rename(dest)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    for cli in clis:
+        install_skill_to_cli(dest, cli, replace=replace)
     return dest

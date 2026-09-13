@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useStore } from '@/lib/store';
 import { Panel, SectionHeader, Pager } from '@/components/hud';
 import type { ConfigEntry, ConfigSource, Workflow } from '@/lib/data';
 import { usePagination } from '@/hooks/use-pagination';
@@ -28,12 +29,13 @@ export default function Library({
   sources: ConfigSource[];
   entries: ConfigEntry[];
   workflows: Workflow[];
-  onAddSource: (repo: string) => void;
+  onAddSource: (repo: string) => Promise<boolean>;
   onFetchSource: (name: string) => void;
   onFetchOfficial: (name: string) => void;
   onRemoveSource: (name: string) => void;
   onBuild: (path: string, name: string) => void;
 }) {
+  const { pending } = useStore();
   const [activeSource, setActiveSource] = useState<string>('all');
   const [addOpen, setAddOpen] = useState(false);
   const [repo, setRepo] = useState('');
@@ -59,13 +61,13 @@ export default function Library({
         title="Scrape configs"
         sub="recipes Skill Seekers builds skills from — presets, scanned & custom, backed by git remotes"
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative w-56">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="filter configs…" className="pl-8 h-8 font-mono-hud text-xs bg-secondary/50" />
             </div>
             <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> add_config_source
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add config source
             </Button>
           </div>
         }
@@ -74,7 +76,7 @@ export default function Library({
       {/* remote sources */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {sources.length === 0 && (
-          <Panel corners={false} className="p-6 col-span-3 text-center">
+          <Panel corners={false} className="p-6 col-span-full text-center">
             <p className="font-mono-hud text-xs text-muted-foreground">
               no remote config sources — register a git repo of unified configs to sync presets across machines
             </p>
@@ -82,8 +84,10 @@ export default function Library({
         )}
         {sources.map((s) => (
           <Panel key={s.name} corners={false}
-            className={cn('p-4 cursor-pointer transition-all group relative', activeSource === s.name && 'border-primary/60')}
-            onClick={() => setActiveSource(activeSource === s.name ? 'all' : s.name)}
+            className={cn('p-4 cursor-pointer transition-all group relative', activeSource === s.id && 'border-primary/60')}
+            role="button" tabIndex={0} aria-pressed={activeSource === s.id}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setActiveSource(activeSource === s.id ? 'all' : s.id); } }}
+            onClick={() => setActiveSource(activeSource === s.id ? 'all' : s.id)}
           >
             <div className="flex items-center gap-2">
               <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -104,10 +108,10 @@ export default function Library({
                 )}
                 {s.id !== 'official' && (
                   <>
-                    <Button size="sm" variant="ghost" className="h-6 px-2 font-mono-hud text-[10px]" title="fetch_config" onClick={() => onFetchSource(s.name)}>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 font-mono-hud text-[10px]" aria-label={`Fetch config source ${s.name}`} onClick={() => onFetchSource(s.name)}>
                       <RefreshCw className="h-3 w-3" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-6 px-2 font-mono-hud text-[10px] opacity-0 group-hover:opacity-100" title="remove_config_source" onClick={() => onRemoveSource(s.name)}>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 font-mono-hud text-[10px] " aria-label={`Remove config source ${s.name}`} onClick={() => { if (window.confirm(`Remove config source ${s.name}?`)) onRemoveSource(s.name); }}>
                       <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </>
@@ -120,7 +124,7 @@ export default function Library({
 
       {/* entries table */}
       <Panel corners={false} className="overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto" role="region" aria-label="Configs table" tabIndex={0}><table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border font-mono-hud text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
               <th className="px-4 py-2.5 text-left font-medium">config</th>
@@ -188,7 +192,7 @@ export default function Library({
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <Pager page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} total={pager.total} onPage={pager.setPage} onPageSize={pager.setPageSize} />
       </Panel>
 
@@ -213,7 +217,7 @@ export default function Library({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="!fixed hud-panel border-border sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// add_config_source</DialogTitle>
+            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// Add config source</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Register a git repo as a config remote — official registry or your own. Configs are fetched, validated, and merged into the library.
             </DialogDescription>
@@ -224,10 +228,9 @@ export default function Library({
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddOpen(false)} className="font-mono-hud text-xs">Cancel</Button>
             <Button
-              disabled={!repo.trim()}
-              onClick={() => {
-                onAddSource(repo.trim());
-                setAddOpen(false); setRepo('');
+              disabled={pending || !repo.trim()}
+              onClick={async () => {
+                if (await onAddSource(repo.trim())) { setAddOpen(false); setRepo(''); }
               }}
               className="font-mono-hud text-xs uppercase tracking-wider"
             >

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Panel, SectionHeader } from '@/components/hud';
-import type { MarketSkill, Marketplace, Skill } from '@/lib/data';
+import type { MarketSkill, Marketplace, Skill, Cli } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Store, Plus, RefreshCw, Download, CheckCircle2, Star, Upload, Search, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useStore } from '@/lib/store';
 
 const TYPE_STYLE: Record<string, string> = {
   official:  '187 92% 50%',
@@ -22,16 +24,24 @@ export default function Marketplace({
   onInstall,
   onPublish,
   onRefresh,
+  onSync,
+  clis,
 }: {
   markets: Marketplace[];
   skills: MarketSkill[];
   localSkills: Skill[];
-  onAdd: (repo: string) => void;
+  onAdd: (repo: string) => Promise<boolean>;
   onRemove: (name: string) => void;
-  onInstall: (s: MarketSkill) => void;
-  onPublish: (skillName: string, marketplace: string) => void;
+  onInstall: (s: MarketSkill, targets: string[], replace: boolean) => Promise<boolean>;
+  onPublish: (skillName: string, marketplace: string) => Promise<boolean>;
   onRefresh: () => void;
+  onSync: () => Promise<boolean>;
+  clis: Cli[];
 }) {
+  const { pending } = useStore();
+  const [installItem, setInstallItem] = useState<MarketSkill | null>(null);
+  const [installTargets, setInstallTargets] = useState<string[]>([]);
+  const [replace, setReplace] = useState(false);
   const [activeMarket, setActiveMarket] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [addOpen, setAddOpen] = useState(false);
@@ -58,7 +68,7 @@ export default function Marketplace({
         sub="remote skill repositories — sync, install, publish (mirrors the 4 marketplace MCP tools)"
         right={
           <Button size="sm" onClick={() => setAddOpen(true)} className="font-mono-hud text-xs uppercase tracking-wider">
-            <Plus className="mr-1.5 h-3.5 w-3.5" /> add_marketplace
+            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add marketplace
           </Button>
         }
       />
@@ -74,7 +84,10 @@ export default function Marketplace({
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {markets.map((m) => (
-          <button
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setActiveMarket(activeMarket === m.id ? "all" : m.id); } }}
             key={m.id}
             onClick={() => setActiveMarket(activeMarket === m.id ? 'all' : m.id)}
             className={cn(
@@ -102,14 +115,15 @@ export default function Marketplace({
                 {m.connected ? '● connected' : '○ offline'}
               </span>
             </div>
-            <span
-              title="remove_marketplace"
-              onClick={(e) => { e.stopPropagation(); onRemove(m.name); }}
-              className="absolute top-2 right-2 hidden group-hover:block text-muted-foreground hover:text-destructive"
+            {m.error && <p role="alert" className="mt-2 text-xs text-destructive break-words">{m.error}</p>}
+            <button
+              aria-label={`Remove marketplace ${m.name}`}
+              onClick={(e) => { e.stopPropagation(); if (window.confirm(`Remove marketplace ${m.name}? Cached files will remain.`)) onRemove(m.name); }}
+              className="absolute bottom-1 right-1 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </span>
-          </button>
+            </button>
+          </div>
         ))}
       </div>
 
@@ -122,7 +136,7 @@ export default function Marketplace({
           </div>
           <span className="font-mono-hud text-[10px] text-muted-foreground">{filtered.length} results {activeMarket !== 'all' && `· ${activeMarket}`}</span>
           <Button variant="ghost" size="sm" className="ml-auto font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground"
-            onClick={onRefresh}>
+            disabled={pending} onClick={onSync}>
             <RefreshCw className="mr-1.5 h-3 w-3" /> sync all
           </Button>
         </div>
@@ -151,7 +165,7 @@ export default function Marketplace({
                   <CheckCircle2 className="h-3.5 w-3.5" /> installed
                 </span>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => onInstall(s)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest shrink-0">
+                <Button size="sm" variant="outline" disabled={pending} onClick={() => { setInstallItem(s); setInstallTargets([]); setReplace(false); }} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest shrink-0">
                   install
                 </Button>
               )}
@@ -169,7 +183,7 @@ export default function Marketplace({
       <Panel className="p-4 flex items-center gap-4 flex-wrap">
         <Upload className="h-4 w-4 text-primary shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold">publish_to_marketplace</div>
+          <div className="text-sm font-semibold">Publish skill</div>
           <div className="text-[11px] text-muted-foreground">Push any local skill to a registered marketplace repo — opens a PR with SKILL.md + bundle manifest.</div>
         </div>
         <Button
@@ -187,13 +201,19 @@ export default function Marketplace({
         </Button>
       </Panel>
 
+      <Dialog open={!!installItem} onOpenChange={() => { if (!pending) setInstallItem(null); }}><DialogContent className="hud-panel"><DialogHeader><DialogTitle>Install {installItem?.name}</DialogTitle><DialogDescription>The item is copied to this workspace. Choose any additional CLI destinations explicitly.</DialogDescription></DialogHeader>
+        {installItem?.kind === 'skill' && clis.map(cli => <label key={cli.id} className="flex items-center gap-2 text-sm"><Checkbox checked={installTargets.includes(cli.id)} onCheckedChange={v => setInstallTargets(t => v ? [...t, cli.id] : t.filter(x => x !== cli.id))} />{cli.name} · {cli.globalPath}</label>)}
+        <label className="flex items-center gap-2 text-sm"><Checkbox checked={replace} onCheckedChange={v => setReplace(v === true)} />Replace existing CLI copies or config file</label>
+        <p className="text-xs text-muted-foreground">Existing workspace skills are preserved. Archive or rename a conflicting skill before installing.</p>
+        <DialogFooter><Button disabled={pending || !installItem} onClick={async () => { if (installItem && await onInstall(installItem, installTargets, replace)) setInstallItem(null); }}>Install</Button></DialogFooter>
+      </DialogContent></Dialog>
       {/* add marketplace dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="!fixed hud-panel border-border sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// add_marketplace</DialogTitle>
+            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// Add marketplace</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Register any git repo as a skill marketplace. Manifest is validated on first sync.
+              Register any git repo as a skill marketplace. Synchronization runs as a background job; watch Jobs for progress.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
@@ -202,10 +222,9 @@ export default function Marketplace({
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddOpen(false)} className="font-mono-hud text-xs">Cancel</Button>
             <Button
-              disabled={!repo.trim()}
-              onClick={() => {
-                onAdd(repo.trim());
-                setAddOpen(false); setRepo('');
+              disabled={pending || !repo.trim()}
+              onClick={async () => {
+                if (await onAdd(repo.trim())) { setAddOpen(false); setRepo(''); }
               }}
               className="font-mono-hud text-xs uppercase tracking-wider"
             >
@@ -219,7 +238,7 @@ export default function Marketplace({
       <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
         <DialogContent className="!fixed hud-panel border-border sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// publish_to_marketplace</DialogTitle>
+            <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// Publish skill</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Pick a local skill and target marketplace.
             </DialogDescription>
@@ -227,6 +246,7 @@ export default function Marketplace({
           <div className="space-y-3 py-2">
             <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">skill</label>
             <select
+              aria-label="Skill to publish"
               value={pubSkill}
               onChange={(e) => setPubSkill(e.target.value)}
               className="w-full h-9 rounded border border-border bg-secondary/50 px-2 font-mono-hud text-xs"
@@ -237,6 +257,7 @@ export default function Marketplace({
             </select>
             <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">marketplace</label>
             <select
+              aria-label="Destination marketplace"
               value={pubMarket}
               onChange={(e) => setPubMarket(e.target.value)}
               className="w-full h-9 rounded border border-border bg-secondary/50 px-2 font-mono-hud text-xs"
@@ -249,10 +270,9 @@ export default function Marketplace({
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPublishOpen(false)} className="font-mono-hud text-xs">Cancel</Button>
             <Button
-              disabled={!pubSkill || !pubMarket}
-              onClick={() => {
-                onPublish(pubSkill, pubMarket);
-                setPublishOpen(false);
+              disabled={pending || !pubSkill || !pubMarket}
+              onClick={async () => {
+                if (await onPublish(pubSkill, pubMarket)) setPublishOpen(false);
               }}
               className="font-mono-hud text-xs uppercase tracking-wider"
             >

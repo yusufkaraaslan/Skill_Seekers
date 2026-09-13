@@ -32,11 +32,14 @@ class UiCommand:
 
         from skill_seekers.web.app import DIST_DIR, create_app  # noqa: PLC0415
 
+        if self.args.host not in ("127.0.0.1", "localhost", "::1"):
+            print("The HUD runs on loopback only. Use --host 127.0.0.1, localhost, or ::1.")
+            return 1
         root = Path(self.args.root).expanduser().resolve() if self.args.root else Path.cwd()
         port = int(self.args.port or DEFAULT_PORT)
         app = create_app(root)
 
-        url = f"http://127.0.0.1:{port}"
+        url = f"http://{'[::1]' if self.args.host == '::1' else '127.0.0.1'}:{port}"
         print(f"Seeker HUD · serving {root}")
         print(f"→ {url}")
         if not DIST_DIR.is_dir():

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useStore } from '@/lib/store';
+import { useDraft } from '@/hooks/use-draft';
+import type { SettingsPayload } from '@/lib/api';
 import { Panel, SectionHeader } from '@/components/hud';
 import { EXPORT_TARGETS, SOURCE_META } from '@/lib/data';
 import type { SourceType, Workflow } from '@/lib/data';
@@ -19,9 +21,9 @@ const SOURCES: { type: SourceType; hint: string; example: string; icon: typeof G
   { type: 'video',      hint: 'YouTube/local — transcript + frame OCR',    example: 'youtube.com/watch?v=…',     icon: Play },
   { type: 'notebook',   hint: 'Jupyter .ipynb cells + outputs',            example: 'analysis.ipynb',            icon: FileCode },
   { type: 'openapi',    hint: 'OpenAPI/Swagger → endpoint skill',          example: 'openapi.yaml',              icon: Settings2 },
-  { type: 'wiki',       hint: 'Generic wiki mirror',                       example: './wiki-export',             icon: BookOpen },
-  { type: 'confluence', hint: 'Confluence spaces',                         example: '--space-key TEAM',          icon: Database },
-  { type: 'notion',     hint: 'Notion pages + databases',                  example: '--database-id …',           icon: Database },
+  { type: 'wiki',       hint: 'Wiki documentation URL',                     example: 'https://wiki.example.com/',             icon: BookOpen },
+  { type: 'confluence', hint: 'Confluence spaces',                         example: 'https://team.atlassian.net/wiki/spaces/TEAM',          icon: Database },
+  { type: 'notion',     hint: 'Notion pages + databases',                  example: 'https://www.notion.so/your-page-id',           icon: Database },
   { type: 'chat',       hint: 'Slack / Discord exports',                   example: './slack-export',            icon: MessageSquare },
   { type: 'docx',       hint: 'Word documents',                            example: 'report.docx',               icon: FileText },
   { type: 'epub',       hint: 'E-books',                                   example: 'book.epub',                 icon: BookOpen },
@@ -33,56 +35,60 @@ const SOURCES: { type: SourceType; hint: string; example: string; icon: typeof G
 ];
 
 interface SourceEntry {
-  id: number;
+  id: string;
   type: SourceType;
   input: string;
 }
 
-let entrySeq = 1;
 
-export default function Create({ workflows: workflowPresets, onLaunch }: { workflows: Workflow[]; onLaunch: (spec: CreateSpec) => void }) {
-  const [step, setStep] = useState(0);
-  const [entries, setEntries] = useState<SourceEntry[]>([{ id: 0, type: 'docs', input: '' }]);
-  const [name, setName] = useState('');
-  const [desc, setDesc] = useState('');
+
+export default function Create({ workflows: workflowPresets, onLaunch, settings }: { workflows: Workflow[]; onLaunch: (spec: CreateSpec) => Promise<boolean>; settings: SettingsPayload }) {
+  const { pending } = useStore();
+  const draftKey = `seeker.create.${settings.root}.`;
+  const exportTargets = settings.capabilities.targets.map(id => EXPORT_TARGETS.find(t => t.id === id) ?? { id, label: id, group: 'package' });
+  const [step, setStep] = useDraft(draftKey + 'step', 0);
+  const [entries, setEntries] = useDraft<SourceEntry[]>(draftKey + 'entries', [{ id: 'initial', type: 'docs', input: '' }]);
+  const [name, setName] = useDraft(draftKey + 'name', '');
+  const [desc, setDesc] = useDraft(draftKey + 'desc', '');
 
   // flags (mirror real CLI)
-  const [enhanceLevel, setEnhanceLevel] = useState(2);
-  const [agent, setAgent] = useState('claude');
-  const [preset, setPreset] = useState('standard');
-  const [workflows, setWorkflows] = useState<string[]>([]);
-  const [maxPages, setMaxPages] = useState('');
-  const [rateLimit, setRateLimit] = useState('0.5');
-  const [workers, setWorkers] = useState('1');
-  const [asyncMode, setAsyncMode] = useState(false);
-  const [chunkForRag, setChunkForRag] = useState(false);
-  const [chunkTokens, setChunkTokens] = useState('512');
-  const [chunkOverlap, setChunkOverlap] = useState('50');
-  const [mergeMode, setMergeMode] = useState<'claude-enhanced' | 'rule-based'>('claude-enhanced');
-  const [skipCodebase, setSkipCodebase] = useState(false);
-  const [dryRun, setDryRun] = useState(false);
-  const [fresh, setFresh] = useState(false);
-  const [resume, setResume] = useState(false);
-  const [targets, setTargets] = useState<string[]>(['claude']);
-  const [localSkips, setLocalSkips] = useState<string[]>([]);
+  const [enhanceLevel, setEnhanceLevel] = useDraft(draftKey + 'enhanceLevel', 2);
+  const [agent, setAgent] = useDraft(draftKey + 'agent', String(settings.defaults.default_agent ?? 'claude'));
+  const [preset, setPreset] = useDraft(draftKey + 'preset', 'standard');
+  const [workflows, setWorkflows] = useDraft<string[]>(draftKey + 'workflows', []);
+  const [maxPages, setMaxPages] = useDraft(draftKey + 'maxPages', '');
+  const [rateLimit, setRateLimit] = useDraft(draftKey + 'rateLimit', '0.5');
+  const [workers, setWorkers] = useDraft(draftKey + 'workers', '1');
+  const [asyncMode, setAsyncMode] = useDraft(draftKey + 'asyncMode', false);
+  const [chunkForRag, setChunkForRag] = useDraft(draftKey + 'chunkForRag', false);
+  const [chunkTokens, setChunkTokens] = useDraft(draftKey + 'chunkTokens', '512');
+  const [chunkOverlap, setChunkOverlap] = useDraft(draftKey + 'chunkOverlap', '50');
+  const [mergeMode, setMergeMode] = useDraft<'claude-enhanced' | 'rule-based'>(draftKey + 'mergeMode', 'claude-enhanced');
+  const [skipCodebase, setSkipCodebase] = useDraft(draftKey + 'skipCodebase', false);
+  const [dryRun, setDryRun] = useDraft(draftKey + 'dryRun', false);
+  const [fresh, setFresh] = useDraft(draftKey + 'fresh', false);
+  const [resume, setResume] = useDraft(draftKey + 'resume', false);
+  const [targets, setTargets] = useDraft<string[]>(draftKey + 'targets', ['claude']);
+  const [localSkips, setLocalSkips] = useDraft<string[]>(draftKey + 'localSkips', []);
 
   const multi = entries.length > 1;
   const hasLocal = entries.some((e) => e.type === 'local');
   const hasWeb = entries.some((e) => ['docs', 'wiki', 'confluence', 'notion'].includes(e.type));
 
   const addEntry = (type: SourceType) => {
+    const id = crypto.randomUUID();
     // replace the single empty placeholder, otherwise append
     setEntries((es) => {
       if (es.length === 1 && !es[0].input && es[0].type === type) return es;
       if (es.length === 1 && !es[0].input) return [{ ...es[0], type }];
-      return [...es, { id: entrySeq++, type, input: '' }];
+      return [...es, { id, type, input: '' }];
     });
   };
 
-  const removeEntry = (id: number) =>
+  const removeEntry = (id: string) =>
     setEntries((es) => (es.length > 1 ? es.filter((e) => e.id !== id) : es));
 
-  const setInput = (id: number, input: string) =>
+  const setInput = (id: string, input: string) =>
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, input } : e)));
 
   const toggleTarget = (id: string) =>
@@ -121,59 +127,20 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
   });
 
   const launchDisabled =
-    targets.length === 0 || entries.every((e) => !e.input.trim());
-
-  // live equivalent CLI / unified config
-  const cliPreview = useMemo(() => {
-    const flagStr = [
-      name && `--name ${name}`,
-      `--enhance-level ${enhanceLevel}`,
-      preset !== 'standard' && `--preset ${preset}`,
-      agent !== 'claude' && `--agent ${agent}`,
-      ...workflows.map((w) => `--enhance-workflow ${w}`),
-      maxPages && `--max-pages ${maxPages}`,
-      rateLimit !== '0.5' && `--rate-limit ${rateLimit}`,
-      workers !== '1' && `--workers ${workers}`,
-      asyncMode && '--async',
-      chunkForRag && `--chunk-for-rag --chunk-tokens ${chunkTokens} --chunk-overlap-tokens ${chunkOverlap}`,
-      multi && `--merge-mode ${mergeMode}`,
-      skipCodebase && '--skip-codebase-analysis',
-      dryRun && '--dry-run',
-      fresh && '--fresh',
-      resume && '--resume',
-    ].filter(Boolean).join(' \\\n  ');
-
-    if (multi) {
-      const cfg = {
-        name: name || 'my-skill',
-        sources: entries.map((e) => ({
-          type: e.type,
-          ...(e.type === 'github' ? { repo: e.input || 'owner/repo' } : e.type === 'docs' ? { base_url: e.input || 'https://…' } : { path: e.input || '…' }),
-        })),
-      };
-      return {
-        head: `# unified multi-source → configs/${name || 'my-skill'}-unified.json`,
-        json: JSON.stringify(cfg, null, 2),
-        cmd: `skill-seekers create --config configs/${name || 'my-skill'}-unified.json \\\n  ${flagStr}`,
-      };
-    }
-    const e = entries[0];
-    const src = e.input || SOURCES.find((s) => s.type === e.type)!.example;
-    return { head: '# equivalent CLI', json: null, cmd: `skill-seekers create ${src} \\\n  ${flagStr}` };
-  }, [entries, name, enhanceLevel, preset, agent, workflows, maxPages, rateLimit, workers, asyncMode, chunkForRag, chunkTokens, chunkOverlap, multi, mergeMode, skipCodebase, dryRun, fresh, resume]);
+    entries.some((e) => !e.input.trim()) || (fresh && resume) || !settings.capabilities.agents.includes(agent);
 
   const STEPS = ['sources', 'options', 'export'];
 
   return (
     <div className="space-y-5 animate-flicker">
-      <SectionHeader title="Create skill" sub="single or unified multi-source — one asset, every AI target" />
+      <SectionHeader title="Create skill" sub="Build a skill from one or more sources. Drafts are saved in this tab." />
 
       {/* wizard step strip */}
       <Panel corners={false} className="px-5 py-4">
         <div className="flex items-center">
           {STEPS.map((p, i) => (
-            <div key={p} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center gap-1.5">
+            <div key={p} className="flex items-center flex-1 min-w-0 last:flex-none">
+              <div className="flex flex-col shrink-0 items-center gap-1.5">
                 <div className={cn(
                   'flex h-7 w-7 items-center justify-center rounded-full border font-mono-hud text-[10px] transition-colors',
                   i <= step ? 'border-primary text-primary shadow-[0_0_10px_hsl(187_92%_50%/0.4)]' : 'border-border text-muted-foreground'
@@ -185,7 +152,7 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <svg className="flex-1 h-4 mx-1" preserveAspectRatio="none" viewBox="0 0 100 4">
+                <svg className="flex-1 min-w-0 w-0 h-4 mx-1" preserveAspectRatio="none" viewBox="0 0 100 4">
                   <line x1="0" y1="2" x2="100" y2="2" stroke={i < step ? 'hsl(187 92% 50% / 0.7)' : 'hsl(220 16% 18%)'} strokeWidth="1.5" strokeDasharray="5 5" className={i === step ? 'animate-dash' : ''} />
                 </svg>
               )}
@@ -236,13 +203,14 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
                         {SOURCE_META[e.type].label}
                       </span>
                       <Input
+                        aria-label={`${SOURCE_META[e.type].label} source ${idx + 1}`}
                         value={e.input}
                         onChange={(ev) => setInput(e.id, ev.target.value)}
                         placeholder={meta.example}
                         className="h-7 font-mono-hud text-xs bg-black/30 border-border/60"
                       />
                       {entries.length > 1 && (
-                        <button onClick={() => removeEntry(e.id)} className="text-muted-foreground hover:text-destructive shrink-0">
+                        <button aria-label={`Remove source ${idx + 1}`} onClick={() => removeEntry(e.id)} className="text-muted-foreground hover:text-destructive shrink-0">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -269,11 +237,11 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
               <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
                 <div>
                   <FL>skill name <Flag>--name</Flag></FL>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="auto-derived" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                  <Input aria-label="Skill name" value={name} onChange={(e) => setName(e.target.value)} placeholder="auto-derived" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                 </div>
                 <div>
                   <FL>description <Flag>--description</Flag></FL>
-                  <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="auto-generated" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                  <Input aria-label="Description" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="auto-generated" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                 </div>
                 <div>
                   <FL>enhancement <Flag>--enhance-level</Flag></FL>
@@ -300,7 +268,7 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
                 <div>
                   <FL>enhancement agent <Flag>--agent</Flag></FL>
                   <div className="mt-1 flex rounded-md border border-border overflow-hidden">
-                    {['claude', 'kimi', 'codex', 'local'].map((a) => (
+                    {settings.capabilities.agents.filter(a => a !== 'custom').map((a) => (
                       <button key={a} onClick={() => setAgent(a)}
                         className={cn('flex-1 py-1.5 font-mono-hud text-[10px] transition-colors', agent === a ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground')}>
                         {a}
@@ -325,15 +293,15 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
                   <>
                     <div>
                       <FL>max pages <Flag>--max-pages</Flag></FL>
-                      <Input value={maxPages} onChange={(e) => setMaxPages(e.target.value)} placeholder="unlimited" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                      <Input aria-label="Maximum pages" value={maxPages} onChange={(e) => setMaxPages(e.target.value)} placeholder="unlimited" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                     </div>
                     <div>
                       <FL>rate limit (s) <Flag>--rate-limit</Flag></FL>
-                      <Input value={rateLimit} onChange={(e) => setRateLimit(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                      <Input aria-label="Rate limit in seconds" value={rateLimit} onChange={(e) => setRateLimit(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                     </div>
                     <div>
                       <FL>workers <Flag>--workers</Flag></FL>
-                      <Input value={workers} onChange={(e) => setWorkers(e.target.value)} placeholder="1–10" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                      <Input aria-label="Workers" value={workers} onChange={(e) => setWorkers(e.target.value)} placeholder="1–10" className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                     </div>
                     <Toggle label="async mode" flag="--async" v={asyncMode} set={setAsyncMode} />
                   </>
@@ -374,18 +342,18 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <FL>tokens <Flag>--chunk-tokens</Flag></FL>
-                      <Input value={chunkTokens} onChange={(e) => setChunkTokens(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                      <Input aria-label="Chunk tokens" value={chunkTokens} onChange={(e) => setChunkTokens(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                     </div>
                     <div className="flex-1">
                       <FL>overlap <Flag>--chunk-overlap-tokens</Flag></FL>
-                      <Input value={chunkOverlap} onChange={(e) => setChunkOverlap(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
+                      <Input aria-label="Chunk overlap" value={chunkOverlap} onChange={(e) => setChunkOverlap(e.target.value)} className="mt-1 h-8 font-mono-hud text-xs bg-secondary/50" />
                     </div>
                   </div>
                 )}
 
                 <Toggle label="dry run (preview only)" flag="--dry-run" v={dryRun} set={setDryRun} />
                 <Toggle label="fresh (clear checkpoint)" flag="--fresh" v={fresh} set={setFresh} />
-                <Toggle label="resume interrupted job" flag="--resume" v={resume} set={setResume} />
+                <Toggle label="resume source checkpoint" flag="--resume" v={resume} set={setResume} />
               </div>
             </>
           )}
@@ -393,9 +361,9 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
           {/* ── STEP 2: targets ── */}
           {step === 2 && (
             <>
-              <StepTitle n="03" t="Export targets" s="package the same asset everywhere — no re-scraping" />
+              <StepTitle n="03" t="Export targets" s="Choose supported package formats, or leave all unchecked to build only." />
               <div className="mt-4 grid grid-cols-2 gap-2">
-                {EXPORT_TARGETS.map((t) => (
+                {exportTargets.map((t) => (
                   <label key={t.id}
                     className={cn('flex items-center gap-2.5 rounded border px-3 py-2.5 cursor-pointer transition-colors',
                       targets.includes(t.id) ? 'border-primary/60 bg-primary/10' : 'border-border bg-secondary/30 hover:border-primary/30')}>
@@ -416,13 +384,17 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> back
             </Button>
             {step < 2 ? (
-              <Button onClick={() => setStep(step + 1)} className="font-mono-hud text-xs uppercase tracking-wider">
+              <Button disabled={step === 0 && entries.some(e => !e.input.trim())} onClick={() => setStep(step + 1)} className="font-mono-hud text-xs uppercase tracking-wider">
                 next <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             ) : (
               <Button
-                disabled={launchDisabled}
-                onClick={() => onLaunch(buildSpec())}
+                disabled={launchDisabled || pending}
+                onClick={async () => {
+                  if (await onLaunch(buildSpec())) {
+                    Object.keys(sessionStorage).filter(k => k.startsWith(draftKey)).forEach(k => sessionStorage.removeItem(k));
+                  }
+                }}
                 className="font-mono-hud text-xs uppercase tracking-wider"
               >
                 <Rocket className="mr-1.5 h-3.5 w-3.5" /> launch job
@@ -433,18 +405,11 @@ export default function Create({ workflows: workflowPresets, onLaunch }: { workf
 
         {/* side: live CLI preview */}
         <Panel className="col-span-12 lg:col-span-4 p-5">
-          <SectionHeader title="Command preview" sub="what the daemon will run" />
-          <div className="rounded border border-border bg-black/40 p-4 font-mono-hud text-[11px] leading-relaxed overflow-x-auto">
-            <div className="text-primary/70 whitespace-pre">{cliPreview.head}</div>
-            {cliPreview.json && (
-              <pre className="mt-2 text-[hsl(258_90%_75%)] whitespace-pre-wrap">{cliPreview.json}</pre>
-            )}
-            <div className="mt-2.5 text-foreground/85 whitespace-pre-wrap break-all">$ {cliPreview.cmd}</div>
-            <div className="mt-3 pt-3 border-t border-border/60 text-foreground/70 whitespace-pre-wrap">
-              $ skill-seekers package output/{name || 'skill'} \<br />
-              &nbsp;&nbsp;--target {targets.join(' --target ') || '…'}
-            </div>
-          </div>
+          <SectionHeader title="Job preview" sub="Sources, options, and saved directories used at launch" />
+          <details className="rounded border border-border bg-black/40 p-4 text-xs">
+            <summary className="cursor-pointer">View job specification</summary>
+            <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all">{JSON.stringify({ entries: entries.map(({ type, input }) => ({ type, input })), name: name || '(derived from source)', targets, flags: buildSpec().flags, output_dir: settings.defaults.output_dir, configs_dir: settings.defaults.configs_dir }, null, 2)}</pre>
+          </details>
           <div className="mt-4 space-y-2 font-mono-hud text-[10px] text-muted-foreground">
             <SpecRow k="sources" v={`${entries.length} (${entries.map((e) => SOURCE_META[e.type].label).join(' + ')})`} />
             <SpecRow k="mode" v={multi ? `unified · ${mergeMode}` : 'single source'} />

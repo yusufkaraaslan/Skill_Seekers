@@ -14,6 +14,8 @@ import type { CreateSpec, SettingsPayload } from '@/lib/api';
 
 export interface StoreState {
   ready: boolean;
+  pending: boolean;
+  sectionErrors: Record<string, string>;
   backendDown: boolean;
   skills: Skill[];
   jobs: Job[];
@@ -35,29 +37,34 @@ export interface StoreState {
   refreshLibrary: () => Promise<void>;
   refreshMarket: () => Promise<void>;
   refreshSettings: () => Promise<void>;
+  refreshMcp: () => Promise<void>;
 
-  create: (spec: CreateSpec) => Promise<void>;
-  move: (ids: string[], dest: string) => Promise<void>;
-  remove: (ids: string[]) => Promise<void>;
-  port: (ids: string[], cli: string, ai: boolean, agent: string) => Promise<void>;
-  enhance: (id: string) => Promise<void>;
-  packageSkill: (id: string, targets?: string[]) => Promise<void>;
-  saveContent: (id: string, content: string) => Promise<void>;
-  addProject: (path: string) => Promise<void>;
-  rescan: (id: string) => Promise<void>;
-  removeProject: (id: string) => Promise<void>;
-  addSource: (repo: string) => Promise<void>;
-  fetchSource: (name: string) => Promise<void>;
-  fetchOfficial: (name: string) => Promise<void>;
-  removeSource: (name: string) => Promise<void>;
-  buildConfig: (path: string, name: string) => Promise<void>;
-  addMarketplace: (repo: string) => Promise<void>;
-  removeMarketplace: (name: string) => Promise<void>;
-  installMarketItem: (s: MarketSkill) => Promise<void>;
-  publish: (skillName: string, marketplace: string) => Promise<void>;
-  setKey: (name: string, value: string) => Promise<void>;
-  setDefaults: (settings: Record<string, unknown>) => Promise<void>;
-  reprobe: () => Promise<void>;
+  create: (spec: CreateSpec) => Promise<boolean>;
+  move: (ids: string[], dest: string) => Promise<boolean>;
+  remove: (ids: string[]) => Promise<boolean>;
+  port: (ids: string[], cli: string, replace: boolean) => Promise<boolean>;
+  enhance: (id: string) => Promise<boolean>;
+  packageSkill: (id: string, targets?: string[]) => Promise<boolean>;
+  saveContent: (id: string, content: string, revision: string) => Promise<boolean>;
+  addProject: (path: string) => Promise<boolean>;
+  rescan: (id: string) => Promise<boolean>;
+  removeProject: (id: string) => Promise<boolean>;
+  addSource: (repo: string) => Promise<boolean>;
+  fetchSource: (name: string) => Promise<boolean>;
+  fetchOfficial: (name: string) => Promise<boolean>;
+  removeSource: (name: string) => Promise<boolean>;
+  buildConfig: (path: string, name: string) => Promise<boolean>;
+  addMarketplace: (repo: string) => Promise<boolean>;
+  removeMarketplace: (name: string) => Promise<boolean>;
+  installMarketItem: (s: MarketSkill, targets: string[], replace: boolean) => Promise<boolean>;
+  publish: (skillName: string, marketplace: string) => Promise<boolean>;
+  setKey: (name: string, value: string) => Promise<boolean>;
+  setDefaults: (settings: Record<string, unknown>) => Promise<boolean>;
+  reprobe: () => Promise<boolean>;
+  syncMarket: () => Promise<boolean>;
+  cancelJob: (id: string) => Promise<boolean>;
+  retryJob: (id: string) => Promise<boolean>;
+  restoreSkill: (id: string) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreState | null>(null);
@@ -69,6 +76,10 @@ export function useStore(): StoreState {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState(false);
+  const mutationRef = useRef(false);
+  const refreshRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -86,22 +97,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [skillQuery, setSkillQuery] = useState('');
   const runningRef = useRef(0);
 
-  const refresh = useCallback(async () => {
-    try {
-      const o = await client.overview();
-      setSkills(o.skills);
-      setJobs(o.jobs);
-      setProjects(o.projects);
-      setClisState(o.clis);
-      setClis(o.clis);
-      setActivity(o.activity);
-      runningRef.current = o.jobs.filter((j) => j.status === 'running').length;
-      setBackendDown(false);
-    } catch {
-      setBackendDown(true);
-    } finally {
-      setReady(true);
+  const inflightRef = useRef<Promise<void> | null>(null);
+  const refresh = useCallback(async (): Promise<void> => {
+    // Share an in-flight poll instead of dropping the call: a mutation that
+    // awaits refresh() must always observe post-mutation state, so after the
+    // stale request settles we fetch again.
+    if (inflightRef.current) {
+      await inflightRef.current;
+      if (inflightRef.current) return inflightRef.current;
     }
+    const run = (async () => {
+      refreshRef.current = true;
+      try {
+        const o = await client.overview();
+        setSkills(o.skills);
+        setJobs(o.jobs);
+        setProjects(o.projects);
+        setClisState(o.clis);
+        setClis(o.clis);
+        setActivity(o.activity);
+        runningRef.current = o.jobs.filter((j) => ['running', 'queued', 'cancelling'].includes(j.status)).length;
+        setBackendDown(false);
+      } catch {
+        setBackendDown(true);
+      } finally {
+        setReady(true);
+        refreshRef.current = false;
+      }
+    })();
+    inflightRef.current = run;
+    try { await run; } finally { if (inflightRef.current === run) inflightRef.current = null; }
   }, []);
 
   const refreshLibrary = useCallback(async () => {
@@ -110,7 +135,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSources(l.sources);
       setEntries(l.entries);
       setWorkflows(l.workflows);
-    } catch { /* backend offline */ }
+      setSectionErrors(e => ({ ...e, library: '' }));
+    } catch (error) { setSectionErrors(e => ({ ...e, library: String(error) })); }
   }, []);
 
   const refreshMarket = useCallback(async () => {
@@ -118,13 +144,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const m = await client.marketplaces();
       setMarkets(m.markets);
       setMarketSkills(m.skills);
-    } catch { /* backend offline */ }
+      setSectionErrors(e => ({ ...e, marketplace: '' }));
+    } catch (error) { setSectionErrors(e => ({ ...e, marketplace: String(error) })); }
   }, []);
 
   const refreshSettings = useCallback(async () => {
     try {
       setSettings(await client.settings());
-    } catch { /* backend offline */ }
+      setSectionErrors(e => ({ ...e, settings: '' }));
+    } catch (error) { setSectionErrors(e => ({ ...e, settings: String(error) })); }
+  }, []);
+
+  const refreshMcp = useCallback(async () => {
+    try {
+      setMcpTools((await client.mcpTools()).tools);
+      setSectionErrors(e => ({ ...e, mcp: '' }));
+    } catch (error) { setSectionErrors(e => ({ ...e, mcp: String(error) })); }
   }, []);
 
   // initial load
@@ -132,45 +167,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     refresh();
     refreshLibrary();
     refreshSettings();
-    client.mcpTools().then((m) => setMcpTools(m.tools)).catch(() => undefined);
-  }, [refresh, refreshLibrary, refreshSettings]);
+    refreshMcp();
+  }, [refresh, refreshLibrary, refreshSettings, refreshMcp]);
 
-  // polling: fast while jobs run, slow otherwise
+  // One awaited polling loop prevents overlapping scans and stale responses.
   useEffect(() => {
-    const tick = () => {
-      refresh();
-      if (runningRef.current > 0) refreshLibrary();
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      const wasRunning = runningRef.current > 0;
+      await refresh();
+      if (wasRunning) await Promise.allSettled([refreshLibrary(), refreshMarket()]);
+      if (!stopped) timer = setTimeout(tick, runningRef.current > 0 ? 1500 : 10000);
     };
-    const fast = setInterval(() => {
-      if (runningRef.current > 0) tick();
-    }, 1500);
-    const slow = setInterval(tick, 10000);
-    return () => {
-      clearInterval(fast);
-      clearInterval(slow);
-    };
-  }, [refresh, refreshLibrary]);
+    timer = setTimeout(tick, 1500);
+    return () => { stopped = true; clearTimeout(timer); };
+  }, [refresh, refreshLibrary, refreshMarket]);
 
   const act = useCallback(
     async (fn: () => Promise<unknown>, ok?: string, then?: () => Promise<void>) => {
+      if (mutationRef.current) return false;
+      mutationRef.current = true;
+      setPending(true);
       try {
         await fn();
         if (ok) toast.success(ok);
         await refresh();
         await then?.();
+        return true;
       } catch (e) {
         toast.error('operation failed', { description: e instanceof Error ? e.message : String(e) });
-      }
+        return false;
+      } finally { mutationRef.current = false; setPending(false); }
     },
     [refresh],
   );
 
   const value: StoreState = {
-    ready, backendDown, skills, jobs, projects, clis, activity, mcpTools, workflows,
+    ready, pending, sectionErrors, backendDown, skills, jobs, projects, clis, activity, mcpTools, workflows,
     sources, entries, markets, marketSkills, settings,
     root: settings?.root ?? '',
     skillQuery, setSkillQuery,
-    refresh, refreshLibrary, refreshMarket, refreshSettings,
+    refresh, refreshLibrary, refreshMarket, refreshSettings, refreshMcp,
 
     create: (spec) =>
       act(
@@ -181,14 +219,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       act(() => client.moveSkills(ids, dest), `Moved ${ids.length} skill(s)`),
     remove: (ids) =>
       act(() => client.deleteSkills(ids), `Deleted ${ids.length} skill(s)`),
-    port: (ids, cli, ai, agent) =>
-      act(() => client.portSkills(ids, cli, ai, agent), `Porting ${ids.length} skill(s) → ${cli}`),
+    port: (ids, cli, replace) =>
+      act(() => client.portSkills(ids, cli, replace), `Porting ${ids.length} skill(s) → ${cli}`),
     enhance: (id) =>
       act(() => client.enhanceSkill(id), `Enhancing ${id}`),
     packageSkill: (id, targets = ['claude']) =>
       act(() => client.packageSkill(id, targets), `Packaging ${id} → ${targets.join(', ')}`),
-    saveContent: (id, content) =>
-      act(() => client.saveSkillContent(id, content), `Saved ${id}/SKILL.md`),
+    saveContent: (id, content, revision) =>
+      act(() => client.saveSkillContent(id, content, revision), `Saved ${id}/SKILL.md`),
     addProject: (path) =>
       act(() => client.addProject(path), 'Project added — scan queued'),
     rescan: (id) =>
@@ -209,19 +247,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       act(() => client.addMarketplace(repo), 'Marketplace registered', refreshMarket),
     removeMarketplace: (name) =>
       act(() => client.removeMarketplace(name), `Removed ${name}`, refreshMarket),
-    installMarketItem: (s) =>
-      act(
-        () =>
-          client.installMarketItem(
-            s.path,
-            s.kind,
-            clis.filter((c) => c.detected).map((c) => c.id).length
-              ? clis.filter((c) => c.detected).map((c) => c.id)
-              : ['claude'],
-          ),
-        `Installing ${s.name}`,
-        refreshMarket,
-      ),
+    installMarketItem: (s, targets, replace) =>
+      act(() => client.installMarketItem(s.path, s.kind, targets, replace), `Installing ${s.name}`, refreshMarket),
+    syncMarket: () => act(() => client.syncMarketplaces(), 'Marketplace sync queued'),
+    cancelJob: (id) => act(() => client.cancelJob(id), 'Cancellation requested'),
+    retryJob: (id) => act(() => client.retryJob(id), 'Retry queued'),
+    restoreSkill: (id) => act(() => client.restoreSkill(id), 'Skill restored'),
     publish: (skillName, marketplace) =>
       act(() => client.publishSkill(skillName, marketplace), `publish_to_marketplace queued`),
     setKey: (name, value) =>

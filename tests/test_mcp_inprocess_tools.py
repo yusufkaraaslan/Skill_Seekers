@@ -320,12 +320,19 @@ class TestExtractTestExamplesToolInProcess:
         assert "Test Example Extraction Results" in text
         assert "❌ Error:" not in text
 
-    async def test_real_parser_round_trip(self, tmp_path):
+    async def test_real_parser_round_trip(self, tmp_path, monkeypatch):
         """End-to-end through the REAL module parser and main() — pins that
         the argv built by the tool is accepted by test_example_extractor."""
         test_file = tmp_path / "test_sample.py"
         test_file.write_text("def test_one():\n    x = dict(a=1)\n    assert x['a'] == 1\n")
 
+        from skill_seekers.cli.ai_enhancer import TestExampleEnhancer
+        from skill_seekers.cli.agent_client import AgentClient
+
+        monkeypatch.setattr(AgentClient, "is_available", lambda _self: False)
+        monkeypatch.setattr(
+            TestExampleEnhancer, "enhance_examples", lambda _self, examples: examples
+        )
         result = await extract_test_examples_tool({"directory": str(tmp_path), "json": True})
         text = result[0].text
         assert "❌ Error:" not in text

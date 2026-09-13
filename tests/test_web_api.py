@@ -30,9 +30,15 @@ def _mk_skill(dir_: Path, name: str | None = None) -> Path:
 @pytest.fixture()
 def workspace(tmp_path, monkeypatch):
     """Isolated workspace root + UI state dir."""
+    import site
+
     fake_home = tmp_path / "home"
     fake_home.mkdir()
+    # Runner subprocesses derive user site-packages from HOME; keep the real one.
+    monkeypatch.setenv("PYTHONUSERBASE", site.getuserbase())
     monkeypatch.setenv("HOME", str(fake_home))
+    # Claude is "detected" through its skills directory; other CLIs stay undetected.
+    (fake_home / ".claude" / "skills").mkdir(parents=True)
     state = tmp_path / "ui-state"
     monkeypatch.setenv("SKILL_SEEKERS_UI_DIR", str(state))
     # paths module reads the env var at import time — patch the module constants
@@ -65,6 +71,7 @@ def workspace(tmp_path, monkeypatch):
 
     from skill_seekers.web.clis import invalidate_installed_cache
 
+    monkeypatch.setattr("skill_seekers.web.clis._probe_version", lambda _binary: None)
     invalidate_installed_cache()
     root = tmp_path / "ws"
     (root / "output" / "demo").mkdir(parents=True)
@@ -78,7 +85,10 @@ def workspace(tmp_path, monkeypatch):
     # every hook for that job has already fired
     finished: set[str] = set()
     manager.register_hook(lambda job: finished.add(job.id))
-    yield root, TestClient(app)
+    import skill_seekers.web.app as app_module
+
+    app_module._cli_cache["at"] = 0.0
+    yield root, TestClient(app, base_url="http://127.0.0.1")
     # let this test's jobs finish while the patched paths are still in place,
     # so their hooks cannot log into the real state dir after teardown
     deadline = time.time() + 60
@@ -113,11 +123,12 @@ def test_overview_and_skills(workspace):
 
 
 def test_skill_move_and_delete(workspace):
-    _, client = workspace
-    r = client.post("/api/skills/move", json={"ids": ["demo"], "dest": "pj-x"})
+    root, client = workspace
+    project = registry.add_project(str(root))
+    r = client.post("/api/skills/move", json={"ids": ["demo"], "dest": project["id"]})
     assert r.json()["ok"] is True
     assert client.get("/api/skills").json()[0]["scope"] == "project"
-    assert client.get("/api/skills").json()[0]["projectId"] == "pj-x"
+    assert client.get("/api/skills").json()[0]["projectId"] == project["id"]
 
     r = client.post("/api/skills/delete", json={"ids": ["demo"]})
     assert r.json()["ok"] is True
@@ -127,7 +138,13 @@ def test_skill_move_and_delete(workspace):
 def test_skill_content_roundtrip(workspace):
     _, client = workspace
     new = "---\nname: demo\ndescription: edited\n---\n\n# edited\n"
-    r = client.put("/api/skills/demo/content", json={"content": new})
+    r = client.put(
+        "/api/skills/demo/content",
+        json={
+            "content": new,
+            "revision": client.get("/api/skills/demo/content").json()["revision"],
+        },
+    )
     assert r.json()["ok"] is True
     assert client.get("/api/skills").json()[0]["content"] == new
 
@@ -276,9 +293,13 @@ def test_flatten_skill(tmp_path):
 
 def test_port_job_end_to_end(workspace, tmp_path, monkeypatch):
     """A port job runs via subprocess and installs into the CLI skills dir."""
+    import skill_seekers.web.app as app_module
+
     root, client = workspace
     fake_home = tmp_path / "jobhome"
     monkeypatch.setenv("HOME", str(fake_home))  # subprocess inherits env
+    (fake_home / ".claude" / "skills").mkdir(parents=True)  # claude must be detected
+    app_module._cli_cache["at"] = 0.0
     r = client.post(
         "/api/skills/port", json={"ids": ["demo"], "cli": "claude", "ai": False, "agent": "claude"}
     )
@@ -476,7 +497,7 @@ def _seed_external_skills(home: Path) -> None:
 def test_skill_origins(workspace):
     _, client = workspace
     _seed_external_skills(Path(os.environ["HOME"]))
-    by_id = {s["id"]: s for s in client.get("/api/skills").json()}
+    by_id = {s["name"]: s for s in client.get("/api/skills").json()}
 
     assert by_id["demo"]["origin"] == "seeker"
     assert by_id["demo"]["pluginName"] is None
@@ -507,7 +528,7 @@ def test_external_skill_quality_and_source(workspace, monkeypatch):
             return FakeReport()
 
     monkeypatch.setattr(qc, "SkillQualityChecker", FakeChecker)
-    ext = {s["id"]: s for s in client.get("/api/skills").json()}["handwritten"]
+    ext = {s["name"]: s for s in client.get("/api/skills").json()}["handwritten"]
     assert ext["quality"] == 42
     assert ext["source"] == str(home / ".claude" / "skills" / "handwritten")
 
@@ -532,7 +553,7 @@ def test_sidecar_under_plugins_is_plugin(workspace):
 
     invalidate_installed_cache()
 
-    by_id = {s["id"]: s for s in client.get("/api/skills").json()}
+    by_id = {s["name"]: s for s in client.get("/api/skills").json()}
     assert by_id["republished"]["origin"] == "plugin"
     assert by_id["republished"]["pluginName"] == "somepack"
 
@@ -578,6 +599,10 @@ def test_mutations_rejected_for_external_skills(workspace):
     # copy-style actions stay open to every origin
     r = client.post("/api/skills/brainstorming/package", json={"targets": ["claude"]})
     assert r.status_code == 200
+    import skill_seekers.web.app as app_module
+
+    (Path(os.environ["HOME"]) / ".kimi" / "skills").mkdir(parents=True, exist_ok=True)
+    app_module._cli_cache["at"] = 0.0  # kimi is only installable once detected
     r = client.post(
         "/api/skills/port",
         json={"ids": ["handwritten"], "cli": "kimi", "ai": False, "agent": "claude"},
@@ -617,7 +642,7 @@ def test_package_external_skill_routes_output(workspace, monkeypatch):
     brainstorming_spec = next(s for s in captured if s["skill_dir"].endswith("brainstorming"))
     demo_spec = next(s for s in captured if s["skill_dir"].endswith("demo"))
     assert brainstorming_spec["output_dir"] == str(root / "output" / "_packages")
-    assert "output_dir" not in demo_spec
+    assert demo_spec["output_dir"] == str(root / "output" / "_packages")
 
 
 def _no_staging_dirs_remain(out: Path) -> bool:
@@ -717,7 +742,11 @@ def test_run_package_concurrent_runs_use_distinct_staging_and_land_output(tmp_pa
     assert code1 == 0 and code2 == 0
     assert len(captured_argv0) == 2
     assert captured_argv0[0] != captured_argv0[1]  # distinct staging paths
-    assert (output_dir / "brainstorming.zip").is_file()
+    # Archives always land under output_dir/<target>/; a second run of the same
+    # skill keeps both archives instead of overwriting or forking the directory.
+    assert (output_dir / "claude" / "brainstorming.zip").is_file()
+    assert len(list((output_dir / "claude").glob("brainstorming*.zip"))) == 2
+    assert not [p for p in output_dir.iterdir() if p.name.startswith("claude-")]
     assert _no_staging_dirs_remain(output_dir)
 
 

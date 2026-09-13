@@ -284,6 +284,9 @@ class ConfigFileDetector:
         """
         config_files = []
         found_count = 0
+        # _walk_directory yields paths under the resolved root; relative_to()
+        # below needs the same base or a relative/symlinked directory raises.
+        directory = Path(directory).resolve()
 
         for file_path in self._walk_directory(directory):
             if max_files > 0 and found_count >= max_files:
@@ -308,21 +311,11 @@ class ConfigFileDetector:
 
     def _walk_directory(self, directory: Path):
         """Walk directory, skipping excluded directories"""
-        for item in directory.rglob("*"):
-            # Skip directories
-            if item.is_dir():
-                continue
+        from skill_seekers.cli.file_discovery import walk_project
 
-            # Skip if in excluded directory (check relative path only)
-            try:
-                relative_parts = item.relative_to(directory).parts
-                if any(skip_dir in relative_parts for skip_dir in self.SKIP_DIRS):
-                    continue
-            except ValueError:
-                # Item is not relative to directory, skip it
-                continue
-
-            yield item
+        for current, filenames in walk_project(directory, self.SKIP_DIRS):
+            for filename in filenames:
+                yield current / filename
 
     def _detect_config_type(self, file_path: Path) -> str | None:
         """Detect configuration file type"""

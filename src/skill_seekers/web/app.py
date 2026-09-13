@@ -16,19 +16,29 @@ import importlib.util
 import json
 import os
 import re
+import hashlib
+from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import market, registry
 from .clis import detect_clis
 from .jobs import Job, get_job_manager
-from .paths import load_settings, save_settings
+from .paths import (
+    load_settings,
+    save_settings,
+    workspace_dir,
+    safe_name,
+    state_transaction,
+    atomic_write,
+)
 
 # The built frontend ships *inside* the package as ``skill_seekers/web/dist`` so
 # it is present in installed wheels (Vite builds straight into this directory).
@@ -428,6 +438,7 @@ class PortRequest(BaseModel):
     cli: str
     ai: bool = False
     agent: str = "claude"
+    replace: bool = False
 
 
 class PackageRequest(BaseModel):
@@ -436,6 +447,7 @@ class PackageRequest(BaseModel):
 
 class ContentRequest(BaseModel):
     content: str
+    revision: str | None = None
 
 
 class ProjectRequest(BaseModel):
@@ -458,7 +470,8 @@ class InstallRequest(BaseModel):
     path: str
     kind: str = "skill"
     name: str = ""
-    clis: list[str] = ["claude"]
+    clis: list[str] = []
+    replace: bool = False
 
 
 class PublishRequest(BaseModel):
@@ -493,23 +506,95 @@ def create_app(root: Path | None = None) -> FastAPI:
     root = (root or Path.cwd()).resolve()
     jobs = get_job_manager()
 
-    app = FastAPI(title="Skill Seekers UI", version="3.9.0")
+    @asynccontextmanager
+    async def lifespan(_app):
+        yield
+        jobs.shutdown(root)
+
+    app = FastAPI(title="Skill Seekers UI", version="3.9.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_headers=["Content-Type"],
     )
+
+    @app.middleware("http")
+    async def local_access(request: Request, call_next):
+        # Parse bracketed IPv6 hosts correctly (split(':') rejects ::1).
+        try:
+            host = urlsplit("//" + request.headers.get("host", ""))
+            if host.hostname not in {"localhost", "127.0.0.1", "::1"} or host.username is not None:
+                return JSONResponse({"detail": "Invalid host header"}, status_code=400)
+        except ValueError:
+            return JSONResponse({"detail": "Invalid host header"}, status_code=400)
+        origin = request.headers.get("origin")
+        if request.url.path.startswith("/api/"):
+            if origin:
+                allowed = {
+                    f"{request.url.scheme}://{request.url.netloc}",
+                    "http://localhost:3000",
+                    "http://127.0.0.1:3000",
+                }
+                if origin not in allowed:
+                    return JSONResponse({"detail": "Untrusted browser origin"}, status_code=403)
+            elif request.headers.get("sec-fetch-site") == "cross-site":
+                return JSONResponse(
+                    {"detail": "Cross-site API access is disabled"}, status_code=403
+                )
+            if (
+                request.method in ("POST", "PUT", "DELETE")
+                and request.headers.get("content-length", "0") != "0"
+                and request.headers.get("content-type", "").split(";")[0] != "application/json"
+            ):
+                return JSONResponse({"detail": "JSON request required"}, status_code=415)
+        return await call_next(request)
+
+    @app.exception_handler(FileExistsError)
+    async def conflict(_request, exc):
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+
+    @app.exception_handler(ValueError)
+    async def invalid(_request, exc):
+        return JSONResponse({"detail": str(exc)}, status_code=400)
+
+    def capabilities() -> dict[str, Any]:
+        from skill_seekers.cli.adaptors import list_platforms
+        from skill_seekers.cli.arguments.create import UNIVERSAL_ARGUMENTS
+
+        return {
+            "targets": list_platforms(),
+            "agents": UNIVERSAL_ARGUMENTS["agent"]["kwargs"]["choices"],
+        }
+
+    def validate_targets(targets: list[str]) -> None:
+        unknown = set(targets) - set(capabilities()["targets"])
+        if unknown:
+            raise HTTPException(400, f"Unsupported package targets: {', '.join(sorted(unknown))}")
+
+    def submit_job(job_type, label, detail, spec, meta=None):
+        settings = load_settings()
+        spec = {
+            "cwd": str(root),
+            "output_dir": str(workspace_dir(root, "output")),
+            "configs_dir": str(workspace_dir(root, "configs")),
+            **spec,
+        }
+        if job_type in ("scan", "enhance"):
+            spec.setdefault("agent", settings["default_agent"])
+        return jobs.submit(job_type, label, detail, spec, meta)
 
     def skills_payload() -> list[dict[str, Any]]:
         settings = load_settings()
         return registry.discover_skills(root, settings.get("enabled_clis") or None)
 
     def skill_dir_for(skill_id: str) -> Path:
-        for s in skills_payload():
-            if s["id"] == skill_id:
-                return Path(s["dir"])
-        raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}")
+        try:
+            return registry.resolve_skill(root, skill_id)
+        except KeyError:
+            raise HTTPException(
+                status_code=404, detail=f"unknown or ambiguous skill: {skill_id}"
+            ) from None
 
     def require_seeker(skill_ids: list[str]) -> None:
         """Refuse to mutate skills Skill Seekers does not own (plugin / manual)."""
@@ -526,8 +611,18 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     def on_job_done(job: Job) -> None:
         """Post-completion hooks: ingest scan results, refresh registry state."""
+        if job.spec.get("cwd") != str(root):
+            return
+        if job.type == "scan" and job.status != "done" and job.meta.get("project_id"):
+            project = registry.get_project(job.meta["project_id"])
+            if project:
+                project.update(status="failed", error=job.error or "Scan failed")
+                registry.save_project(project)
         if job.type == "scan" and job.status == "done" and job.meta.get("project_id"):
-            out_dir = root / "configs" / "scanned" / job.meta.get("project_slug", "")
+            out_dir = Path(
+                job.spec.get("out")
+                or workspace_dir(root, "configs") / "scanned" / job.meta.get("project_slug", "")
+            )
             frameworks = []
             if out_dir.is_dir():
                 for cfg in sorted(out_dir.glob("*.json")):
@@ -548,7 +643,21 @@ def create_app(root: Path | None = None) -> FastAPI:
         if job.type == "port" and job.status == "done":
             registry.log_activity("port", job.detail)
 
-    jobs.register_hook(on_job_done)
+    jobs.register_hook(on_job_done, key=str(root))
+    for interrupted in jobs.list(root):
+        if (
+            interrupted["type"] == "scan"
+            and interrupted["status"] == "failed"
+            and interrupted["meta"].get("project_id")
+        ):
+            project = registry.get_project(interrupted["meta"]["project_id"])
+            if project and project.get("status") == "scanning":
+                project.update(status="failed", error=interrupted.get("error"))
+                registry.save_project(project)
+
+    @app.get("/api/capabilities")
+    def get_capabilities() -> dict[str, Any]:
+        return capabilities()
 
     # ── health & overview ────────────────────────────────────────────────
 
@@ -559,8 +668,11 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.get("/api/overview")
     def overview() -> dict[str, Any]:
         return {
-            "skills": skills_payload(),
-            "jobs": jobs.list()[:12],
+            "skills": [
+                {k: v for k, v in s.items() if k not in ("content", "files")}
+                for s in skills_payload()
+            ],
+            "jobs": jobs.list(root),
             "clis": cached_detect_clis(),
             "projects": registry.list_projects(),
             "activity": registry.list_activity(),
@@ -576,7 +688,9 @@ def create_app(root: Path | None = None) -> FastAPI:
     @app.post("/api/skills/move")
     def move_skills(req: MoveRequest) -> dict[str, Any]:
         require_seeker(req.ids)
-        registry.move_skills(req.ids, req.dest)
+        if req.dest != "global" and not registry.get_project(req.dest):
+            raise HTTPException(404, "Unknown project")
+        registry.move_skills([registry.skill_id_for(skill_dir_for(i)) for i in req.ids], req.dest)
         dest_name = "global scope" if req.dest == "global" else req.dest
         registry.log_activity("move", f"moved {len(req.ids)} skill(s) → {dest_name}")
         return {"ok": True}
@@ -590,14 +704,41 @@ def create_app(root: Path | None = None) -> FastAPI:
         )
         return {"ok": True, "deleted": processed}
 
+    @app.get("/api/skills/archived")
+    def archived_skills() -> list[dict[str, Any]]:
+        return registry.list_archived(root)
+
+    @app.post("/api/skills/archived/{archive_id}/restore")
+    def restore_skill(archive_id: str) -> dict[str, Any]:
+        try:
+            dest = registry.restore_skill(root, archive_id)
+        except KeyError:
+            raise HTTPException(404, "Unknown archived skill") from None
+        return {"ok": True, "path": str(dest)}
+
     @app.post("/api/skills/port")
     def port_skills(req: PortRequest) -> dict[str, Any]:
+        from .clis import spec_by_id
+        from .installer import installation_path
+
+        try:
+            spec_by_id(req.cli)
+        except KeyError:
+            raise HTTPException(400, "Unsupported CLI") from None
+        if not any(c["id"] == req.cli and c["detected"] for c in cached_detect_clis()):
+            raise HTTPException(400, f"{req.cli} is not detected on this machine")
+        if req.ai:
+            raise HTTPException(400, "AI conversion is unavailable; use standard installation")
         dirs = [str(skill_dir_for(i)) for i in req.ids]
-        job = jobs.submit(
+        for source in map(Path, dirs):
+            dest = installation_path(source.stem if source.is_file() else source.name, req.cli)
+            if dest.exists() and dest.resolve() != source.resolve() and not req.replace:
+                raise FileExistsError(f"{dest} already exists; enable replacement to overwrite it")
+        job = submit_job(
             "port",
             f"{len(dirs)} skill(s) → {req.cli}",
-            f"install to {req.cli}" + (" (AI-assisted)" if req.ai else ""),
-            {"type": "port", "skill_dirs": dirs, "cli": req.cli, "cwd": str(root)},
+            f"install to {req.cli}",
+            {"type": "port", "skill_dirs": dirs, "cli": req.cli, "replace": req.replace},
         )
         return {"ok": True, "job": job.to_dict()}
 
@@ -606,7 +747,7 @@ def create_app(root: Path | None = None) -> FastAPI:
         require_seeker([skill_id])
         skill_dir = skill_dir_for(skill_id)
         settings = load_settings()
-        job = jobs.submit(
+        job = submit_job(
             "enhance",
             skill_id,
             "AI enhancement pass",
@@ -622,23 +763,16 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/skills/{skill_id}/package")
     def package_skill(skill_id: str, req: PackageRequest) -> dict[str, Any]:
+        validate_targets(req.targets)
         skill_dir = skill_dir_for(skill_id)
-        try:
-            origin = registry.origin_of(root, skill_id)
-        except KeyError:
-            raise HTTPException(status_code=404, detail=f"unknown skill: {skill_id}") from None
         spec: dict[str, Any] = {
             "type": "package",
             "skill_dir": str(skill_dir),
             "targets": req.targets,
             "cwd": str(root),
         }
-        if origin != "seeker":
-            # Packaging must not write into a location Skill Seekers doesn't
-            # own (plugin cache, ~/.claude/skills, …); route the archive to
-            # the workspace instead. See runner.run_package for the staging.
-            spec["output_dir"] = str(root / "output" / "_packages")
-        job = jobs.submit(
+        spec["output_dir"] = str(workspace_dir(root, "output") / "_packages")
+        job = submit_job(
             "package",
             f"{skill_id} → {', '.join(req.targets)}",
             f"package {skill_dir.name} for {len(req.targets)} target(s)",
@@ -647,6 +781,17 @@ def create_app(root: Path | None = None) -> FastAPI:
         registry.log_activity("package", f"{skill_id} packaging → {', '.join(req.targets)}")
         return {"ok": True, "job": job.to_dict()}
 
+    @app.get("/api/skills/{skill_id}/content")
+    def get_skill_content(skill_id: str) -> dict[str, Any]:
+        path = skill_dir_for(skill_id)
+        content_path = path if path.is_file() else path / "SKILL.md"
+        raw = content_path.read_bytes()
+        return {
+            "content": raw.decode("utf-8", errors="replace"),
+            "revision": hashlib.sha256(raw).hexdigest(),
+            "files": registry.list_skill_files(path) if path.is_dir() else [],
+        }
+
     @app.put("/api/skills/{skill_id}/content")
     def save_skill_content(skill_id: str, req: ContentRequest) -> dict[str, Any]:
         require_seeker([skill_id])
@@ -654,8 +799,24 @@ def create_app(root: Path | None = None) -> FastAPI:
         skill_md = skill_dir / "SKILL.md"
         if not skill_md.is_file():
             raise HTTPException(status_code=404, detail="SKILL.md not found")
-        skill_md.write_text(req.content, encoding="utf-8")
-        return {"ok": True}
+        # Consult the job manager BEFORE entering the state transaction: JobManager
+        # takes its own lock and then the state lock, so nesting them the other
+        # way round here would be an ABBA deadlock.
+        if any(
+            j["status"] in ("running", "queued", "cancelling")
+            and j["type"] == "enhance"
+            and j["label"] in (skill_id, skill_dir.name)
+            for j in jobs.list(root)
+        ):
+            raise HTTPException(409, "Wait for enhancement to finish before saving")
+        with state_transaction():
+            revision = hashlib.sha256(skill_md.read_bytes()).hexdigest()
+            if req.revision is None:
+                raise HTTPException(428, "Load the current content revision before saving")
+            if req.revision != revision:
+                raise HTTPException(409, "Skill changed since it was opened; reload before saving")
+            atomic_write(skill_md, req.content.encode("utf-8"))
+        return {"ok": True, "revision": hashlib.sha256(req.content.encode("utf-8")).hexdigest()}
 
     # ── projects ─────────────────────────────────────────────────────────
 
@@ -665,39 +826,40 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/projects")
     def add_project(req: ProjectRequest) -> dict[str, Any]:
-        path = Path(req.path).expanduser()
+        path = (root / Path(req.path).expanduser()).resolve()
         if not path.is_dir():
             raise HTTPException(status_code=400, detail=f"not a directory: {path}")
         project = registry.add_project(str(path))
-        slug = project["id"].removeprefix("pj-")
-        out = root / "configs" / "scanned" / slug
-        job = jobs.submit(
-            "scan",
-            project["name"],
-            f"{project['path']} → configs/scanned/{slug}/",
-            {"type": "scan", "directory": str(path), "out": str(out), "cwd": str(root)},
-            meta={"project_id": project["id"], "project_slug": slug},
-        )
-        project["status"] = "scanning"
-        registry.save_project(project)
-        return {"ok": True, "project": project, "job": job.to_dict()}
+        result = rescan_project(project["id"])
+        return {**result, "project": registry.get_project(project["id"])}
 
     @app.post("/api/projects/{project_id}/rescan")
     def rescan_project(project_id: str) -> dict[str, Any]:
         project = registry.get_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="unknown project")
+        if any(
+            j["meta"].get("project_id") == project_id
+            and j["status"] in ("running", "queued", "cancelling")
+            for j in jobs.list(root)
+        ):
+            raise HTTPException(409, "Project scan is already running")
         slug = project_id.removeprefix("pj-")
-        out = root / "configs" / "scanned" / slug
-        job = jobs.submit(
-            "scan",
-            project["name"],
-            f"{project['path']} → configs/scanned/{slug}/",
-            {"type": "scan", "directory": project["path"], "out": str(out), "cwd": str(root)},
-            meta={"project_id": project_id, "project_slug": slug},
-        )
-        project["status"] = "scanning"
+        out = workspace_dir(root, "configs") / "scanned" / slug
+        project.update(status="scanning", error=None)
         registry.save_project(project)
+        try:
+            job = submit_job(
+                "scan",
+                project["name"],
+                f"{project['path']} → configs/scanned/{slug}/",
+                {"type": "scan", "directory": project["path"], "out": str(out), "cwd": str(root)},
+                meta={"project_id": project_id, "project_slug": slug},
+            )
+        except OSError as exc:
+            project.update(status="failed", error=str(exc))
+            registry.save_project(project)
+            raise HTTPException(500, f"Could not start scan: {exc}") from exc
         return {"ok": True, "job": job.to_dict()}
 
     @app.delete("/api/projects/{project_id}")
@@ -710,11 +872,43 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.get("/api/jobs")
     def list_jobs() -> list[dict[str, Any]]:
-        return jobs.list()
+        return jobs.list(root)
+
+    def require_job(job_id: str) -> dict[str, Any]:
+        job = next((j for j in jobs.list(root) if j["id"] == job_id), None)
+        if job is None:
+            raise HTTPException(404, "Unknown job")
+        return job
 
     @app.post("/api/jobs/{job_id}/cancel")
     def cancel_job(job_id: str) -> dict[str, Any]:
-        return {"ok": jobs.cancel(job_id)}
+        require_job(job_id)
+        if not jobs.cancel(job_id):
+            raise HTTPException(409, "Job is no longer running")
+        return {"ok": True}
+
+    @app.post("/api/jobs/{job_id}/retry")
+    def retry_job(job_id: str) -> dict[str, Any]:
+        previous = require_job(job_id)
+        if previous["type"] == "scan" and previous["meta"].get("project_id"):
+            return rescan_project(previous["meta"]["project_id"])
+        try:
+            job = jobs.retry(job_id)
+        except KeyError:
+            raise HTTPException(409, "This historical job has no retry specification") from None
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.get("/api/jobs/{job_id}/artifacts/{index}")
+    def download_artifact(job_id: str, index: int) -> FileResponse:
+        job = require_job(job_id)
+        if index < 0 or index >= len(job["artifacts"]):
+            raise HTTPException(404, "Unknown artifact")
+        path = Path(job["artifacts"][index])
+        if not path.is_file():
+            raise HTTPException(
+                404, "Artifact is a directory or no longer exists; use its local path"
+            )
+        return FileResponse(path, filename=path.name)
 
     # ── create ───────────────────────────────────────────────────────────
 
@@ -722,6 +916,64 @@ def create_app(root: Path | None = None) -> FastAPI:
     def create(req: CreateRequest) -> dict[str, Any]:
         if not req.entries:
             raise HTTPException(status_code=400, detail="at least one source is required")
+        validate_targets(req.targets)
+        for entry in req.entries:
+            if entry.type not in registry.KNOWN_SOURCE_TYPES or not entry.input.strip():
+                raise HTTPException(400, "Each source needs a supported type and nonempty input")
+            if entry.input.lstrip().startswith("--"):
+                raise HTTPException(400, "Enter a source URL or path, not CLI flags")
+        allowed_agents = capabilities()["agents"]
+        if req.flags.get("agent") and req.flags["agent"] not in allowed_agents:
+            raise HTTPException(400, "Unsupported enhancement agent")
+        for key, minimum, maximum in (
+            ("workers", 1, 10),
+            ("max_pages", 1, 1000000),
+            ("chunk_tokens", 1, 1000000),
+            ("chunk_overlap", 0, 1000000),
+        ):
+            if req.flags.get(key) not in (None, ""):
+                try:
+                    value = int(req.flags[key])
+                except (ValueError, TypeError):
+                    raise HTTPException(400, f"{key} must be an integer") from None
+                if not minimum <= value <= maximum:
+                    raise HTTPException(400, f"{key} must be between {minimum} and {maximum}")
+        for key, choices in {
+            "enhance_level": (0, 1, 2, 3),
+            "preset": ("quick", "standard", "comprehensive"),
+            "merge_mode": ("rule-based", "ai-enhanced", "claude-enhanced"),
+        }.items():
+            if req.flags.get(key) is not None and req.flags[key] not in choices:
+                raise HTTPException(400, f"Unsupported {key}")
+        if req.flags.get("rate_limit") not in (None, ""):
+            import math
+
+            try:
+                rate = float(req.flags["rate_limit"])
+                if not math.isfinite(rate) or rate < 0:
+                    raise ValueError
+            except (ValueError, TypeError):
+                raise HTTPException(400, "rate_limit must be a finite nonnegative number") from None
+        if req.flags.get("chunk_for_rag") and int(req.flags.get("chunk_overlap") or 50) >= int(
+            req.flags.get("chunk_tokens") or 512
+        ):
+            raise HTTPException(400, "Chunk overlap must be smaller than chunk size")
+        skips = req.flags.get("local_skips") or []
+        if not isinstance(skips, list) or any(
+            s
+            not in {
+                "--skip-api-reference",
+                "--skip-dependency-graph",
+                "--skip-patterns",
+                "--skip-test-examples",
+                "--skip-how-to-guides",
+                "--skip-docs",
+            }
+            for s in skips
+        ):
+            raise HTTPException(400, "Unsupported local analysis option")
+        if req.flags.get("fresh") and req.flags.get("resume"):
+            raise HTTPException(400, "Choose either fresh or resume")
         name = req.name.strip() or _derive_name(req.entries[0].input)
         name = re.sub(r"[^a-zA-Z0-9_-]+", "-", name).strip("-").lower()
         if not name:
@@ -732,12 +984,16 @@ def create_app(root: Path | None = None) -> FastAPI:
             "entries": [e.model_dump() for e in req.entries],
             "name": name,
             "targets": req.targets,
-            "flags": {**req.flags, "description": req.description},
-            "output_dir": settings.get("output_dir", "output"),
-            "configs_dir": str(root / settings.get("configs_dir", "configs")),
+            "flags": {
+                "agent": settings["default_agent"],
+                **req.flags,
+                "description": req.description,
+            },
+            "output_dir": str(workspace_dir(root, "output")),
+            "configs_dir": str(workspace_dir(root, "configs")),
             "cwd": str(root),
         }
-        job = jobs.submit(
+        job = submit_job(
             "create",
             name,
             f"{len(req.entries)} source(s) → {', '.join(req.targets) or 'no packaging'}",
@@ -787,6 +1043,17 @@ def create_app(root: Path | None = None) -> FastAPI:
                 }
             )
         entries = registry.list_config_entries(root)
+        from skill_seekers.services.git_repo import GitConfigRepo
+
+        cache = GitConfigRepo().cache_dir
+        for source in sources:
+            if source["id"] == "official":
+                continue
+            safe_name(source["id"])
+            cached = registry.list_config_entries(root, cache / source["id"], source["id"])
+            source["configs"] = len(cached)
+            source["connected"] = (cache / source["id"]).is_dir()
+            entries.extend(cached)
         skills = skills_payload()
         for entry in entries:
             stem = entry["name"].removesuffix(".json")
@@ -794,7 +1061,7 @@ def create_app(root: Path | None = None) -> FastAPI:
                 s["name"] for s in skills if s["name"] == stem or stem in s["source"]
             ]
             entry["fetched"] = True
-        local_names = {e["name"] for e in entries}
+        local_names = {e["name"] for e in entries if e["source"] == "official"}
         for cfg in official_configs:
             fname = f"{cfg.get('name', '')}.json"
             if not cfg.get("name") or fname in local_names:
@@ -823,7 +1090,7 @@ def create_app(root: Path | None = None) -> FastAPI:
     def fetch_official(req: FetchOfficialRequest) -> dict[str, Any]:
         """Download a config from the official remote registry into configs/."""
         name = req.name.strip()
-        if not name:
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", name):
             raise HTTPException(status_code=400, detail="config name required")
         import httpx
 
@@ -835,10 +1102,18 @@ def create_app(root: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=502, detail=f"registry fetch failed: {e}") from e
         if not isinstance(data, dict) or "sources" not in data:
             raise HTTPException(status_code=422, detail="remote file is not a unified config")
-        dest_dir = root / load_settings().get("configs_dir", "configs")
+        dest_dir = workspace_dir(root, "configs")
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / f"{name}.json"
-        dest.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        with state_transaction():
+            if dest.exists():
+                raise FileExistsError(
+                    f"{dest.name} already exists; preserve or rename the local config first"
+                )
+            atomic_write(dest, json.dumps(data, indent=2).encode("utf-8"))
+            atomic_write(
+                dest.with_name(f".{dest.name}.seeker-source.json"), b'{"source": "official"}'
+            )
         registry.log_activity("scan", f"fetched {name}.json from official registry")
         return {"ok": True, "path": str(dest)}
 
@@ -848,11 +1123,12 @@ def create_app(root: Path | None = None) -> FastAPI:
 
         manager = SourceManager()
         name = req.name.strip() or req.repo.rstrip("/").removesuffix(".git").split("/")[-1]
+        safe_name(name)
         git_url = (
             req.repo if "://" in req.repo or req.repo.endswith(".git") else f"https://{req.repo}"
         )
         result = manager.add_source(name=name, git_url=git_url, branch=req.branch)
-        job = jobs.submit(
+        job = submit_job(
             "fetch",
             f"fetch_config · {name}",
             f"git pull {git_url} ({req.branch})",
@@ -879,10 +1155,11 @@ def create_app(root: Path | None = None) -> FastAPI:
     def fetch_source(name: str) -> dict[str, Any]:
         from skill_seekers.services.source_manager import SourceManager
 
+        safe_name(name)
         source = SourceManager().get_source(name)
         if not source:
             raise HTTPException(status_code=404, detail="unknown source")
-        job = jobs.submit(
+        job = submit_job(
             "fetch",
             f"fetch_config · {name}",
             f"git pull {source.get('git_url')} ({source.get('branch', 'main')})",
@@ -899,7 +1176,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/library/build")
     def build_config(req: BuildRequest) -> dict[str, Any]:
-        cfg_path = Path(req.config_path)
+        cfg_path = Path(req.config_path).resolve()
         if not cfg_path.is_file():
             raise HTTPException(status_code=404, detail="config not found")
         try:
@@ -907,7 +1184,8 @@ def create_app(root: Path | None = None) -> FastAPI:
         except ValueError as e:
             raise HTTPException(status_code=400, detail=f"invalid JSON config: {e}") from e
         name = req.name.strip() or str(data.get("name") or cfg_path.stem)
-        job = jobs.submit(
+        safe_name(name)
+        job = submit_job(
             "create",
             f"build · {cfg_path.name}",
             f"skill-seekers create --config {cfg_path}",
@@ -917,7 +1195,7 @@ def create_app(root: Path | None = None) -> FastAPI:
                 "name": name,
                 "targets": [],
                 "flags": {},
-                "configs_dir": str(root / "configs"),
+                "configs_dir": str(workspace_dir(root, "configs")),
                 "cwd": str(root),
             },
         )
@@ -932,16 +1210,11 @@ def create_app(root: Path | None = None) -> FastAPI:
         manager = MarketplaceManager()
         markets = []
         skills: list[dict[str, Any]] = []
-        installed_names = {s["name"] for s in skills_payload()}
         for m in manager.list_marketplaces():
             market_id = m.get("name", "")
-            connected = False
-            try:
-                repo_path = market.sync_marketplace(m.get("git_url", ""), m.get("branch", "main"))
-                connected = True
-                skills.extend(market.browse_marketplace(repo_path, market_id))
-            except Exception:  # noqa: BLE001 — offline marketplaces shown as disconnected
-                pass
+            repo_path = market.cache_path(m.get("git_url", ""), m.get("branch", "main"))
+            status = market.cache_status(m.get("git_url", ""), m.get("branch", "main"))
+            skills.extend(market.browse_marketplace(repo_path, market_id))
             markets.append(
                 {
                     "id": market_id,
@@ -949,12 +1222,17 @@ def create_app(root: Path | None = None) -> FastAPI:
                     "repo": m.get("git_url", ""),
                     "type": m.get("type", "community"),
                     "skills": sum(1 for s in skills if s["market"] == market_id),
-                    "lastSync": m.get("updated_at", m.get("created_at", "—")),
-                    "connected": connected,
+                    "lastSync": status.get("lastSync", "never"),
+                    "connected": status.get("connected", False),
+                    "error": status.get("error"),
                 }
             )
         for s in skills:
-            s["installed"] = s["name"] in installed_names
+            item = Path(s["path"])
+            dest = workspace_dir(root, "configs" if s["kind"] == "config" else "output") / item.name
+            s["installed"] = (
+                dest.is_file() if s["kind"] == "config" else (dest / "SKILL.md").is_file()
+            )
         return {"markets": markets, "skills": skills}
 
     @app.post("/api/marketplaces")
@@ -962,12 +1240,41 @@ def create_app(root: Path | None = None) -> FastAPI:
         from skill_seekers.services.marketplace_manager import MarketplaceManager
 
         name = req.name.strip() or req.repo.rstrip("/").removesuffix(".git").split("/")[-1]
+        safe_name(name)
         git_url = (
             req.repo if "://" in req.repo or req.repo.endswith(".git") else f"https://{req.repo}"
         )
         result = MarketplaceManager().add_marketplace(name=name, git_url=git_url, branch=req.branch)
         registry.log_activity("scan", f"marketplace {name} registered")
-        return {"ok": True, "marketplace": result}
+        job = submit_job(
+            "market-sync",
+            name,
+            f"Sync {name}",
+            {"type": "market-sync", "git_url": git_url, "branch": req.branch},
+        )
+        return {"ok": True, "marketplace": result, "job": job.to_dict()}
+
+    @app.post("/api/marketplaces/sync")
+    def sync_marketplaces() -> dict[str, Any]:
+        from skill_seekers.services.marketplace_manager import MarketplaceManager
+
+        accepted = []
+        for m in MarketplaceManager().list_marketplaces():
+            if any(
+                j["type"] == "market-sync"
+                and j["label"] == m["name"]
+                and j["status"] in ("running", "queued", "cancelling")
+                for j in jobs.list(root)
+            ):
+                continue
+            job = submit_job(
+                "market-sync",
+                m["name"],
+                f"Sync {m['name']}",
+                {"type": "market-sync", "git_url": m["git_url"], "branch": m.get("branch", "main")},
+            )
+            accepted.append(job.to_dict())
+        return {"ok": True, "jobs": accepted}
 
     @app.delete("/api/marketplaces/{name}")
     def remove_marketplace(name: str) -> dict[str, Any]:
@@ -979,17 +1286,35 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.post("/api/marketplaces/install")
     def install_from_marketplace(req: InstallRequest) -> dict[str, Any]:
-        item_path = Path(req.path)
-        if not item_path.exists():
+        from .clis import get_cli_specs
+
+        item_path = Path(req.path).resolve()
+        known = {Path(s["path"]).resolve(): s for s in marketplaces()["skills"]}
+        if item_path not in known or known[item_path]["kind"] != req.kind:
             raise HTTPException(status_code=404, detail="item not found in marketplace cache")
-        dest = market.install_marketplace_item(item_path, req.kind, root, req.clis)
-        registry.log_activity("create", f"installed {item_path.name} from marketplace")
-        return {"ok": True, "dest": str(dest)}
+        if set(req.clis) - {s.id for s in get_cli_specs()}:
+            raise HTTPException(400, "Unsupported installation target")
+        dest = workspace_dir(root, "configs" if req.kind == "config" else "output") / item_path.name
+        if dest.exists() and (req.kind != "config" or not req.replace):
+            raise FileExistsError(f"{dest} already exists; archive or rename it first")
+        job = submit_job(
+            "install",
+            item_path.name,
+            f"Install to {', '.join(req.clis) or 'workspace'}",
+            {
+                "type": "install",
+                "path": str(item_path),
+                "kind": req.kind,
+                "clis": req.clis,
+                "replace": req.replace,
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
 
     @app.post("/api/marketplaces/publish")
     def publish_to_marketplace(req: PublishRequest) -> dict[str, Any]:
         skill_dir = skill_dir_for(req.skill_name)
-        job = jobs.submit(
+        job = submit_job(
             "publish",
             f"{req.skill_name} → {req.marketplace}",
             "publish_to_marketplace",
@@ -1022,13 +1347,18 @@ def create_app(root: Path | None = None) -> FastAPI:
         manager = ConfigManager()
         keys = []
         for env_name, provider in API_KEY_PROVIDERS.items():
-            is_set = bool(os.environ.get(env_name)) or bool(manager.get_api_key(provider))
+            is_set = bool(os.environ.get(env_name)) or bool(
+                manager.get_github_token()
+                if provider == "github"
+                else manager.get_api_key(provider)
+            )
             keys.append({"name": env_name, "set": is_set})
         return {
             "clis": cached_detect_clis(),
             "keys": keys,
             "defaults": load_settings(),
             "root": str(root),
+            "capabilities": capabilities(),
         }
 
     @app.put("/api/settings/keys")
@@ -1039,7 +1369,9 @@ def create_app(root: Path | None = None) -> FastAPI:
         if not provider:
             raise HTTPException(status_code=400, detail=f"unknown key: {req.name}")
         if provider == "github":
-            os.environ[req.name] = req.value
+            # Persist without hijacking an existing default profile; a fresh
+            # config still adopts this one via ConfigManager's fallback.
+            ConfigManager().add_github_profile("seeker-ui", req.value, set_as_default=False)
         else:
             ConfigManager().set_api_key(provider, req.value)
         os.environ[req.name] = req.value
@@ -1047,9 +1379,20 @@ def create_app(root: Path | None = None) -> FastAPI:
 
     @app.put("/api/settings/defaults")
     def set_defaults(req: DefaultsRequest) -> dict[str, Any]:
-        current = load_settings()
-        current.update(req.settings)
-        save_settings(current)
+        allowed = {"default_agent", "output_dir", "configs_dir"}
+        if set(req.settings) - allowed:
+            raise HTTPException(400, "Unsupported settings")
+        if any(not isinstance(v, str) or not v.strip() for v in req.settings.values()):
+            raise HTTPException(400, "Settings must be nonempty strings")
+        if (
+            "default_agent" in req.settings
+            and req.settings["default_agent"] not in capabilities()["agents"]
+        ):
+            raise HTTPException(400, "Unsupported enhancement agent")
+        with state_transaction():
+            current = load_settings()
+            current.update(req.settings)
+            save_settings(current)
         return {"ok": True, "defaults": current}
 
     @app.post("/api/settings/reprobe")
@@ -1063,11 +1406,14 @@ def create_app(root: Path | None = None) -> FastAPI:
     # ── SPA static serving ───────────────────────────────────────────────
 
     if DIST_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
+        if (DIST_DIR / "assets").is_dir():
+            app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
 
         @app.get("/{full_path:path}")
         def spa(full_path: str) -> FileResponse:
-            candidate = DIST_DIR / full_path
+            candidate = (DIST_DIR / full_path).resolve()
+            if not candidate.is_relative_to(DIST_DIR.resolve()) or full_path.startswith("api/"):
+                raise HTTPException(404, "Not found")
             if full_path and candidate.is_file():
                 return FileResponse(candidate)
             return FileResponse(DIST_DIR / "index.html")

@@ -596,7 +596,9 @@ class TestTestExampleExtractor(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = Path(tempfile.mkdtemp())
-        self.extractor = TestExampleExtractor(min_confidence=0.5, max_per_file=10)
+        self.extractor = TestExampleExtractor(
+            min_confidence=0.5, max_per_file=10, enhance_with_ai=False
+        )
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -639,7 +641,7 @@ test("javascript test", () => {
 """)
 
         # Extract Python only
-        python_extractor = TestExampleExtractor(languages=["python"])
+        python_extractor = TestExampleExtractor(languages=["python"], enhance_with_ai=False)
         report = python_extractor.extract_from_directory(self.temp_dir)
 
         # Should only extract from Python file
@@ -661,7 +663,7 @@ test("javascript test", () => {
         test_file.write_text(test_code)
 
         # Extract with limit of 5
-        limited_extractor = TestExampleExtractor(max_per_file=5)
+        limited_extractor = TestExampleExtractor(max_per_file=5, enhance_with_ai=False)
         examples = limited_extractor.extract_from_file(test_file)
 
         # Should not exceed limit

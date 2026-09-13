@@ -15,11 +15,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import { Search, MoreHorizontal, ArrowLeftRight, FolderInput, Trash2, Eye, Pencil, Sparkles, Package, X, Bot, CheckCircle2, Lock } from 'lucide-react';
+import { Search, MoreHorizontal, ArrowLeftRight, FolderInput, Trash2, Eye, Pencil, Sparkles, Package, X, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/lib/store';
+import { api } from '@/lib/api';
 
 type ScopeFilter = 'all' | 'global' | 'project';
 type OriginFilter = 'all' | SkillOrigin;
@@ -47,12 +47,14 @@ export default function Skills({
   query: string;
   onQuery: (q: string) => void;
   onOpenSkill: (id: string) => void;
-  onMove: (ids: string[], dest: 'global' | string) => void;
-  onPort: (ids: string[], cli: CliId, opts: { ai: boolean; agent: string }) => void;
-  onDelete: (ids: string[]) => void;
-  onEnhance: (id: string) => void;
-  onPackage: (id: string) => void;
+  onMove: (ids: string[], dest: 'global' | string) => Promise<boolean>;
+  onPort: (ids: string[], cli: CliId, replace: boolean) => Promise<boolean>;
+  onDelete: (ids: string[]) => Promise<boolean>;
+  onEnhance: (id: string) => Promise<boolean>;
+  onPackage: (id: string, targets?: string[]) => Promise<boolean>;
 }) {
+  const { pending } = useStore();
+  const [packageFor, setPackageFor] = useState<string | null>(null);
   const [scope, setScope] = useState<ScopeFilter>('all');
   const [origin, setOrigin] = useState<OriginFilter>('all');
   const [cliFilter, setCliFilter] = useState<CliId[]>([]);
@@ -197,11 +199,11 @@ export default function Skills({
 
       {/* table */}
       <Panel corners={false} className="overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto" role="region" aria-label="Skills table" tabIndex={0}><table className="w-full min-w-[800px] text-sm">
           <thead>
             <tr className="border-b border-border font-mono-hud text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
               <th className="w-10 px-3 py-2.5 text-left">
-                <Checkbox checked={pager.slice.length > 0 && pager.slice.every((s) => selected.includes(s.id))} onCheckedChange={toggleAll} />
+                <Checkbox aria-label="Select this page" checked={pager.slice.length > 0 && pager.slice.every((s) => selected.includes(s.id))} onCheckedChange={toggleAll} />
               </th>
               <th className="px-3 py-2.5 text-left font-medium">skill</th>
               <th className="px-3 py-2.5 text-left font-medium">origin</th>
@@ -224,14 +226,14 @@ export default function Skills({
                 onClick={() => onOpenSkill(s.id)}
               >
                 <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox checked={selected.includes(s.id)} onCheckedChange={() => toggleOne(s.id)} />
+                  <Checkbox aria-label={`Select ${s.name}`} checked={selected.includes(s.id)} onCheckedChange={() => toggleOne(s.id)} />
                 </td>
                 <td className="px-3 py-2.5 max-w-[320px]">
                   <div className="flex items-center gap-2">
                     <span className="text-primary/70 font-mono-hud text-xs shrink-0">{SOURCE_META[s.sourceType].icon}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono-hud text-[13px] font-semibold truncate">{s.name}</span>
+                        <button className="font-mono-hud text-[13px] font-semibold truncate text-left" onClick={(e) => { e.stopPropagation(); onOpenSkill(s.id); }}>{s.name}</button>
                         {!isOwned(s) && (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -254,7 +256,7 @@ export default function Skills({
                 <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                      <button aria-label={`Actions for ${s.name}`} className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
@@ -266,7 +268,7 @@ export default function Skills({
                           <DropdownMenuItem onClick={() => onEnhance(s.id)}><Sparkles className="mr-2 h-3.5 w-3.5" /> Enhance</DropdownMenuItem>
                         </>
                       )}
-                      <DropdownMenuItem onClick={() => onPackage(s.id)}><Package className="mr-2 h-3.5 w-3.5" /> Package / export</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setPackageFor(s.id)}><Package className="mr-2 h-3.5 w-3.5" /> Package / export</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {isOwned(s) && (
                         <DropdownMenuItem onClick={() => setMoveFor([s.id])}><FolderInput className="mr-2 h-3.5 w-3.5" /> Move to…</DropdownMenuItem>
@@ -293,7 +295,7 @@ export default function Skills({
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
         <Pager page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} total={pager.total} onPage={pager.setPage} onPageSize={pager.setPageSize} />
       </Panel>
 
@@ -303,13 +305,13 @@ export default function Skills({
           <DialogHeader>
             <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// move {moveFor?.length ?? 0} skill(s)</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Change scope — global skills load in every session; project skills only in their codebase.
+              Organize skills within this HUD. Project assignment does not change CLI installation paths or which sessions load a skill.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <MoveOption label="◈ Global" desc="~/.claude/skills etc. — available everywhere" onClick={() => { onMove(moveFor!, 'global'); setMoveFor(null); setSelected([]); }} />
+            <MoveOption label="◈ Global" desc="Unassigned in this workspace" onClick={async () => { if (await onMove(moveFor!, 'global')) { setMoveFor(null); setSelected([]); } }} />
             {projects.map((p) => (
-              <MoveOption key={p.id} label={`▣ ${p.name}`} desc={p.path} onClick={() => { onMove(moveFor!, p.id); setMoveFor(null); setSelected([]); }} />
+              <MoveOption key={p.id} label={`▣ ${p.name}`} desc={p.path} onClick={async () => { if (await onMove(moveFor!, p.id)) { setMoveFor(null); setSelected([]); } }} />
             ))}
           </div>
         </DialogContent>
@@ -317,12 +319,15 @@ export default function Skills({
 
       {/* ── Port dialog ── */}
       <PortDialog
+        key={portFor?.join(",") ?? "closed"}
         ids={portFor}
         skills={skills}
         onClose={() => setPortFor(null)}
-        onConfirm={(cli, opts) => { onPort(portFor!, cli, opts); setPortFor(null); setSelected([]); }}
+        onConfirm={async (cli, replace) => { const ok = await onPort(portFor!, cli, replace); if (ok) { setPortFor(null); setSelected([]); } return ok; }}
       />
 
+      {packageFor && <PackageDialog id={packageFor} onClose={() => setPackageFor(null)} onPackage={onPackage} />}
+      <ArchivedSkills />
       {/* ── Delete confirm ── */}
       <AlertDialog open={!!deleteFor} onOpenChange={() => setDeleteFor(null)}>
         <AlertDialogContent className="!fixed hud-panel border-border">
@@ -331,15 +336,15 @@ export default function Skills({
               // delete {deleteFor?.length ?? 0} skill(s)?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">
-              Removes the skill from every CLI install. Source assets stay in{' '}
-              <span className="font-mono-hud text-foreground/80">output/</span> — rebuild anytime with one command.
+              Moves source files to the recoverable archive and removes copies installed from this source by Seeker. Other installations remain untouched. Restore source files from Archived skills below; reinstall CLI copies afterward.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="font-mono-hud text-xs">Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-mono-hud text-xs uppercase tracking-wider"
-              onClick={() => { onDelete(deleteFor!); setDeleteFor(null); setSelected([]); }}
+              disabled={pending}
+              onClick={async (e) => { e.preventDefault(); if (await onDelete(deleteFor!)) { setDeleteFor(null); setSelected([]); } }}
             >
               Delete
             </AlertDialogAction>
@@ -353,118 +358,49 @@ export default function Skills({
 
 // ── Port dialog with AI-assisted conversion ──────────────────────────────────
 
-const CLI_FORMAT: Record<CliId, string> = {
-  claude:   'skill dir · SKILL.md + refs',
-  kimi:     '.zip · SKILL.md',
-  cursor:   '.cursorrules (flattened)',
-  windsurf: '.windsurfrules',
-  gemini:   '.tar.gz bundle',
-  codex:    'instructions.md',
-  opencode: 'agent .md',
-};
-
-function PortDialog({
-  ids,
-  skills,
-  onClose,
-  onConfirm,
-}: {
-  ids: string[] | null;
-  skills: Skill[];
-  onClose: () => void;
-  onConfirm: (cli: CliId, opts: { ai: boolean; agent: string }) => void;
+function PortDialog({ ids, onClose, onConfirm }: {
+  ids: string[] | null; skills: Skill[]; onClose: () => void;
+  onConfirm: (cli: CliId, replace: boolean) => Promise<boolean>;
 }) {
-  const [ai, setAi] = useState(true);
-  const [agent, setAgent] = useState('claude');
-  const selectedSkills = skills.filter((s) => ids?.includes(s.id));
+  const { pending, clis } = useStore();
+  // Only CLIs actually present on this machine: installing into a missing
+  // tool's directory would make the HUD report that tool as detected.
+  const available = ALL_CLI_IDS.filter(id => clis.find(c => c.id === id)?.detected);
+  const [target, setTarget] = useState<CliId>(available[0] ?? 'claude');
+  const [replace, setReplace] = useState(false);
+  return <Dialog open={!!ids} onOpenChange={() => { if (!pending) onClose(); }}>
+    <DialogContent className="hud-panel sm:max-w-lg">
+      <DialogHeader><DialogTitle>Install {ids?.length ?? 0} skill(s)</DialogTitle><DialogDescription>Copy the complete skill folder into the selected CLI's user skill directory. Shared skill directories can also be read by other compatible CLIs.</DialogDescription></DialogHeader>
+      <label htmlFor="install-cli">Destination CLI</label>
+      <select id="install-cli" className="rounded border bg-background p-2" value={target} onChange={e => setTarget(e.target.value as CliId)}>
+        {available.map(id => <option key={id} value={id}>{cliById(id).name} — {cliById(id).globalPath}</option>)}
+      </select>
+      {!available.length && <p className="text-sm text-destructive">No supported CLI was detected on this machine.</p>}
+      <label className="flex items-center gap-2 text-sm"><Checkbox checked={replace} onCheckedChange={v => setReplace(v === true)} />Replace existing destination copies</label>
+      {replace && <p className="text-sm text-destructive">Existing destination content will be replaced. The source is preserved.</p>}
+      <DialogFooter><Button variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending || !available.length} onClick={() => onConfirm(target, replace)}>Install</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
 
-  return (
-    <Dialog open={!!ids} onOpenChange={onClose}>
-      <DialogContent className="!fixed hud-panel border-border sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">
-            // port {ids?.length ?? 0} skill(s)
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Repackage + install to another CLI. With AI assist, the agent rewrites content to the
-            target's conventions — e.g. SKILL.md → .cursorrules — instead of a raw copy.
-          </DialogDescription>
-        </DialogHeader>
+function PackageDialog({ id, onClose, onPackage }: { id: string; onClose: () => void; onPackage: (id: string, targets?: string[]) => Promise<boolean> }) {
+  const { settings, pending } = useStore();
+  const [targets, setTargets] = useState(['claude']);
+  return <Dialog open onOpenChange={() => { if (!pending) onClose(); }}><DialogContent className="hud-panel"><DialogHeader><DialogTitle>Package skill</DialogTitle><DialogDescription>Choose package formats. Output locations appear in Jobs.</DialogDescription></DialogHeader>
+    <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">{settings?.capabilities.targets.map(target => <label key={target} className="flex items-center gap-2 text-sm"><Checkbox checked={targets.includes(target)} onCheckedChange={v => setTargets(t => v ? [...t, target] : t.filter(x => x !== target))} />{target}</label>)}</div>
+    <DialogFooter><Button disabled={pending || !targets.length} onClick={async () => { if (await onPackage(id, targets)) onClose(); }}>Package</Button></DialogFooter>
+  </DialogContent></Dialog>;
+}
 
-        <div className="space-y-1.5 py-2 max-h-[320px] overflow-y-auto">
-          {ALL_CLI_IDS.map((id) => {
-            const cli = cliById(id);
-            const already = selectedSkills.length > 0 && selectedSkills.every((s) => s.installs.includes(id));
-            const partial = !already && selectedSkills.some((s) => s.installs.includes(id));
-            return (
-              <button
-                key={id}
-                disabled={!cli.detected}
-                onClick={() => onConfirm(id, { ai, agent })}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded border px-3 py-2.5 text-left transition-colors',
-                  cli.detected
-                    ? already
-                      ? 'border-border bg-secondary/20 hover:border-[hsl(45_93%_55%/0.5)]'
-                      : 'border-border bg-secondary/40 hover:border-primary/50'
-                    : 'border-border opacity-40 cursor-not-allowed'
-                )}
-              >
-                <CliChip id={id} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold">{cli.name}</span>
-                    {already && (
-                      <span className="flex items-center gap-1 font-mono-hud text-[9px] text-[hsl(45_93%_60%)]">
-                        <CheckCircle2 className="h-3 w-3" /> installed — re-port
-                      </span>
-                    )}
-                    {partial && (
-                      <span className="font-mono-hud text-[9px] text-[hsl(258_90%_70%)]">partially installed</span>
-                    )}
-                  </div>
-                  <div className="font-mono-hud text-[10px] text-muted-foreground truncate">
-                    {cli.detected ? `${cli.globalPath} · ${CLI_FORMAT[id]}` : 'not detected on this machine'}
-                  </div>
-                </div>
-                <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </button>
-            );
-          })}
-        </div>
-
-        <DialogFooter className="flex-col gap-3 sm:flex-col sm:space-x-0">
-          <div className="flex items-center justify-between w-full rounded border border-primary/30 bg-primary/5 px-3 py-2">
-            <span className="flex items-center gap-2 font-mono-hud text-[11px] text-foreground/85">
-              <Bot className="h-3.5 w-3.5 text-primary" /> AI-assisted conversion
-            </span>
-            <div className="flex items-center gap-2">
-              <div className="flex rounded border border-border overflow-hidden">
-                {['claude', 'kimi', 'codex'].map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAgent(a)}
-                    disabled={!ai}
-                    className={cn(
-                      'px-2 py-1 font-mono-hud text-[9px] transition-colors',
-                      agent === a && ai ? 'bg-primary/15 text-primary' : 'text-muted-foreground',
-                      !ai && 'opacity-40'
-                    )}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-              <Switch checked={ai} onCheckedChange={setAi} />
-            </div>
-          </div>
-          <span className="font-mono-hud text-[10px] text-muted-foreground">
-            undetected CLIs need a local CLI install first · re-port overwrites the target copy
-          </span>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+function ArchivedSkills() {
+  const { restoreSkill, pending } = useStore();
+  const [entries, setEntries] = useState<Awaited<ReturnType<typeof api.archivedSkills>>>([]);
+  const [error, setError] = useState('');
+  const load = () => api.archivedSkills().then(data => { setEntries(data); setError(''); }).catch(e => setError(String(e)));
+  return <details className="rounded border p-3" onToggle={e => { if (e.currentTarget.open) load(); }}><summary className="cursor-pointer text-sm">Archived skills</summary>
+    {error && <p role="alert">{error}</p>}{!entries.length && <p className="mt-2 text-sm text-muted-foreground">No archived skills. Reopen to refresh.</p>}
+    {entries.map(entry => <div key={entry.id} className="mt-2 flex flex-wrap items-center gap-2 text-sm"><span>{entry.name} · {entry.archivedAt}</span><Button size="sm" disabled={pending} onClick={async () => { if (await restoreSkill(entry.id)) await load(); }}>Restore</Button></div>)}
+  </details>;
 }
 
 function MoveOption({ label, desc, onClick }: { label: string; desc: string; onClick: () => void }) {
@@ -481,159 +417,55 @@ function MoveOption({ label, desc, onClick }: { label: string; desc: string; onC
 
 // ── Detail drawer (rendered by App so table rows + drawer share state) ───────
 
-export function SkillDrawer({
-  skill,
-  onClose,
-  onEnhance,
-  onPackage,
-  onSave,
-}: {
-  skill: Skill | null;
-  onClose: () => void;
-  onEnhance: (id: string) => void;
-  onPackage: (id: string) => void;
-  onSave: (id: string, content: string) => void;
+export function SkillDrawer({ skill, onClose, onEnhance, onPackage, onSave }: {
+  skill: Skill; onClose: () => void;
+  onEnhance: (id: string) => Promise<boolean>;
+  onPackage: (id: string, targets?: string[]) => Promise<boolean>;
+  onSave: (id: string, content: string, revision: string) => Promise<boolean>;
 }) {
+  const { pending } = useStore();
+  const [loaded, setLoaded] = useState<{ content: string; revision: string; files?: { path: string; size: string }[] } | null>(null);
+  const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<string | null>(null);
-  const { projects } = useStore();
-  const project = projects.find((p) => p.id === skill?.projectId);
-
+  const [error, setError] = useState('');
+  const [packaging, setPackaging] = useState(false);
+  const dirty = loaded !== null && draft !== loaded.content;
   useEffect(() => {
-    setEditing(false);
-    setDraft(null);
-  }, [skill?.id]);
-
-  const toggleEdit = () => {
-    if (editing && skill && draft !== null && draft !== skill.content) {
-      onSave(skill.id, draft);
+    let active = true;
+    api.skillContent(skill.id).then(data => { if (active) { setLoaded(data); setDraft(data.content); } }).catch(e => { if (active) setError(String(e)); });
+    return () => { active = false; };
+  }, [skill.id]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+  const close = () => { if (!pending && (!dirty || window.confirm('Discard unsaved skill edits?'))) onClose(); };
+  const save = async () => {
+    if (!loaded) return;
+    if (await onSave(skill.id, draft, loaded.revision)) {
+      // Reload the authoritative revision only after a successful save.
+      try { const data = await api.skillContent(skill.id); setLoaded(data); setDraft(data.content); setEditing(false); setError(''); }
+      catch (e) { setError(`Saved, but reload failed: ${String(e)}`); }
     }
-    setEditing(!editing);
   };
-
-  return (
-    <Sheet open={!!skill} onOpenChange={onClose}>
-      <SheetContent side="right" className="!fixed w-[560px] sm:max-w-[560px] hud-panel border-l-border p-0 scanline">
-        {skill && (
-          <div className="flex h-full flex-col">
-            <SheetHeader className="border-b border-border p-5 pb-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <ScopeTag scope={skill.scope} project={project?.name} />
-                <OriginTag origin={skill.origin} pluginName={skill.pluginName} />
-                <span className="font-mono-hud text-[10px] text-muted-foreground">v{skill.version}</span>
-                <span className="font-mono-hud text-[10px] text-muted-foreground">·</span>
-                <span className="font-mono-hud text-[10px] text-muted-foreground">{SOURCE_META[skill.sourceType].label}</span>
-              </div>
-              <SheetTitle className="font-mono-hud text-lg">{skill.name}</SheetTitle>
-              <SheetDescription className="text-xs leading-relaxed">{skill.description}</SheetDescription>
-              <div className="flex items-center gap-2 pt-1 flex-wrap">
-                <InstallSet installs={skill.installs} />
-                <div className="ml-auto"><QualityMeter q={skill.quality} /></div>
-              </div>
-            </SheetHeader>
-
-            <div className="flex gap-2 border-b border-border px-5 py-3">
-              {skill.origin === 'seeker' && (
-                <>
-                  <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={toggleEdit} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
-                    <Pencil className="mr-1 h-3 w-3" /> {editing ? 'save' : 'edit'}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => onEnhance(skill.id)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
-                    <Sparkles className="mr-1 h-3 w-3" /> enhance
-                  </Button>
-                </>
-              )}
-              <Button size="sm" variant="outline" onClick={() => onPackage(skill.id)} className="h-7 font-mono-hud text-[10px] uppercase tracking-widest">
-                <Package className="mr-1 h-3 w-3" /> package
-              </Button>
-              <span className="ml-auto font-mono-hud text-[10px] text-muted-foreground self-center">{fmtSize(skill.sizeKb)}</span>
-            </div>
-
-            <ScrollArea className="flex-1">
-              <div className="p-5 space-y-5">
-                {/* SKILL.md */}
-                <div>
-                  <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">SKILL.md</div>
-                  {editing ? (
-                    <textarea
-                      value={draft ?? skill.content}
-                      onChange={(e) => setDraft(e.target.value)}
-                      spellCheck={false}
-                      className="w-full h-72 rounded border border-primary/40 bg-black/40 p-4 font-mono-hud text-[12px] leading-relaxed text-foreground/90 outline-none resize-y"
-                    />
-                  ) : (
-                    <div className="rounded border border-border bg-black/40 p-4 font-mono-hud text-[12px] leading-relaxed overflow-x-auto">
-                      <MiniMd text={skill.content} />
-                    </div>
-                  )}
-                </div>
-
-                {/* files */}
-                <div>
-                  <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">bundle files</div>
-                  <div className="rounded border border-border divide-y divide-border/60">
-                    {skill.files.map((f) => (
-                      <div key={f.path} className="flex items-center justify-between px-3 py-1.5 font-mono-hud text-[11px]">
-                        <span className="text-foreground/80">▸ {f.path}</span>
-                        <span className="text-muted-foreground">{f.size}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* provenance */}
-                <div>
-                  <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">provenance</div>
-                  <div className="grid grid-cols-2 gap-px rounded border border-border overflow-hidden font-mono-hud text-[11px]">
-                    {[
-                      ['source', skill.source],
-                      ['updated', skill.updatedAt],
-                      ['tags', skill.tags.join(' · ')],
-                      ['installs', `${skill.installs.length} CLIs`],
-                    ].map(([k, v]) => (
-                      <div key={k} className="bg-secondary/30 px-3 py-2">
-                        <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{k}</div>
-                        <div className="mt-0.5 text-foreground/85 truncate">{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-// ultra-light markdown renderer for the preview pane
-function MiniMd({ text }: { text: string }) {
-  const lines = text.split('\n');
-  let inFront = false;
-  return (
-    <>
-      {lines.map((l, i) => {
-        if (l === '---') {
-          inFront = !inFront;
-          return <div key={i} className="text-muted-foreground/50 select-none">───</div>;
-        }
-        if (inFront) return <div key={i} className="text-muted-foreground">{l}</div>;
-        if (l.startsWith('# ')) return <div key={i} className="text-primary font-bold text-[14px] mt-1">{l.slice(2)}</div>;
-        if (l.startsWith('## ')) return <div key={i} className="text-[hsl(45_93%_60%)] font-semibold mt-3">{l.slice(3)}</div>;
-        if (!l.trim()) return <div key={i} className="h-2" />;
-        return (
-          <div key={i} className="text-foreground/80">
-            {l.split(/(`[^`]+`)/g).map((part, j) =>
-              part.startsWith('`') ? (
-                <code key={j} className="rounded bg-primary/10 px-1 text-primary">{part.slice(1, -1)}</code>
-              ) : (
-                <span key={j}>{part}</span>
-              )
-            )}
-          </div>
-        );
-      })}
-    </>
-  );
+  return <Sheet open onOpenChange={open => { if (!open) close(); }}>
+    <SheetContent className="w-full sm:max-w-[640px] hud-panel p-0 flex flex-col">
+      <SheetHeader className="border-b p-5 pr-10"><div className="flex gap-2"><ScopeTag scope={skill.scope} /><OriginTag origin={skill.origin} pluginName={skill.pluginName} /></div><SheetTitle>{skill.name}</SheetTitle><SheetDescription>{skill.description}</SheetDescription></SheetHeader>
+      <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
+        {skill.editable !== false && skill.origin === 'seeker' && <><Button size="sm" disabled={pending || !loaded} onClick={() => editing ? save() : setEditing(true)}>{editing ? 'Save' : 'Edit'}</Button>{editing && <Button variant="outline" size="sm" disabled={pending} onClick={() => { if (!dirty || window.confirm('Discard unsaved edits?')) { setDraft(loaded?.content ?? ''); setEditing(false); } }}>Cancel edit</Button>}<Button variant="outline" size="sm" disabled={pending || dirty} onClick={() => onEnhance(skill.id)}>Enhance</Button></>}
+        <Button variant="outline" size="sm" disabled={pending || dirty} onClick={() => setPackaging(true)}>Package</Button>
+        <span className="ml-auto text-xs text-muted-foreground">{fmtSize(skill.sizeKb)}</span>
+      </div>
+      <ScrollArea className="flex-1 min-h-0"><div className="p-5 space-y-4">
+        {error && <p role="alert" className="text-destructive">{error}</p>}
+        {!loaded && !error && <p role="status">Loading complete SKILL.md…</p>}
+        {!!loaded?.files?.length && <details><summary className="cursor-pointer text-sm">Files (up to 200)</summary><ul className="mt-2 text-xs space-y-1">{loaded.files.map(file => <li key={file.path} className="flex gap-2 justify-between"><span className="break-all">{file.path}</span><span className="shrink-0 text-muted-foreground">{file.size}</span></li>)}</ul></details>}
+        {loaded && (editing ? <textarea aria-label="SKILL.md content" value={draft} onChange={e => setDraft(e.target.value)} spellCheck={false} className="w-full min-h-96 rounded border bg-background p-3 font-mono-hud text-sm" /> : <pre className="whitespace-pre-wrap break-words rounded border bg-black/30 p-4 font-mono-hud text-sm">{loaded.content}</pre>)}
+        <div className="space-y-2 text-sm"><p className="break-all"><strong>Location:</strong> {skill.dir}</p><p className="break-all"><strong>Source:</strong> {skill.source}</p><p>Updated: {skill.updatedAt}</p><InstallSet installs={skill.installs} />{skill.installations?.map(i => <p key={i.path + i.cli} className="break-all text-xs">{i.cli}: {i.path}</p>)}</div>
+      </div></ScrollArea>
+      {packaging && <PackageDialog id={skill.id} onClose={() => setPackaging(false)} onPackage={onPackage} />}
+    </SheetContent>
+  </Sheet>;
 }

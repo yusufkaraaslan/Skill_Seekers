@@ -4,7 +4,7 @@ import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [react()],
   // Build straight into the Python package so the built SPA ships inside the
   // wheel (see src/skill_seekers/web/app.py DIST_DIR). Gitignored, not committed.

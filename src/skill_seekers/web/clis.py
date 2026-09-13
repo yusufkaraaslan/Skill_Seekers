@@ -64,8 +64,9 @@ def _build_cli_specs() -> list[CliSpec]:
             short="CUR",
             color="199 89% 55%",
             binary="cursor",
-            global_path=home / ".cursor" / "rules",
-            kind="flat",
+            global_path=home / ".cursor" / "skills",
+            kind="dir",
+            alt_paths=(home / ".agents" / "skills",),
         ),
         CliSpec(
             id="windsurf",
@@ -73,8 +74,8 @@ def _build_cli_specs() -> list[CliSpec]:
             short="WIN",
             color="172 70% 45%",
             binary="windsurf",
-            global_path=home / ".codeium" / "windsurf" / "memories",
-            kind="flat",
+            global_path=home / ".codeium" / "windsurf" / "skills",
+            kind="dir",
         ),
         CliSpec(
             id="gemini",
@@ -91,8 +92,9 @@ def _build_cli_specs() -> list[CliSpec]:
             short="CDX",
             color="152 60% 42%",
             binary="codex",
-            global_path=home / ".codex" / "instructions",
-            kind="flat",
+            global_path=home / ".agents" / "skills",
+            kind="dir",
+            alt_paths=(home / ".codex" / "skills",),
         ),
         CliSpec(
             id="opencode",
@@ -100,9 +102,9 @@ def _build_cli_specs() -> list[CliSpec]:
             short="OPC",
             color="330 70% 60%",
             binary="opencode",
-            global_path=home / ".config" / "opencode" / "agent",
-            kind="flat",
-            alt_paths=(home / ".opencode" / "agent",),
+            global_path=home / ".config" / "opencode" / "skills",
+            kind="dir",
+            alt_paths=(home / ".claude" / "skills", home / ".agents" / "skills"),
         ),
     ]
 
@@ -138,7 +140,7 @@ def _probe_version(binary: str) -> str | None:
     return m.group(0) if m else (text.splitlines()[0][:24] if text else None)
 
 
-_installed_cache: dict[str, tuple[float, list[tuple[str, Path]]]] = {}
+_installed_cache: dict[CliSpec, tuple[float, list[tuple[str, Path]]]] = {}
 INSTALLED_CACHE_TTL = 30.0
 
 # Top-level dirs under ~/.claude/plugins that are catalogue clones or state,
@@ -152,47 +154,56 @@ def iter_installed_skills(spec: CliSpec) -> list[tuple[str, Path]]:
 
     Covers the global skills dir (direct children with SKILL.md) plus any
     scan_roots searched recursively (plugin bundles, marketplace caches).
-    Results are deduplicated by skill name, first location wins. Cached for
+    Results are deduplicated by resolved location, preserving duplicate names. Cached for
     INSTALLED_CACHE_TTL seconds since recursive scans are expensive.
     """
     import time
 
-    cached = _installed_cache.get(spec.id)
+    cached = _installed_cache.get(spec)
     now = time.time()
     if cached and now - cached[0] < INSTALLED_CACHE_TTL:
         return cached[1]
 
-    found: dict[str, Path] = {}
+    found: dict[Path, tuple[str, Path]] = {}
     if spec.kind == "dir":
         if spec.global_path.is_dir():
             for p in sorted(spec.global_path.iterdir()):
-                if p.is_dir() and (p / "SKILL.md").is_file():
-                    found.setdefault(p.name, p)
-        for root in spec.scan_roots:
+                if not p.name.startswith(".") and p.is_dir() and (p / "SKILL.md").is_file():
+                    found.setdefault(p.resolve(), (p.name, p))
+                elif spec.id == "opencode" and p.is_file() and p.suffix == ".md":
+                    found.setdefault(p.resolve(), (p.stem, p))
+        for root in (*spec.scan_roots, spec.global_path, *spec.alt_paths):
             if not root.is_dir():
                 continue
-            # A SKILL.md nested inside a skill dir (e.g. vercel's ai-sdk/upstream/)
-            # belongs to that skill; walk shallow-first so the owner is seen before
-            # its descendants.
-            claimed: set[Path] = set()
-            for skill_md in sorted(root.rglob("SKILL.md"), key=lambda p: (len(p.parts), str(p))):
-                rel = skill_md.relative_to(root)
-                if rel.parts and rel.parts[0] in PLUGIN_ROOT_SKIP:
-                    continue
-                if any(part in _SKIP_ANYWHERE for part in rel.parts):
-                    continue
-                skill_dir = skill_md.parent
-                if any(parent in claimed for parent in skill_dir.parents):
-                    continue
-                claimed.add(skill_dir)
-                found.setdefault(skill_dir.name, skill_dir)
+            import os
+
+            # Prune catalogue/dependency trees before reading their contents.
+            for directory, subdirs, files in os.walk(root, followlinks=False):
+                current = Path(directory)
+                subdirs[:] = sorted(
+                    d
+                    for d in subdirs
+                    if not d.startswith(".seeker-")
+                    and d not in _SKIP_ANYWHERE
+                    and (current != root or d not in PLUGIN_ROOT_SKIP)
+                )
+                if "SKILL.md" in files:
+                    found.setdefault(current.resolve(), (current.name, current))
+                    subdirs.clear()  # nested SKILL.md files belong to this skill
     else:
         if spec.global_path.is_dir():
             for p in sorted(spec.global_path.iterdir()):
                 if p.is_file() and p.suffix in (".md", ".mdc"):
-                    found.setdefault(p.stem, p)
-    result = list(found.items())
-    _installed_cache[spec.id] = (now, result)
+                    found.setdefault(p.resolve(), (p.stem, p))
+    for alternate in spec.alt_paths:
+        if alternate.is_dir():
+            for p in sorted(alternate.iterdir()):
+                if spec.kind == "dir" and (p / "SKILL.md").is_file():
+                    found.setdefault(p.resolve(), (p.name, p))
+                elif spec.kind == "flat" and p.is_file() and p.suffix in (".md", ".mdc"):
+                    found.setdefault(p.resolve(), (p.stem, p))
+    result = list(found.values())
+    _installed_cache[spec] = (now, result)
     return result
 
 

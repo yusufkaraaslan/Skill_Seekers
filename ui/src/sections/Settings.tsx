@@ -3,6 +3,7 @@ import { Panel, SectionHeader, CliChip } from '@/components/hud';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RefreshCw, CheckCircle2, XCircle, KeyRound } from 'lucide-react';
+import { useStore } from '@/lib/store';
 import type { SettingsPayload } from '@/lib/api';
 
 const KEY_TARGETS: Record<string, string> = {
@@ -21,10 +22,11 @@ export default function Settings({
   onReprobe,
 }: {
   settings: SettingsPayload | null;
-  onSetKey: (name: string, value: string) => void;
-  onSetDefaults: (s: Record<string, unknown>) => void;
+  onSetKey: (name: string, value: string) => Promise<boolean>;
+  onSetDefaults: (s: Record<string, unknown>) => Promise<boolean>;
   onReprobe: () => void;
 }) {
+  const { pending } = useStore();
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const clis = settings?.clis ?? [];
   const keys = settings?.keys ?? [];
@@ -87,10 +89,11 @@ export default function Settings({
         <SectionHeader title="Credentials" sub="stored via config manager — never written to configs" />
         <div className="space-y-2.5">
           {keys.map((k) => (
-            <div key={k.name} className="flex items-center gap-3">
+            <div key={k.name} className="flex flex-wrap sm:flex-nowrap items-center gap-3">
               <KeyRound className={`h-3.5 w-3.5 shrink-0 ${k.set ? 'text-[hsl(152_60%_50%)]' : 'text-muted-foreground'}`} />
               <span className="font-mono-hud text-xs w-44 shrink-0">{k.name}</span>
               <Input
+                aria-label={k.name}
                 type="password"
                 value={keyDrafts[k.name] ?? ''}
                 onChange={(e) => setKeyDrafts((d) => ({ ...d, [k.name]: e.target.value }))}
@@ -100,10 +103,9 @@ export default function Settings({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={!keyDrafts[k.name]?.trim()}
-                onClick={() => {
-                  onSetKey(k.name, keyDrafts[k.name].trim());
-                  setKeyDrafts((d) => ({ ...d, [k.name]: '' }));
+                disabled={pending || !keyDrafts[k.name]?.trim()}
+                onClick={async () => {
+                  if (await onSetKey(k.name, keyDrafts[k.name].trim())) setKeyDrafts((d) => ({ ...d, [k.name]: '' }));
                 }}
                 className="h-8 font-mono-hud text-[10px] uppercase tracking-wider shrink-0"
               >
@@ -119,23 +121,23 @@ export default function Settings({
 
       {/* defaults */}
       <Panel className="p-5">
-        <SectionHeader title="Defaults" sub="applied to every new job unless overridden" />
+        <SectionHeader title="Defaults" sub="Applied to new jobs. Existing Create drafts keep their chosen options." />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">enhancement agent</label>
-            <Input value={agent} onChange={(e) => setDefaultAgent(e.target.value)} className="mt-1.5 font-mono-hud text-xs h-8 bg-secondary/50" />
+            <select aria-label="Default enhancement agent" value={agent} onChange={e => setDefaultAgent(e.target.value)} className="mt-1.5 w-full rounded border bg-background p-2 text-sm">{settings?.capabilities.agents.filter(a => a !== 'custom').map(a => <option key={a}>{a}</option>)}</select>
           </div>
           <div>
             <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">output directory</label>
-            <Input value={out} onChange={(e) => setOutputDir(e.target.value)} className="mt-1.5 font-mono-hud text-xs h-8 bg-secondary/50" />
+            <Input aria-label="Output directory" value={out} onChange={(e) => setOutputDir(e.target.value)} className="mt-1.5 font-mono-hud text-xs h-8 bg-secondary/50" />
           </div>
           <div>
             <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">configs directory</label>
-            <Input value={cfg} onChange={(e) => setConfigsDir(e.target.value)} className="mt-1.5 font-mono-hud text-xs h-8 bg-secondary/50" />
+            <Input aria-label="Configs directory" value={cfg} onChange={(e) => setConfigsDir(e.target.value)} className="mt-1.5 font-mono-hud text-xs h-8 bg-secondary/50" />
           </div>
         </div>
         <div className="mt-4">
-          <Button size="sm" onClick={saveDefaults} className="font-mono-hud text-xs uppercase tracking-wider">
+          <Button size="sm" disabled={pending} onClick={saveDefaults} className="font-mono-hud text-xs uppercase tracking-wider">
             save defaults
           </Button>
         </div>

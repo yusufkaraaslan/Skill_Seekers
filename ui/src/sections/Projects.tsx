@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useStore } from '@/lib/store';
 import { Panel, SectionHeader, StatusPill, InstallSet } from '@/components/hud';
 import { fmtSize } from '@/lib/data';
 import type { Project, Skill } from '@/lib/data';
@@ -13,13 +14,18 @@ export default function Projects({
   onRescan,
   onAdd,
   onViewSkills,
+  onRemove,
+  onViewConfigs,
 }: {
   projects: Project[];
   skills: Skill[];
-  onRescan: (id: string) => void;
-  onAdd: (path: string) => void;
+  onRescan: (id: string) => Promise<boolean>;
+  onAdd: (path: string) => Promise<boolean>;
+  onRemove: (id: string) => Promise<boolean>;
+  onViewConfigs: () => void;
   onViewSkills: (pid: string) => void;
 }) {
+  const { pending } = useStore();
   const [addOpen, setAddOpen] = useState(false);
   const [path, setPath] = useState('');
 
@@ -48,14 +54,14 @@ export default function Projects({
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {projects.map((p) => (
-          <ProjectCard
+          <div key={p.id} className="min-w-0"><ProjectCard
             key={p.id}
             project={p}
             skills={projectSkills(p.id)}
             scanning={p.status === 'scanning'}
             onRescan={() => onRescan(p.id)}
             onViewSkills={() => onViewSkills(p.id)}
-          />
+          /><div className="mt-2 flex gap-2"><Button variant="outline" size="sm" onClick={onViewConfigs}>View configs</Button><Button variant="ghost" size="sm" disabled={pending} onClick={() => { if (window.confirm(`Stop tracking ${p.name}? Project files will be preserved.`)) onRemove(p.id); }}>Remove project</Button></div></div>
         ))}
       </div>
 
@@ -64,15 +70,16 @@ export default function Projects({
           <DialogHeader>
             <DialogTitle className="font-mono-hud text-sm uppercase tracking-[0.2em] text-primary">// add project</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Point Seeker at a local path or git URL. First scan runs automatically.
+              Choose an existing local directory. The first scan runs automatically; clone remote repositories first.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">path or git url</label>
+            <label className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">local directory</label>
             <Input
+              aria-label="Project directory"
               value={path}
               onChange={(e) => setPath(e.target.value)}
-              placeholder="~/dev/my-project  ·  github.com/user/repo"
+              placeholder="~/dev/my-project"
               className="font-mono-hud text-sm bg-secondary/50"
             />
             <div className="rounded border border-dashed border-border p-3 text-[11px] text-muted-foreground leading-relaxed">
@@ -83,11 +90,9 @@ export default function Projects({
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddOpen(false)} className="font-mono-hud text-xs">Cancel</Button>
             <Button
-              disabled={!path.trim()}
-              onClick={() => {
-                setAddOpen(false);
-                onAdd(path.trim());
-                setPath('');
+              disabled={pending || !path.trim()}
+              onClick={async () => {
+                if (await onAdd(path.trim())) { setAddOpen(false); setPath(''); }
               }}
               className="font-mono-hud text-xs uppercase tracking-wider"
             >
@@ -133,6 +138,7 @@ function ProjectCard({
         <StatusPill status={scanning ? 'scanning' : p.status} />
       </div>
 
+      {p.error && <p role="alert" className="mt-3 text-sm text-destructive">{p.error}</p>}
       {/* frameworks */}
       <div className="mt-4 flex flex-wrap gap-1.5">
         {(p.frameworks ?? []).map((f) => (
@@ -141,7 +147,7 @@ function ProjectCard({
           </span>
         ))}
         {(p.frameworks ?? []).length === 0 && (
-          <span className="font-mono-hud text-[10px] text-muted-foreground">detecting…</span>
+          <span className="font-mono-hud text-[10px] text-muted-foreground">{scanning ? 'detecting…' : 'no frameworks found'}</span>
         )}
       </div>
 
@@ -162,7 +168,7 @@ function ProjectCard({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+      <div className="mt-4 flex flex-wrap gap-2 items-center justify-between border-t border-border pt-3">
         <div className="font-mono-hud text-[10px] text-muted-foreground space-x-3">
           <span>last scan <span className="text-foreground/70">{p.lastScan}</span></span>
           <span>skills <span className="text-foreground/70">{skills.length}</span></span>

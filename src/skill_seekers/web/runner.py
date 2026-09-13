@@ -51,7 +51,15 @@ def _run_cli_main(module_name: str, argv: list[str]) -> int:
     sys.argv = [module_name.rsplit(".", 1)[-1], *argv]
     try:
         module = importlib.import_module(module_name)
-        result = module.main()
+        try:
+            result = module.main()
+        except SystemExit as exc:
+            if exc.code is None:
+                return 0
+            if isinstance(exc.code, int):
+                return exc.code
+            print(str(exc.code), flush=True)
+            return 1
         return int(result) if isinstance(result, int) else 0
     finally:
         sys.argv = old_argv
@@ -102,18 +110,58 @@ def run_create(spec: dict[str, Any]) -> int:
     name = spec.get("name") or "untitled-skill"
     flags: dict[str, Any] = spec.get("flags") or {}
     targets: list[str] = spec.get("targets") or []
-    configs_dir = Path(spec.get("configs_dir") or "configs")
     cwd = Path(spec.get("cwd") or os.getcwd())
+    configs_dir = cwd / Path(spec.get("configs_dir") or "configs").expanduser()
+    output_path = cwd / Path(spec.get("output_dir") or "output").expanduser() / name
 
     progress(5, "resolving sources…")
 
-    if len(entries) > 1:
+    if len(entries) > 1 or entries[0]["type"] in ("confluence", "notion", "chat"):
         # Unified multi-source: emit a unified config JSON and run via --config
         sources = []
         for e in entries:
             stype = SOURCE_TYPE_MAP.get(e["type"], e["type"])
             key = SOURCE_TO_INPUT_KEY.get(e["type"], "path")
-            sources.append({"type": stype, key: e["input"]})
+            value = e["input"].strip()
+            remote = value.startswith(("https://", "http://"))
+            if e["type"] in ("video", "rss", "openapi", "confluence", "notion"):
+                key = "url" if remote else "path"
+            if key == "path":
+                value = str((cwd / Path(value).expanduser()).resolve())
+            source = {"type": stype, key: value}
+            if e["type"] == "github":
+                source["repo"] = (
+                    value.removeprefix("https://github.com/")
+                    .removeprefix("http://github.com/")
+                    .removesuffix(".git")
+                    .strip("/")
+                )
+            if e["type"] == "notion" and remote:
+                import re
+
+                match = re.search(r"([a-fA-F0-9]{32}|[a-fA-F0-9-]{36})(?:[?/#]|$)", value)
+                if not match:
+                    raise ValueError(
+                        "Use a Notion page URL containing its page ID, or an export path"
+                    )
+                source = {"type": stype, "page_id": match.group(1)}
+            if e["type"] == "confluence" and remote:
+                from urllib.parse import urlsplit
+
+                parts = urlsplit(value)
+                segments = parts.path.split("/")
+                if "spaces" not in segments or segments.index("spaces") + 1 >= len(segments):
+                    raise ValueError("Use a Confluence /spaces/SPACE URL, or an export path")
+                source["space_key"] = segments[segments.index("spaces") + 1]
+                source["base_url"] = f"{parts.scheme}://{parts.netloc}" + (
+                    "/wiki" if parts.path.startswith("/wiki/") else ""
+                )
+            for option in ("max_pages", "rate_limit"):
+                if flags.get(option) not in (None, ""):
+                    source[option] = (
+                        float(flags[option]) if option == "rate_limit" else int(flags[option])
+                    )
+            sources.append(source)
         cfg = {
             "name": name,
             "description": flags.get("description") or f"{name} — unified multi-source skill",
@@ -121,14 +169,20 @@ def run_create(spec: dict[str, Any]) -> int:
             "sources": sources,
         }
         configs_dir.mkdir(parents=True, exist_ok=True)
+        # Stable name: re-running the same create (or Retry) overwrites its own
+        # config instead of littering configs/ with random files.
+        from .paths import atomic_write
+
         cfg_path = configs_dir / f"{name}-unified.json"
-        cfg_path.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+        atomic_write(cfg_path, json.dumps(cfg, indent=2).encode("utf-8"))
         progress(10, f"wrote {cfg_path}")
         argv = ["--config", str(cfg_path), "--name", name, *_create_flag_argv(flags)]
     else:
         e = entries[0]
         progress(10, f"source: {e['type']} · {e['input']}")
         argv = [e["input"], "--name", name, *_create_flag_argv(flags)]
+
+    argv += ["--output", str(output_path), "--non-interactive"]
 
     progress(15, "launching create pipeline…")
     code = _run_cli_main("skill_seekers.cli.create_command", argv)
@@ -139,28 +193,26 @@ def run_create(spec: dict[str, Any]) -> int:
         progress(100, "dry run complete")
         return 0
 
+    if not (output_path / "SKILL.md").is_file():
+        raise RuntimeError(f"Create finished without producing {output_path / 'SKILL.md'}")
     # Package to each requested target
-    if targets:
-        skill_dir = Path(spec.get("output_dir") or "output") / name
-        total = len(targets)
-        for i, target in enumerate(targets):
-            pct = 80 + int((i / total) * 18)
-            progress(pct, f"packaging → {target}…")
-            pkg_argv = [str(skill_dir), "--target", target, "--no-open", "--yes"]
-            if flags.get("chunk_for_rag"):
-                pkg_argv += [
-                    "--chunk-for-rag",
-                    "--chunk-tokens",
-                    str(flags.get("chunk_tokens") or 512),
-                    "--chunk-overlap-tokens",
-                    str(flags.get("chunk_overlap") or 50),
-                ]
-            pkg_code = _run_cli_main("skill_seekers.cli.package_skill", pkg_argv)
-            if pkg_code != 0:
-                print(f"packaging for {target} failed (exit {pkg_code})", flush=True)
-
     _write_sidecar(cwd, spec)
+    artifact(output_path)
+    if targets:
+        return run_package(
+            {
+                "skill_dir": str(output_path),
+                "targets": targets,
+                "output_dir": str(output_path.parent / "_packages"),
+                "flags": flags,
+            }
+        )
     return 0
+
+
+def artifact(path: Path) -> None:
+    """Publish an output location for the job detail view."""
+    print("[[ARTIFACT]] " + json.dumps(str(path.resolve())), flush=True)
 
 
 def _write_sidecar(cwd: Path, spec: dict[str, Any]) -> None:
@@ -201,12 +253,30 @@ def run_scan(spec: dict[str, Any]) -> int:
     return int(code or 0)
 
 
-def _package_targets(skill_dir: str, targets: list[str]) -> int:
-    """Run the package CLI for each target against ``skill_dir`` in turn."""
-    total = len(targets)
+def _package_targets(
+    skill_dir: str,
+    targets: list[str],
+    flags: dict | None = None,
+    first: int = 0,
+    count: int | None = None,
+) -> int:
+    """Run the package CLI for each target against ``skill_dir`` in turn.
+
+    ``first``/``count`` let a caller that packages one target at a time report
+    progress across the whole job instead of restarting at 10% per target.
+    """
+    total = count or len(targets)
     for i, target in enumerate(targets):
-        progress(10 + int((i / total) * 85), f"packaging → {target}…")
+        progress(10 + int(((first + i) / total) * 85), f"packaging → {target}…")
         argv = [skill_dir, "--target", target, "--no-open", "--yes", "--skip-quality-check"]
+        if flags and flags.get("chunk_for_rag"):
+            argv += [
+                "--chunk-for-rag",
+                "--chunk-tokens",
+                str(flags.get("chunk_tokens") or 512),
+                "--chunk-overlap-tokens",
+                str(flags.get("chunk_overlap") or 50),
+            ]
         code = _run_cli_main("skill_seekers.cli.package_skill", argv)
         if code != 0:
             return code
@@ -228,25 +298,62 @@ def run_package(spec: dict[str, Any]) -> int:
     half-written directory sitting where the next run would collide with it.
     """
     skill_dir = Path(spec["skill_dir"])
-    targets: list[str] = spec.get("targets") or ["claude"]
+    targets: list[str] = list(dict.fromkeys(spec.get("targets") or ["claude"]))
 
     output_dir = spec.get("output_dir")
     if not output_dir:
-        return _package_targets(str(skill_dir), targets)
+        code = _package_targets(str(skill_dir), targets, spec.get("flags"))
+        if code == 0:
+            artifact(skill_dir.parent)
+        return code
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     # Unique per job: concurrent packages of the same skill must not share a path.
     staging = Path(tempfile.mkdtemp(prefix=f".staging-{skill_dir.name}-", dir=out))
-    staged = staging / skill_dir.name
+    staged = staging / (skill_dir.stem if skill_dir.is_file() else skill_dir.name)
     try:
-        shutil.copytree(skill_dir, staged)  # no dirs_exist_ok — the dir is fresh
-        code = _package_targets(str(staged), targets)
+        if skill_dir.is_file():
+            staged.mkdir()
+            shutil.copy2(skill_dir, staged / "SKILL.md")
+        else:
+            shutil.copytree(skill_dir, staged)
+        grouped = staging / ".formats"
+        code = 0
+        for i, target in enumerate(targets):
+            code = _package_targets(
+                str(staged), [target], spec.get("flags"), first=i, count=len(targets)
+            )
+            if code != 0:
+                break
+            # One directory per target, always: adaptors reuse filenames, and a
+            # layout that depends on the target count is a trap for consumers.
+            target_dir = grouped / target
+            target_dir.mkdir(parents=True)
+            for item in list(staging.iterdir()):
+                if item not in (staged, grouped):
+                    shutil.move(str(item), str(target_dir / item.name))
         if code == 0:
             # The CLI writes archives beside the skill dir, i.e. into `staging/`.
-            for artifact in staging.iterdir():
-                if artifact.is_file():
-                    shutil.move(str(artifact), str(out / artifact.name))
+            from .paths import state_transaction
+
+            with state_transaction():
+                job_suffix = staging.name.rsplit("-", 1)[-1]
+                for target_dir in sorted(grouped.iterdir()):
+                    dest_dir = out / target_dir.name
+                    dest_dir.mkdir(exist_ok=True)
+                    artifact(dest_dir)
+                    for item in sorted(target_dir.iterdir()):
+                        dest = dest_dir / item.name
+                        if dest.exists():  # earlier run of the same skill: keep both
+                            dest = dest_dir / f"{item.stem}-{job_suffix}{item.suffix}"
+                        shutil.move(str(item), str(dest))
+                        if dest.is_dir():
+                            for file in sorted(dest.rglob("*")):
+                                if file.is_file():
+                                    artifact(file)
+                        else:
+                            artifact(dest)
         return code
     finally:
         shutil.rmtree(staging, ignore_errors=True)
@@ -275,12 +382,13 @@ def run_port(spec: dict[str, Any]) -> int:
     for i, sd in enumerate(skill_dirs):
         progress(10 + int((i / total) * 85), f"installing {Path(sd).name} → {cli}…")
         try:
-            dest = install_skill_to_cli(Path(sd), cli)
+            dest = install_skill_to_cli(Path(sd), cli, replace=spec.get("replace", False))
             print(f"✓ {Path(sd).name} → {dest}", flush=True)
+            artifact(dest)
         except Exception as e:  # noqa: BLE001 — report and continue with other skills
             failed += 1
             print(f"✗ {Path(sd).name}: {e}", flush=True)
-    return 1 if failed == total else 0
+    return 1 if failed else 0
 
 
 def run_fetch_source(spec: dict[str, Any]) -> int:
@@ -297,6 +405,31 @@ def run_fetch_source(spec: dict[str, Any]) -> int:
     )
     configs = repo.find_configs(Path(path) if not isinstance(path, Path) else path)
     progress(85, f"{len(configs)} configs found")
+    artifact(Path(path))
+    return 0
+
+
+def run_market_sync(spec: dict[str, Any]) -> int:
+    """Refresh a marketplace cache in a visible background job."""
+    from .market import sync_marketplace
+
+    path = sync_marketplace(spec["git_url"], spec.get("branch", "main"))
+    artifact(path)
+    return 0
+
+
+def run_market_install(spec: dict[str, Any]) -> int:
+    """Install one marketplace item to explicitly chosen destinations."""
+    from .market import install_marketplace_item
+
+    dest = install_marketplace_item(
+        Path(spec["path"]),
+        spec["kind"],
+        Path(spec["cwd"]),
+        spec.get("clis", []),
+        replace=spec.get("replace", False),
+    )
+    artifact(dest)
     return 0
 
 
@@ -332,6 +465,8 @@ DISPATCH = {
     "fetch": run_fetch_source,
     "publish": run_publish,
     "estimate": run_estimate,
+    "market-sync": run_market_sync,
+    "install": run_market_install,
 }
 
 
@@ -355,7 +490,8 @@ def main() -> int:
         traceback.print_exc()
         print(f"✗ {type(e).__name__}: {e}", flush=True)
         return 1
-    progress(100, "done")
+    if not code:
+        progress(100, "done")
     return int(code or 0)
 
 

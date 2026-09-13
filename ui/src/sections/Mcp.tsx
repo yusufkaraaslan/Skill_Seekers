@@ -4,7 +4,7 @@ import { MCP_CATEGORY_COLOR } from '@/lib/data';
 import type { McpTool } from '@/lib/data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plug, Search, TerminalSquare, Play, Copy, RefreshCw } from 'lucide-react';
+import { Plug, Search, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
@@ -58,7 +58,7 @@ function StatusCard({
         </div>
       </div>
       <span className="ml-auto shrink-0 font-mono-hud text-[10px] whitespace-nowrap" style={{ color: `hsl(${color})` }}>{label}</span>
-      <Button size="sm" variant="ghost" className="h-7 px-2" title="copy client config" onClick={onCopy}>
+      <Button size="sm" variant="ghost" className="h-7 px-2" title="copy client config" aria-label={`Copy ${title} configuration`} onClick={onCopy}>
         <Copy className="h-3.5 w-3.5" />
       </Button>
     </Panel>
@@ -68,11 +68,11 @@ function StatusCard({
 export default function Mcp({ tools }: { tools: McpTool[] }) {
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<string>('all');
-  const [nl, setNl] = useState('');
+  const [probeError, setProbeError] = useState('');
 
   const [status, setStatus] = useState<McpStatus | null>(null);
   const fetchStatus = useCallback(
-    () => api.mcpStatus().then(setStatus).catch(() => setStatus(null)),
+    () => api.mcpStatus().then(value => { setStatus(value); setProbeError(''); }).catch(error => { setStatus(null); setProbeError(String(error)); }),
     [],
   );
   useEffect(() => {
@@ -95,13 +95,6 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
 
   const counts = CATEGORIES.map((c) => ({ c, n: tools.filter((t) => t.category === c).length }));
 
-  const dispatch = () => {
-    const match = tools.find((t) => nl.toLowerCase().includes(t.name.split('_')[0]));
-    toast.success(`→ ${match?.name ?? 'install_skill'}`, {
-      description: 'natural-language dispatch happens inside an MCP-connected agent — start one with: python -m skill_seekers.mcp.server_fastmcp',
-    });
-    setNl('');
-  };
 
   return (
     <div className="space-y-5 animate-flicker">
@@ -115,46 +108,30 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
         }
       />
 
+      {probeError && <p role="alert" className="rounded border border-destructive p-3 text-sm">Status unavailable: {probeError}. Use Re-probe to retry.</p>}
       {/* server status strip */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <StatusCard
           title="stdio transport"
           sub={status?.stdio.command ?? 'python -m skill_seekers.mcp.server_fastmcp'}
           hint="pip install 'skill-seekers[mcp]'"
-          live={status ? status.stdio.state === 'installed' : null}
+          live={probeError ? false : status ? status.stdio.state === 'installed' : null}
           liveLabel="installed"
-          downLabel="not installed"
+          downLabel={probeError ? "unavailable" : "not installed"}
           onCopy={() => copyText('.mcp.json snippet', STDIO_SNIPPET)}
         />
         <StatusCard
           title="http transport"
           sub={status ? status.http.url : 'http://127.0.0.1:8000/sse'}
           hint="start: python -m skill_seekers.mcp.server_fastmcp --http"
-          live={status ? status.http.state === 'live' : null}
+          live={probeError ? false : status ? status.http.state === 'live' : null}
           liveLabel="live"
-          downLabel="not running"
+          downLabel={probeError ? "unavailable" : "not running"}
           onCopy={() => copyText('Cursor / Windsurf snippet', httpSnippet(status?.http.url ?? 'http://127.0.0.1:8000/sse'))}
         />
-        {/* natural language runner */}
-        <Panel className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TerminalSquare className="h-4 w-4 text-primary" />
-            <span className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">natural language → tool</span>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={nl}
-              onChange={(e) => setNl(e.target.value)}
-              placeholder='"Package output/react for Claude"'
-              className="h-8 font-mono-hud text-xs bg-secondary/50"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && nl.trim()) dispatch();
-              }}
-            />
-            <Button size="sm" className="h-8 px-2.5" disabled={!nl.trim()} onClick={dispatch}>
-              <Play className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+        <Panel className="p-4 space-y-2">
+          <p className="font-semibold text-sm">Use tools in your connected agent</p>
+          <p className="text-sm text-muted-foreground">Copy a client configuration, connect your agent to Seeker MCP, then ask it to use a tool below. This page provides connection help and examples.</p>
         </Panel>
       </div>
 
@@ -192,9 +169,9 @@ export default function Mcp({ tools }: { tools: McpTool[] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
         {filtered.map((t) => (
           <div key={t.name} className="hud-panel rounded-md p-3.5 hover:border-primary/30 transition-colors group">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="status-dot inline-block h-[6px] w-[6px] rounded-full shrink-0" style={{ background: `hsl(${MCP_CATEGORY_COLOR[t.category]})`, color: `hsl(${MCP_CATEGORY_COLOR[t.category]})` }} />
-              <span className="font-mono-hud text-[13px] font-semibold">{t.name}</span>
+              <span className="font-mono-hud text-[13px] font-semibold break-all">{t.name}</span>
               <span
                 className="ml-auto rounded border px-1.5 py-px font-mono-hud text-[9px] uppercase tracking-wider shrink-0"
                 style={{ color: `hsl(${MCP_CATEGORY_COLOR[t.category]})`, borderColor: `hsl(${MCP_CATEGORY_COLOR[t.category]} / 0.35)` }}

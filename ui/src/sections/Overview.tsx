@@ -37,11 +37,11 @@ export default function Overview({
   const stats = [
     { label: 'Skills tracked', value: String(seekerCount), sub: `+${pluginCount} plugin · +${manualCount} manual`, accent: true },
     { label: 'CLIs detected', value: `${detected.length}/${clis.length}`, sub: detected.map((c) => c.id).join(' · ') || 'none' },
-    { label: 'Skill footprint', value: fmtSize(totalSize), sub: 'across all installs' },
+    { label: 'Skill footprint', value: fmtSize(totalSize), sub: 'indexed source files' },
     { label: 'Avg quality', value: String(avgQ), sub: 'heuristic score' },
   ];
 
-  const needsEnhance = skills.filter((s) => s.quality < 70).length;
+  const needsEnhance = skills.filter((s) => s.origin === 'seeker' && s.quality < 70).length;
 
   return (
     <div className="space-y-5 animate-flicker">
@@ -49,8 +49,8 @@ export default function Overview({
       <div className="grid grid-cols-12 gap-5">
         <Panel className="col-span-12 lg:col-span-8 p-5 scanline overflow-hidden relative">
           <div className="absolute inset-0 bg-grid opacity-40 pointer-events-none" />
-          <div className="relative flex items-center gap-8">
-            <Radar size={190} blips={skills.length + 6} />
+          <div className="relative flex items-center gap-4">
+            <div className="hidden xl:block shrink-0"><Radar size={160} blips={Math.min(skills.length, 40)} /></div>
             <div className="flex-1 min-w-0">
               <div className="font-mono-hud text-[10px] uppercase tracking-[0.3em] text-primary/70 mb-1">
                 // seeker hud · mission control
@@ -59,7 +59,7 @@ export default function Overview({
                 Every skill. Every CLI. <span className="text-primary text-glow-cyan">One scope.</span>
               </h1>
               <p className="mt-2 text-sm text-muted-foreground max-w-md">
-                Scanning local machine + tracked projects. {skills.length} skills indexed across{' '}
+                Indexed sources and installations. {skills.length} skills indexed across{' '}
                 {detected.length} detected CLIs.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -151,27 +151,18 @@ export default function Overview({
               );
             })}
           </div>
-          <div className="mt-4 border-t border-border pt-3 flex items-center justify-between">
+          <div className="mt-4 border-t border-border pt-3 flex flex-wrap gap-2 items-center justify-between">
             <span className="font-mono-hud text-[10px] uppercase tracking-widest text-muted-foreground">quality distribution</span>
-            <div className="flex gap-1">
-              {skills.map((s) => (
-                <span
-                  key={s.id}
-                  title={`${s.name}: ${s.quality}`}
-                  className="inline-block w-[10px] rounded-[2px]"
-                  style={{
-                    height: `${8 + (s.quality / 100) * 18}px`,
-                    background: `hsl(${qualityColor(s.quality)} / 0.7)`,
-                  }}
-                />
-              ))}
+            <div className="flex flex-wrap gap-2 text-xs">
+              {[{ label: 'High', min: 85, max: 101 }, { label: 'Good', min: 70, max: 85 }, { label: 'Needs work', min: 0, max: 70 }].map(bucket => <span key={bucket.label} style={{ color: `hsl(${qualityColor(bucket.min)})` }}>{bucket.label}: {skills.filter(s => s.quality >= bucket.min && s.quality < bucket.max).length}</span>)}
             </div>
           </div>
         </Panel>
 
         {/* activity */}
         <Panel className="col-span-12 lg:col-span-7 p-5">
-          <SectionHeader title="Recent ops" sub="last 24h across all targets" />
+          <SectionHeader title="Recent ops" sub="latest recorded operations" />
+          {!activity.length && <p className="text-sm text-muted-foreground">No operations recorded yet.</p>}
           <div className="space-y-1 max-h-[264px] overflow-y-auto pr-1">
             {activity.map((a) => (
               <div key={a.id} className="flex items-start gap-3 rounded px-2 py-1.5 hover:bg-secondary/40 transition-colors">
@@ -189,8 +180,8 @@ export default function Overview({
         {[
           { icon: ScanSearch, t: 'Scan a project', d: 'AI reads manifests → emits one config per framework', act: onNewScan },
           { icon: Plus, t: 'Create from source', d: 'Docs, GitHub, PDF, video — 18 source types', act: onNewSkill },
-          { icon: Sparkles, t: 'Enhance queue', d: needsEnhance ? `${needsEnhance} skill(s) below quality 70` : 'all skills above quality 70', act: () => onNavigate('skills') },
-          { icon: Package, t: 'Bulk export', d: 'Package one asset to 21 platform targets', act: () => onNavigate('create') },
+          { icon: Sparkles, t: 'Review quality', d: needsEnhance ? `${needsEnhance} skill(s) below quality 70` : 'all skills above quality 70', act: () => onNavigate('skills') },
+          { icon: Package, t: 'Package a skill', d: 'Choose an existing skill and its export formats', act: () => onNavigate('skills') },
         ].map((q) => (
           <button key={q.t} onClick={q.act} className="hud-panel hud-corners rounded-md p-4 text-left group hover:border-primary/40 transition-colors">
             <q.icon className="h-4 w-4 text-primary mb-2.5 group-hover:drop-shadow-[0_0_6px_hsl(187_92%_50%)]" />

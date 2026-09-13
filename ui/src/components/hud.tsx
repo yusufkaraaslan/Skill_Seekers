@@ -36,7 +36,7 @@ export function SectionHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between gap-4 mb-3">
+    <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
       <div>
         <div className="flex items-center gap-2">
           <span className="inline-block h-3.5 w-[3px] bg-primary shadow-[0_0_8px_hsl(187_92%_50%/0.8)]" />
@@ -160,6 +160,8 @@ const STATUS_STYLE: Record<string, [string, string]> = {
   queued:        ['217 12% 55%', 'queued'],
   done:          ['152 60% 45%', 'done'],
   failed:        ['0 72% 55%', 'failed'],
+  cancelling: ['45 93% 55%', 'cancelling'],
+  cancelled: ['217 12% 55%', 'cancelled'],
 };
 
 export function StatusPill({ status }: { status: string }) {
@@ -210,7 +212,7 @@ export function Pager({
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono-hud text-[10px] text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-3 py-2 font-mono-hud text-[10px] text-muted-foreground">
       <div className="flex items-center gap-1">
         <span className="mr-1 uppercase tracking-widest">per page</span>
         {PAGE_SIZES.map((n) => (
@@ -227,9 +229,9 @@ export function Pager({
         ))}
       </div>
       <div className="flex items-center gap-2">
-        <button disabled={page <= 1} onClick={() => onPage(page - 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">‹</button>
+        <button aria-label="Previous page" disabled={page <= 1} onClick={() => onPage(page - 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">‹</button>
         <span>{from}–{to} of {total}</span>
-        <button disabled={page >= pageCount} onClick={() => onPage(page + 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">›</button>
+        <button aria-label="Next page" disabled={page >= pageCount} onClick={() => onPage(page + 1)} className="rounded border border-border px-2 py-0.5 hover:text-foreground disabled:opacity-30">›</button>
       </div>
     </div>
   );

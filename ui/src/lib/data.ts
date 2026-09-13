@@ -31,11 +31,11 @@ export interface Cli {
 export const CLIS: Cli[] = [
   { id: 'claude',   name: 'Claude Code', short: 'CLA', color: '24 85% 60%',  version: '—', globalPath: '~/.claude/skills',              detected: false, skillCount: 0 },
   { id: 'kimi',     name: 'Kimi CLI',    short: 'KIM', color: '258 90% 66%', version: '—', globalPath: '~/.kimi/skills',                detected: false, skillCount: 0 },
-  { id: 'cursor',   name: 'Cursor',      short: 'CUR', color: '199 89% 55%', version: '—', globalPath: '~/.cursor/rules',               detected: false, skillCount: 0 },
-  { id: 'windsurf', name: 'Windsurf',    short: 'WIN', color: '172 70% 45%', version: '—', globalPath: '~/.codeium/windsurf/memories',  detected: false, skillCount: 0 },
+  { id: 'cursor',   name: 'Cursor',      short: 'CUR', color: '199 89% 55%', version: '—', globalPath: '~/.cursor/skills',              detected: false, skillCount: 0 },
+  { id: 'windsurf', name: 'Windsurf',    short: 'WIN', color: '172 70% 45%', version: '—', globalPath: '~/.codeium/windsurf/skills',   detected: false, skillCount: 0 },
   { id: 'gemini',   name: 'Gemini CLI',  short: 'GEM', color: '217 89% 61%', version: '—', globalPath: '~/.gemini/skills',              detected: false, skillCount: 0 },
-  { id: 'codex',    name: 'Codex CLI',   short: 'CDX', color: '152 60% 42%', version: '—', globalPath: '~/.codex/instructions',         detected: false, skillCount: 0 },
-  { id: 'opencode', name: 'OpenCode',    short: 'OPC', color: '330 70% 60%', version: '—', globalPath: '~/.config/opencode/agent',      detected: false, skillCount: 0 },
+  { id: 'codex',    name: 'Codex CLI',   short: 'CDX', color: '152 60% 42%', version: '—', globalPath: '~/.agents/skills',              detected: false, skillCount: 0 },
+  { id: 'opencode', name: 'OpenCode',    short: 'OPC', color: '330 70% 60%', version: '—', globalPath: '~/.config/opencode/skills',     detected: false, skillCount: 0 },
 ];
 
 export function setClis(clis: Cli[]): void {
@@ -81,8 +81,12 @@ export interface Skill {
   updatedAt: string;
   quality: number;             // 0–100 heuristic score
   tags: string[];
-  files: SkillFile[];
-  content: string;             // SKILL.md body
+  files?: SkillFile[];
+  revision?: string;
+  contentTruncated?: boolean;
+  editable?: boolean;
+  installations?: { cli: CliId; path: string; owned: string }[];
+  content?: string;             // SKILL.md body
   dir?: string;                // absolute path on disk (from backend)
   origin: SkillOrigin;
   pluginName?: string | null;  // set when origin === 'plugin' and the path was parseable
@@ -124,14 +128,15 @@ export interface Project {
   path: string;
   frameworks: { name: string; version: string }[];
   lastScan: string;
-  status: 'clean' | 'stale' | 'scanning' | 'new-configs' | 'new';
+  status: 'clean' | 'stale' | 'scanning' | 'new-configs' | 'new' | 'failed';
+  error?: string;
   configsFound: number;
 }
 
 // ── Jobs ────────────────────────────────────────────────────────────────────
 
-export type JobType = 'create' | 'scan' | 'package' | 'enhance' | 'port' | 'fetch' | 'publish' | 'install';
-export type JobStatus = 'queued' | 'running' | 'done' | 'failed';
+export type JobType = 'create' | 'scan' | 'package' | 'enhance' | 'port' | 'fetch' | 'publish' | 'install' | 'market-sync';
+export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelling' | 'cancelled';
 
 export interface Job {
   id: string;
@@ -142,6 +147,9 @@ export interface Job {
   status: JobStatus;
   startedAt: string;
   log: string[];
+  error?: string;
+  artifacts?: string[];
+  downloadableArtifacts?: number[];
 }
 
 // ── Activity feed ───────────────────────────────────────────────────────────
@@ -160,9 +168,6 @@ export const EXPORT_TARGETS = [
   { id: 'gemini',     label: 'Gemini Skill (.tar.gz)',  group: 'skill' },
   { id: 'openai',     label: 'OpenAI GPT (.zip)',       group: 'skill' },
   { id: 'kimi',       label: 'Kimi Skill (.zip)',       group: 'skill' },
-  { id: 'cursor',     label: 'Cursor (.cursorrules)',   group: 'ide' },
-  { id: 'windsurf',   label: 'Windsurf (.windsurfrules)', group: 'ide' },
-  { id: 'cline',      label: 'Cline (.clinerules)',     group: 'ide' },
   { id: 'langchain',  label: 'LangChain Documents',     group: 'rag' },
   { id: 'llama-index',label: 'LlamaIndex TextNodes',    group: 'rag' },
   { id: 'pinecone',   label: 'Pinecone Markdown',       group: 'rag' },
@@ -201,6 +206,7 @@ export interface Marketplace {
   skills: number;
   lastSync: string;
   connected: boolean;
+  error?: string;
 }
 
 export interface MarketSkill {

@@ -5,6 +5,7 @@ const BASE = '/api';
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(30000),
     ...init,
   });
   if (!res.ok) {
@@ -15,7 +16,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* non-json error */
     }
-    throw new Error(detail);
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
   }
   return res.json() as Promise<T>;
 }
@@ -55,6 +56,7 @@ export interface SettingsPayload {
   keys: { name: string; set: boolean }[];
   defaults: Record<string, unknown>;
   root: string;
+  capabilities: { targets: string[]; agents: string[] };
 }
 
 export interface McpStatus {
@@ -83,11 +85,16 @@ export const api = {
   create: (spec: CreateSpec) => post<{ ok: boolean; name: string }>('/create', spec),
   moveSkills: (ids: string[], dest: string) => post('/skills/move', { ids, dest }),
   deleteSkills: (ids: string[]) => post('/skills/delete', { ids }),
-  portSkills: (ids: string[], cli: string, ai: boolean, agent: string) =>
-    post('/skills/port', { ids, cli, ai, agent }),
+  portSkills: (ids: string[], cli: string, replace: boolean) =>
+    post('/skills/port', { ids, cli, replace }),
   enhanceSkill: (id: string) => post(`/skills/${id}/enhance`),
   packageSkill: (id: string, targets: string[]) => post(`/skills/${id}/package`, { targets }),
-  saveSkillContent: (id: string, content: string) => put(`/skills/${id}/content`, { content }),
+  skillContent: (id: string) => req<{ content: string; revision: string; files?: { path: string; size: string }[] }>(`/skills/${id}/content`),
+  saveSkillContent: (id: string, content: string, revision: string) => put(`/skills/${id}/content`, { content, revision }),
+  archivedSkills: () => req<{ id: string; name: string; archivedAt: string; original: string }[]>('/skills/archived'),
+  restoreSkill: (id: string) => post(`/skills/archived/${id}/restore`),
+  cancelJob: (id: string) => post(`/jobs/${id}/cancel`),
+  retryJob: (id: string) => post(`/jobs/${id}/retry`),
 
   addProject: (path: string) => post<{ project: Project }>('/projects', { path }),
   rescanProject: (id: string) => post(`/projects/${id}/rescan`),
@@ -101,8 +108,9 @@ export const api = {
 
   addMarketplace: (repo: string) => post('/marketplaces', { repo }),
   removeMarketplace: (name: string) => del(`/marketplaces/${name}`),
-  installMarketItem: (path: string, kind: string, clis: string[]) =>
-    post('/marketplaces/install', { path, kind, clis }),
+  syncMarketplaces: () => post('/marketplaces/sync'),
+  installMarketItem: (path: string, kind: string, clis: string[], replace: boolean) =>
+    post('/marketplaces/install', { path, kind, clis, replace }),
   publishSkill: (skill_name: string, marketplace: string) =>
     post('/marketplaces/publish', { skill_name, marketplace }),
 
