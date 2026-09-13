@@ -480,10 +480,11 @@ def run_upload(spec: dict[str, Any]) -> int:
     )
     if code != 0:
         return code
-    archives = sorted((out / target).glob("*.zip")) + sorted((out / target).glob("*.tar.gz"))
+    archives = [p for p in (out / target).iterdir() if p.suffix in (".zip", ".gz")]
     if not archives:
         raise RuntimeError(f"packaging for {target} produced no archive under {out / target}")
-    argv = [str(archives[-1]), "--target", target]
+    newest = max(archives, key=lambda p: p.stat().st_mtime)
+    argv = [str(newest), "--target", target]
     for key, flag in UPLOAD_OPTION_FLAGS.items():
         value = (spec.get("options") or {}).get(key)
         if value not in (None, ""):
