@@ -1,6 +1,7 @@
 """Runner job types added for the skill/config/analyze/environment pages."""
 # ruff: noqa: F811
 
+import json
 import os
 from pathlib import Path
 
@@ -88,3 +89,33 @@ def test_run_translate_update_quality_argv(workspace, monkeypatch):
     assert calls[2] == ("skill_seekers.cli.incremental_updater", [skill, "--force"])
     assert calls[3][0] == "skill_seekers.cli.quality_metrics"
     assert calls[3][1][:2] == [skill, "--report"] and calls[3][1][2] == "--output"
+
+
+def test_run_analyze_invokes_each_tool_and_writes_manifest(workspace, monkeypatch):
+    root, _ = workspace
+    calls = []
+
+    def fake_cli(module, argv):
+        calls.append(module.rsplit(".", 1)[-1])
+        out = argv[argv.index("--output") + 1] if "--output" in argv else None
+        if out:
+            Path(out).write_text(json.dumps({"patterns": [1, 2], "metrics": {"overall": 91}}))
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_cli)
+    spec = {
+        "cwd": str(root),
+        "output_dir": str(root / "output"),
+        "target": {"kind": "dir", "value": str(root)},
+        "tools": ["patterns", "quality"],
+        "depth": "basic",
+        "min_confidence": 0.7,
+        "ai_mode": "off",
+        "attach_to": None,
+    }
+    assert runner.run_analyze(spec) == 0
+    assert calls == ["pattern_recognizer", "quality_metrics"]
+    from skill_seekers.web import analysis_store
+
+    manifests = analysis_store.list_recent(root)
+    assert len(manifests) == 1 and set(manifests[0]["results"]) == {"patterns", "quality"}

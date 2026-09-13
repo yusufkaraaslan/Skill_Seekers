@@ -9,11 +9,14 @@ which prints a ``[[PROGRESS:nn]]`` marker line.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -524,6 +527,193 @@ def run_quality(spec: dict[str, Any]) -> int:
     return code
 
 
+ANALYZE_DEPTH = {"basic": "surface", "c3x": "deep"}
+# Run order, not menu order: `guides` consumes the JSON `tests` writes, so the
+# tools always execute in this sequence whatever order the request listed them.
+ANALYZE_TOOL_ORDER = ("patterns", "tests", "guides", "config", "router", "quality")
+# pattern_recognizer's --output is a directory; it writes this file inside it.
+PATTERN_RESULT_NAME = "detected_patterns.json"
+# Per-tool JSON keys holding the thing the manifest counts.
+COUNT_LIST_KEYS = ("patterns", "examples", "guides", "config_files", "configs")
+COUNT_TOTAL_KEYS = ("total_patterns_detected", "total_examples", "total_guides", "total_files")
+
+
+def _analysis_count(tool: str, path: Path) -> float | None:
+    """Headline number for an analysis result file (score for quality)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    if tool == "quality":
+        metrics = data.get("metrics")
+        overall = metrics.get("overall") if isinstance(metrics, dict) else None
+        if overall is None:
+            score = data.get("overall_score")
+            overall = score.get("total_score") if isinstance(score, dict) else score
+        return overall if isinstance(overall, (int, float)) else None
+    for key in COUNT_LIST_KEYS:
+        if isinstance(data.get(key), list):
+            return len(data[key])
+    for key in COUNT_TOTAL_KEYS:
+        if isinstance(data.get(key), int):
+            return data[key]
+    return None
+
+
+def _tool_output(path: Path, nested: str | None = None) -> Path | None:
+    """Resolve a tool's result: the path itself, or a known file inside it."""
+    if path.is_file():
+        return path
+    if nested and (path / nested).is_file():
+        return path / nested
+    return None
+
+
+def _capture_json(module: str, argv: list[str], out: Path) -> int:
+    """Run a CLI that prints its JSON report to stdout, saving it to ``out``."""
+    with open(out, "w", encoding="utf-8") as stream, contextlib.redirect_stdout(stream):
+        return _run_cli_main(module, argv)
+
+
+def _router_configs(spec: dict[str, Any], target: str) -> list[str]:
+    """Sub-skill configs of a skill target built from a unified config."""
+    from .paths import read_json
+
+    if spec.get("target", {}).get("kind") != "skill":
+        return []
+    configs_dir = Path(spec.get("configs_dir") or "configs")
+    skill_dir = Path(target)
+    sidecar = read_json(skill_dir / ".seeker-meta.json", {})
+    stored = sidecar.get("config") if isinstance(sidecar, dict) else None
+    config = read_json(Path(stored or configs_dir / f"{skill_dir.name}.json"), {})
+    if not isinstance(config, dict):
+        return []
+    names = [s.get("name") for s in config.get("sources") or [] if isinstance(s, dict)]
+    paths = [configs_dir / f"{name}.json" for name in names if name]
+    return [str(p) for p in paths if p.is_file()]
+
+
+@contextlib.contextmanager
+def _analysis_target(spec: dict[str, Any]):
+    """Yield a local directory to analyse, cloning a repo target first."""
+    target = spec["target"]
+    if target.get("kind") != "repo":
+        yield target["value"]
+        return
+    repo = target["value"]
+    with tempfile.TemporaryDirectory(prefix="seeker-analyze-") as tmp:
+        progress(5, f"cloning {repo}…")
+        clone = subprocess.run(
+            ["git", "clone", "--depth", "1", f"https://github.com/{repo}", tmp],
+            capture_output=True,
+            text=True,
+        )
+        if clone.returncode != 0:
+            raise RuntimeError(f"git clone failed for {repo}: {clone.stderr.strip()}")
+        yield tmp
+
+
+def run_analyze(spec: dict[str, Any]) -> int:
+    """Run the selected C3.x tools over a target and record a manifest."""
+    from .analysis_store import slug_for, write_manifest
+
+    root = Path(spec["cwd"])
+    slug = slug_for(spec["target"]["value"])
+    out_dir = Path(spec["output_dir"]) / "_analysis" / slug
+    out_dir.mkdir(parents=True, exist_ok=True)
+    depth = ANALYZE_DEPTH.get(spec.get("depth", "basic"), "surface")
+    ai_mode = spec.get("ai_mode", "off")
+    no_ai = ai_mode == "off"
+    results: dict[str, Any] = {}
+    tools = sorted(
+        spec["tools"],
+        key=lambda t: (
+            ANALYZE_TOOL_ORDER.index(t) if t in ANALYZE_TOOL_ORDER else len(ANALYZE_TOOL_ORDER)
+        ),
+    )
+    with _analysis_target(spec) as target:
+        for i, tool in enumerate(tools):
+            progress(10 + int((i / len(tools)) * 85), f"{tool}…")
+            out = out_dir / f"{tool}.json"
+            nested = None
+            if tool == "patterns":
+                out, nested = out_dir / "patterns", PATTERN_RESULT_NAME
+                code = _run_cli_main(
+                    "skill_seekers.cli.pattern_recognizer",
+                    ["--directory", target, "--output", str(out), "--depth", depth, "--json"],
+                )
+            elif tool == "tests":
+                code = _capture_json(
+                    "skill_seekers.cli.test_example_extractor",
+                    [
+                        target,
+                        "--json",
+                        "--recursive",
+                        "--min-confidence",
+                        str(spec.get("min_confidence", 0.7)),
+                    ],
+                    out,
+                )
+            elif tool == "guides":
+                examples = out_dir / "tests.json"
+                if not examples.is_file():
+                    print("skipping guides: select the tests tool to feed it", flush=True)
+                    code = 0
+                else:
+                    # --json-output makes the builder print the collection and
+                    # ignore --output, so capture stdout instead.
+                    argv = ["--input", str(examples), "--json-output"]
+                    code = _capture_json(
+                        "skill_seekers.cli.how_to_guide_builder",
+                        argv + (["--no-ai"] if no_ai else []),
+                        out,
+                    )
+            elif tool == "config":
+                code = _run_cli_main(
+                    "skill_seekers.cli.config_extractor",
+                    [target, "--output", str(out), "--ai-mode", "none" if no_ai else ai_mode],
+                )
+            elif tool == "quality":
+                code = _run_cli_main(
+                    "skill_seekers.cli.quality_metrics", [target, "--report", "--output", str(out)]
+                )
+            elif tool == "router":
+                configs = _router_configs(spec, target)
+                if not configs:
+                    print(
+                        "skipping router: target is not a skill with sub-skill configs", flush=True
+                    )
+                    code = 0
+                else:
+                    code = _run_cli_main(
+                        "skill_seekers.cli.generate_router",
+                        [*configs, "--output-dir", str(out_dir)],
+                    )
+            else:
+                print(f"skipping unsupported tool {tool}", flush=True)
+                code = 0
+            if code != 0:
+                return code
+            found = _tool_output(out, nested)
+            if found:
+                artifact(found)
+                results[tool] = {"count": _analysis_count(tool, found), "path": str(found)}
+    write_manifest(
+        root,
+        slug,
+        {
+            "target": spec["target"]["value"],
+            "tools": tools,
+            "startedAt": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "attachedTo": spec.get("attach_to"),
+            "results": results,
+        },
+    )
+    return 0
+
+
 DISPATCH = {
     "create": run_create,
     "scan": run_scan,
@@ -539,6 +729,7 @@ DISPATCH = {
     "translate": run_translate,
     "update": run_update,
     "quality": run_quality,
+    "analyze": run_analyze,
 }
 
 
