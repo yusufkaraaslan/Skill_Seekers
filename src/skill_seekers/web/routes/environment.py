@@ -29,6 +29,9 @@ class InstallAgentRequest(BaseModel):
     force: bool = False
 
 
+DOCTOR_LEVELS = {"pass": "ok", "warn": "warning", "fail": "error"}
+
+
 def _doctor() -> dict[str, Any]:
     from skill_seekers.cli.doctor import run_all_checks
 
@@ -36,7 +39,7 @@ def _doctor() -> dict[str, Any]:
         {
             "name": result.name,
             "ok": result.status == "pass",
-            "level": result.status,
+            "level": DOCTOR_LEVELS.get(result.status, "error"),
             "found": result.detail,
             "hint": result.verbose_detail,
             "fix": "",
@@ -109,7 +112,7 @@ def register(app: FastAPI, ctx: HudContext) -> None:
         rows = []
         for agent in get_available_agents():
             cli = clis.get(agent, {})
-            agent_dir = get_agent_path(agent)
+            agent_dir = get_agent_path(agent, project_root=ctx.root)
             rows.append(
                 {
                     "id": agent,

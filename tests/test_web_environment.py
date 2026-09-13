@@ -6,11 +6,12 @@ from skill_seekers.web.jobs import Job, get_job_manager
 
 
 def test_environment_snapshot_shape(workspace):
-    _, client = workspace
+    root, client = workspace
     env = client.get("/api/environment").json()
     assert {c["name"] for c in env["doctor"]["checks"]} >= {"Python version", "Git"} or len(
         env["doctor"]["checks"]
     ) >= 5
+    assert all(c["level"] in ("ok", "warning", "error") for c in env["doctor"]["checks"])
     assert {s["id"] for s in env["servers"]} == {"mcp-stdio", "mcp-http", "embedding"}
     assert all(
         s["state"] in ("installed", "missing", "running", "stopped", "live", "down")
@@ -18,6 +19,10 @@ def test_environment_snapshot_shape(workspace):
     )
     claude = next(a for a in env["agents"] if a["id"] == "claude")
     assert claude["detected"] is True and claude["skillInstalled"] is False
+    # cursor's install path (".cursor/skills/") is project-relative — it must
+    # resolve under the HUD's workspace root, not the server process's cwd.
+    cursor = next(a for a in env["agents"] if a["id"] == "cursor")
+    assert cursor["agentDir"].startswith(str(root))
 
 
 def test_server_start_stop_and_agent_install_jobs(workspace, monkeypatch):
