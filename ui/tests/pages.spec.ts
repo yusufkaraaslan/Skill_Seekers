@@ -43,6 +43,24 @@ test('new sections are routable and mcp redirects to environment', async ({ page
   await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button')).toHaveCount(11);
 });
 
+test('environment shows doctor, starts a server and installs the agent skill', async ({ page }) => {
+  const hits: string[] = [];
+  await page.route('**/api/environment/**', route => { hits.push(new URL(route.request().url()).pathname); return route.fulfill({ json: { ok: true, job: { id: 'x' } } }); });
+  await page.goto('/environment');
+  await expect(page.getByRole('heading', { name: 'Doctor' })).toBeVisible();
+  await expect(page.getByText('3.14')).toBeVisible();
+  await page.getByRole('button', { name: 'Start Embedding server' }).click();
+  await page.getByRole('button', { name: 'Install skill into Claude Code' }).click();
+  await expect.poll(() => hits).toEqual(['/api/environment/servers/embedding/start', '/api/environment/agents/claude/install']);
+});
+
+test('MCP failures show an error and do not offer a simulated execution', async ({ page }) => {
+  await page.route('**/api/mcp/status', route => route.fulfill({ status: 503, json: { detail: 'Probe unavailable' } }));
+  await page.goto('/environment');
+  await expect(page.getByText(/Probe unavailable/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /play|try it/i })).toHaveCount(0);
+});
+
 test('skill page tabs cover enhance, analysis, export and history', async ({ page }) => {
   let uploaded: unknown = null;
   await page.route('**/api/skills/sk-1/upload', route => { uploaded = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'u' } } }); });
