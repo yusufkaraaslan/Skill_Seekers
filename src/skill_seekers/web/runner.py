@@ -456,6 +456,73 @@ def run_estimate(spec: dict[str, Any]) -> int:
     return _run_cli_main("skill_seekers.cli.estimate_pages", [spec["source"]])
 
 
+UPLOAD_OPTION_FLAGS = {
+    "persist_directory": "--persist-directory",
+    "chroma_url": "--chroma-url",
+    "embedding_function": "--embedding-function",
+    "weaviate_url": "--weaviate-url",
+    "cluster_url": "--cluster-url",
+    "api_key": "--api-key",
+}
+
+
+def run_upload(spec: dict[str, Any]) -> int:
+    """Package for one target, then hand the archive to upload_skill."""
+    target = spec["target"]
+    out = Path(spec["output_dir"])
+    code = run_package(
+        {
+            "skill_dir": spec["skill_dir"],
+            "targets": [target],
+            "output_dir": str(out),
+            "flags": spec.get("flags"),
+        }
+    )
+    if code != 0:
+        return code
+    archives = sorted((out / target).glob("*.zip")) + sorted((out / target).glob("*.tar.gz"))
+    if not archives:
+        raise RuntimeError(f"packaging for {target} produced no archive under {out / target}")
+    argv = [str(archives[-1]), "--target", target]
+    for key, flag in UPLOAD_OPTION_FLAGS.items():
+        value = (spec.get("options") or {}).get(key)
+        if value not in (None, ""):
+            argv += [flag, str(value)]
+    if (spec.get("options") or {}).get("use_cloud"):
+        argv.append("--use-cloud")
+    progress(60, f"uploading → {target}…")
+    return _run_cli_main("skill_seekers.cli.upload_skill", argv)
+
+
+def run_translate(spec: dict[str, Any]) -> int:
+    progress(10, f"translating → {', '.join(spec['languages'])}…")
+    return _run_cli_main(
+        "skill_seekers.cli.multilang_support",
+        [spec["skill_dir"], "--languages", *spec["languages"]],
+    )
+
+
+def run_update(spec: dict[str, Any]) -> int:
+    flag = "--force" if spec.get("apply") else "--check-changes"
+    progress(
+        10, "checking upstream for changes…" if flag == "--check-changes" else "applying update…"
+    )
+    return _run_cli_main("skill_seekers.cli.incremental_updater", [spec["skill_dir"], flag])
+
+
+def run_quality(spec: dict[str, Any]) -> int:
+    out = Path(spec["output_dir"])
+    out.mkdir(parents=True, exist_ok=True)
+    report = out / f"{Path(spec['skill_dir']).name}-quality.json"
+    code = _run_cli_main(
+        "skill_seekers.cli.quality_metrics",
+        [spec["skill_dir"], "--report", "--output", str(report)],
+    )
+    if code == 0 and report.is_file():
+        artifact(report)
+    return code
+
+
 DISPATCH = {
     "create": run_create,
     "scan": run_scan,
@@ -467,6 +534,10 @@ DISPATCH = {
     "estimate": run_estimate,
     "market-sync": run_market_sync,
     "install": run_market_install,
+    "upload": run_upload,
+    "translate": run_translate,
+    "update": run_update,
+    "quality": run_quality,
 }
 
 

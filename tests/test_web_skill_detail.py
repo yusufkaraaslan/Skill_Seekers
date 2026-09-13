@@ -117,3 +117,40 @@ def test_enhance_status_reads_sidecar_file(workspace):
     )
     status = client.get(f"/api/skills/{skill_id}/enhance-status").json()
     assert status["status"] == "running"
+
+
+def test_skill_job_endpoints_validate_and_submit(workspace, monkeypatch):
+    root, client = workspace
+    submitted = []
+    monkeypatch.setattr(
+        get_job_manager(),
+        "submit",
+        lambda *a: submitted.append(a[3]) or Job("j", a[0], a[1], a[2], spec=a[3]),
+    )
+    skill_id = client.get("/api/skills").json()[0]["id"]
+    assert (
+        client.post(f"/api/skills/{skill_id}/upload", json={"target": "cursor"}).status_code == 400
+    )
+    assert (
+        client.post(
+            f"/api/skills/{skill_id}/upload",
+            json={"target": "chroma", "options": {"persist_directory": "x"}},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(f"/api/skills/{skill_id}/translate", json={"languages": []}).status_code == 400
+    )
+    assert (
+        client.post(
+            f"/api/skills/{skill_id}/translate", json={"languages": ["tr", "../x"]}
+        ).status_code
+        == 400
+    )
+    assert (
+        client.post(f"/api/skills/{skill_id}/translate", json={"languages": ["tr"]}).status_code
+        == 200
+    )
+    assert client.post(f"/api/skills/{skill_id}/update", json={"apply": True}).status_code == 200
+    assert client.post(f"/api/skills/{skill_id}/quality").status_code == 200
+    assert [s["type"] for s in submitted] == ["upload", "translate", "update", "quality"]

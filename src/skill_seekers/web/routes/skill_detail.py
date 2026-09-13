@@ -1,12 +1,39 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from .. import registry
 from ..context import HudContext
+
+UPLOAD_TARGETS = {
+    "claude",
+    "gemini",
+    "openai",
+    "kimi",
+    "chroma",
+    "faiss",
+    "qdrant",
+    "weaviate",
+    "pinecone",
+}
+
+
+class UploadRequest(BaseModel):
+    target: str
+    options: dict[str, Any] = {}
+
+
+class TranslateRequest(BaseModel):
+    languages: list[str]
+
+
+class UpdateRequest(BaseModel):
+    apply: bool = False
 
 
 def _entry_for(ctx: HudContext, skill_id: str) -> dict[str, Any]:
@@ -77,3 +104,69 @@ def register(app: FastAPI, ctx: HudContext) -> None:
 
         skill_dir = ctx.skill_dir_for(skill_id)
         return read_status(str(skill_dir)) if skill_dir.is_dir() else None
+
+    @app.post("/api/skills/{skill_id}/upload")
+    def upload_skill(skill_id: str, req: UploadRequest) -> dict[str, Any]:
+        from ..paths import workspace_dir
+
+        if req.target not in UPLOAD_TARGETS:
+            raise HTTPException(400, f"Unsupported upload target: {req.target}")
+        skill_dir = ctx.skill_dir_for(skill_id)
+        job = ctx.submit_job(
+            "upload",
+            f"{skill_dir.name} → {req.target}",
+            f"upload to {req.target}",
+            {
+                "type": "upload",
+                "skill_dir": str(skill_dir),
+                "target": req.target,
+                "options": req.options,
+                "output_dir": str(workspace_dir(ctx.root, "output") / "_packages"),
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/skills/{skill_id}/translate")
+    def translate_skill(skill_id: str, req: TranslateRequest) -> dict[str, Any]:
+        if not req.languages or any(
+            not re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", lang) for lang in req.languages
+        ):
+            raise HTTPException(400, "Provide one or more language codes such as tr, de, zh-Hans")
+        ctx.require_seeker([skill_id])
+        skill_dir = ctx.skill_dir_for(skill_id)
+        job = ctx.submit_job(
+            "translate",
+            skill_dir.name,
+            f"translate → {', '.join(req.languages)}",
+            {"type": "translate", "skill_dir": str(skill_dir), "languages": req.languages},
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/skills/{skill_id}/update")
+    def update_skill(skill_id: str, req: UpdateRequest) -> dict[str, Any]:
+        ctx.require_seeker([skill_id])
+        skill_dir = ctx.skill_dir_for(skill_id)
+        job = ctx.submit_job(
+            "update",
+            skill_dir.name,
+            "apply upstream changes" if req.apply else "check upstream for changes",
+            {"type": "update", "skill_dir": str(skill_dir), "apply": req.apply},
+        )
+        return {"ok": True, "job": job.to_dict()}
+
+    @app.post("/api/skills/{skill_id}/quality")
+    def quality_skill(skill_id: str) -> dict[str, Any]:
+        from ..paths import workspace_dir
+
+        skill_dir = ctx.skill_dir_for(skill_id)
+        job = ctx.submit_job(
+            "quality",
+            skill_dir.name,
+            "quality report",
+            {
+                "type": "quality",
+                "skill_dir": str(skill_dir),
+                "output_dir": str(workspace_dir(ctx.root, "output") / "_reports"),
+            },
+        )
+        return {"ok": True, "job": job.to_dict()}
