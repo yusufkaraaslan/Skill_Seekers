@@ -12,7 +12,7 @@ const payloads: Record<string, unknown> = {
   '/api/skills/sk-1/content': { content: '# react-docs\nEND', revision: 'r1', files: [] },
   '/api/configs/cfg-1': { id: 'cfg-1', name: 'react.json', path: '/ws/configs/react.json', source: 'official', origin: 'preset', framework: 'react', version: '2.1', data: { name: 'react', sources: [] }, revision: 'c1', validation: { valid: true, errors: [], warnings: [] }, usedBy: [{ id: 'sk-1', name: 'react-docs' }], sync: null, syncSettings: null, lastEstimate: null },
   '/api/workflows': [{ name: 'default', origin: 'bundled', file: 'bundled/default.yaml', yaml: 'name: default\nstages: []', steps: 4, description: 'Balanced', validation: { valid: true, error: null } }],
-  '/api/analyze/recent': [],
+  '/api/analyze/recent': [{ slug: 'lazy-bird-1a2b3c4d', target: '~/dev/lazy-bird', tools: ['patterns', 'quality'], skipped: [], startedAt: '2026-09-13 09:40:00', attachedTo: null, results: { patterns: { count: 14, path: '/x' }, quality: { count: 91, path: '/y' } } }],
   '/api/environment': { doctor: { checks: [{ name: 'Python', ok: true, level: 'ok', found: '3.14', hint: '', fix: '' }], ranAt: 'now' }, servers: [{ id: 'mcp-stdio', name: 'MCP · stdio', address: 'python -m …', state: 'installed', jobId: null }, { id: 'mcp-http', name: 'MCP · HTTP', address: 'http://127.0.0.1:8000/sse', state: 'stopped', jobId: null }, { id: 'embedding', name: 'Embedding server', address: 'http://127.0.0.1:8001', state: 'stopped', jobId: null }], agents: [{ id: 'claude', name: 'Claude Code', short: 'CLA', color: '24 85% 60%', detected: true, version: '2', skillInstalled: false, agentDir: '/home/t/.claude/skills' }] },
   '/api/mcp/tools': { tools: [], count: 0 },
   '/api/mcp/status': { stdio: { state: 'installed', command: 'x' }, http: { state: 'down', host: '127.0.0.1', port: 8000, url: 'http://127.0.0.1:8000/sse' } },
@@ -187,6 +187,20 @@ test('Use in Create waits for workspace settings before stashing the create draf
   await expect(page).toHaveURL(/\/create$/);
   const stashed = await page.evaluate(() => sessionStorage.getItem('seeker.create./ws.workflows'));
   expect(stashed).toBe('["default"]');
+});
+
+test('analyze submits the selected tools for a directory', async ({ page }) => {
+  let body: unknown = null;
+  await page.route('**/api/analyze', route => { body = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'a' } } }); });
+  await page.goto('/analyze');
+  // recentAnalyses fixture round-trips through AnalysisManifest — nothing
+  // exercised that type until this test.
+  await expect(page.getByText('lazy-bird-1a2b3c4d')).toBeVisible();
+  await page.getByRole('textbox', { name: 'local path' }).fill('~/dev/lazy-bird');
+  await page.getByRole('checkbox', { name: /Design patterns/ }).check();
+  await page.getByRole('checkbox', { name: /Quality check/ }).check();
+  await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect.poll(() => body).toMatchObject({ target: { kind: 'dir', value: '~/dev/lazy-bird' }, tools: ['patterns', 'quality'], depth: 'basic' });
 });
 
 // The skill page packs eight tabs of tables, chip rows and card grids into the
