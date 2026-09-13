@@ -71,12 +71,23 @@ const UPLOAD_CARDS: { target: string; label: string; env: string; fmt: string }[
 // One connection field per database. `key` is the option name the backend maps
 // to an upload_skill flag (web/runner.py:UPLOAD_OPTION_FLAGS); `field` is the
 // human name, and doubles as the input's accessible name.
-const VECTOR_DBS: { id: string; label: string; field: string; key: string; placeholder: string }[] = [
-  { id: 'chroma', label: 'ChromaDB', field: 'persist directory', key: 'persist_directory', placeholder: './chroma_db' },
-  { id: 'faiss', label: 'FAISS', field: 'index path', key: 'persist_directory', placeholder: './skill.faiss' },
-  { id: 'qdrant', label: 'Qdrant', field: 'server url', key: 'cluster_url', placeholder: 'http://localhost:6333' },
-  { id: 'weaviate', label: 'Weaviate', field: 'cluster url', key: 'cluster_url', placeholder: 'http://localhost:8080' },
+//
+// `upload` is whether `upload_skill` can actually reach the store:
+// get_upload_platforms() is derived from each adaptor's supports_upload(), and
+// FAISS/Qdrant answer no — a job for them dies in argparse. Weaviate takes
+// `weaviate_url`, not `cluster_url`: the adaptor only reads cluster_url on the
+// Weaviate Cloud branch (use_cloud AND an api key), so a plain URL sent under
+// that name is silently dropped.
+const VECTOR_DBS: { id: string; label: string; field: string; key: string; placeholder: string; upload: boolean }[] = [
+  { id: 'chroma', label: 'ChromaDB', field: 'persist directory', key: 'persist_directory', placeholder: './chroma_db', upload: true },
+  { id: 'faiss', label: 'FAISS', field: 'index path', key: 'persist_directory', placeholder: './skill.faiss', upload: false },
+  { id: 'qdrant', label: 'Qdrant', field: 'server url', key: 'cluster_url', placeholder: 'http://localhost:6333', upload: false },
+  { id: 'weaviate', label: 'Weaviate', field: 'cluster url', key: 'weaviate_url', placeholder: 'http://localhost:8080', upload: true },
 ];
+
+// argparse `choices` on --embedding-function (cli/arguments/upload.py); any
+// other value fails the job, so the UI offers exactly these.
+const EMBEDDING_FUNCTIONS = ['none', 'openai', 'sentence-transformers'];
 
 const TRANSLATE_LANGS: [string, string][] = [
   ['tr', 'Türkçe'], ['de', 'Deutsch'], ['ja', '日本語'],
@@ -1001,7 +1012,7 @@ function ExportTab({ id, onNavigate }: { id: string; onNavigate: (to: string) =>
   const [targets, setTargets] = useState<string[]>(['claude']);
   const [db, setDb] = useState('chroma');
   const [conn, setConn] = useState<Record<string, string>>({});
-  const [embedding, setEmbedding] = useState('');
+  const [embedding, setEmbedding] = useState('none');
   const available = store.settings?.capabilities.targets ?? [];
   const keys = store.settings?.keys ?? [];
   const active = VECTOR_DBS.find((d) => d.id === db) ?? VECTOR_DBS[0];
@@ -1015,7 +1026,7 @@ function ExportTab({ id, onNavigate }: { id: string; onNavigate: (to: string) =>
 
   const exportToDb = () => {
     const options: Record<string, string> = { [active.key]: connValue.trim() };
-    if (embedding.trim()) options.embedding_function = embedding.trim();
+    if (embedding !== 'none') options.embedding_function = embedding;
     return store.uploadSkill(id, active.id, options);
   };
 
@@ -1097,15 +1108,22 @@ function ExportTab({ id, onNavigate }: { id: string; onNavigate: (to: string) =>
             <label
               key={entry.id}
               className={cn(
-                'flex cursor-pointer items-center gap-2.5 rounded border px-3 py-2.5 transition-colors',
+                'flex items-center gap-2.5 rounded border px-3 py-2.5 transition-colors',
+                entry.upload ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                 db === entry.id ? 'border-primary/60 bg-primary/10' : 'border-border bg-secondary/30',
               )}
             >
-              <RadioGroupItem value={entry.id} aria-label={entry.label} />
+              <RadioGroupItem value={entry.id} aria-label={entry.label} disabled={!entry.upload} />
               <span className="font-mono-hud text-[12px]">{entry.label}</span>
             </label>
           ))}
         </RadioGroup>
+        {VECTOR_DBS.some((entry) => !entry.upload) && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {VECTOR_DBS.filter((entry) => !entry.upload).map((entry) => entry.label).join(' and ')}: not supported by
+            upload yet — package to this format instead.
+          </p>
+        )}
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{active.field}</div>
@@ -1119,19 +1137,22 @@ function ExportTab({ id, onNavigate }: { id: string; onNavigate: (to: string) =>
           </div>
           <div className="space-y-1">
             <div className="font-mono-hud text-[10px] uppercase tracking-[0.2em] text-muted-foreground">embedding function</div>
-            <Input
+            <select
               aria-label="embedding function"
               value={embedding}
-              placeholder="default — the exporter picks one"
               onChange={(e) => setEmbedding(e.target.value)}
-              className="h-8 font-mono-hud text-xs"
-            />
+              className="h-8 w-full rounded border border-border bg-secondary/40 px-2 font-mono-hud text-xs outline-none focus:border-primary/50"
+            >
+              {EMBEDDING_FUNCTIONS.map((fn) => (
+                <option key={fn} value={fn}>{fn === 'none' ? 'none (platform default)' : fn}</option>
+              ))}
+            </select>
           </div>
         </div>
         <Button
           variant="outline"
           className="mt-3 w-full font-mono-hud text-[11px] uppercase tracking-wider"
-          disabled={store.pending || !connValue.trim()}
+          disabled={store.pending || !active.upload || !connValue.trim()}
           onClick={exportToDb}
         >
           Export to {active.label}
@@ -1174,6 +1195,16 @@ function HistoryTab({ history }: { history: Job[] }) {
                 <td className="px-3 py-2.5">
                   <span className="block break-words text-[13px]">{job.detail}</span>
                   {job.error && <span role="alert" className="block break-words text-[11px] text-destructive">{job.error}</span>}
+                  {/* same affordance as sections/Jobs.tsx: the worker log is the
+                      only place a failure explains itself */}
+                  <details open={job.status === 'failed'} className="mt-1">
+                    <summary className="cursor-pointer font-mono-hud text-[11px] text-muted-foreground">
+                      Log ({(job.log ?? []).length} lines)
+                    </summary>
+                    <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded border border-border bg-black/30 p-2 text-[11px]">
+                      {(job.log ?? []).join('\n')}
+                    </pre>
+                  </details>
                 </td>
                 <td className="px-3 py-2.5"><StatusPill status={job.status} /></td>
                 <td className="px-3 py-2.5">

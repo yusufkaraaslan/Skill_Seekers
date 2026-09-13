@@ -75,6 +75,30 @@ test('editor loads full content and preserves a conflicted draft', async ({ page
   await expect(editor).toHaveValue('My unsaved edit');
 });
 
+test('vector export only offers the databases upload can reach', async ({ page }) => {
+  let uploaded: unknown = null;
+  await page.route('**/api/skills/sk-1/upload', route => { uploaded = route.request().postDataJSON(); return route.fulfill({ json: { ok: true, job: { id: 'u' } } }); });
+  await page.goto('/skills/sk-1');
+  await page.getByRole('tab', { name: 'Export' }).click();
+  // FAISS and Qdrant have no uploading adaptor — offering them queues a job that
+  // dies in argparse.
+  await expect(page.getByRole('radio', { name: 'FAISS' })).toBeDisabled();
+  await expect(page.getByRole('radio', { name: 'Qdrant' })).toBeDisabled();
+  await page.getByRole('radio', { name: 'Weaviate' }).check();
+  await page.getByRole('textbox', { name: 'cluster url' }).fill('http://localhost:8080');
+  await page.getByRole('button', { name: /Export to Weaviate/ }).click();
+  // weaviate_url, not cluster_url: the adaptor only reads cluster_url on its
+  // Weaviate Cloud branch.
+  await expect.poll(() => uploaded).toEqual({ target: 'weaviate', options: { weaviate_url: 'http://localhost:8080' } });
+});
+
+test('skill history opens the worker log of a failed job', async ({ page }) => {
+  await page.route('**/api/skills/sk-1/history', route => route.fulfill({ json: [{ id: 'job-9', type: 'enhance', label: 'react-docs', detail: 'level 2 · claude', progress: 40, status: 'failed', startedAt: '2026-09-13 09:02:40', log: ['line one', '\u2717 failed'], error: 'agent exited 1', artifacts: [] }] }));
+  await page.goto('/skills/sk-1');
+  await page.getByRole('tab', { name: 'History' }).click();
+  await expect(page.getByText('line one')).toBeVisible();
+});
+
 // The skill page packs eight tabs of tables, chip rows and card grids into the
 // same column the nav sections use; every one of them has to fit the narrow
 // viewports hud.spec.ts pins for the rest of the HUD.
