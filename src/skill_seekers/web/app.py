@@ -659,6 +659,21 @@ def create_app(root: Path | None = None) -> FastAPI:
     def get_capabilities() -> dict[str, Any]:
         return capabilities()
 
+    from .context import HudContext
+    from .routes import register_all
+
+    ctx = HudContext(
+        root=root,
+        jobs=jobs,
+        submit_job=submit_job,
+        skill_dir_for=skill_dir_for,
+        require_seeker=require_seeker,
+        capabilities=capabilities,
+        validate_targets=validate_targets,
+        cached_detect_clis=cached_detect_clis,
+    )
+    register_all(app, ctx)
+
     # ── health & overview ────────────────────────────────────────────────
 
     @app.get("/api/health")
