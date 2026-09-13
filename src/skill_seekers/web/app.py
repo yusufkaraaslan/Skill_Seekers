@@ -1424,14 +1424,19 @@ def create_app(root: Path | None = None) -> FastAPI:
         if (DIST_DIR / "assets").is_dir():
             app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
 
-        # Registered for every method (not just GET): an unmatched path under
-        # "api/" must 404 regardless of HTTP verb — leaving this GET-only let a
-        # non-GET request to an unknown API path (e.g. after ".." normalization
-        # collapses a path-traversal attempt) fall through to a misleading 405
-        # Method Not Allowed instead of the 404 the handler below returns.
-        @app.api_route(
-            "/{full_path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]
-        )
+        # An unmatched path under "api/" must 404 regardless of HTTP verb.
+        # Without this, a non-GET request to an unknown API path (e.g. after
+        # ".." normalization collapses a path-traversal attempt) would match
+        # the GET-only SPA route below by path template and get Starlette's
+        # generic 405 Method Not Allowed instead of a proper 404 — but only
+        # when a dist exists, so scope this narrowly to "/api/*" rather than
+        # widening the SPA route's methods (which would also change non-GET
+        # semantics for legitimate frontend routes).
+        @app.api_route("/api/{full_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+        def api_not_found(full_path: str) -> None:  # noqa: ARG001 — required by FastAPI's path template
+            raise HTTPException(404, "Not found")
+
+        @app.get("/{full_path:path}")
         def spa(full_path: str) -> FileResponse:
             candidate = (DIST_DIR / full_path).resolve()
             if not candidate.is_relative_to(DIST_DIR.resolve()) or full_path.startswith("api/"):

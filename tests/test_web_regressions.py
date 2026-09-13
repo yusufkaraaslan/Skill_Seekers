@@ -112,6 +112,26 @@ def test_dist_symlink_cannot_serve_external_file(workspace, monkeypatch):
     assert client.get("/api/unknown").status_code == 404
 
 
+def test_unmatched_api_path_404s_for_every_method_when_dist_exists(workspace, monkeypatch):
+    """A dist build makes the SPA route match any path — non-API routes must
+    keep their normal 405 for a disallowed method, but an unmatched path
+    under "api/" must 404 regardless of HTTP verb (see app.py's narrow
+    "/api/{full_path:path}" catch-all, registered only when a dist exists)."""
+    import skill_seekers.web.app as app_module
+    from fastapi.testclient import TestClient
+
+    root, _ = workspace
+    dist = root / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("SPA")
+    monkeypatch.setattr(app_module, "DIST_DIR", dist)
+    client = TestClient(app_module.create_app(root), base_url="http://127.0.0.1")
+    assert client.delete("/api/nope").status_code == 404
+    assert client.post("/api/nope", json={}).status_code == 404
+    assert client.get("/skills").text == "SPA"
+    assert client.post("/some-route").status_code == 405
+
+
 def test_identical_names_across_clis_have_distinct_ids(workspace):
     root, client = workspace
     _mk_skill(Path.home() / ".claude/skills/demo")
