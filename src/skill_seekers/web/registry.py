@@ -132,7 +132,19 @@ def _quality_for(skill_dir: Path, meta_cache: dict[str, Any]) -> int:
 
 
 def skill_quality_breakdown(skill_dir: Path) -> list[dict[str, Any]]:
-    """Per-dimension scores the skill page charts; falls back to neutral values."""
+    """Per-dimension scores the skill page charts; falls back to neutral values.
+
+    The chart's four labels are the design's, not the checker's — map each
+    label to the real ``QualityIssue.category`` it reflects: ``content``
+    covers YAML-frontmatter presence (plus a couple of unrelated content
+    checks), ``enhancement`` covers code-example/section counts.
+    """
+    label_to_category = {
+        "frontmatter": "content",
+        "structure": "structure",
+        "examples": "enhancement",
+        "links": "links",
+    }
     try:
         from skill_seekers.cli.quality_checker import SkillQualityChecker
 
@@ -141,12 +153,12 @@ def skill_quality_breakdown(skill_dir: Path) -> list[dict[str, Any]]:
         by_cat: dict[str, int] = {}
         for issue in issues:
             by_cat[issue.category] = by_cat.get(issue.category, 0) + 1
-        dims = ["frontmatter", "structure", "examples", "links"]
-        return [{"label": d, "score": max(0, 100 - 12 * by_cat.get(d, 0))} for d in dims]
-    except Exception:  # noqa: BLE001 — quality is best-effort metadata
         return [
-            {"label": d, "score": 75} for d in ("frontmatter", "structure", "examples", "links")
+            {"label": label, "score": max(0, 100 - 12 * by_cat.get(category, 0))}
+            for label, category in label_to_category.items()
         ]
+    except Exception:  # noqa: BLE001 — quality is best-effort metadata
+        return [{"label": label, "score": 75} for label in label_to_category]
 
 
 def discover_skills(root: Path, enabled_clis: list[str] | None = None) -> list[dict[str, Any]]:

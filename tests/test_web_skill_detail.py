@@ -41,6 +41,40 @@ def test_detail_merges_registry_installs_and_sidecar(workspace):
     assert client.get("/api/skills/nope/detail").status_code == 404
 
 
+def test_quality_breakdown_maps_real_checker_categories(workspace):
+    root, client = workspace
+    # "good": valid frontmatter + a "When to Use" section + no references dir,
+    # so the real checker's `content` category (mapped to the "frontmatter"
+    # label) has nothing to flag.
+    _mk_skill(root / "output/good")
+    (root / "output/good/SKILL.md").write_text(
+        "---\nname: good\ndescription: a fully described skill\n---\n\n"
+        "# good\n\n## When to Use This Skill\n\n"
+        "Use this whenever you need a fully described skill for testing.\n",
+        encoding="utf-8",
+    )
+    # "bare": no YAML frontmatter and no code examples -- real checker
+    # categories `content` ("Missing YAML frontmatter") and `enhancement`
+    # ("No code examples found") must both fire.
+    _mk_skill(root / "output/bare")
+    (root / "output/bare/SKILL.md").write_text(
+        "Just some plain prose about a bare skill with no structure at all.\n",
+        encoding="utf-8",
+    )
+    skills = {s["name"]: s["id"] for s in client.get("/api/skills").json()}
+    good_scores = {
+        b["label"]: b["score"]
+        for b in client.get(f"/api/skills/{skills['good']}/detail").json()["qualityBreakdown"]
+    }
+    bare_scores = {
+        b["label"]: b["score"]
+        for b in client.get(f"/api/skills/{skills['bare']}/detail").json()["qualityBreakdown"]
+    }
+    assert good_scores["frontmatter"] == 100
+    assert bare_scores["frontmatter"] < 100
+    assert bare_scores["examples"] < 100
+
+
 def test_history_lists_only_jobs_for_this_skill(workspace):
     root, client = workspace
     manager = get_job_manager()
