@@ -174,6 +174,21 @@ test('workflows install dialog PUTs a new user workflow and closes on success', 
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
+test('Use in Create waits for workspace settings before stashing the create draft', async ({ page }) => {
+  await page.route('**/api/settings', async route => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return route.fulfill({ json: payloads['/api/settings'] });
+  });
+  await page.goto('/workflows/default');
+  const button = page.getByRole('button', { name: 'Use in Create' });
+  await expect(button).toBeDisabled();
+  await expect(button).toBeEnabled({ timeout: 5000 });
+  await button.click();
+  await expect(page).toHaveURL(/\/create$/);
+  const stashed = await page.evaluate(() => sessionStorage.getItem('seeker.create./ws.workflows'));
+  expect(stashed).toBe('["default"]');
+});
+
 // The skill page packs eight tabs of tables, chip rows and card grids into the
 // same column the nav sections use; every one of them has to fit the narrow
 // viewports hud.spec.ts pins for the rest of the HUD.

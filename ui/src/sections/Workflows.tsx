@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { Panel, SectionHeader } from '@/components/hud';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,16 @@ export default function Workflows({ selected }: { selected: string | null }) {
   const openWorkflow = (name: string) => navigate(`/workflows/${encodeURIComponent(name)}`);
 
   const stashForCreate = (name: string) => {
+    // `/api/workflows` and `/api/settings` load in parallel — `store.root`
+    // reads '' until settings arrive, and a draft stashed under
+    // `seeker.create..workflows` (empty root) is never read back by
+    // sections/Create.tsx (its draftKey is keyed by the real root). The
+    // button is disabled until settings load (see WorkflowDetail below),
+    // but guard here too rather than trust only the disabled prop.
+    if (!store.root) {
+      toast.error('Workspace settings not loaded yet');
+      return;
+    }
     // Mirrors sections/Create.tsx's draft key exactly (`seeker.create.<root>.`
     // + field name) so the Create screen picks this up as its `workflows`
     // draft on the next load.
@@ -294,7 +305,14 @@ function WorkflowDetail({ row, reload, onUseInCreate }: {
           <Button size="sm" variant="outline" disabled={store.pending} onClick={validate} className="font-mono-hud text-[11px] uppercase tracking-wider">
             <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Validate
           </Button>
-          <Button size="sm" variant="outline" onClick={onUseInCreate} className="font-mono-hud text-[11px] uppercase tracking-wider">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!store.settings}
+            title={store.settings ? undefined : 'Loading workspace settings…'}
+            onClick={onUseInCreate}
+            className="font-mono-hud text-[11px] uppercase tracking-wider"
+          >
             <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Use in Create
           </Button>
           {row.origin === 'bundled' ? (
