@@ -1424,7 +1424,14 @@ def create_app(root: Path | None = None) -> FastAPI:
         if (DIST_DIR / "assets").is_dir():
             app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
 
-        @app.get("/{full_path:path}")
+        # Registered for every method (not just GET): an unmatched path under
+        # "api/" must 404 regardless of HTTP verb — leaving this GET-only let a
+        # non-GET request to an unknown API path (e.g. after ".." normalization
+        # collapses a path-traversal attempt) fall through to a misleading 405
+        # Method Not Allowed instead of the 404 the handler below returns.
+        @app.api_route(
+            "/{full_path:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"]
+        )
         def spa(full_path: str) -> FileResponse:
             candidate = (DIST_DIR / full_path).resolve()
             if not candidate.is_relative_to(DIST_DIR.resolve()) or full_path.startswith("api/"):
