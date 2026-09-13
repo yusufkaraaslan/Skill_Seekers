@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from .. import registry
 from ..context import HudContext
-from ..paths import atomic_write, read_json, state_transaction
+from ..paths import atomic_write, read_json, safe_name, state_transaction
 
 
 def _validate(path: Path) -> dict[str, Any]:
@@ -71,6 +71,17 @@ class GenerateRequest(BaseModel):
 SYNC_FILE = "sync.json"
 SPLIT_STRATEGIES = ("auto", "none", "source", "category", "router", "size")
 SYNC_INTERVALS = ("hourly", "daily", "weekly", "manual")
+
+
+def sync_state_path(path: Path, data: dict[str, Any]) -> Path:
+    """The one spelling of a config's sync-state file — reader and writer.
+
+    ``safe_name`` keeps a config ``name`` from escaping the sync directory; an
+    empty or missing name falls back to the config's file stem so the detail
+    read and the sync-check write can never disagree.
+    """
+    name = safe_name(str(data.get("name") or path.stem))
+    return Path.home() / ".skill-seekers" / "sync" / f"{name}_sync.json"
 
 
 def sync_settings_all() -> dict[str, Any]:
@@ -144,10 +155,7 @@ def register(app: FastAPI, ctx: HudContext) -> None:
             for s in skills
             if s["name"] == path.stem or path.stem in (s.get("source") or "")
         ]
-        sync_state = read_json(
-            Path.home() / ".skill-seekers" / "sync" / f"{data.get('name', path.stem)}_sync.json",
-            None,
-        )
+        sync_state = read_json(sync_state_path(path, data), None)
         estimate = read_json(path.with_name(f".{path.name}.estimate.json"), None)
         return {
             "id": cfg_id,
@@ -260,11 +268,8 @@ def register(app: FastAPI, ctx: HudContext) -> None:
 
     @app.post("/api/configs/{cfg_id}/sync/check")
     def sync_check(cfg_id: str) -> dict[str, Any]:
-        from ..paths import safe_name
-
         path = path_for(cfg_id)
-        name = json.loads(path.read_text(encoding="utf-8")).get("name") or path.stem
-        state = Path.home() / ".skill-seekers" / "sync" / f"{safe_name(str(name))}_sync.json"
+        state = sync_state_path(path, json.loads(path.read_text(encoding="utf-8")))
         job = ctx.submit_job(
             "sync-check",
             path.name,

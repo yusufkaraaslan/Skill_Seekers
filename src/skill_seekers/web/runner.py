@@ -843,6 +843,14 @@ def run_sync_check(spec: dict[str, Any]) -> int:
             hashes[change.url] = change.new_hash
     for change in report.deleted:
         hashes.pop(change.url, None)
+    # check_page swallows a RequestException into a DELETED change that
+    # check_pages then files nowhere, so an unreachable page is simply missing
+    # from every bucket — count them rather than reporting "0 changes".
+    reached = len(report.added) + len(report.modified) + len(report.deleted) + report.unchanged
+    unreachable = report.total_pages - reached
+    failure = f"{unreachable} page(s) unreachable" if unreachable > 0 else None
+    if failure:
+        print(failure, flush=True)
     now = datetime.now(timezone.utc).isoformat()
     payload = {
         # This file is also sync.monitor's SyncState store — keep those keys
@@ -853,14 +861,19 @@ def run_sync_check(spec: dict[str, Any]) -> int:
         "last_change": now if changes else previous.get("last_change"),
         "total_checks": int(previous.get("total_checks") or 0) + 1,
         "total_changes": int(previous.get("total_changes") or 0) + len(changes),
+        # Hashes for the pages that *were* reached are kept, so the next run
+        # still diffs against them instead of re-reporting everything.
         "page_hashes": hashes,
-        "status": "idle",
-        "error": None,
+        "status": "error" if failure else "idle",
+        "error": failure,
         "checkedAt": now,
         "changes": [c.model_dump(mode="json") for c in changes],
     }
     atomic_write(state_path, json.dumps(payload, indent=2, default=str).encode("utf-8"))
     artifact(state_path)
+    if failure:
+        progress(90, failure)
+        return 1
     progress(90, f"{len(changes)} change(s) in {len(urls)} page(s)")
     return 0
 

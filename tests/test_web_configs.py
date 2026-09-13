@@ -155,3 +155,50 @@ def test_sync_settings_persist(workspace):
         "interval": "daily",
         "auto_rebuild": True,
     }
+
+
+def test_sync_state_name_is_sanitised(workspace):
+    """A config ``name`` is a request-derived path component: it must not let
+    the detail read reach outside ~/.skill-seekers/sync/."""
+    root, client = workspace
+    path = _write_config(root, name="evil")
+    path.write_text(json.dumps({"name": "../../evil", "sources": []}))
+    assert client.get(f"/api/configs/{registry.config_id_for(path)}").status_code == 400
+
+
+def test_detail_and_sync_check_agree_on_the_state_file(workspace, monkeypatch):
+    """A nameless config used to be read as ``_sync.json`` and written as
+    ``<stem>_sync.json``, so a finished check rendered as "never checked"."""
+    from pathlib import Path
+
+    from skill_seekers.sync import detector as detector_mod
+    from skill_seekers.sync.models import ChangeReport
+    from skill_seekers.web import runner
+
+    root, client = workspace
+    path = _write_config(root)
+    path.write_text(
+        json.dumps(
+            {
+                "name": "",
+                "sources": [{"type": "documentation", "base_url": "https://example.invalid/d"}],
+            }
+        )
+    )
+    cfg_id = registry.config_id_for(path)
+    submitted = []
+    monkeypatch.setattr(
+        get_job_manager(),
+        "submit",
+        lambda *a: submitted.append(a[3]) or Job("j", a[0], a[1], a[2], spec=a[3]),
+    )
+    assert client.post(f"/api/configs/{cfg_id}/sync/check").status_code == 200
+    assert Path(submitted[0]["state_path"]).name == f"{path.stem}_sync.json"
+
+    class FakeDetector:
+        def check_pages(self, urls, previous_hashes, generate_diffs=False):
+            return ChangeReport(skill_name="unknown", total_pages=len(urls), unchanged=len(urls))
+
+    monkeypatch.setattr(detector_mod, "ChangeDetector", FakeDetector)
+    assert runner.run_sync_check(submitted[0]) == 0
+    assert client.get(f"/api/configs/{cfg_id}").json()["sync"]["total_checks"] == 1

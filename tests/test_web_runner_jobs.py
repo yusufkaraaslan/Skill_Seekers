@@ -442,3 +442,51 @@ def test_run_push_and_submit_map_service_results_to_exit_codes(workspace, monkey
     monkeypatch.setattr(scan_mod, "_probe_urls", lambda _config: ["https://react.invalid/docs"])
     monkeypatch.setattr(source_mod, "submit_config", _never)
     assert runner.run_submit({"config_path": str(cfg), "probe_urls": True}) == 1
+
+
+def test_run_sync_check_reports_unreachable_pages(workspace, monkeypatch, capsys):
+    """check_pages files a swallowed RequestException into no bucket at all, so
+    an unreachable docs site must not read as a clean "0 change(s)" run."""
+    from skill_seekers.sync import detector as detector_mod
+    from skill_seekers.sync.models import ChangeReport, ChangeType, PageChange
+
+    root, _ = workspace
+    cfg = root / "configs" / "react.json"
+    cfg.parent.mkdir(exist_ok=True)
+    cfg.write_text(
+        json.dumps(
+            {
+                "name": "react",
+                "sources": [
+                    {
+                        "type": "documentation",
+                        "base_url": "https://react.invalid/docs",
+                        "start_urls": ["https://react.invalid/a", "https://react.invalid/b"],
+                    }
+                ],
+            }
+        )
+    )
+    state = root / "sync" / "react_sync.json"
+
+    class FakeDetector:
+        def check_pages(self, urls, previous_hashes, generate_diffs=False):
+            # Two pages asked for, only one classified — the other was dropped.
+            return ChangeReport(
+                skill_name="unknown",
+                total_pages=len(urls),
+                modified=[
+                    PageChange(
+                        url=urls[0], change_type=ChangeType.MODIFIED, old_hash="a", new_hash="b"
+                    )
+                ],
+                unchanged=0,
+            )
+
+    monkeypatch.setattr(detector_mod, "ChangeDetector", FakeDetector)
+    assert runner.run_sync_check({"config_path": str(cfg), "state_path": str(state)}) == 1
+    assert "1 page(s) unreachable" in capsys.readouterr().out
+    payload = json.loads(state.read_text())
+    assert payload["status"] == "error" and payload["error"] == "1 page(s) unreachable"
+    # The page that was reached keeps its hash for the next run.
+    assert payload["page_hashes"] == {"https://react.invalid/a": "b"}
