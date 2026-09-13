@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from tests.test_web_api import _mk_skill, workspace  # noqa: F401
-from skill_seekers.web import runner
+from skill_seekers.web import analysis_store, runner
 
 
 def test_run_upload_packages_then_uploads(workspace, monkeypatch):
@@ -115,7 +115,109 @@ def test_run_analyze_invokes_each_tool_and_writes_manifest(workspace, monkeypatc
     }
     assert runner.run_analyze(spec) == 0
     assert calls == ["pattern_recognizer", "quality_metrics"]
-    from skill_seekers.web import analysis_store
-
     manifests = analysis_store.list_recent(root)
     assert len(manifests) == 1 and set(manifests[0]["results"]) == {"patterns", "quality"}
+
+
+def _analyze_spec(root, target, tools, kind="dir", **extra):
+    """Spec shaped like the one routes/analyze.py submits."""
+    return {
+        "cwd": str(root),
+        "output_dir": str(root / "output"),
+        "configs_dir": str(root / "configs"),
+        "target": {"kind": kind, "value": str(target)},
+        "tools": tools,
+        "depth": "basic",
+        "min_confidence": 0.7,
+        "ai_mode": "off",
+        "attach_to": None,
+        **extra,
+    }
+
+
+def test_run_analyze_resolves_patterns_output_directory(workspace, monkeypatch):
+    """pattern_recognizer's --output is a DIRECTORY holding detected_patterns.json."""
+    root, _ = workspace
+
+    def fake_cli(_module, argv):
+        out = Path(argv[argv.index("--output") + 1])
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "detected_patterns.json").write_text(
+            json.dumps(
+                {
+                    "total_files_analyzed": 3,
+                    "files_with_patterns": 1,
+                    "total_patterns_detected": 2,
+                    "reports": [{"file_path": "x.py", "patterns": [1, 2]}],
+                }
+            )
+        )
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_cli)
+    assert runner.run_analyze(_analyze_spec(root, root, ["patterns"])) == 0
+    manifest = analysis_store.list_recent(root)[0]
+    assert manifest["results"]["patterns"]["count"] == 2
+    assert manifest["results"]["patterns"]["path"].endswith("/patterns/detected_patterns.json")
+    assert manifest["tools"] == ["patterns"] and manifest["skipped"] == []
+
+
+def test_run_analyze_records_the_router_config_it_generated(workspace, monkeypatch):
+    root, _ = workspace
+    skill = _mk_skill(root / "output/hub")
+    configs = root / "configs"
+    configs.mkdir()
+    (configs / "hub.json").write_text(
+        json.dumps({"name": "hub", "sources": [{"name": "a"}, {"name": "b"}]})
+    )
+    for name in ("a", "b"):
+        (configs / f"{name}.json").write_text(json.dumps({"name": name}))
+    calls = []
+
+    def fake_cli(module, argv):
+        calls.append((module, argv))
+        out_dir = Path(argv[argv.index("--output-dir") + 1])
+        name = argv[argv.index("--name") + 1]
+        # generate_router does not create --output-dir; the runner must have.
+        assert out_dir.is_dir()
+        (out_dir / f"{name}.json").write_text(
+            json.dumps({"name": name, "_router": True, "_sub_skills": ["a", "b"]})
+        )
+        return 0
+
+    monkeypatch.setattr(runner, "_run_cli_main", fake_cli)
+    spec = _analyze_spec(root, skill, ["router"], kind="skill")
+    assert runner.run_analyze(spec) == 0
+    assert calls[0][0] == "skill_seekers.cli.generate_router"
+    assert calls[0][1][:2] == [str(configs / "a.json"), str(configs / "b.json")]
+    slug = analysis_store.slug_for(str(skill))
+    manifest = analysis_store.list_recent(root)[0]
+    assert manifest["results"]["router"] == {
+        "count": 2,
+        "path": str(root / "output/_analysis" / slug / "router" / f"{slug}.json"),
+    }
+    assert manifest["tools"] == ["router"] and manifest["skipped"] == []
+
+
+def test_run_analyze_never_reports_a_previous_runs_files(workspace, monkeypatch):
+    """A leftover tests.json must not let `guides` run, nor be counted as fresh."""
+    root, _ = workspace
+    target = root / "src"
+    target.mkdir()
+    stale = root / "output/_analysis" / analysis_store.slug_for(str(target))
+    stale.mkdir(parents=True)
+    (stale / "tests.json").write_text(json.dumps({"examples": [1, 2, 3]}))
+    calls = []
+    monkeypatch.setattr(runner, "_run_cli_main", lambda m, _a: calls.append(m) or 0)
+
+    assert runner.run_analyze(_analyze_spec(root, target, ["guides"])) == 0
+    assert calls == []
+    manifest = analysis_store.list_recent(root)[0]
+    assert "guides" not in manifest["results"]
+    assert manifest["tools"] == [] and manifest["skipped"] == ["guides"]
+    assert not (stale / "tests.json").exists()
+
+
+def test_slug_for_separates_targets_sharing_a_basename():
+    assert analysis_store.slug_for("/a/src") != analysis_store.slug_for("/b/src")
+    assert analysis_store.slug_for("/a/src").startswith("src-")

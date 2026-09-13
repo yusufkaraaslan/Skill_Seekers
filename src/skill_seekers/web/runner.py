@@ -534,7 +534,7 @@ ANALYZE_TOOL_ORDER = ("patterns", "tests", "guides", "config", "router", "qualit
 # pattern_recognizer's --output is a directory; it writes this file inside it.
 PATTERN_RESULT_NAME = "detected_patterns.json"
 # Per-tool JSON keys holding the thing the manifest counts.
-COUNT_LIST_KEYS = ("patterns", "examples", "guides", "config_files", "configs")
+COUNT_LIST_KEYS = ("_sub_skills", "patterns", "examples", "guides", "config_files", "configs")
 COUNT_TOTAL_KEYS = ("total_patterns_detected", "total_examples", "total_guides", "total_files")
 
 
@@ -622,11 +622,17 @@ def run_analyze(spec: dict[str, Any]) -> int:
     root = Path(spec["cwd"])
     slug = slug_for(spec["target"]["value"])
     out_dir = Path(spec["output_dir"]) / "_analysis" / slug
+    # Start from an empty run directory: otherwise a file left by an earlier run
+    # (say tests.json when only `guides` was selected) is picked up and recorded
+    # as a fresh result under this run's timestamp.
+    shutil.rmtree(out_dir, ignore_errors=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     depth = ANALYZE_DEPTH.get(spec.get("depth", "basic"), "surface")
     ai_mode = spec.get("ai_mode", "off")
     no_ai = ai_mode == "off"
     results: dict[str, Any] = {}
+    ran: list[str] = []
+    skipped: list[str] = []
     tools = sorted(
         spec["tools"],
         key=lambda t: (
@@ -657,19 +663,19 @@ def run_analyze(spec: dict[str, Any]) -> int:
                     out,
                 )
             elif tool == "guides":
-                examples = out_dir / "tests.json"
-                if not examples.is_file():
+                # Gate on what THIS run produced, never on a leftover file.
+                if "tests" not in ran:
                     print("skipping guides: select the tests tool to feed it", flush=True)
-                    code = 0
-                else:
-                    # --json-output makes the builder print the collection and
-                    # ignore --output, so capture stdout instead.
-                    argv = ["--input", str(examples), "--json-output"]
-                    code = _capture_json(
-                        "skill_seekers.cli.how_to_guide_builder",
-                        argv + (["--no-ai"] if no_ai else []),
-                        out,
-                    )
+                    skipped.append(tool)
+                    continue
+                # --json-output makes the builder print the collection and
+                # ignore --output, so capture stdout instead.
+                argv = ["--input", str(out_dir / "tests.json"), "--json-output"]
+                code = _capture_json(
+                    "skill_seekers.cli.how_to_guide_builder",
+                    argv + (["--no-ai"] if no_ai else []),
+                    out,
+                )
             elif tool == "config":
                 code = _run_cli_main(
                     "skill_seekers.cli.config_extractor",
@@ -685,17 +691,24 @@ def run_analyze(spec: dict[str, Any]) -> int:
                     print(
                         "skipping router: target is not a skill with sub-skill configs", flush=True
                     )
-                    code = 0
-                else:
-                    code = _run_cli_main(
-                        "skill_seekers.cli.generate_router",
-                        [*configs, "--output-dir", str(out_dir)],
-                    )
+                    skipped.append(tool)
+                    continue
+                # generate_router writes <output-dir>/<name>.json and, beside it,
+                # <output-dir>/../output/<name>/SKILL.md — give it a directory of
+                # its own so neither escapes this run's folder.
+                out = out_dir / "router" / f"{slug}.json"
+                out.parent.mkdir(parents=True, exist_ok=True)  # generate_router will not
+                code = _run_cli_main(
+                    "skill_seekers.cli.generate_router",
+                    [*configs, "--output-dir", str(out.parent), "--name", slug],
+                )
             else:
                 print(f"skipping unsupported tool {tool}", flush=True)
-                code = 0
+                skipped.append(tool)
+                continue
             if code != 0:
                 return code
+            ran.append(tool)
             found = _tool_output(out, nested)
             if found:
                 artifact(found)
@@ -705,7 +718,8 @@ def run_analyze(spec: dict[str, Any]) -> int:
         slug,
         {
             "target": spec["target"]["value"],
-            "tools": tools,
+            "tools": ran,
+            "skipped": skipped,
             "startedAt": time.strftime("%Y-%m-%d %H:%M:%S"),
             "attachedTo": spec.get("attach_to"),
             "results": results,

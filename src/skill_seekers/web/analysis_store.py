@@ -8,6 +8,7 @@ explicitly attached to.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -22,8 +23,14 @@ def analysis_root(root: Path) -> Path:
 
 
 def slug_for(value: str) -> str:
-    """Filesystem-safe run name derived from the analysed target."""
-    return re.sub(r"[^a-z0-9]+", "-", Path(value).name.lower()).strip("-") or "analysis"
+    """Filesystem-safe run name for a target.
+
+    The basename alone collides (``/a/src`` and ``/b/src``), which would let one
+    target's run directory and manifest overwrite another's, so the full target
+    string is hashed into the suffix.
+    """
+    stem = re.sub(r"[^a-z0-9]+", "-", Path(value).name.lower()).strip("-") or "analysis"
+    return f"{stem}-{hashlib.sha256(value.encode('utf-8')).hexdigest()[:8]}"
 
 
 def write_manifest(root: Path, slug: str, data: dict[str, Any]) -> Path:
