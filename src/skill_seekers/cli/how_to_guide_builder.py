@@ -867,7 +867,7 @@ class HowToGuideBuilder:
         examples: list[dict],
         grouping_strategy: str = "ai-tutorial-group",
         output_dir: Path | None = None,
-        enhance_with_ai: bool = True,
+        enhance_with_ai: bool | None = None,
         ai_mode: str = "auto",
     ) -> GuideCollection:
         """
@@ -877,13 +877,17 @@ class HowToGuideBuilder:
             examples: List of TestExample dicts from C3.2
             grouping_strategy: How to group workflows ("ai-tutorial-group", "file-path", etc.)
             output_dir: Optional directory to save markdown files
-            enhance_with_ai: Enable comprehensive AI enhancement (default: True)
+            enhance_with_ai: Override the constructor setting; None inherits it
             ai_mode: AI enhancement mode - "auto", "api", "local", or "none"
 
         Returns:
             GuideCollection with all generated guides
         """
         logger.info(f"Building how-to guides from {len(examples)} examples...")
+
+        # An omitted call-level option must respect the constructor's opt-out.
+        if enhance_with_ai is None:
+            enhance_with_ai = self.enhance_with_ai
 
         # Initialize AI enhancer if requested
         enhancer = None

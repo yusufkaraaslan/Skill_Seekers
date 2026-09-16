@@ -10,9 +10,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Development version: 3.10.0.dev0_
 
 ### Added
+- **Vector figures are extracted from PDF pages** (#434, PR #451 by @bferanmi806-sketch) — PDF image extraction relied on `page.get_images()` + `doc.extract_image(xref)`, which only see embedded raster objects, so vector-only diagrams reached neither the extracted assets nor the generated skill. Meaningful vector drawing clusters are now rendered as PNG assets alongside the raster path, with nearby labels kept in the clip. Entries in `extracted_images` carry `source` (`raster`/`vector`) and `bbox`, and pages gain `vector_figures_count` (`images_count` stays raster-only, so `total_images` keeps its meaning for the generated statistics).
+  - Detection is deliberately conservative and rejects page frames, separator rules, line-ruled tables and small decorative marks. A cluster made entirely of wide fill-only bands is page furniture — that is what a shaded code block, callout or admonition looks like — and is rejected, so ordinary docs PDFs do not emit PNGs of their own code samples.
+  - Figures are emitted in reading order rather than by area, so the `vectorN` suffix and the order in the generated reference markdown follow the page.
+  - `--min-image-size` now applies to vector figures on the same pixel basis as rasters; previously the flag silently did nothing for them.
+  - Raster/vector de-duplication compares **IoU**, not intersection-over-smaller-area. Under the latter, any fully contained raster scored 1.0, so a 30x30pt embedded logo deleted the entire architecture diagram enclosing it.
+  - Cost guardrails: clustering is skipped above `VECTOR_MAX_DRAWINGS` (2000) or `VECTOR_MAX_CLUSTERS` (400), and cluster membership is resolved through a coarse grid index instead of comparing every cluster against every drawing. A 3000-path page (scatter plot, map, CAD export) went from **56.3s and zero figures** to 0.17s — this path is on by default, so that cost was previously paid per page.
 - **RapidProxy joins as our first Silver sponsor** — logo in the README sponsor grid across all 12 languages and on the website sponsors page, captioned "Sponsor — Silver" per rule 2. Sponsor entries gain an optional `since` field and a `logo_svg` vector companion.
 - **Readability metrics in the quality checker** (#228, PR #441 by @bferanmi806-sketch) — `skill-seekers quality` now reports Flesch Reading Ease, Flesch-Kincaid Grade Level, average sentence length, and average paragraph length for SKILL.md prose, plus aggregated notes for over-long sentences and paragraphs. YAML frontmatter, fenced code, and inline code are excluded, and no new dependency is added. Scores use English-language formulas and may be inaccurate for other languages.
   - Readability is reported as **info, never as warnings**: `quality_score` deducts 5 points per warning and `quality --threshold` exits non-zero in CI, so emitting warnings would have dropped scores by up to 10 points and failed existing quality gates on skills that had not changed. A regression test pins this contract.
+- Seeker HUD: skills are tagged by origin (`seeker` / `plugin · <name>` / `manual`) with a filter; external skills are read-only except port/package (API returns 403 on mutation).
+- Seeker HUD: `GET /api/mcp/status` probes the stdio/HTTP transports; the Seeker MCP tab shows real status and copyable client config.
+- Seeker HUD: live skill search shared between the top bar and the grid; configs search; 25/50/100 paging on the skills, configs and workflows lists.
+- Seeker HUD: routed skill page at `/skills/<id>` with Overview, SKILL.md, Files, Installs, Enhance, Analysis, Export, and History tabs, replacing the skill drawer.
+- Seeker HUD: routed config page at `/configs/<id>` with Overview, JSON, Validate, Estimate, Sync, Push/Submit, and Generate tabs.
+- Seeker HUD: Workflows screen at `/workflows` (rows select `/workflows/<name>`) lists, views, copies, edits, validates, and deletes enhancement-workflow YAML.
+- Seeker HUD: Analyze screen at `/analyze` runs the C3.x codebase-analysis tools against a directory, skill, or owner/repo target and records manifests under `output/_analysis/`.
+- Seeker HUD: Environment screen at `/environment` adds Doctor, Servers (start/stop the MCP HTTP and embedding servers), and Agents (install/reinstall a skill) panels alongside the MCP tools catalogue.
+- Seeker HUD: twelve new job types — `upload`, `translate`, `update`, `quality`, `analyze`, `split`, `push`, `submit`, `sync-check`, `generate-config`, `install-agent`, `server` — back the new page actions; servers started from Environment run as jobs, and stopping the server cancels the job.
+- Seeker HUD: new `routes/` package (one module per screen, `register(app, ctx)`) and a shared `HudContext` carrying workspace/job-manager state into every route.
+
+### Changed
+- Seeker HUD: "Library" tab is now "Configs", "MCP Tools" is now "Seeker MCP".
+- Seeker HUD: externally-installed skills now report a checker-derived quality score (was a fixed 70), their real install path as source (was "external install"), and no default "external" tag.
+- Seeker HUD: opening a skill or config from any table, card, or job output now navigates to its routed page instead of opening a drawer; `/mcp` redirects to `/environment`, where the MCP tools catalogue is a collapsible panel rather than its own screen.
+
+### Fixed
+- Seeker HUD: installed-plugin scan no longer reads `~/.claude/plugins/{marketplaces,repos,data}/` (catalogue clones), which over-reported skills from plugins that were never installed.
+- Seeker HUD: MCP HTTP transport is reported live only when /health identifies Skill Seekers' own server (was any listener on the port); packaging an external skill no longer writes the archive into the plugin cache.
+- Seeker HUD: a `SKILL.md` nested inside a skill directory (e.g. vercel's `ai-sdk/upstream/`) no longer shows up as a separate skill; pressing Enter in the top-bar search no longer triggers the opened drawer's first action; the Seeker MCP status cards no longer overflow; the web API test fixture now owns its own `JobManager`, so test jobs stop leaking into `~/.skill-seekers/ui/`.
+- Seeker HUD: config sync-state paths are read and written through one sanitised `sync_state_path()` helper, closing a path-traversal read of arbitrary `*_sync.json` files via an unsanitised config `name`.
+- Seeker HUD: sync checks now detect and report unreachable pages (non-zero exit, `status: "error"`, unreachable-page count) instead of silently recording a down docs site as zero changes.
+- Seeker HUD: analysis runs are isolated per target by a hashed run directory, so concurrent runs no longer share state, and a stale previous run's leftover test output no longer falsely triggers the guides step. Running one tool now merges into the target's manifest instead of replacing it (a re-run clears only that tool's own output), and the manifest is written even when a tool exits non-zero, recording the failure alongside the results that survived.
+- Seeker HUD: uploads to the vector/RAG targets work again — the packager's `<name>-<target>.json` output was filtered out by an archive-only extension check, so every Chroma/Weaviate/Pinecone upload failed with "produced no archive".
+- Seeker HUD: `POST /api/environment/agents/{agent}/install` no longer accepts a caller-supplied `skill_dir`; the install source is always the workspace's own bootstrap output. Upload targets are derived from the adaptor registry, so `faiss`/`qdrant` are rejected up front instead of queueing a job that dies in argparse.
+- Seeker HUD: leaving a skill or config page with unsaved SKILL.md / JSON edits now asks for confirmation — the sidebar, header search and breadcrumbs used to discard the draft silently, since `BrowserRouter` has no `useBlocker`.
+- Seeker HUD: unmatched `/api/*` paths now 404 for every HTTP method, without widening the SPA catch-all route's accepted methods.
+- Seeker HUD: Doctor check levels are normalised (`pass`/`warn`/`fail` → `ok`/`warning`/`error`) so the status pill reflects real failures, and agent install paths resolve under the HUD's workspace root instead of the server process's working directory.
 
 ## [3.9.1] - 2026-08-02
 

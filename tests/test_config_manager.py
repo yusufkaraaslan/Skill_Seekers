@@ -48,3 +48,17 @@ class TestGetApiKey:
 
     def test_unknown_provider_returns_none(self, manager):
         assert manager.get_api_key("not-a-provider") is None
+
+
+def test_default_config_is_not_shared_between_instances(tmp_path, monkeypatch):
+    """A profile added under one config file must not leak into a fresh default config."""
+    for name in ("one", "two"):
+        monkeypatch.setattr(ConfigManager, "CONFIG_DIR", tmp_path / name)
+        monkeypatch.setattr(ConfigManager, "CONFIG_FILE", tmp_path / name / "config.json")
+        monkeypatch.setattr(ConfigManager, "PROGRESS_DIR", tmp_path / name / "progress")
+        manager = ConfigManager()
+        if name == "one":
+            manager.add_github_profile("work", "ghp_fixture_not_a_secret", set_as_default=True)
+        else:
+            assert "work" not in manager.config["github"]["profiles"]
+            assert manager.config["github"]["default_profile"] != "work"

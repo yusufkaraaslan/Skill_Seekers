@@ -5,6 +5,7 @@ Handles multi-profile GitHub tokens, API keys, and application settings.
 Provides secure storage with file permissions and auto-detection capabilities.
 """
 
+import copy
 import json
 import os
 import stat
@@ -90,7 +91,7 @@ class ConfigManager:
     def _load_config(self) -> dict[str, Any]:
         """Load configuration from file or create default."""
         if not self.config_file.exists():
-            return self.DEFAULT_CONFIG.copy()
+            return copy.deepcopy(self.DEFAULT_CONFIG)
 
         try:
             with open(self.config_file) as f:
@@ -102,13 +103,15 @@ class ConfigManager:
         except (OSError, json.JSONDecodeError) as e:
             print(f"⚠️  Warning: Could not load config file: {e}")
             print("   Using default configuration.")
-            return self.DEFAULT_CONFIG.copy()
+            return copy.deepcopy(self.DEFAULT_CONFIG)
 
     def _merge_with_defaults(self, config: dict[str, Any]) -> dict[str, Any]:
         """Merge loaded config with defaults to ensure all keys exist."""
 
         def deep_merge(default: dict, custom: dict) -> dict:
-            result = default.copy()
+            # deepcopy: nested defaults (github.profiles, api_keys, …) must never
+            # be shared with the class-level DEFAULT_CONFIG or across instances.
+            result = copy.deepcopy(default)
             for key, value in custom.items():
                 if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                     result[key] = deep_merge(result[key], value)
