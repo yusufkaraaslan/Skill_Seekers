@@ -549,3 +549,78 @@ class TestConfigManagerDefaultAgent:
         # Re-instantiate to verify persistence
         mgr2 = ConfigManager()
         assert mgr2.get_default_agent() == "openai"
+
+
+# ---------------------------------------------------------------------------
+# --enhance-level forwarding
+#
+# doc_scraper.py and video_scraper.py shell out to `skill-seekers-enhance` and
+# forward --enhance-level verbatim. The flag was never declared on this command,
+# so every scraper-triggered enhancement died with
+# "unrecognized arguments: --enhance-level" and the skill shipped unenhanced.
+# ---------------------------------------------------------------------------
+
+
+class TestEnhanceLevelFlag:
+    def test_flag_is_declared(self):
+        """--enhance-level must parse; the scrapers always send it."""
+        import argparse
+
+        from skill_seekers.cli.arguments.enhance import add_enhance_arguments
+
+        parser = argparse.ArgumentParser()
+        add_enhance_arguments(parser)
+        args = parser.parse_args(["output/react", "--enhance-level", "2"])
+        assert args.enhance_level == 2
+
+    def test_defaults_to_enhancing(self):
+        """Omitting the flag must not disable enhancement."""
+        import argparse
+
+        from skill_seekers.cli.arguments.enhance import add_enhance_arguments
+
+        parser = argparse.ArgumentParser()
+        add_enhance_arguments(parser)
+        args = parser.parse_args(["output/react"])
+        assert args.enhance_level > 0
+
+    @pytest.mark.parametrize("level", ["0", "1", "2", "3"])
+    def test_all_documented_levels_accepted(self, level):
+        import argparse
+
+        from skill_seekers.cli.arguments.enhance import add_enhance_arguments
+
+        parser = argparse.ArgumentParser()
+        add_enhance_arguments(parser)
+        args = parser.parse_args(["output/react", "--enhance-level", level])
+        assert args.enhance_level == int(level)
+
+    def test_level_zero_skips_without_calling_ai(self, tmp_path, monkeypatch):
+        """Level 0 means disabled — it must not reach mode selection."""
+        import skill_seekers.cli.enhance_command as ec
+
+        skill_dir = _make_skill_dir(tmp_path)
+
+        def _boom(*_args, **_kwargs):
+            raise AssertionError("_pick_mode called despite --enhance-level 0")
+
+        monkeypatch.setattr(ec, "_pick_mode", _boom)
+
+        sys_argv_backup = sys.argv.copy()
+        sys.argv = ["enhance_command.py", str(skill_dir), "--enhance-level", "0"]
+        try:
+            assert ec.main() == 0
+        finally:
+            sys.argv = sys_argv_backup
+
+    def test_nonzero_level_still_reaches_dry_run(self, tmp_path):
+        """Levels 1-3 must not short-circuit; this command only writes SKILL.md."""
+        skill_dir = _make_skill_dir(tmp_path)
+        sys_argv_backup = sys.argv.copy()
+        sys.argv = ["enhance_command.py", str(skill_dir), "--enhance-level", "3", "--dry-run"]
+        try:
+            from skill_seekers.cli.enhance_command import main
+
+            assert main() == 0
+        finally:
+            sys.argv = sys_argv_backup
