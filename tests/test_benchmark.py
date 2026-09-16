@@ -651,3 +651,36 @@ class TestBenchmarkModels:
 
         assert "100.0% faster" in improvement
         assert "✅" in improvement
+
+
+class TestCpuFreqFallback:
+    """psutil.cpu_freq is absent on some platforms (macOS arm64 with psutil 7.2+)."""
+
+    def test_missing_cpu_freq_attribute(self, monkeypatch):
+        import psutil
+
+        monkeypatch.delattr(psutil, "cpu_freq", raising=False)
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert result.system_info["cpu_freq_mhz"] == 0
+        assert result.system_info["cpu_count"] > 0
+
+    def test_cpu_freq_raises(self, monkeypatch):
+        import psutil
+
+        def boom():
+            raise NotImplementedError("no freq on this platform")
+
+        monkeypatch.setattr(psutil, "cpu_freq", boom, raising=False)
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert result.system_info["cpu_freq_mhz"] == 0
+
+    def test_python_version_is_interpreter_version(self):
+        import sys
+
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert (
+            result.system_info["python_version"] == f"{sys.version_info[0]}.{sys.version_info[1]}"
+        )
