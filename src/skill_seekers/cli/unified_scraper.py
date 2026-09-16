@@ -701,7 +701,14 @@ class UnifiedScraper(SkillConverter):
         shutil.copy(data_file, cache_data_file)
 
         # Append to list instead of overwriting (multi-source support)
-        self.scraped_data[bucket].append({**record, "data": data, "data_file": cache_data_file})
+        self.scraped_data[bucket].append(
+            {
+                **record,
+                "data": data,
+                "data_file": cache_data_file,
+                "refs_dir": os.path.join(source_skill_dir, "references"),
+            }
+        )
 
         # Build standalone SKILL.md for synthesis
         try:
@@ -830,6 +837,7 @@ class UnifiedScraper(SkillConverter):
                     "idx": idx,
                     "data": result.to_dict(),
                     "data_file": cache_data_file,
+                    "refs_dir": os.path.join(video_skill_dir, "references"),
                 }
             )
 
@@ -1324,7 +1332,17 @@ class UnifiedScraper(SkillConverter):
         """Load a cached data/<cache_stem>.json payload into scraped_data."""
         data_file = os.path.join(self.data_dir, f"{cache_stem}.json")
         data = self._read_required_json(data_file)
-        self.scraped_data[bucket].append({**record, "data": data, "data_file": data_file})
+        cache_prefix = f"{bucket}_data_"
+        source_suffix = cache_stem.removeprefix(cache_prefix)
+        source_skill_dir = os.path.join(self.sources_dir, f"{self.name}_{bucket}_{source_suffix}")
+        self.scraped_data[bucket].append(
+            {
+                **record,
+                "data": data,
+                "data_file": data_file,
+                "refs_dir": os.path.join(source_skill_dir, "references"),
+            }
+        )
 
     def _load_cached_sources(self) -> int:
         """Reload unified scraped_data from prior .skillseeker-cache outputs."""
@@ -1432,7 +1450,15 @@ class UnifiedScraper(SkillConverter):
         data_file = os.path.join(self.data_dir, f"video_data_{idx}.json")
         data = self._read_required_json(data_file)
         self.scraped_data["video"].append(
-            {"video_id": video_id, "idx": idx, "data": data, "data_file": data_file}
+            {
+                "video_id": video_id,
+                "idx": idx,
+                "data": data,
+                "data_file": data_file,
+                "refs_dir": os.path.join(
+                    self.sources_dir, f"{self.name}_video_{idx}", "references"
+                ),
+            }
         )
 
     def _load_cached_local(self, source: dict[str, Any]) -> None:

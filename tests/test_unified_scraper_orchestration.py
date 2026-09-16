@@ -401,6 +401,9 @@ class TestScrapePdf:
         entry = scraper.scraped_data["pdf"][0]
         assert entry["pdf_path"] == pdf_path
         assert entry["data"]["pages"] == pages
+        assert entry["refs_dir"] == str(
+            Path(scraper.sources_dir) / "test_unified_pdf_0_report" / "references"
+        )
 
     def test_source_counter_incremented(self, tmp_path, monkeypatch):
         scraper = _make_scraper(tmp_path=tmp_path)
@@ -416,7 +419,37 @@ class TestScrapePdf:
 
 
 # ===========================================================================
-# 4b. _scrape_with_converter() shared engine (Phase 4 dispatch refactor)
+# 4b. _scrape_video()
+# ===========================================================================
+
+
+class TestScrapeVideo:
+    """Video records expose their standalone reference tree to the unified builder."""
+
+    def test_scraped_data_includes_reference_directory(self, tmp_path, monkeypatch):
+        scraper = _make_scraper(tmp_path=tmp_path)
+        scraper.scraped_data["video"] = []
+        scraper._source_counters["video"] = 0
+
+        extracted_data = tmp_path / "video_data.json"
+        extracted_data.write_text(json.dumps({"videos": []}), encoding="utf-8")
+        result = MagicMock(videos=[], total_segments=0)
+        result.to_dict.return_value = {"videos": []}
+        converter = MagicMock(data_file=str(extracted_data), result=result)
+        monkeypatch.setattr(
+            "skill_seekers.cli.video_scraper.VideoToSkillConverter",
+            lambda _config: converter,
+        )
+
+        scraper._scrape_video({"url": "https://youtu.be/example"})
+
+        assert scraper.scraped_data["video"][0]["refs_dir"] == str(
+            Path(scraper.sources_dir) / "test_unified_video_0" / "references"
+        )
+
+
+# ===========================================================================
+# 4c. _scrape_with_converter() shared engine (Phase 4 dispatch refactor)
 # ===========================================================================
 
 
@@ -494,12 +527,22 @@ class TestScrapeWithConverterEngine:
         # Exact record keys are preserved
         assert len(scraper.scraped_data["pptx"]) == 1
         entry = scraper.scraped_data["pptx"][0]
-        assert set(entry.keys()) == {"pptx_path", "pptx_id", "idx", "data", "data_file"}
+        assert set(entry.keys()) == {
+            "pptx_path",
+            "pptx_id",
+            "idx",
+            "data",
+            "data_file",
+            "refs_dir",
+        }
         assert entry["pptx_path"] == pptx_path
         assert entry["pptx_id"] == "deck"
         assert entry["idx"] == 0
         assert entry["data"]["slides"] == slides
         assert entry["data_file"].endswith("pptx_data_0_deck.json")
+        assert entry["refs_dir"] == str(
+            Path(scraper.sources_dir) / "test_unified_pptx_0_deck" / "references"
+        )
         assert scraper._source_counters["pptx"] == 1
 
     def test_engine_still_calls_build_skill(self, tmp_path, monkeypatch):
@@ -976,6 +1019,7 @@ class TestUnifiedSkipScrape:
             "idx": 0,
             "data": {"pages": [{"title": "Manual"}]},
             "data_file": str(pdf_data),
+            "refs_dir": str(Path(scraper.sources_dir) / "test_unified_pdf_0_manual" / "references"),
         }
 
     def test_load_cached_video_uses_unified_data_cache(self, tmp_path):
@@ -992,6 +1036,7 @@ class TestUnifiedSkipScrape:
             "idx": 0,
             "data": {"videos": [{"title": "Demo"}]},
             "data_file": str(video_data),
+            "refs_dir": str(Path(scraper.sources_dir) / "test_unified_video_0" / "references"),
         }
 
 

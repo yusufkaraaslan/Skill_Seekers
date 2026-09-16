@@ -1079,6 +1079,10 @@ This skill combines knowledge from multiple sources:
     def _generate_references(self):
         """Generate reference files organized by source."""
         logger.info("Generating reference files...")
+        references_dir = os.path.join(self.skill_dir, "references")
+        if os.path.isdir(references_dir):
+            shutil.rmtree(references_dir)
+        os.makedirs(references_dir, exist_ok=True)
 
         # Generate references for each source type (now lists)
         docs_list = self.scraped_data.get("documentation", [])
@@ -1312,6 +1316,8 @@ This skill combines knowledge from multiple sources:
             return
 
         pdf_dir = os.path.join(self.skill_dir, "references", "pdf")
+        if os.path.isdir(pdf_dir):
+            shutil.rmtree(pdf_dir)
         os.makedirs(pdf_dir, exist_ok=True)
 
         # Create index
@@ -1320,7 +1326,68 @@ This skill combines knowledge from multiple sources:
             f.write("# PDF Documentation\n\n")
             f.write(f"Reference from {len(pdf_list)} PDF document(s).\n\n")
 
+            for i, pdf_source in enumerate(pdf_list):
+                source_id, copied_references = self._copy_source_reference_tree(
+                    pdf_dir, "pdf", pdf_source, i
+                )
+                f.write(f"## {source_id}\n\n")
+                if copied_references:
+                    for relative_path in copied_references:
+                        filename = os.path.basename(relative_path)
+                        f.write(f"- [{filename}]({relative_path})\n")
+                else:
+                    f.write("No readable reference files available.\n")
+                f.write("\n")
+
         logger.info(f"Created PDF references ({len(pdf_list)} sources)")
+
+    @staticmethod
+    def _reference_source_id(source_type: str, source_data: dict, position: int) -> str:
+        """Return the stable identifier used to namespace one source's references."""
+        return str(
+            source_data.get("source_id")
+            or source_data.get(f"{source_type}_id")
+            or source_data.get("notebook_id")
+            or source_data.get("spec_id")
+            or source_data.get("feed_id")
+            or source_data.get("man_id")
+            or source_data.get("chat_id")
+            or f"source_{position}"
+        )
+
+    def _copy_source_reference_tree(
+        self,
+        type_dir: str,
+        source_type: str,
+        source_data: dict,
+        position: int,
+    ) -> tuple[str, list[str]]:
+        """Copy one standalone sub-skill's references and adjacent assets."""
+        source_id = self._reference_source_id(source_type, source_data, position)
+        namespace = f"{position}_{self._sanitize_source_id(source_id)}"
+        refs_dir = source_data.get("refs_dir")
+        if not refs_dir or not os.path.isdir(refs_dir):
+            logger.warning("No readable %s references found for source %s", source_type, source_id)
+            return source_id, []
+
+        namespace_dir = os.path.join(type_dir, namespace)
+        if os.path.isdir(namespace_dir):
+            shutil.rmtree(namespace_dir)
+
+        destination_refs = os.path.join(namespace_dir, "references")
+        shutil.copytree(refs_dir, destination_refs)
+
+        source_skill_dir = os.path.dirname(refs_dir)
+        for resource_dir_name in ("assets", "frames"):
+            source_resources = os.path.join(source_skill_dir, resource_dir_name)
+            if os.path.isdir(source_resources):
+                shutil.copytree(source_resources, os.path.join(namespace_dir, resource_dir_name))
+
+        copied_references = [
+            os.path.relpath(path, type_dir).replace(os.sep, "/")
+            for path in sorted(Path(destination_refs).rglob("*.md"))
+        ]
+        return source_id, copied_references
 
     def _generate_generic_references(self, source_type: str, source_list: list[dict]):
         """Generate references for any source type using a generic approach.
@@ -1337,6 +1404,8 @@ This skill combines knowledge from multiple sources:
 
         label = self._SOURCE_LABELS.get(source_type, source_type.title())
         type_dir = os.path.join(self.skill_dir, "references", source_type)
+        if os.path.isdir(type_dir):
+            shutil.rmtree(type_dir)
         os.makedirs(type_dir, exist_ok=True)
 
         # Create index
@@ -1347,17 +1416,17 @@ This skill combines knowledge from multiple sources:
 
             for i, source_data in enumerate(source_list):
                 # Try common ID fields
-                source_id = (
-                    source_data.get("source_id")
-                    or source_data.get(f"{source_type}_id")
-                    or source_data.get("notebook_id")
-                    or source_data.get("spec_id")
-                    or source_data.get("feed_id")
-                    or source_data.get("man_id")
-                    or source_data.get("chat_id")
-                    or f"source_{i}"
+                source_id, copied_references = self._copy_source_reference_tree(
+                    type_dir, source_type, source_data, i
                 )
                 f.write(f"## {source_id}\n\n")
+
+                if copied_references:
+                    f.write("**Readable references:**\n\n")
+                    for relative_path in copied_references:
+                        filename = os.path.basename(relative_path)
+                        f.write(f"- [{filename}]({relative_path})\n")
+                    f.write("\n")
 
                 # Write summary of extracted data
                 data = source_data.get("data", {})
