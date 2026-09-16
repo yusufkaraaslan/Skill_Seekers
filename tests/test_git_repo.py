@@ -129,6 +129,21 @@ class TestInjectToken:
 class TestCloneOrPull:
     """Test clone and pull operations."""
 
+    @pytest.mark.parametrize(
+        "source_name",
+        ["", "../outside", "nested/source", r"nested\\source", "/absolute", r"C:\\cache"],
+    )
+    @patch("skill_seekers.services.git_repo.git.Repo.clone_from")
+    def test_clone_rejects_unsafe_cache_name_before_clone(self, mock_clone, git_repo, source_name):
+        """Cache names must stay within the configured cache directory."""
+        with pytest.raises(ValueError, match="single path segment"):
+            git_repo.clone_or_pull(
+                source_name=source_name,
+                git_url="https://github.com/org/repo.git",
+            )
+
+        mock_clone.assert_not_called()
+
     @patch("skill_seekers.services.git_repo.git.Repo.clone_from")
     def test_clone_new_repo(self, mock_clone, git_repo):
         """Test cloning a new repository."""

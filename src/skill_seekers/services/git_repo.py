@@ -6,12 +6,39 @@ Handles git clone/pull operations for custom config sources
 
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 from urllib.parse import urlparse
 
 import git
 from git.exc import GitCommandError, InvalidGitRepositoryError
+
+
+_DRIVE_PATH_PREFIX = re.compile(r"^[A-Za-z]:")
+
+
+def validate_path_segment(name: str, *, label: str) -> str:
+    """Return a name that is safe to use as one filesystem path segment.
+
+    Cache and output names come from configuration or tool arguments.  Keep
+    them to a single segment so callers cannot escape their designated root
+    on either POSIX or Windows.
+    """
+    if (
+        not isinstance(name, str)
+        or not name
+        or name in {".", ".."}
+        or ".." in name
+        or "/" in name
+        or "\\" in name
+        or os.path.isabs(name)
+        or _DRIVE_PATH_PREFIX.match(name)
+    ):
+        raise ValueError(
+            f"Invalid {label}: use a non-empty single path segment without traversal or separators."
+        )
+    return name
 
 
 class GitConfigRepo:
@@ -68,7 +95,7 @@ class GitConfigRepo:
             raise ValueError(f"Invalid git URL: {git_url}")
 
         # Determine cache path
-        repo_path = self.cache_dir / source_name
+        repo_path = self.cache_dir / validate_path_segment(source_name, label="source name")
 
         # Force refresh: delete existing cache
         if force_refresh and repo_path.exists():
