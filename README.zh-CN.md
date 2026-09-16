@@ -8,9 +8,9 @@
 
 > ⚠️ **翻译说明**
 >
-> 本中文文档基于 AI 初译版本，并由社区贡献者人工润色改进。
+> 本文档由 AI 翻译，部分内容经社区贡献者人工润色。
 >
-> 如发现翻译不准确之处，欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 反馈！
+> 仍可能存在不准确或不自然的表述，欢迎通过 [GitHub Issue #260](https://github.com/yusufkaraaslan/Skill_Seekers/issues/260) 反馈！
 
 [![Version](https://img.shields.io/badge/version-3.9.0-blue.svg)](https://github.com/yusufkaraaslan/Skill_Seekers/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
