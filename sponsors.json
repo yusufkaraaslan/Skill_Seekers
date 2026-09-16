@@ -3,31 +3,10 @@
   "contact": "yusufkaraaslan.yk@pm.me",
   "sponsors_url": "https://github.com/sponsors/yusufkaraaslan",
   "policy": "SPONSORSHIP.md",
-
-  "partners": [
-    {
-      "name": "Atlas Cloud",
-      "url": "https://www.atlascloud.ai/",
-      "logo": "docs/assets/sponsors/atlas-cloud.png",
-      "width": 200,
-      "blurb": "A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.",
-      "note": "Launch Partner - predates the tier structure, placement grandfathered outside the standard tiers."
-    }
-  ],
-
+  "partners": [],
   "platinum": [],
   "gold": [],
-
-  "silver": [
-    {
-      "name": "RapidProxy",
-      "url": "https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor",
-      "logo": "docs/assets/sponsors/rapidproxy.png",
-      "logo_svg": "docs/assets/sponsors/rapidproxy.svg",
-      "since": "August 2026"
-    }
-  ],
-
+  "silver": [],
   "bronze": [],
   "supporters": []
 }
