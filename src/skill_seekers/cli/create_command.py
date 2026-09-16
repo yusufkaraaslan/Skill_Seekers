@@ -115,6 +115,11 @@ class CreateCommand:
         # 7. Centralized workflows
         self._run_workflows()
 
+        # 8. Optional structured index. This runs after enhancement and
+        # workflows so indexed sections always reflect the final markdown.
+        if ctx.output.index:
+            self._build_index(ctx)
+
         return 0
 
     def _validate_arguments(self) -> None:
@@ -563,6 +568,24 @@ class CreateCommand:
             pass
         except Exception as e:
             logger.warning(f"Workflow execution failed: {e}")
+
+    def _build_index(self, ctx: ExecutionContext) -> None:
+        """Build the opt-in, script-queryable index for a completed skill."""
+        from pathlib import Path
+
+        from skill_seekers.cli.skill_indexer import build_index, write_search_script
+
+        name = ctx.output.name or (
+            self.source_info.suggested_name if self.source_info else "unnamed"
+        )
+        skill_dir = Path(ctx.output.output_dir or f"output/{name}")
+        result = build_index(skill_dir)
+        write_search_script(skill_dir)
+        logger.info(
+            "Built optional search index with %d sections: %s",
+            result.section_count,
+            result.index_path,
+        )
 
 
 def main() -> int:
