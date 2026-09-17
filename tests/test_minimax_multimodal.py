@@ -9,7 +9,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from skill_seekers.cli.agent_client import AgentClient, provider_supports_images
+from skill_seekers.cli.agent_client import (
+    AgentClient,
+    provider_supports_images,
+    provider_supports_video,
+)
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
@@ -86,6 +90,40 @@ def test_openai_protocol_sends_image_data_url(monkeypatch, tmp_path):
     assert content[0] == {"type": "text", "text": "Extract text"}
     assert content[1]["type"] == "image_url"
     assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_minimax_m3_sends_video_and_thinking_mode(monkeypatch, tmp_path):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    response = client.client.chat.completions.create.return_value
+    response.choices = [
+        type(
+            "Choice",
+            (),
+            {"finish_reason": "stop", "message": type("Message", (), {"content": "code"})()},
+        )()
+    ]
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"video-data")
+
+    assert provider_supports_video("minimax") is True
+    assert client.call_with_video("Read this clip", video_path, thinking="disabled") == "code"
+
+    request = client.client.chat.completions.create.call_args.kwargs
+    content = request["messages"][-1]["content"]
+    assert content[0] == {"type": "text", "text": "Read this clip"}
+    assert content[1]["type"] == "video_url"
+    assert content[1]["video_url"]["url"].startswith("data:video/mp4;base64,")
+    assert request["extra_body"] == {"thinking": {"type": "disabled"}}
+
+
+def test_minimax_m2_7_rejects_video_before_request(monkeypatch, tmp_path):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    client.model = "MiniMax-M2.7"
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"video-data")
+
+    assert client.call_with_video("Read this clip", video_path) is None
+    client.client.chat.completions.create.assert_not_called()
 
 
 def test_anthropic_protocol_sends_base64_image_block(monkeypatch, tmp_path):
