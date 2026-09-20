@@ -122,12 +122,10 @@ class ConfigPublisher:
         if not config_name:
             raise ValueError("Config JSON must have a 'name' field")
 
-        # Validate config_name to prevent path traversal
-        if "/" in config_name or "\\" in config_name or ".." in config_name:
-            raise ValueError(
-                f"Invalid config name '{config_name}'. "
-                "Path separators (/, \\) and traversal sequences (..) are not allowed."
-            )
+        # Validate config_name to prevent path traversal (shared allowlist)
+        from skill_seekers.services.path_safety import validate_path_segment
+
+        validate_path_segment(config_name, label="config name")
 
         try:
             from skill_seekers.cli.config_validator import validate_config

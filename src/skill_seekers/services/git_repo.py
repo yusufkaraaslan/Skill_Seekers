@@ -6,7 +6,6 @@ Handles git clone/pull operations for custom config sources
 
 import json
 import os
-import re
 import shutil
 from pathlib import Path
 from urllib.parse import urlparse
@@ -14,31 +13,12 @@ from urllib.parse import urlparse
 import git
 from git.exc import GitCommandError, InvalidGitRepositoryError
 
+from skill_seekers.services.path_safety import validate_path_segment
 
-_DRIVE_PATH_PREFIX = re.compile(r"^[A-Za-z]:")
 
-
-def validate_path_segment(name: str, *, label: str) -> str:
-    """Return a name that is safe to use as one filesystem path segment.
-
-    Cache and output names come from configuration or tool arguments.  Keep
-    them to a single segment so callers cannot escape their designated root
-    on either POSIX or Windows.
-    """
-    if (
-        not isinstance(name, str)
-        or not name
-        or name in {".", ".."}
-        or ".." in name
-        or "/" in name
-        or "\\" in name
-        or os.path.isabs(name)
-        or _DRIVE_PATH_PREFIX.match(name)
-    ):
-        raise ValueError(
-            f"Invalid {label}: use a non-empty single path segment without traversal or separators."
-        )
-    return name
+# Re-exported so ``from skill_seekers.services.git_repo import validate_path_segment``
+# keeps working; the single definition lives in path_safety.
+__all__ = ["GitConfigRepo", "validate_path_segment"]
 
 
 class GitConfigRepo:
@@ -121,11 +101,12 @@ class GitConfigRepo:
                     origin.pull(branch)
                     return repo_path
                 except (InvalidGitRepositoryError, GitCommandError):
-                    # Corrupted repo - delete and re-clone
-                    shutil.rmtree(repo_path)
-                    raise  # Re-raise to trigger clone below
+                    # Corrupted or unpullable cache: drop it and fall through to a
+                    # fresh clone. (A `raise` here used to leave the outer try, so
+                    # the cache was deleted and *no* clone happened — #462.)
+                    shutil.rmtree(repo_path, ignore_errors=True)
 
-            # Repository doesn't exist - clone
+            # Repository doesn't exist (or was just discarded) - clone
             git.Repo.clone_from(
                 clone_url,
                 repo_path,

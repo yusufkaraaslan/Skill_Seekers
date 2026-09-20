@@ -46,6 +46,15 @@ def fetch_config_from_api(
     if config_name.startswith("configs/"):
         config_name = config_name[8:]
 
+    # The name becomes <destination>/<name>.json — keep it to one segment.
+    from skill_seekers.services.path_safety import validate_path_segment
+
+    try:
+        validate_path_segment(config_name, label="config name")
+    except ValueError as e:
+        logger.error(f"❌ {e}")
+        return None
+
     try:
         with httpx.Client(timeout=timeout) as client:
             # Get config details first

@@ -11,7 +11,6 @@ MCP Tool Implementations for Workflow Management
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import yaml
@@ -30,10 +29,10 @@ USER_WORKFLOWS_DIR = Path.home() / ".config" / "skill-seekers" / "workflows"
 
 
 def _validate_name(name: str) -> str:
-    """Validate workflow name to prevent path traversal (CWE-22)."""
-    if not name or ".." in name or "/" in name or "\\" in name or os.path.isabs(name):
-        raise ValueError(f"Invalid workflow name: {name!r}")
-    return name
+    """Validate workflow name to prevent path traversal (CWE-22) — shared allowlist."""
+    from skill_seekers.services.path_safety import validate_path_segment
+
+    return validate_path_segment(name, label="workflow name")
 
 
 def _ensure_user_dir() -> Path:
