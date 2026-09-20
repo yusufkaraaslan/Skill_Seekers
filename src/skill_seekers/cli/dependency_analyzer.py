@@ -44,6 +44,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from itertools import islice
 from typing import Any
 
 from skill_seekers.cli.utils import build_line_index, offset_to_line
@@ -95,6 +96,7 @@ class DependencyAnalyzer:
             )
 
         self.graph = nx.DiGraph()  # Directed graph for dependencies
+        self.cycles_truncated = False
         self.file_dependencies: dict[str, list[DependencyInfo]] = {}
         self.file_nodes: dict[str, FileNode] = {}
         self._newline_offsets: list[int] = []
@@ -871,19 +873,27 @@ class DependencyAnalyzer:
 
         return None
 
-    def detect_cycles(self) -> list[list[str]]:
-        """
-        Detect circular dependencies in the graph.
+    def detect_cycles(self, max_cycles: int = 100) -> list[list[str]]:
+        """Return up to max_cycles examples of circular dependencies.
 
-        Returns:
-            List of cycles, where each cycle is a list of file paths
+        Enumerating every simple cycle can require exponential time and memory.
+        cycles_truncated marks a sample; callers must not present it as a total.
         """
+        if max_cycles < 1:
+            raise ValueError("max_cycles must be positive")
+        self.cycles_truncated = False
         try:
-            cycles = list(nx.simple_cycles(self.graph))
+            sample = list(islice(nx.simple_cycles(self.graph), max_cycles + 1))
+            self.cycles_truncated = len(sample) > max_cycles
+            cycles = sample[:max_cycles]
             if cycles:
-                logger.warning(f"Found {len(cycles)} circular dependencies")
-                for cycle in cycles:
-                    logger.warning(f"  Cycle: {' -> '.join(cycle)} -> {cycle[0]}")
+                logger.warning(
+                    "Found %s%d circular dependencies",
+                    "at least " if self.cycles_truncated else "",
+                    len(cycles),
+                )
+                for cycle in cycles[:5]:
+                    logger.warning("  Cycle: %s -> %s", " -> ".join(map(str, cycle)), cycle[0])
             return cycles
         except Exception as e:
             logger.error(f"Error detecting cycles: {e}")
@@ -973,6 +983,7 @@ class DependencyAnalyzer:
             "total_files": self.graph.number_of_nodes(),
             "total_dependencies": self.graph.number_of_edges(),
             "circular_dependencies": len(self.detect_cycles()),
+            "circular_dependencies_truncated": self.cycles_truncated,
             "strongly_connected_components": len(self.get_strongly_connected_components()),
             "avg_dependencies_per_file": (
                 self.graph.number_of_edges() / self.graph.number_of_nodes()

@@ -4,6 +4,7 @@ Core benchmarking framework.
 
 import time
 import psutil
+import sys
 import functools
 from contextlib import contextmanager
 from datetime import datetime
@@ -12,6 +13,23 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .models import Metric, TimingResult, MemoryUsage, BenchmarkReport
+
+
+def _cpu_freq_mhz() -> float:
+    """Current CPU frequency in MHz, or 0 when the platform cannot report it.
+
+    ``psutil.cpu_freq`` is only defined on platforms that support it (psutil
+    7.2 dropped it on macOS arm64), and where present it may return ``None``
+    or raise on restricted systems.
+    """
+    cpu_freq = getattr(psutil, "cpu_freq", None)
+    if cpu_freq is None:
+        return 0
+    try:
+        freq = cpu_freq()
+    except Exception:
+        return 0
+    return freq.current if freq else 0
 
 
 class BenchmarkResult:
@@ -62,10 +80,10 @@ class BenchmarkResult:
         """Collect system information."""
         self.system_info = {
             "cpu_count": psutil.cpu_count(),
-            "cpu_freq_mhz": psutil.cpu_freq().current if psutil.cpu_freq() else 0,
+            "cpu_freq_mhz": _cpu_freq_mhz(),
             "memory_total_gb": psutil.virtual_memory().total / (1024**3),
             "memory_available_gb": psutil.virtual_memory().available / (1024**3),
-            "python_version": f"{psutil.version_info[0]}.{psutil.version_info[1]}",
+            "python_version": f"{sys.version_info[0]}.{sys.version_info[1]}",
         }
 
     def to_report(self) -> BenchmarkReport:

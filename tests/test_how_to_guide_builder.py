@@ -1160,3 +1160,22 @@ class TestNestedControlFlowSteps(unittest.TestCase):
         code = "def helper():\n    hidden = 1\n\nvisible = 2\n"
         steps = self.analyzer._extract_steps_python(code, {"code": code, "language": "python"})
         self.assertEqual([s.code for s in steps], ["visible = 2"])
+
+
+def test_constructor_ai_opt_out_is_respected():
+    """Building guides must not launch an agent after enhancement was disabled."""
+    from unittest.mock import patch
+
+    examples = [
+        {
+            "category": "workflow",
+            "code": "client = Client()\nclient.connect()",
+            "test_name": "test_connection_workflow",
+            "file_path": "test_client.py",
+            "language": "python",
+        }
+    ]
+    with patch("skill_seekers.cli.guide_enhancer.GuideEnhancer") as enhancer:
+        collection = HowToGuideBuilder(enhance_with_ai=False).build_guides_from_examples(examples)
+        assert collection.total_guides > 0
+        enhancer.assert_not_called()

@@ -305,3 +305,23 @@ class DoctorCommand:
     def execute(self) -> int:
         results = run_all_checks()
         return print_report(results, verbose=getattr(self.args, "verbose", False))
+
+
+def main(args=None) -> int:
+    """Standalone entry point (``skill-seekers-doctor`` / ``python -m skill_seekers.cli.doctor``).
+
+    Builds its parser from the central ``DoctorParser`` so the flag set has a
+    single definition, then runs the same ``DoctorCommand`` the unified CLI
+    dispatches to. This was dropped by mistake in the COMMAND_CLASSES migration
+    (#327), which left the published console script raising ImportError.
+    """
+    if args is None:
+        from skill_seekers.cli.parsers.doctor_parser import DoctorParser
+
+        parser = DoctorParser().build_standalone(prog="skill-seekers-doctor")
+        args = parser.parse_args()
+    return DoctorCommand(args).execute()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

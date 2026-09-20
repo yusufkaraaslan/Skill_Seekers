@@ -549,7 +549,7 @@ class UnifiedScraper(SkillConverter):
         # Create config for GitHub scraper
         github_config = {
             "repo": repo,
-            "name": f"{self.name}_github_{idx}_{repo_id}",
+            "name": self._sub_skill_name("github", idx, repo_id),
             "github_token": source.get("github_token"),
             "include_issues": source.get("include_issues", True),
             "max_issues": source.get("max_issues", 100),
@@ -605,7 +605,9 @@ class UnifiedScraper(SkillConverter):
             logger.info(f"📁 Repository clone saved for future use: {cloned_repo_path}")
 
         # Save data to unified location with unique filename
-        github_data_file = os.path.join(self.data_dir, f"github_data_{idx}_{repo_id}.json")
+        github_data_file = os.path.join(
+            self.data_dir, f"{self._cache_stem('github', idx, repo_id)}.json"
+        )
         with open(github_data_file, "w", encoding="utf-8") as f:
             json.dump(github_data, f, indent=2, ensure_ascii=False)
 
@@ -622,6 +624,7 @@ class UnifiedScraper(SkillConverter):
                 "idx": idx,
                 "data": github_data,
                 "data_file": github_data_file,
+                "refs_dir": os.path.join(github_skill_dir, "references"),
             }
         )
 
@@ -638,6 +641,23 @@ class UnifiedScraper(SkillConverter):
             logger.warning(f"⚠️  Failed to build standalone GitHub SKILL.md: {e}")
 
         logger.info("✅ GitHub: Repository scraped successfully")
+
+    def _sub_skill_name(self, bucket: str, idx: int, source_id: str | None = None) -> str:
+        """Cache sub-skill directory name for one source.
+
+        ``{name}_{bucket}_{idx}_{source_id}`` (``{name}_{bucket}_{idx}`` for
+        types without an id, i.e. video). Fresh scrapes name the standalone
+        sub-skill with this and cached loads reconstruct ``refs_dir`` from it,
+        so the two paths cannot drift.
+        """
+        suffix = f"_{source_id}" if source_id is not None else ""
+        return f"{self.name}_{bucket}_{idx}{suffix}"
+
+    @staticmethod
+    def _cache_stem(bucket: str, idx: int, source_id: str | None = None) -> str:
+        """Cache data filename stem for one source: ``{bucket}_data_{idx}[_{source_id}]``."""
+        suffix = f"_{source_id}" if source_id is not None else ""
+        return f"{bucket}_data_{idx}{suffix}"
 
     def _scrape_with_converter(
         self,
@@ -701,7 +721,14 @@ class UnifiedScraper(SkillConverter):
         shutil.copy(data_file, cache_data_file)
 
         # Append to list instead of overwriting (multi-source support)
-        self.scraped_data[bucket].append({**record, "data": data, "data_file": cache_data_file})
+        self.scraped_data[bucket].append(
+            {
+                **record,
+                "data": data,
+                "data_file": cache_data_file,
+                "refs_dir": os.path.join(source_skill_dir, "references"),
+            }
+        )
 
         # Build standalone SKILL.md for synthesis
         try:
@@ -727,7 +754,7 @@ class UnifiedScraper(SkillConverter):
             bucket="pdf",
             converter_type="pdf",
             config={
-                "name": f"{self.name}_pdf_{idx}_{pdf_id}",
+                "name": self._sub_skill_name("pdf", idx, pdf_id),
                 "pdf_path": source["path"],  # Fixed: use pdf_path instead of pdf
                 "description": f"{source.get('name', pdf_id)} documentation",
                 "extract_tables": source.get("extract_tables", True),
@@ -735,7 +762,7 @@ class UnifiedScraper(SkillConverter):
                 "password": source.get("password"),
             },
             record={"pdf_path": pdf_path, "pdf_id": pdf_id, "idx": idx},
-            cache_stem=f"pdf_data_{idx}_{pdf_id}",
+            cache_stem=self._cache_stem("pdf", idx, pdf_id),
             label="PDF",
             summary_key="pages",
             summary_noun="pages",
@@ -756,7 +783,7 @@ class UnifiedScraper(SkillConverter):
             bucket="word",
             converter_type="word",
             config={
-                "name": f"{self.name}_word_{idx}_{docx_id}",
+                "name": self._sub_skill_name("word", idx, docx_id),
                 "docx_path": source["path"],
                 "description": f"{source.get('name', docx_id)} documentation",
             },
@@ -766,7 +793,7 @@ class UnifiedScraper(SkillConverter):
                 "word_id": docx_id,  # Alias for generic reference generation
                 "idx": idx,
             },
-            cache_stem=f"word_data_{idx}_{docx_id}",
+            cache_stem=self._cache_stem("word", idx, docx_id),
             label="Word",
             summary_key="pages",
             summary_noun="sections",
@@ -794,7 +821,7 @@ class UnifiedScraper(SkillConverter):
 
         # Create config for video scraper
         video_config = {
-            "name": f"{self.name}_video_{idx}",
+            "name": self._sub_skill_name("video", idx),
             "url": source.get("url"),
             "video_file": source.get("path"),
             "playlist": source.get("playlist"),
@@ -820,7 +847,7 @@ class UnifiedScraper(SkillConverter):
             result = converter.result
             converter.save_extracted_data()
 
-            cache_data_file = os.path.join(self.data_dir, f"video_data_{idx}.json")
+            cache_data_file = os.path.join(self.data_dir, f"{self._cache_stem('video', idx)}.json")
             shutil.copy(converter.data_file, cache_data_file)
 
             # Append to list
@@ -830,6 +857,7 @@ class UnifiedScraper(SkillConverter):
                     "idx": idx,
                     "data": result.to_dict(),
                     "data_file": cache_data_file,
+                    "refs_dir": os.path.join(video_skill_dir, "references"),
                 }
             )
 
@@ -1018,12 +1046,12 @@ class UnifiedScraper(SkillConverter):
             bucket="epub",
             converter_type="epub",
             config={
-                "name": f"{self.name}_epub_{idx}_{epub_id}",
+                "name": self._sub_skill_name("epub", idx, epub_id),
                 "epub_path": source["path"],
                 "description": source.get("description", f"{epub_id} e-book"),
             },
             record={"epub_path": epub_path, "epub_id": epub_id, "idx": idx},
-            cache_stem=f"epub_data_{idx}_{epub_id}",
+            cache_stem=self._cache_stem("epub", idx, epub_id),
             label="EPUB",
             summary_key="chapters",
             summary_noun="chapters",
@@ -1042,12 +1070,12 @@ class UnifiedScraper(SkillConverter):
             bucket="jupyter",
             converter_type="jupyter",
             config={
-                "name": f"{self.name}_jupyter_{idx}_{nb_id}",
+                "name": self._sub_skill_name("jupyter", idx, nb_id),
                 "notebook_path": source["path"],
                 "description": source.get("description", f"{nb_id} notebook"),
             },
             record={"notebook_path": nb_path, "notebook_id": nb_id, "idx": idx},
-            cache_stem=f"jupyter_data_{idx}_{nb_id}",
+            cache_stem=self._cache_stem("jupyter", idx, nb_id),
             label="Jupyter",
             summary_key="cells",
             summary_noun="cells",
@@ -1066,12 +1094,12 @@ class UnifiedScraper(SkillConverter):
             bucket="html",
             converter_type="html",
             config={
-                "name": f"{self.name}_html_{idx}_{html_id}",
+                "name": self._sub_skill_name("html", idx, html_id),
                 "html_path": source["path"],
                 "description": source.get("description", f"{html_id} HTML content"),
             },
             record={"html_path": html_path, "html_id": html_id, "idx": idx},
-            cache_stem=f"html_data_{idx}_{html_id}",
+            cache_stem=self._cache_stem("html", idx, html_id),
             label="HTML",
             summary_key="pages",
             summary_noun="pages",
@@ -1090,13 +1118,13 @@ class UnifiedScraper(SkillConverter):
             bucket="openapi",
             converter_type="openapi",
             config={
-                "name": f"{self.name}_openapi_{idx}_{spec_id}",
+                "name": self._sub_skill_name("openapi", idx, spec_id),
                 "spec_path": source.get("path"),
                 "spec_url": source.get("url"),
                 "description": source.get("description", f"{spec_id} API spec"),
             },
             record={"spec_path": spec_path, "spec_id": spec_id, "idx": idx},
-            cache_stem=f"openapi_data_{idx}_{spec_id}",
+            cache_stem=self._cache_stem("openapi", idx, spec_id),
             label="OpenAPI",
             summary_key="endpoints",
             summary_noun="endpoints",
@@ -1115,12 +1143,12 @@ class UnifiedScraper(SkillConverter):
             bucket="asciidoc",
             converter_type="asciidoc",
             config={
-                "name": f"{self.name}_asciidoc_{idx}_{adoc_id}",
+                "name": self._sub_skill_name("asciidoc", idx, adoc_id),
                 "asciidoc_path": source["path"],
                 "description": source.get("description", f"{adoc_id} AsciiDoc content"),
             },
             record={"asciidoc_path": adoc_path, "asciidoc_id": adoc_id, "idx": idx},
-            cache_stem=f"asciidoc_data_{idx}_{adoc_id}",
+            cache_stem=self._cache_stem("asciidoc", idx, adoc_id),
             label="AsciiDoc",
             summary_key="sections",
             summary_noun="sections",
@@ -1139,12 +1167,12 @@ class UnifiedScraper(SkillConverter):
             bucket="pptx",
             converter_type="pptx",
             config={
-                "name": f"{self.name}_pptx_{idx}_{pptx_id}",
+                "name": self._sub_skill_name("pptx", idx, pptx_id),
                 "pptx_path": source["path"],
                 "description": source.get("description", f"{pptx_id} presentation"),
             },
             record={"pptx_path": pptx_path, "pptx_id": pptx_id, "idx": idx},
-            cache_stem=f"pptx_data_{idx}_{pptx_id}",
+            cache_stem=self._cache_stem("pptx", idx, pptx_id),
             label="PowerPoint",
             summary_key="slides",
             summary_noun="slides",
@@ -1164,7 +1192,7 @@ class UnifiedScraper(SkillConverter):
             bucket="confluence",
             converter_type="confluence",
             config={
-                "name": f"{self.name}_confluence_{idx}_{source_id}",
+                "name": self._sub_skill_name("confluence", idx, source_id),
                 "base_url": source.get("base_url", source.get("url")),
                 "space_key": source.get("space_key"),
                 "export_path": source.get("path"),
@@ -1174,7 +1202,7 @@ class UnifiedScraper(SkillConverter):
                 "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
             },
             record={"source_id": source_id, "idx": idx},
-            cache_stem=f"confluence_data_{idx}_{source_id}",
+            cache_stem=self._cache_stem("confluence", idx, source_id),
             label="Confluence",
             summary_key="pages",
             summary_noun="pages",
@@ -1196,7 +1224,7 @@ class UnifiedScraper(SkillConverter):
             bucket="notion",
             converter_type="notion",
             config={
-                "name": f"{self.name}_notion_{idx}_{source_id}",
+                "name": self._sub_skill_name("notion", idx, source_id),
                 "database_id": source.get("database_id"),
                 "page_id": source.get("page_id"),
                 "export_path": source.get("path"),
@@ -1205,7 +1233,7 @@ class UnifiedScraper(SkillConverter):
                 "max_pages": source.get("max_pages", DEFAULTS["scraping"]["max_pages"]),
             },
             record={"source_id": source_id, "idx": idx},
-            cache_stem=f"notion_data_{idx}_{source_id}",
+            cache_stem=self._cache_stem("notion", idx, source_id),
             label="Notion",
             summary_key="pages",
             summary_noun="pages",
@@ -1224,7 +1252,7 @@ class UnifiedScraper(SkillConverter):
             bucket="rss",
             converter_type="rss",
             config={
-                "name": f"{self.name}_rss_{idx}_{feed_id}",
+                "name": self._sub_skill_name("rss", idx, feed_id),
                 "feed_url": source.get("url"),
                 "feed_path": source.get("path"),
                 "follow_links": source.get("follow_links", True),
@@ -1232,7 +1260,7 @@ class UnifiedScraper(SkillConverter):
                 "description": source.get("description", f"{feed_id} RSS/Atom feed"),
             },
             record={"feed_url": feed_url, "feed_id": feed_id, "idx": idx},
-            cache_stem=f"rss_data_{idx}_{feed_id}",
+            cache_stem=self._cache_stem("rss", idx, feed_id),
             label="RSS",
             summary_key="articles",
             summary_noun="articles",
@@ -1252,14 +1280,14 @@ class UnifiedScraper(SkillConverter):
             bucket="manpage",
             converter_type="manpage",
             config={
-                "name": f"{self.name}_manpage_{idx}_{man_id}",
+                "name": self._sub_skill_name("manpage", idx, man_id),
                 "man_names": man_names,
                 "man_path": man_path,
                 "sections": source.get("sections", []),
                 "description": source.get("description", f"{man_id} man pages"),
             },
             record={"man_id": man_id, "idx": idx},
-            cache_stem=f"manpage_data_{idx}_{man_id}",
+            cache_stem=self._cache_stem("manpage", idx, man_id),
             label="Man pages",
             fail_label="man page",
             summary_key="pages",
@@ -1280,7 +1308,7 @@ class UnifiedScraper(SkillConverter):
             bucket="chat",
             converter_type="chat",
             config={
-                "name": f"{self.name}_chat_{idx}_{chat_id}",
+                "name": self._sub_skill_name("chat", idx, chat_id),
                 "export_path": source.get("path"),
                 "platform": source.get("platform", "slack"),
                 "token": source.get("token"),
@@ -1289,7 +1317,7 @@ class UnifiedScraper(SkillConverter):
                 "description": source.get("description", f"{chat_id} chat export"),
             },
             record={"chat_id": chat_id, "platform": source.get("platform", "slack"), "idx": idx},
-            cache_stem=f"chat_data_{idx}_{chat_id}",
+            cache_stem=self._cache_stem("chat", idx, chat_id),
             label="Chat",
             fail_label="chat",
             summary_key="messages",
@@ -1319,12 +1347,32 @@ class UnifiedScraper(SkillConverter):
             return json.load(f)
 
     def _append_cached_data_source(
-        self, bucket: str, cache_stem: str, record: dict[str, Any]
+        self,
+        bucket: str,
+        idx: int,
+        source_id: str,
+        record: dict[str, Any],
     ) -> None:
-        """Load a cached data/<cache_stem>.json payload into scraped_data."""
-        data_file = os.path.join(self.data_dir, f"{cache_stem}.json")
+        """Load a cached data/<stem>.json payload into scraped_data.
+
+        The cache stem and the standalone sub-skill directory are both derived
+        from ``(bucket, idx, source_id)`` through the same helpers the fresh
+        scrape path uses, so ``refs_dir`` always points where the sub-skill
+        was actually built.
+        """
+        data_file = os.path.join(self.data_dir, f"{self._cache_stem(bucket, idx, source_id)}.json")
         data = self._read_required_json(data_file)
-        self.scraped_data[bucket].append({**record, "data": data, "data_file": data_file})
+        source_skill_dir = os.path.join(
+            self.sources_dir, self._sub_skill_name(bucket, idx, source_id)
+        )
+        self.scraped_data[bucket].append(
+            {
+                **record,
+                "data": data,
+                "data_file": data_file,
+                "refs_dir": os.path.join(source_skill_dir, "references"),
+            }
+        )
 
     def _load_cached_sources(self) -> int:
         """Reload unified scraped_data from prior .skillseeker-cache outputs."""
@@ -1393,7 +1441,8 @@ class UnifiedScraper(SkillConverter):
         repo_id = repo.replace("/", "_")
         self._append_cached_data_source(
             "github",
-            f"github_data_{idx}_{repo_id}",
+            idx,
+            repo_id,
             {"repo": repo, "repo_id": repo_id, "idx": idx},
         )
 
@@ -1404,7 +1453,8 @@ class UnifiedScraper(SkillConverter):
         pdf_id = os.path.splitext(os.path.basename(pdf_path))[0]
         self._append_cached_data_source(
             "pdf",
-            f"pdf_data_{idx}_{pdf_id}",
+            idx,
+            pdf_id,
             {"pdf_path": pdf_path, "pdf_id": pdf_id, "idx": idx},
         )
 
@@ -1415,7 +1465,8 @@ class UnifiedScraper(SkillConverter):
         docx_id = os.path.splitext(os.path.basename(docx_path))[0]
         self._append_cached_data_source(
             "word",
-            f"word_data_{idx}_{docx_id}",
+            idx,
+            docx_id,
             {
                 "docx_path": docx_path,
                 "docx_id": docx_id,
@@ -1429,10 +1480,18 @@ class UnifiedScraper(SkillConverter):
         idx = self._next_source_index("video")
         video_url = source.get("url", "")
         video_id = video_url or source.get("path", f"video_{idx}")
-        data_file = os.path.join(self.data_dir, f"video_data_{idx}.json")
+        data_file = os.path.join(self.data_dir, f"{self._cache_stem('video', idx)}.json")
         data = self._read_required_json(data_file)
         self.scraped_data["video"].append(
-            {"video_id": video_id, "idx": idx, "data": data, "data_file": data_file}
+            {
+                "video_id": video_id,
+                "idx": idx,
+                "data": data,
+                "data_file": data_file,
+                "refs_dir": os.path.join(
+                    self.sources_dir, self._sub_skill_name("video", idx), "references"
+                ),
+            }
         )
 
     def _load_cached_local(self, source: dict[str, Any]) -> None:
@@ -1466,7 +1525,8 @@ class UnifiedScraper(SkillConverter):
         epub_id = os.path.splitext(os.path.basename(epub_path))[0]
         self._append_cached_data_source(
             "epub",
-            f"epub_data_{idx}_{epub_id}",
+            idx,
+            epub_id,
             {"epub_path": epub_path, "epub_id": epub_id, "idx": idx},
         )
 
@@ -1477,7 +1537,8 @@ class UnifiedScraper(SkillConverter):
         nb_id = os.path.splitext(os.path.basename(nb_path))[0]
         self._append_cached_data_source(
             "jupyter",
-            f"jupyter_data_{idx}_{nb_id}",
+            idx,
+            nb_id,
             {"notebook_path": nb_path, "notebook_id": nb_id, "idx": idx},
         )
 
@@ -1488,7 +1549,8 @@ class UnifiedScraper(SkillConverter):
         html_id = os.path.splitext(os.path.basename(html_path.rstrip("/")))[0]
         self._append_cached_data_source(
             "html",
-            f"html_data_{idx}_{html_id}",
+            idx,
+            html_id,
             {"html_path": html_path, "html_id": html_id, "idx": idx},
         )
 
@@ -1499,7 +1561,8 @@ class UnifiedScraper(SkillConverter):
         spec_id = os.path.splitext(os.path.basename(spec_path))[0] if spec_path else f"spec_{idx}"
         self._append_cached_data_source(
             "openapi",
-            f"openapi_data_{idx}_{spec_id}",
+            idx,
+            spec_id,
             {"spec_path": spec_path, "spec_id": spec_id, "idx": idx},
         )
 
@@ -1510,7 +1573,8 @@ class UnifiedScraper(SkillConverter):
         adoc_id = os.path.splitext(os.path.basename(adoc_path.rstrip("/")))[0]
         self._append_cached_data_source(
             "asciidoc",
-            f"asciidoc_data_{idx}_{adoc_id}",
+            idx,
+            adoc_id,
             {"asciidoc_path": adoc_path, "asciidoc_id": adoc_id, "idx": idx},
         )
 
@@ -1521,7 +1585,8 @@ class UnifiedScraper(SkillConverter):
         pptx_id = os.path.splitext(os.path.basename(pptx_path))[0]
         self._append_cached_data_source(
             "pptx",
-            f"pptx_data_{idx}_{pptx_id}",
+            idx,
+            pptx_id,
             {"pptx_path": pptx_path, "pptx_id": pptx_id, "idx": idx},
         )
 
@@ -1533,7 +1598,8 @@ class UnifiedScraper(SkillConverter):
             source_id = os.path.basename(source_id.rstrip("/"))
         self._append_cached_data_source(
             "confluence",
-            f"confluence_data_{idx}_{source_id}",
+            idx,
+            source_id,
             {"source_id": source_id, "idx": idx},
         )
 
@@ -1547,7 +1613,8 @@ class UnifiedScraper(SkillConverter):
             source_id = os.path.basename(source_id.rstrip("/"))
         self._append_cached_data_source(
             "notion",
-            f"notion_data_{idx}_{source_id}",
+            idx,
+            source_id,
             {"source_id": source_id, "idx": idx},
         )
 
@@ -1558,7 +1625,8 @@ class UnifiedScraper(SkillConverter):
         feed_id = feed_url.split("/")[-1].split(".")[0] if feed_url else f"feed_{idx}"
         self._append_cached_data_source(
             "rss",
-            f"rss_data_{idx}_{feed_id}",
+            idx,
+            feed_id,
             {"feed_url": feed_url, "feed_id": feed_id, "idx": idx},
         )
 
@@ -1570,7 +1638,8 @@ class UnifiedScraper(SkillConverter):
         man_id = man_names[0] if man_names else os.path.basename(man_path.rstrip("/"))
         self._append_cached_data_source(
             "manpage",
-            f"manpage_data_{idx}_{man_id}",
+            idx,
+            man_id,
             {"man_id": man_id, "idx": idx},
         )
 
@@ -1582,7 +1651,8 @@ class UnifiedScraper(SkillConverter):
         chat_id = channel or os.path.basename(export_path.rstrip("/")) or f"chat_{idx}"
         self._append_cached_data_source(
             "chat",
-            f"chat_data_{idx}_{chat_id}",
+            idx,
+            chat_id,
             {"chat_id": chat_id, "platform": source.get("platform", "slack"), "idx": idx},
         )
 
@@ -2158,12 +2228,17 @@ class UnifiedScraper(SkillConverter):
                         client = AgentClient(mode="api", api_key=_api_key)
                         if client.client:
                             # Read references and current SKILL.md
-                            references = ""
-                            refs_dir = Path(self.output_dir) / "references"
-                            if refs_dir.exists():
-                                for md_file in sorted(refs_dir.rglob("*.md")):
-                                    content = md_file.read_text(encoding="utf-8", errors="ignore")
-                                    references += f"\n\n## {md_file.name}\n\n{content}"
+                            # Bounded read: unified builds now carry full
+                            # PDF/EPUB reference trees (#453), so the prompt
+                            # must be capped the same way the adaptors cap it.
+                            from skill_seekers.cli.scraper_utils import read_reference_markdown
+
+                            references = "".join(
+                                f"\n\n## {rel_path}\n\n{content}"
+                                for rel_path, content in read_reference_markdown(
+                                    Path(self.output_dir) / "references"
+                                ).items()
+                            )
                             current_skill = Path(skill_md_path).read_text(encoding="utf-8")
 
                             # Build enhancement prompt

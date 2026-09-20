@@ -32,7 +32,7 @@ class TestSingletonDetector(unittest.TestCase):
 
     def setUp(self):
         self.detector = SingletonDetector(depth="deep")
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_surface_detection_by_name(self):
         """Test surface detection using class name"""
@@ -114,7 +114,7 @@ class TestFactoryDetector(unittest.TestCase):
 
     def setUp(self):
         self.detector = FactoryDetector(depth="deep")
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_surface_detection_by_name(self):
         """Test surface detection using class name"""
@@ -194,7 +194,7 @@ class TestObserverDetector(unittest.TestCase):
 
     def setUp(self):
         self.detector = ObserverDetector(depth="deep")
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_observer_triplet_detection(self):
         """Test classic attach/detach/notify triplet"""
@@ -265,7 +265,7 @@ class TestPatternRecognizerIntegration(unittest.TestCase):
     """Integration tests for PatternRecognizer"""
 
     def setUp(self):
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_analyze_singleton_code(self):
         """Test end-to-end Singleton analysis"""
@@ -356,7 +356,7 @@ class TestMultiLanguageSupport(unittest.TestCase):
     """Tests for multi-language pattern detection"""
 
     def setUp(self):
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_python_patterns(self):
         """Test Python-specific patterns"""
@@ -424,7 +424,7 @@ class TestExtendedPatternDetectors(unittest.TestCase):
     """Tests for extended pattern detectors (Builder, Adapter, Command, etc.)"""
 
     def setUp(self):
-        self.recognizer = PatternRecognizer(depth="deep")
+        self.recognizer = PatternRecognizer(depth="deep", enhance_with_ai=False)
 
     def test_builder_pattern(self):
         """Test Builder pattern detection"""

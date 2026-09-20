@@ -9,7 +9,11 @@ import logging
 import argparse
 from typing import Any
 
-from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
+from skill_seekers.cli.source_detector import (
+    SourceDetector,
+    SourceInfo,
+    SourceValidationError,
+)
 from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
 from skill_seekers.cli.arguments.create import (
@@ -45,35 +49,21 @@ class CreateCommand:
         Returns:
             Exit code (0 for success, non-zero for error)
         """
-        # 1. Detect source type
+        # 1-2. Detect source type, honour --html-path, validate accessibility.
+        # One shared stage (SourceDetector.resolve) so `skill-seekers detect`
+        # reports exactly what create would do with the same input.
         try:
             detection_input = self._resolve_detection_input()
-            self.source_info = SourceDetector.detect(detection_input)
-            # Honor explicit --html-path: force html mode even if auto-detection
-            # would route to a different scraper (e.g., codebase for a mixed dir).
-            html_path = getattr(self.args, "html_path", None)
-            if html_path and self.source_info.type != "html":
-                logger.info(
-                    "Overriding detected type %r with html (--html-path set)",
-                    self.source_info.type,
-                )
-                import os as _os
-
-                if _os.path.isdir(html_path):
-                    self.source_info = SourceDetector._detect_html_directory(html_path)
-                else:
-                    self.source_info = SourceDetector._detect_html(html_path)
+            self.source_info = SourceDetector.resolve(
+                detection_input, html_path=getattr(self.args, "html_path", None)
+            )
             logger.info(f"Detected source type: {self.source_info.type}")
             logger.debug(f"Parsed info: {self.source_info.parsed}")
+        except SourceValidationError as e:
+            logger.error(f"Source validation failed: {e}")
+            return 1
         except ValueError as e:
             logger.error(str(e))
-            return 1
-
-        # 2. Validate source accessibility
-        try:
-            SourceDetector.validate_source(self.source_info)
-        except ValueError as e:
-            logger.error(f"Source validation failed: {e}")
             return 1
 
         # 3. Initialize ExecutionContext with source info
