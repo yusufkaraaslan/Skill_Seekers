@@ -21,13 +21,22 @@ class TestParserRegistry:
     """Test parser registry functionality."""
 
     def test_all_parsers_registered(self):
-        """Test that all parsers are registered."""
-        assert len(PARSERS) == 20, f"Expected 20 parsers, got {len(PARSERS)}"
+        """Every dispatchable command has a parser and vice versa.
+
+        Derived from main.py's dispatch tables rather than a hard-coded count,
+        which went stale twice in a row (ui in #ui-experiment, detect in #457)
+        without any textual merge conflict.
+        """
+        from skill_seekers.cli.main import COMMAND_CLASSES, COMMAND_MODULES
+
+        dispatchable = set(COMMAND_CLASSES) | set(COMMAND_MODULES)
+        assert set(get_parser_names()) == dispatchable
+        assert len(PARSERS) == len(dispatchable)
 
     def test_get_parser_names(self):
         """Test getting list of parser names."""
         names = get_parser_names()
-        assert len(names) == 20
+        assert len(names) == len(PARSERS)
         assert "create" in names
         assert "package" in names
         assert "upload" in names
@@ -136,6 +145,7 @@ class TestCurrentCommands:
         current_commands = [
             "config",
             "create",
+            "detect",
             "enhance",
             "enhance-status",
             "package",
@@ -184,9 +194,9 @@ class TestCurrentCommands:
             assert cmd not in names, f"Removed command '{cmd}' still in parser registry!"
 
     def test_command_count_matches(self):
-        """Test that we have exactly 20 commands."""
-        assert len(PARSERS) == 20
-        assert len(get_parser_names()) == 20
+        """Parser names are unique and match the registry size."""
+        names = get_parser_names()
+        assert len(names) == len(set(names)) == len(PARSERS)
 
 
 if __name__ == "__main__":
