@@ -378,6 +378,7 @@ skill-seekers create [source] [options]
 | | `--var` | | Override workflow variable (key=value) |
 | | `--workflow-dry-run` | | Preview workflow without executing |
 | | `--dry-run` | | Preview without creating |
+| | `--index` | | Build an opt-in SQLite search index (`scripts/index.db` + `scripts/search.py`) over the generated references — see [Skill search index](../features/SKILL_SEARCH_INDEX.md) |
 | | `--chunk-for-rag` | | Enable RAG chunking |
 | | `--chunk-tokens` | 512 | Chunk size in tokens |
 | | `--chunk-overlap-tokens` | 50 | Chunk overlap in tokens |

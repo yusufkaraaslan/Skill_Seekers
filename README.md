@@ -238,6 +238,14 @@ One config can pull documentation, GitHub, PDFs, videos, and more into a single 
 </details>
 
 <details>
+<summary><b>Search index inside the skill</b> — query before you read (opt-in)</summary>
+
+`skill-seekers create <source> --index` adds a stdlib-only `scripts/search.py` and a SQLite FTS5 index over the generated references, so an agent can find the right `file#anchor` before reading a large Markdown file wholesale. Off by default; the Markdown is untouched.
+
+→ [Skill Search Index](docs/features/SKILL_SEARCH_INDEX.md)
+</details>
+
+<details>
 <summary><b>Video extraction</b> — transcripts, frames, on-screen code</summary>
 
 YouTube, Vimeo, and local files. Three-tier transcript fallback (subtitles → YouTube transcript API → local Whisper), plus optional visual extraction that OCRs on-screen code from sampled frames.
