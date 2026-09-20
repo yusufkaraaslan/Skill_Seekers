@@ -7,14 +7,20 @@ is opt-in because SQLite database bytes are not stable across SQLite versions.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
 import re
 import sqlite3
+from dataclasses import dataclass
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
 
-_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$", re.MULTILINE)
-_CODE_FENCE_RE = re.compile(r"^```([^\s`]*)", re.MULTILINE)
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$")
+_FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})\s*([^\s`]*)")
+
+# Table-of-contents pages generated next to the real reference files. Indexing
+# them would list every heading twice and let link-only rows outrank content.
+_EXCLUDED_FILENAMES = frozenset({"index.md"})
 
 
 @dataclass(frozen=True)
@@ -49,6 +55,8 @@ def build_index(skill_dir: Path) -> IndexBuildResult:
         section_count = 0
         if references_dir.exists():
             for reference_path in sorted(references_dir.rglob("*.md")):
+                if reference_path.name in _EXCLUDED_FILENAMES:
+                    continue
                 relative_path = reference_path.relative_to(skill_dir).as_posix()
                 text = reference_path.read_text(encoding="utf-8", errors="replace")
                 for section in _split_sections(relative_path, text):
@@ -84,6 +92,25 @@ def build_index(skill_dir: Path) -> IndexBuildResult:
     return IndexBuildResult(index_path, section_count, fts_enabled)
 
 
+def index_skill(skill_dir: Path) -> IndexBuildResult:
+    """Build the index, install the query script and the SKILL.md guidance.
+
+    The single entry point ``create --index`` uses. When nothing was indexable
+    (no ``references/*.md`` or no headings) the empty database is removed and
+    neither the script nor the search-first instruction is installed — pointing
+    an agent at an index that can never return a hit only costs tool calls.
+    """
+    result = build_index(skill_dir)
+    if result.section_count == 0:
+        logger.warning(
+            "No indexable reference sections under %s; skipping search index.", skill_dir
+        )
+        result.index_path.unlink(missing_ok=True)
+        return result
+    write_search_script(skill_dir)
+    return result
+
+
 def append_search_instruction(skill_dir: Path) -> None:
     """Append the opt-in search-first guidance to a generated ``SKILL.md``."""
     skill_path = Path(skill_dir) / "SKILL.md"
@@ -94,11 +121,11 @@ def append_search_instruction(skill_dir: Path) -> None:
         "\n\n## Search reference documentation\n\n"
         "Before reading a reference file wholesale, search the generated index for "
         "confirmed hits:\n\n"
-        '```bash\npython3 scripts/search.py "your query" --limit 5\n```\n\n'
+        '```bash\npython scripts/search.py "your query" --limit 5\n```\n\n'
         "Read only the returned `file#anchor` sections that apply to the task. "
         "Use `--category` to narrow results or `--json` for machine-readable output.\n"
     )
-    content = skill_path.read_text(encoding="utf-8")
+    content = skill_path.read_text(encoding="utf-8", errors="replace")
     if "## Search reference documentation" not in content:
         skill_path.write_text(content.rstrip() + instruction, encoding="utf-8")
 
@@ -157,27 +184,46 @@ class _Section:
 
 
 def _split_sections(relative_path: str, text: str) -> list[_Section]:
-    """Split one rendered markdown file on headings and preserve valid anchors."""
-    matches = list(_HEADING_RE.finditer(text))
-    if not matches:
-        return []
+    """Split one rendered markdown file on headings and preserve valid anchors.
 
+    Fenced code blocks are tracked line by line so a ``# comment`` inside a
+    ```` ```bash ```` or ```` ```python ```` block never becomes a section:
+    generated references are full of such lines, and a bogus section would
+    both truncate the real one and emit an anchor that does not exist.
+    """
     reference_path = Path(relative_path).relative_to("references")
     category = reference_path.parent.as_posix() if reference_path.parent != Path(".") else "general"
     kind = Path(relative_path).stem
+
+    lines = text.splitlines()
+    heading_lines: list[tuple[int, str]] = []
+    fence: str | None = None
+    for number, line in enumerate(lines):
+        fence_match = _FENCE_RE.match(line)
+        if fence_match:
+            marker = fence_match.group(1)
+            if fence is None:
+                fence = marker[0] * 3
+            elif marker.startswith(fence):
+                fence = None
+            continue
+        if fence is None:
+            heading_match = _HEADING_RE.match(line)
+            if heading_match:
+                heading_lines.append((number, heading_match.group(2).strip()))
+    if not heading_lines:
+        return []
+
     seen_anchors: dict[str, int] = {}
     sections: list[_Section] = []
-    for index, match in enumerate(matches):
-        heading = match.group(2).strip()
+    for index, (line_number, heading) in enumerate(heading_lines):
         base_anchor = _anchor_for(heading)
         count = seen_anchors.get(base_anchor, 0)
         seen_anchors[base_anchor] = count + 1
         anchor = base_anchor if count == 0 else f"{base_anchor}-{count}"
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        content = text[match.start() : end].strip()
-        languages = sorted(
-            {language.lower() for language in _CODE_FENCE_RE.findall(content) if language}
-        )
+        end_line = heading_lines[index + 1][0] if index + 1 < len(heading_lines) else len(lines)
+        content = "\n".join(lines[line_number:end_line]).strip()
+        languages = sorted({m.group(2).lower() for m in _iter_fences(content) if m.group(2)})
         sections.append(
             _Section(
                 file=relative_path,
@@ -192,12 +238,33 @@ def _split_sections(relative_path: str, text: str) -> list[_Section]:
     return sections
 
 
+def _iter_fences(content: str):
+    """Yield the opening fence of each code block in ``content`` (for code_langs)."""
+    fence: str | None = None
+    for line in content.splitlines():
+        match = _FENCE_RE.match(line)
+        if not match:
+            continue
+        marker = match.group(1)
+        if fence is None:
+            fence = marker[0] * 3
+            yield match
+        elif marker.startswith(fence):
+            fence = None
+
+
 def _anchor_for(heading: str) -> str:
-    """Return a GitHub-compatible anchor for ordinary generated headings."""
+    """Return the anchor GitHub-style renderers generate for ``heading``.
+
+    Lowercase, drop punctuation other than ``-`` and ``_``, and map *each*
+    whitespace character to one hyphen. Runs are deliberately not collapsed:
+    ``Foo -- Bar`` renders as ``#foo----bar``, and a pointer that collapses it
+    to ``#foo-bar`` jumps nowhere.
+    """
     normalized = heading.strip().lower()
     normalized = re.sub(r"[^\w\s-]", "", normalized, flags=re.UNICODE)
-    normalized = re.sub(r"[\s-]+", "-", normalized, flags=re.UNICODE)
-    return normalized.strip("-") or "section"
+    normalized = re.sub(r"\s", "-", normalized, flags=re.UNICODE)
+    return normalized or "section"
 
 
 _SEARCH_SCRIPT = r'''#!/usr/bin/env python3
@@ -253,14 +320,23 @@ def search(connection: sqlite3.Connection, query: str, category: str | None, lim
     tokens = re.findall(r"[\w]+", query, flags=re.UNICODE)
     if not tokens:
         return []
-    try:
+    if _has_fts(connection):
         return _fts_search(connection, tokens, category, limit)
-    except sqlite3.OperationalError:
-        return _like_search(connection, tokens, category, limit)
+    return _like_search(connection, tokens, category, limit)
+
+
+def _has_fts(connection: sqlite3.Connection) -> bool:
+    """True when the index was built with FTS5 (the builder skips the table otherwise)."""
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sections_fts'"
+    ).fetchone()
+    return row is not None
 
 
 def _fts_search(connection: sqlite3.Connection, tokens: list[str], category: str | None, limit: int) -> list[dict]:
-    match_query = " AND ".join(tokens)
+    # Each token is a quoted phrase: bare NOT / OR / AND / NEAR are FTS5
+    # operators and would be a syntax error, silently degrading ranking.
+    match_query = " AND ".join('"' + token.replace('"', '""') + '"' for token in tokens)
     category_clause = " AND sections.category = ?" if category else ""
     parameters: list[object] = [match_query]
     if category:
@@ -283,26 +359,31 @@ def _fts_search(connection: sqlite3.Connection, tokens: list[str], category: str
 
 
 def _like_search(connection: sqlite3.Connection, tokens: list[str], category: str | None, limit: int) -> list[dict]:
-    clauses = " AND ".join("lower(section_content.content) LIKE ?" for _ in tokens)
-    parameters: list[object] = [f"%{token.lower()}%" for token in tokens]
-    if category:
-        clauses += " AND sections.category = ?"
-        parameters.append(category)
+    """Portable fallback for SQLite builds without FTS5.
+
+    Matching is done in Python with str.casefold(): SQL LIKE treats ``_`` as
+    a wildcard (``get_node`` would match ``get-node``) and SQLite's lower() is
+    ASCII-only, so neither gives the FTS path's semantics.
+    """
+    category_clause = " WHERE sections.category = ?" if category else ""
     rows = connection.execute(
         f"""
         SELECT sections.file, sections.anchor, sections.heading, sections.category,
                section_content.content
         FROM sections
-        JOIN section_content ON section_content.id = sections.id
-        WHERE {clauses}
+        JOIN section_content ON section_content.id = sections.id{category_clause}
         ORDER BY sections.file, sections.id
         """,
-        parameters,
+        [category] if category else [],
     ).fetchall()
+    folded_tokens = [token.casefold() for token in tokens]
     results = []
     for row in rows:
         content = row["content"]
-        score = sum(content.lower().count(token.lower()) for token in tokens)
+        folded = content.casefold()
+        if not all(token in folded for token in folded_tokens):
+            continue
+        score = sum(folded.count(token) for token in folded_tokens)
         results.append({
             "file": row["file"],
             "anchor": row["anchor"],

@@ -31,22 +31,35 @@ Skill Seekers installation at use time.
 
 ## Query a skill
 
-    python3 scripts/search.py "connect signal" --limit 5
-    python3 scripts/search.py "timeout" --category network
-    python3 scripts/search.py "authentication token" --json
+    python scripts/search.py "connect signal" --limit 5
+    python scripts/search.py "timeout" --category network
+    python scripts/search.py "authentication token" --json
 
 Results include a file#anchor pointer, a relevance score, and a short snippet.
 Read the returned sections only after confirming that they apply to the task.
 
-The indexer splits rendered references/*.md files at headings. It stores stable
+The indexer splits rendered references/*.md files at headings, ignoring
+`#` lines inside fenced code blocks. Table-of-contents pages named
+`index.md` are skipped so headings are not indexed twice. Anchors follow the
+GitHub rules (each space becomes one hyphen, hyphens are kept), so the returned
+`file#anchor` pointers resolve in rendered Markdown. It stores stable
 metadata for each section (file, heading, anchor, category, kind, and
 code_langs) plus searchable heading and content text. Files are processed in
 sorted order; compare table rows rather than raw SQLite bytes when checking
 reproducibility across different SQLite versions.
 
+## When nothing is indexed
+
+If a skill has no reference Markdown with headings, no index, script or
+SKILL.md instruction is installed and a warning is logged. A failure while
+building the index is also only logged: the skill itself is already complete.
+
+For a unified configuration that sets its own `output_dir`, the index is built
+in that directory; a CLI `--output` still overrides it.
+
 ## Compatibility
 
 The indexer prefers SQLite FTS5 and ranks matches with BM25. Python builds
-without FTS5 still generate an index and use deterministic LIKE matching in the
-query script. Vector-database targets continue to use their existing retrieval
+without FTS5 still generate an index; the query script then matches literally
+in Python (case-folded, `_` is not a wildcard) and ranks by occurrence count. Vector-database targets continue to use their existing retrieval
 paths.

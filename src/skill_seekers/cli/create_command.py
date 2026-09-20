@@ -7,6 +7,7 @@ to appropriate converter via get_converter().
 import sys
 import logging
 import argparse
+from pathlib import Path
 from typing import Any
 
 from skill_seekers.cli.source_detector import (
@@ -489,10 +490,7 @@ class CreateCommand:
         """Run centralized AI enhancement after converter completes."""
         from pathlib import Path
 
-        name = ctx.output.name or (
-            self.source_info.suggested_name if self.source_info else "unnamed"
-        )
-        skill_dir = ctx.output.output_dir or f"output/{name}"
+        skill_dir = str(self._resolve_skill_dir(ctx))
 
         logger.info("\n" + "=" * 60)
         logger.info(f"Enhancing SKILL.md (level {ctx.enhancement.level})")
@@ -559,23 +557,41 @@ class CreateCommand:
         except Exception as e:
             logger.warning(f"Workflow execution failed: {e}")
 
-    def _build_index(self, ctx: ExecutionContext) -> None:
-        """Build the opt-in, script-queryable index for a completed skill."""
-        from pathlib import Path
+    def _resolve_skill_dir(self, ctx: ExecutionContext) -> Path:
+        """Where the converter wrote the skill — shared by every post-step.
 
-        from skill_seekers.cli.skill_indexer import build_index, write_search_script
+        Same rule as ``SkillConverter.resolve_skill_dir`` (config/CLI
+        ``output_dir`` verbatim minus trailing separators, else
+        ``output/<name>``) so enhancement and indexing can never target a
+        different directory than the scraper used.
+        """
+        from skill_seekers.cli.skill_converter import SkillConverter
 
         name = ctx.output.name or (
             self.source_info.suggested_name if self.source_info else "unnamed"
         )
-        skill_dir = Path(ctx.output.output_dir or f"output/{name}")
-        result = build_index(skill_dir)
-        write_search_script(skill_dir)
-        logger.info(
-            "Built optional search index with %d sections: %s",
-            result.section_count,
-            result.index_path,
-        )
+        return Path(SkillConverter.resolve_skill_dir({"output_dir": ctx.output.output_dir}, name))
+
+    def _build_index(self, ctx: ExecutionContext) -> None:
+        """Build the opt-in, script-queryable index for a completed skill.
+
+        Like enhancement and workflows, a failure here is logged and does not
+        fail ``create``: SKILL.md and references/ are already complete.
+        """
+        from skill_seekers.cli.skill_indexer import index_skill
+
+        skill_dir = self._resolve_skill_dir(ctx)
+        try:
+            result = index_skill(skill_dir)
+        except Exception as e:
+            logger.warning(f"Search index build failed (skill is still complete): {e}")
+            return
+        if result.section_count:
+            logger.info(
+                "Built optional search index with %d sections: %s",
+                result.section_count,
+                result.index_path,
+            )
 
 
 def main() -> int:

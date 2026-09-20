@@ -388,6 +388,10 @@ class ExecutionContext(BaseModel):
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
                 "index": bool(file_data.get("index", False)),
+                # The scrapers honour a config-file output_dir; the centralized
+                # post-steps (enhancement, index) must target the same directory.
+                # A CLI --output still overrides this in _apply_args.
+                "output_dir": file_data.get("output_dir"),
             }
             config["enhancement"] = {
                 "enabled": enhancement.get("enabled", True),
@@ -405,6 +409,8 @@ class ExecutionContext(BaseModel):
             config["output"] = {
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
+                "index": bool(file_data.get("index", False)),
+                "output_dir": file_data.get("output_dir"),
             }
             # Copy all scraping-tuning keys the file provides — not just
             # max_pages/rate_limit/browser. Otherwise workers/async_mode/browser
