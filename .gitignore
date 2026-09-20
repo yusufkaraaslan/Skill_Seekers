@@ -10,8 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -33,6 +33,9 @@ env/
 
 # Output directory
 output/
+
+# Default output of `skill-seekers scan` (generated, holds machine-specific absolute paths)
+configs/scanned/
 *.zip
 
 # Skill Seekers cache (intermediate files)
@@ -77,3 +80,9 @@ USER_GUIDE.md
 chroma_db/
 # Superpowers SDK output
 docs/superpowers/
+
+# Web UI (Seeker HUD)
+ui/node_modules/
+ui/dist/
+# Built frontend — Vite outputs here; bundled into the wheel at build time
+src/skill_seekers/web/dist/

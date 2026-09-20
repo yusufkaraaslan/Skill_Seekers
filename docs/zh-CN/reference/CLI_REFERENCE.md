@@ -1089,6 +1089,7 @@ skill-seekers quality SKILL_DIRECTORY [options]
 |-------|------|-------------|
 | | `--report` | 生成详细报告 |
 | | `--output` | JSON 报告的输出路径 |
+| | `--json` | 将 JSON 报告打印到标准输出（仅一个文档；错误以 `{"error": ...}` 输出，诊断信息写到标准错误）。不会写入默认的 `quality_report.json`；`--output` 仍可保存副本。不能与 `--report` 同时使用 |
 | | `--threshold` | 质量门禁阈值（0-10）。设置后，技能得分低于阈值时以非零退出码退出；未设置时该命令仅报告（退出码 0） |
 
 **示例：**
@@ -1177,6 +1178,23 @@ skill-seekers create https://blog.example.com/feed.xml --name blog-knowledge
 # 从本地文件
 skill-seekers create --feed-path ./feed.rss --name feed-summaries
 ```
+
+---
+
+### doctor
+
+检查环境健康状况和依赖项。
+
+**用法：**
+
+```bash
+skill-seekers doctor [--verbose] [--json]
+```
+
+| 标志 | 默认值 | 用途 |
+|---|---|---|
+| `--verbose`, `-v` | 关闭 | 显示每项检查的详细信息（API 密钥检查会包含掩码后的密钥片段，如 `sk-a...TAIL`） |
+| `--json` | 关闭 | 在标准输出上输出机器可读的 JSON：`version`、`checks`、`summary`、`healthy`、`exit_code`。仅输出一个文档；依赖项的导入提示写入标准错误；检查崩溃时输出 `{"error": ...}`。除非同时指定 `--verbose`，否则 `verbose_detail` 为空，密钥片段不会默认进入 CI 日志 |
 
 ---
 

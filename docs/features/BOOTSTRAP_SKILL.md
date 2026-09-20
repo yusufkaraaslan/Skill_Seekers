@@ -452,7 +452,7 @@ pytest tests/test_bootstrap_skill.py -v
 # End-to-end tests
 pytest tests/test_bootstrap_skill_e2e.py -v
 
-# Full test suite (10 tests for bootstrap feature)
+# All bootstrap tests
 pytest tests/test_bootstrap*.py -v
 ```
 
@@ -468,25 +468,20 @@ pytest tests/test_bootstrap*.py -v
 
 ### E2E Test Example
 
+Bootstrap tests share one real analysis of a small temporary project per pytest
+session. They pass `--source`, `--output`, `--no-sync`, `--enhance-level 0`, and
+`--python` to the script, so they do not analyze this checkout, modify the active
+Python environment, or launch an AI agent. The script itself defaults to
+`--enhance-level 2`, so a normal `./scripts/bootstrap_skill.sh` run produces the
+AI-enhanced operational skill.
+The subprocess helper stops the entire process group if pytest interrupts it.
+
 ```python
-def test_bootstrap_skill_e2e(tmp_path):
-    """Test complete bootstrap skill workflow."""
-    # Setup
-    output_dir = tmp_path / "skill-seekers"
-    header_file = "scripts/skill_header.md"
-
-    # Run bootstrap
-    result = subprocess.run(
-        ["./scripts/bootstrap_skill.sh"],
-        capture_output=True,
-        text=True
-    )
-
-    # Verify
+def test_bootstrap_skill_e2e(bootstrap_artifact):
+    """Verify the isolated bootstrap output."""
+    result, output_dir = bootstrap_artifact
     assert result.returncode == 0
-    assert (output_dir / "SKILL.md").exists()
-    assert has_valid_frontmatter(output_dir / "SKILL.md")
-    assert has_required_fields(output_dir / "SKILL.md")
+    assert (output_dir / "SKILL.md").is_file()
 ```
 
 ### Test Coverage Report

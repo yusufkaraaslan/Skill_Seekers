@@ -16,7 +16,7 @@ def sample_config(tmp_path):
 
 
 @pytest.fixture
-def monitor(sample_config):
+def monitor(sample_config, monkeypatch):
     config_path, tmp_path = sample_config
     state_file = tmp_path / "test-skill_sync.json"
     with (
@@ -27,6 +27,11 @@ def monitor(sample_config):
             config_path=str(config_path),
             check_interval=60,
             state_file=str(state_file),
+        )
+        monkeypatch.setattr(
+            m.detector,
+            "check_pages",
+            lambda **_kwargs: ChangeReport(skill_name="test-skill", total_pages=0),
         )
         return m
 

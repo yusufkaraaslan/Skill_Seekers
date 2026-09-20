@@ -19,6 +19,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class SourceValidationError(ValueError):
+    """A source was detected but is not usable (missing file, not a directory, ...).
+
+    Subclass of ValueError so existing ``except ValueError`` callers keep working,
+    while commands that want to tell "could not detect" from "detected but
+    invalid" apart can catch this first.
+    """
+
+
 @dataclass
 class SourceInfo:
     """Information about a detected source.
@@ -581,6 +590,32 @@ class SourceDetector:
         return SourceInfo(type="web", parsed={"url": source}, suggested_name=name, raw_input=source)
 
     @classmethod
+    def resolve(
+        cls, source: str, *, html_path: str | None = None, validate: bool = True
+    ) -> SourceInfo:
+        """Full source-resolution stage shared by ``create`` and ``detect``.
+
+        Detects the source, applies the explicit ``--html-path`` override, and
+        (by default) validates that the detected source is usable. Keeping this
+        in one place means ``skill-seekers detect`` answers exactly what
+        ``skill-seekers create`` would do with the same input.
+
+        Raises:
+            SourceValidationError: detected, but the source is not usable.
+            ValueError: the source type could not be determined.
+        """
+        source_info = cls.detect(source)
+        if html_path and source_info.type != "html":
+            logger.info("Overriding detected type %r with html (--html-path set)", source_info.type)
+            if os.path.isdir(html_path):
+                source_info = cls._detect_html_directory(html_path)
+            else:
+                source_info = cls._detect_html(html_path)
+        if validate:
+            cls.validate_source(source_info)
+        return source_info
+
+    @classmethod
     def validate_source(cls, source_info: SourceInfo) -> None:
         """Validate that source is accessible.
 
@@ -593,60 +628,60 @@ class SourceDetector:
         if source_info.type == "local":
             directory = source_info.parsed["directory"]
             if not os.path.exists(directory):
-                raise ValueError(f"Directory does not exist: {directory}")
+                raise SourceValidationError(f"Directory does not exist: {directory}")
             if not os.path.isdir(directory):
-                raise ValueError(f"Path is not a directory: {directory}")
+                raise SourceValidationError(f"Path is not a directory: {directory}")
 
         elif source_info.type == "pdf":
             file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
-                raise ValueError(f"PDF file does not exist: {file_path}")
+                raise SourceValidationError(f"PDF file does not exist: {file_path}")
             if not os.path.isfile(file_path):
-                raise ValueError(f"Path is not a file: {file_path}")
+                raise SourceValidationError(f"Path is not a file: {file_path}")
 
         elif source_info.type == "word":
             file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
-                raise ValueError(f"Word document does not exist: {file_path}")
+                raise SourceValidationError(f"Word document does not exist: {file_path}")
             if not os.path.isfile(file_path):
-                raise ValueError(f"Path is not a file: {file_path}")
+                raise SourceValidationError(f"Path is not a file: {file_path}")
 
         elif source_info.type == "epub":
             file_path = source_info.parsed["file_path"]
             if not os.path.exists(file_path):
-                raise ValueError(f"EPUB file does not exist: {file_path}")
+                raise SourceValidationError(f"EPUB file does not exist: {file_path}")
             if not os.path.isfile(file_path):
-                raise ValueError(f"Path is not a file: {file_path}")
+                raise SourceValidationError(f"Path is not a file: {file_path}")
 
         elif source_info.type == "video":
             if source_info.parsed.get("source_kind") == "file":
                 file_path = source_info.parsed["file_path"]
                 if not os.path.exists(file_path):
-                    raise ValueError(f"Video file does not exist: {file_path}")
+                    raise SourceValidationError(f"Video file does not exist: {file_path}")
                 if not os.path.isfile(file_path):
-                    raise ValueError(f"Path is not a file: {file_path}")
+                    raise SourceValidationError(f"Path is not a file: {file_path}")
             # URL-based video sources are validated during processing
 
         elif source_info.type == "config":
             config_path = source_info.parsed["config_path"]
             if not os.path.exists(config_path):
-                raise ValueError(f"Config file does not exist: {config_path}")
+                raise SourceValidationError(f"Config file does not exist: {config_path}")
             if not os.path.isfile(config_path):
-                raise ValueError(f"Path is not a file: {config_path}")
+                raise SourceValidationError(f"Path is not a file: {config_path}")
 
         elif source_info.type in ("jupyter", "html", "pptx", "asciidoc", "manpage", "openapi"):
             file_path = source_info.parsed.get("file_path", "")
             if file_path:
                 type_label = source_info.type.upper()
                 if not os.path.exists(file_path):
-                    raise ValueError(f"{type_label} file does not exist: {file_path}")
+                    raise SourceValidationError(f"{type_label} file does not exist: {file_path}")
                 if not os.path.isfile(file_path) and not os.path.isdir(file_path):
-                    raise ValueError(f"Path is not a file or directory: {file_path}")
+                    raise SourceValidationError(f"Path is not a file or directory: {file_path}")
 
         elif source_info.type == "rss":
             file_path = source_info.parsed.get("file_path", "")
             if file_path and not os.path.exists(file_path):
-                raise ValueError(f"RSS/Atom file does not exist: {file_path}")
+                raise SourceValidationError(f"RSS/Atom file does not exist: {file_path}")
 
         # For web, github, confluence, notion, chat, rss (URL), validation happens
         # during scraping (URL accessibility, API auth, etc.)

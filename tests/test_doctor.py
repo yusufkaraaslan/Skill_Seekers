@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import os
+from argparse import Namespace
 from unittest.mock import patch
 
 from skill_seekers.cli.doctor import (
     CheckResult,
+    DoctorCommand,
     check_api_keys,
     check_core_deps,
     check_git,
@@ -15,6 +18,7 @@ from skill_seekers.cli.doctor import (
     check_output_directory,
     check_package_installed,
     check_python_version,
+    main,
     print_report,
     run_all_checks,
 )
@@ -173,3 +177,148 @@ class TestPrintReport:
         print_report(results, verbose=False)
         captured = capsys.readouterr()
         assert "secret: hidden" not in captured.out
+
+
+class TestJsonReport:
+    def test_main_json_forwards_dependency_stdout_to_stderr(self, capsys):
+        def noisy_checks():
+            print("third-party import warning")
+            return [CheckResult("Python version", "pass", "3.12.0", critical=True)]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", side_effect=noisy_checks):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 0
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)  # stdout is exactly one document
+        assert payload["checks"][0]["name"] == "Python version"
+        assert "third-party import warning" in captured.err  # not silently dropped
+
+    def test_json_hides_verbose_detail_unless_verbose(self, capsys):
+        """verbose_detail carries masked API-key fragments; CI logs must not get them by default."""
+        results = [CheckResult("API keys", "warn", "1 set", verbose_detail="  KEY: sk-a...TAIL")]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            DoctorCommand(Namespace(verbose=False, json=True)).execute()
+            quiet = json.loads(capsys.readouterr().out)
+            DoctorCommand(Namespace(verbose=True, json=True)).execute()
+            loud = json.loads(capsys.readouterr().out)
+
+        assert quiet["checks"][0]["verbose_detail"] == ""
+        assert "TAIL" not in json.dumps(quiet)
+        assert loud["checks"][0]["verbose_detail"] == "  KEY: sk-a...TAIL"
+
+    def test_json_includes_version(self, capsys):
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=[]):
+            DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        payload = json.loads(capsys.readouterr().out)
+        assert isinstance(payload["version"], str) and payload["version"]
+
+    def test_crashing_check_becomes_error_document(self, capsys):
+        with patch(
+            "skill_seekers.cli.doctor.run_all_checks", side_effect=FileNotFoundError("cwd gone")
+        ):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        assert code == 1
+        assert "cwd gone" in json.loads(capsys.readouterr().out)["error"]
+
+    def test_json_flag_reaches_command_through_the_real_cli(self, capsys):
+        """Parser-driven: a typo in doctor_parser.py or the dispatch table must fail here."""
+        from skill_seekers.cli.main import main as cli_main
+
+        results = [CheckResult("Python version", "pass", "3.12.0", critical=True)]
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            assert cli_main(["doctor", "--json"]) == 0
+        assert json.loads(capsys.readouterr().out)["healthy"] is True
+
+    def test_human_and_json_agree_on_exit_code(self, capsys):
+        results = [CheckResult("Python version", "fail", "3.9", critical=True)]
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            human = DoctorCommand(Namespace(verbose=False, json=False)).execute()
+            capsys.readouterr()
+            machine = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        assert human == machine == json.loads(capsys.readouterr().out)["exit_code"] == 1
+
+    def test_main_json_outputs_structured_checks_and_summary(self, capsys):
+        results = [
+            CheckResult("Python version", "pass", "3.12.0", critical=True),
+            CheckResult("API keys", "warn", "No API keys configured"),
+        ]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["checks"] == [
+            {
+                "name": "Python version",
+                "status": "pass",
+                "detail": "3.12.0",
+                "critical": True,
+                "verbose_detail": "",
+            },
+            {
+                "name": "API keys",
+                "status": "warn",
+                "detail": "No API keys configured",
+                "critical": False,
+                "verbose_detail": "",
+            },
+        ]
+        assert payload["summary"] == {"passed": 1, "warnings": 1, "failed": 0}
+        assert payload["healthy"] is True
+        assert payload["exit_code"] == 0
+
+    def test_main_json_preserves_critical_failure_exit_code(self, capsys):
+        results = [CheckResult("Python version", "fail", "3.9", critical=True)]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+
+        assert code == 1
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["healthy"] is False
+        assert payload["exit_code"] == 1
+
+
+class TestDoctorEntryPoints:
+    """The unified CLI dispatch, the console script and ``python -m`` all reach the same code."""
+
+    _ok = [CheckResult("python", "pass", "3.12")]
+
+    def test_command_class_dispatch_contract(self, capsys):
+        from argparse import Namespace
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok):
+            assert DoctorCommand(Namespace(verbose=True)).execute() == 0
+        assert "python" in capsys.readouterr().out
+
+    def test_main_parses_argv_from_central_parser(self, capsys):
+        with (
+            patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok),
+            patch("skill_seekers.cli.doctor.print_report", return_value=0) as report,
+            patch("sys.argv", ["skill-seekers-doctor", "--verbose"]),
+        ):
+            assert main() == 0
+        assert report.call_args.kwargs["verbose"] is True
+
+    def test_main_accepts_preparsed_namespace(self):
+        from argparse import Namespace
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok):
+            assert main(Namespace(verbose=False)) == 0
+
+    def test_module_is_runnable(self):
+        """``python -m skill_seekers.cli.doctor`` must run the checks, not silently exit 0."""
+        import subprocess
+        import sys
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "skill_seekers.cli.doctor", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert proc.returncode == 0
+        assert "--verbose" in proc.stdout

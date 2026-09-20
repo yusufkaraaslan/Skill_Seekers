@@ -1,29 +1,8 @@
-"""
-End-to-end tests for bootstrap skill feature (PR #249)
+"""End-to-end bootstrap checks using one isolated sample project per session.
 
-Tests verify:
-1. Bootstrap script creates proper skill structure
-2. Generated SKILL.md is valid and usable
-3. Skill is installable in isolated virtual environment
-4. Output works with all platform adaptors
-5. Error cases handled gracefully
-
-Coverage: 8-12 tests
-Execution time: Fast tests ~2-3 min, Full tests ~5-10 min
-Requires: Python 3.10+, bash, uv
-
-Run fast tests:
-    pytest tests/test_bootstrap_skill_e2e.py -v -k "not venv"
-
-Run full suite:
-    pytest tests/test_bootstrap_skill_e2e.py -v -m "e2e"
-
-Run with venv tests:
-    pytest tests/test_bootstrap_skill_e2e.py -v -m "venv"
+Run with pytest tests/test_bootstrap_skill_e2e.py -v. Requires Python and bash.
 """
 
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -36,25 +15,15 @@ def project_root():
 
 
 @pytest.fixture
-def run_bootstrap(project_root):
-    """Execute bootstrap script and return result"""
-
-    def _run(timeout=600):
-        script = project_root / "scripts" / "bootstrap_skill.sh"
-
-        result = subprocess.run(
-            ["bash", str(script)], cwd=project_root, capture_output=True, text=True, timeout=timeout
-        )
-
-        return result
-
-    return _run
+def run_bootstrap(bootstrap_artifact):
+    """Return the session's completed real bootstrap run."""
+    return lambda: bootstrap_artifact[0]
 
 
 @pytest.fixture
-def output_skill_dir(project_root):
-    """Get path to bootstrap output directory"""
-    return project_root / "output" / "skill-seekers"
+def output_skill_dir(bootstrap_artifact):
+    """Isolated output, never the developer's output/ directory."""
+    return bootstrap_artifact[1]
 
 
 @pytest.mark.e2e
@@ -117,30 +86,19 @@ class TestBootstrapSkillE2E:
         assert line_count > 100, f"SKILL.md too short: {line_count} lines"
         assert line_count < 2000, f"SKILL.md suspiciously long: {line_count} lines"
 
-    @pytest.mark.slow
-    @pytest.mark.venv
-    def test_skill_installable_in_venv(self, run_bootstrap, output_skill_dir, tmp_path):
-        """Test skill is installable in clean virtual environment"""
-        # First run bootstrap
-        result = run_bootstrap()
-        assert result.returncode == 0
+    def test_skill_installable_to_claude(self, output_skill_dir, tmp_path, monkeypatch):
+        """A generated skill is installed as files, not as a Python package."""
+        from skill_seekers.web.installer import install_skill_to_cli
 
-        # Create venv
-        venv_path = tmp_path / "test_venv"
-        subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True, timeout=60)
+        monkeypatch.setenv("HOME", str(tmp_path))
+        import skill_seekers.web.paths as paths
 
-        # Install skill in venv
-        pip_path = venv_path / "bin" / "pip"
-        result = subprocess.run(
-            [str(pip_path), "install", "-e", "."],
-            cwd=output_skill_dir.parent.parent,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-
-        # Should install successfully
-        assert result.returncode == 0, f"Install failed: {result.stderr}"
+        monkeypatch.setattr(paths, "UI_STATE_DIR", tmp_path / "ui-state")
+        monkeypatch.setattr(paths, "TRASH_DIR", tmp_path / "trash")
+        monkeypatch.setattr(paths, "MARKET_CACHE_DIR", tmp_path / "market")
+        installed = install_skill_to_cli(output_skill_dir, "claude")
+        assert (installed / "SKILL.md").read_bytes() == (output_skill_dir / "SKILL.md").read_bytes()
+        assert (installed / "references").is_dir()
 
     def test_skill_packageable_with_adaptors(self, run_bootstrap, output_skill_dir, tmp_path):
         """Verify bootstrap output works with all platform adaptors"""

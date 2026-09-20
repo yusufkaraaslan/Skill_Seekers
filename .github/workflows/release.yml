@@ -114,6 +114,22 @@ jobs:
         echo "ℹ️  Release ${{ github.ref_name }} already exists, skipping creation"
         echo "View at: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
 
+    - name: Build Seeker HUD frontend
+      if: hashFiles('ui/package.json') != ''
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Compile frontend into the package
+      if: hashFiles('ui/package.json') != ''
+      working-directory: ui
+      run: |
+        npm ci
+        npm run build
+        # Vite outputs to src/skill_seekers/web/dist (see ui/vite.config.ts),
+        # which is bundled into the wheel via [tool.setuptools.package-data].
+        test -f ../src/skill_seekers/web/dist/index.html
+
     - name: Build package
       run: |
         uv build
