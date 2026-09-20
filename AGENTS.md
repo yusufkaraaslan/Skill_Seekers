@@ -217,6 +217,7 @@ skill-seekers install <source>             # One-command workflow (scrape + enha
 
 # Utilities
 skill-seekers estimate <source>            # Estimate page count before scraping
+skill-seekers detect <source> [--json]     # Read-only: how create would classify a source (exit 2 if invalid)
 skill-seekers doctor                       # Health check for dependencies
 skill-seekers config                       # Configure API keys and settings
 skill-seekers workflows                    # List and apply workflow presets
