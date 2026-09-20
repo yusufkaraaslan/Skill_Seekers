@@ -43,9 +43,19 @@ pip install skill-seekers[all-llms]
 export MINIMAX_API_KEY=your-api-key
 export MINIMAX_API_REGION=global_en
 export MINIMAX_API_PROTOCOL=openai
+export MINIMAX_THINKING=adaptive   # optional: adaptive | disabled (M3; OpenAI protocol only)
 ```
 
 Add to your `~/.bashrc`, `~/.zshrc`, or `.env` file for persistence.
+
+`MINIMAX_THINKING` controls MiniMax-M3's reasoning mode for every request Skill
+Seekers makes (thinking is on by default; `disabled` gives lower-latency direct
+answers). It is validated when the client is created and only carried by the
+OpenAI-compatible protocol; under `MINIMAX_API_PROTOCOL=anthropic` it is ignored
+with a warning. M2.x models cannot disable thinking.
+
+Video input (`AgentClient.call_with_video()`) is available for MiniMax-M3 over
+the OpenAI-compatible protocol: MP4, AVI, MOV or MKV, up to 50 MB inline.
 
 Choose the region and protocol that match your account:
 

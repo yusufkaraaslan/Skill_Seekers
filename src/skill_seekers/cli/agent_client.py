@@ -38,6 +38,9 @@ from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
     MINIMAX_DEFAULT_PROTOCOL,
     MINIMAX_ENDPOINTS,
+    MINIMAX_THINKING_MODES,
+    MINIMAX_VIDEO_MAX_BYTES,
+    MINIMAX_VIDEO_MODELS,
 )
 
 logger = logging.getLogger(__name__)
@@ -111,8 +114,12 @@ DEFAULT_MODELS = {
 # "protocol" is the wire format (see WIRE_PROTOCOLS) — _call_api branches on it,
 #   NOT on provider name, so an OpenAI/Anthropic-compatible provider needs no new
 #   _call_api branch. Providers may declare "protocol_env" for a runtime override.
-# "supports_images"/"supports_video" gate multimodal calls; "endpoints"/"region_env"
-#   describe a region→protocol→URL map for providers with regional base URLs.
+# "supports_images"/"supports_video" gate multimodal calls; "video_models" and
+#   "video_max_bytes" narrow video to specific models / a size cap;
+#   "thinking_modes" + "thinking_env" describe a reasoning knob carried in the
+#   OpenAI-protocol body. "endpoints"/"region_env" describe a region→protocol→URL
+#   map for providers with regional base URLs. All of these are read generically —
+#   _call_api never branches on a provider name.
 WIRE_PROTOCOLS = ("anthropic", "openai", "google")
 API_PROVIDERS: tuple[dict[str, Any], ...] = (
     {
@@ -153,6 +160,10 @@ API_PROVIDERS: tuple[dict[str, Any], ...] = (
         "region_env": "MINIMAX_API_REGION",
         "supports_images": True,
         "supports_video": True,
+        "video_models": MINIMAX_VIDEO_MODELS,
+        "video_max_bytes": MINIMAX_VIDEO_MAX_BYTES,
+        "thinking_modes": MINIMAX_THINKING_MODES,
+        "thinking_env": "MINIMAX_THINKING",
     },
 )
 
@@ -179,23 +190,28 @@ def provider_supports_video(provider: str) -> bool:
     return bool(PROVIDER_META.get(provider, {}).get("supports_video"))
 
 
+# Same values the stdlib registry returns, for hosts whose MIME database is
+# stripped (minimal containers): the fallback must not send a different type
+# than a normal host would.
+_FALLBACK_MEDIA_TYPES = {
+    ".avi": "video/x-msvideo",
+    ".mkv": "video/x-matroska",
+    ".mov": "video/quicktime",
+    ".mp4": "video/mp4",
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+}
+
+
 def _media_type(path: Path, fallback: str) -> str:
     """Resolve a media type even when the host MIME database is incomplete."""
     detected = mimetypes.guess_type(path.name)[0]
     if detected:
         return detected
-    common_types = {
-        ".avi": "video/avi",
-        ".mkv": "video/x-matroska",
-        ".mov": "video/quicktime",
-        ".mp4": "video/mp4",
-        ".gif": "image/gif",
-        ".jpeg": "image/jpeg",
-        ".jpg": "image/jpeg",
-        ".png": "image/png",
-        ".webp": "image/webp",
-    }
-    return common_types.get(path.suffix.lower(), fallback)
+    return _FALLBACK_MEDIA_TYPES.get(path.suffix.lower(), fallback)
 
 
 def get_provider_api_keys() -> dict[str, str | None]:
@@ -383,6 +399,7 @@ class AgentClient:
             self.api_key, detected = self.detect_api_key()
             self.provider = provider or detected
         self.api_protocol = self._resolve_api_protocol()
+        self.thinking = self._resolve_thinking(None)
 
         # Determine mode (keep original for error handling decisions)
         self._requested_mode = mode
@@ -427,6 +444,31 @@ class AgentClient:
         if api_key.startswith("AIza"):
             return "google"
         return "anthropic"  # Safe fallback
+
+    def _resolve_thinking(self, thinking: str | None) -> str | None:
+        """Validated reasoning mode for providers that declare ``thinking_modes``.
+
+        Explicit argument, then the registry's ``thinking_env`` variable, then
+        None (the provider's own default). Validated here — at construction for
+        the env var, before any request for a call argument — so a typo is a
+        ValueError, not a swallowed "API call failed".
+        """
+        meta = PROVIDER_META.get(self.provider, {})
+        modes = meta.get("thinking_modes")
+        env_name = meta.get("thinking_env")
+        resolved = (
+            (thinking or (os.environ.get(env_name, "") if env_name else "") or "").strip().lower()
+        )
+        if not resolved:
+            return None
+        if not modes:
+            raise ValueError(f"Provider {self.provider!r} has no thinking modes")
+        if resolved not in modes:
+            raise ValueError(
+                f"Unsupported thinking mode {resolved!r} for {self.provider}; "
+                f"choose one of: {', '.join(modes)}"
+            )
+        return resolved
 
     def _resolve_api_protocol(self) -> str:
         """Resolve the wire protocol (see WIRE_PROTOCOLS) for the provider.
@@ -600,20 +642,49 @@ class AgentClient:
         temperature: float | None = None,
         thinking: str | None = None,
     ) -> str | None:
-        """Call MiniMax M3 with a local video through its OpenAI wire format."""
-        if self.mode != "api" or self.api_protocol != "openai":
-            logger.warning("Video requests require an OpenAI-compatible API mode")
+        """Call a video-capable provider with a local clip (OpenAI ``video_url`` part).
+
+        Every gate is registry-driven (``supports_video``, ``video_models``,
+        ``video_max_bytes``) and fails before any bytes are read or sent.
+        """
+        if self.mode != "api":
+            logger.warning("Video requests require API mode (an API key), not a LOCAL agent")
             return None
         if not provider_supports_video(self.provider):
             logger.warning("Provider %r does not support video requests", self.provider)
             return None
+        if self.api_protocol != "openai":
+            logger.warning(
+                "Video requests need the OpenAI-compatible protocol; %s is %r",
+                self.provider,
+                self.api_protocol,
+            )
+            return None
+        meta = PROVIDER_META.get(self.provider, {})
         model = self.model or self.get_model(self.provider)
-        if self.provider == "minimax" and model != MINIMAX_DEFAULT_MODEL:
-            logger.warning("MiniMax video requests require MiniMax-M3")
+        video_models = meta.get("video_models")
+        if video_models and model.lower() not in {m.lower() for m in video_models}:
+            logger.warning(
+                "%s video requests require one of %s (model is %r)",
+                self.provider,
+                ", ".join(video_models),
+                model,
+            )
             return None
 
         path = Path(video_path)
+        max_bytes = meta.get("video_max_bytes")
         try:
+            size = path.stat().st_size
+            if max_bytes and size > max_bytes:
+                logger.error(
+                    "Video %s is %.1f MB; %s accepts at most %.0f MB inline",
+                    path,
+                    size / 1_048_576,
+                    self.provider,
+                    max_bytes / 1_048_576,
+                )
+                return None
             video_data = base64.standard_b64encode(path.read_bytes()).decode("ascii")
         except OSError as e:
             logger.error(f"Could not read video {path}: {e}")
@@ -723,6 +794,21 @@ class AgentClient:
         # instead of a hardcoded 120s that killed large enhancement prompts.
         request_timeout = timeout if timeout is not None else get_default_timeout()
 
+        # Reasoning mode: validated outside the try below so a bad value is a
+        # ValueError to the caller, not a swallowed "API call failed".
+        thinking_mode = self._resolve_thinking(thinking) if thinking else self.thinking
+        if thinking_mode is not None and self.api_protocol != "openai":
+            logger.warning(
+                "Thinking mode %r ignored: the %s protocol does not carry it (set %s=openai)",
+                thinking_mode,
+                self.api_protocol,
+                PROVIDER_META.get(self.provider, {}).get("protocol_env", "the protocol"),
+            )
+            thinking_mode = None
+        if video is not None and self.api_protocol != "openai":
+            logger.warning("Video input is only carried by the OpenAI protocol; not sending")
+            return None
+
         try:
             if self.api_protocol == "anthropic":
                 kwargs: dict[str, Any] = {}
@@ -801,12 +887,7 @@ class AgentClient:
                 kwargs = {}
                 if temperature is not None:
                     kwargs["temperature"] = temperature
-                thinking_mode = thinking
-                if self.provider == "minimax" and thinking_mode is None:
-                    thinking_mode = os.environ.get("MINIMAX_THINKING", "").strip() or None
-                if self.provider == "minimax" and thinking_mode is not None:
-                    if thinking_mode not in ("adaptive", "disabled"):
-                        raise ValueError("MiniMax thinking must be adaptive or disabled")
+                if thinking_mode is not None:
                     kwargs["extra_body"] = {"thinking": {"type": thinking_mode}}
                 response = self.client.chat.completions.create(
                     model=model,
