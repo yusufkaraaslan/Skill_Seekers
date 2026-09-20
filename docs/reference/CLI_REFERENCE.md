@@ -1091,6 +1091,7 @@ skill-seekers quality SKILL_DIRECTORY [options]
 |-------|------|-------------|
 | | `--report` | Generate detailed report |
 | | `--output` | Output path for JSON report |
+| | `--json` | Print the JSON report to stdout (exactly one document; errors as `{"error": ...}`, diagnostics on stderr). No default `quality_report.json` is written; `--output` still saves a copy. Cannot be combined with `--report` |
 | | `--threshold` | Quality gate threshold (0-10). When set, exit non-zero if the skill scores below it; without it the command only reports (exit 0) |
 
 **Examples:**
@@ -1104,6 +1105,9 @@ skill-seekers quality output/react/ --report
 
 # Save report as JSON
 skill-seekers quality output/react/ --output quality.json
+
+# JSON on stdout for pipelines (no file side effect)
+skill-seekers quality output/react/ --json | jq .overall_score.total_score
 
 # Quality gate: fail (non-zero exit) if below threshold
 skill-seekers quality output/react/ --threshold 7.0

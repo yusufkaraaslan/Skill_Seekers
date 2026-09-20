@@ -8,6 +8,7 @@ Tracks completeness, accuracy, coverage, and health metrics.
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 from dataclasses import dataclass, field, asdict
@@ -542,7 +543,18 @@ class QualityAnalyzer:
 
 
 def main(args=None):
-    """CLI entry point for quality metrics."""
+    """CLI entry point for quality metrics.
+
+    Output contract:
+
+    * default — one-line score summary; ``--report`` prints the full breakdown.
+      Writes ``<skill_dir>/quality_report.json`` unless ``--output`` names a path.
+    * ``--json`` — stdout is exactly one JSON document (the report, or
+      ``{"error": ...}`` on failure). Diagnostics go to stderr. No default file
+      is written; an explicit ``--output`` still saves a copy.
+    * ``--threshold`` — exit ``EXIT_ERROR`` when the score is below the gate,
+      in either mode.
+    """
     from pathlib import Path
 
     from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
@@ -554,31 +566,56 @@ def main(args=None):
         parser = QualityParser().build_standalone()
         args = parser.parse_args()
 
+    json_output = bool(args.json)
+
+    def fail(message: str) -> int:
+        # Under --json stdout stays machine-readable even for errors
+        # (same contract as `skill-seekers detect --json`).
+        if json_output:
+            print(json.dumps({"error": message}, indent=2))
+        else:
+            print(f"❌ Error: {message}")
+        return EXIT_ERROR
+
     # Analyze skill
     skill_dir = Path(args.skill_dir)
     if not skill_dir.exists():
-        print(f"❌ Error: Directory not found: {skill_dir}")
-        return EXIT_ERROR
+        return fail(f"Directory not found: {skill_dir}")
 
     analyzer = QualityAnalyzer(skill_dir)
 
     # Generate report
     report = analyzer.generate_report()
+    serialized_report = json.dumps(asdict(report), indent=2, default=_json_default)
 
-    # Display report. --report prints the full breakdown; otherwise still show a
-    # one-line score summary so the user doesn't have to open the JSON to learn it.
-    if args.report:
-        formatted = analyzer.format_report(report)
-        print(formatted)
+    # Save first, print second: a failed --output write must not leave a
+    # complete report on stdout followed by a non-zero exit, which a pipeline
+    # could not tell apart from a threshold miss. JSON mode writes no default
+    # file (stdout is the deliverable); an explicit --output still saves a copy.
+    report_path = (
+        Path(args.output)
+        if args.output
+        else (None if json_output else skill_dir / "quality_report.json")
+    )
+    if report_path is not None:
+        try:
+            report_path.write_text(serialized_report)
+        except OSError as exc:
+            return fail(f"Could not write report to {report_path}: {exc}")
+
+    # JSON mode reserves stdout for one machine-readable document. Otherwise,
+    # --report prints the full breakdown and the default is a one-line summary.
+    if json_output:
+        print(serialized_report)
+    elif args.report:
+        print(analyzer.format_report(report))
     else:
         score = report.overall_score
         print(f"\n📊 Quality Score: {score.total_score:.1f}/100 (Grade: {score.grade})")
 
-    # Save report
-    report_path = Path(args.output) if args.output else skill_dir / "quality_report.json"
-
-    report_path.write_text(json.dumps(asdict(report), indent=2, default=_json_default))
-    print(f"\n✅ Report saved: {report_path}")
+    if report_path is not None:
+        # Diagnostics never pollute a JSON stdout.
+        print(f"\n✅ Report saved: {report_path}", file=sys.stderr if json_output else sys.stdout)
 
     # Quality gating: only when --threshold is explicitly given. Report-only
     # invocations (the historical contract — e.g. CI steps that just want
@@ -590,7 +627,8 @@ def main(args=None):
         if total_score < args.threshold * 10:
             print(
                 f"❌ Quality score {total_score / 10:.1f}/10 is below the "
-                f"threshold of {args.threshold:.1f}/10"
+                f"threshold of {args.threshold:.1f}/10",
+                file=sys.stderr if json_output else sys.stdout,
             )
             return EXIT_ERROR
     return EXIT_SUCCESS

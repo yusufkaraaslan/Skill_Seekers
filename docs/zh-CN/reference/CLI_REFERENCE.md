@@ -1089,6 +1089,7 @@ skill-seekers quality SKILL_DIRECTORY [options]
 |-------|------|-------------|
 | | `--report` | 生成详细报告 |
 | | `--output` | JSON 报告的输出路径 |
+| | `--json` | 将 JSON 报告打印到标准输出（仅一个文档；错误以 `{"error": ...}` 输出，诊断信息写到标准错误）。不会写入默认的 `quality_report.json`；`--output` 仍可保存副本。不能与 `--report` 同时使用 |
 | | `--threshold` | 质量门禁阈值（0-10）。设置后，技能得分低于阈值时以非零退出码退出；未设置时该命令仅报告（退出码 0） |
 
 **示例：**
