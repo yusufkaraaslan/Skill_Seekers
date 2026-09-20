@@ -99,6 +99,7 @@ skill-seekers detect https://docs.djangoproject.com/ --json
 
 # Doctor / diagnostics
 skill-seekers doctor
+skill-seekers doctor --json   # machine-readable, for CI and agents
 ```
 
 ---
