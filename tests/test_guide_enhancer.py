@@ -23,6 +23,17 @@ from skill_seekers.cli.guide_enhancer import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_agent_environment(monkeypatch):
+    """Keep mode detection independent of installed agents and real SDK clients."""
+    from skill_seekers.cli.agent_client import AgentClient
+
+    monkeypatch.setattr(AgentClient, "_init_api_client", lambda _self: Mock())
+    monkeypatch.setattr(
+        AgentClient, "is_available", lambda self: self.mode == "local" or self.client is not None
+    )
+
+
 class TestGuideEnhancerModeDetection:
     """Test mode detection logic"""
 
@@ -650,3 +661,10 @@ class TestNoEnhancerNameCollisions:
     def test_canonical_classes_importable(self):
         from skill_seekers.cli.ai_enhancer import PatternEnhancer, TestExampleEnhancer  # noqa: F401
         from skill_seekers.cli.guide_enhancer import GuideEnhancer  # noqa: F401
+
+
+def test_none_mode_does_not_probe_agent():
+    """Disabling enhancement must also bypass the agent availability command."""
+    with patch("skill_seekers.cli.agent_client.AgentClient.is_available") as available:
+        assert GuideEnhancer(mode="none").mode == "none"
+        available.assert_not_called()

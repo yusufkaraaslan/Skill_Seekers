@@ -1055,15 +1055,17 @@ class TestExampleExtractor:
 
     def _find_test_files(self, directory: Path, recursive: bool) -> list[Path]:
         """Find test files in directory"""
+        from fnmatch import fnmatch
+        from skill_seekers.cli.file_discovery import walk_project
+
         test_files = []
-
-        for pattern in self.TEST_PATTERNS:
-            if recursive:
-                test_files.extend(directory.rglob(pattern))
-            else:
-                test_files.extend(directory.glob(pattern))
-
-        return list(set(test_files))  # Remove duplicates
+        for current, filenames in walk_project(directory):
+            for filename in filenames:
+                if any(fnmatch(filename, pattern) for pattern in self.TEST_PATTERNS):
+                    test_files.append(current / filename)
+            if not recursive:
+                break
+        return sorted(test_files)
 
     def _detect_language(self, file_path: Path) -> str:
         """Detect programming language from file extension"""

@@ -217,39 +217,20 @@ class SkillAdaptor(ABC):
         """
         Read reference markdown files from skill directory.
 
-        Single canonical copy — claude/openai/gemini carried byte-identical
-        versions and openai_compatible a cosmetic variant.
+        Delegates to the shared bounded reader in ``scraper_utils`` (also used
+        by the unified enhancement path) so every enhancement prompt observes
+        the same size limits. Keys are paths relative to ``references_dir``.
 
         Args:
             references_dir: Path to references directory
             max_chars: Maximum total characters to read
 
         Returns:
-            Dictionary mapping filename to content
+            Dictionary mapping relative file path to content
         """
-        if not references_dir.exists():
-            return {}
+        from skill_seekers.cli.scraper_utils import read_reference_markdown
 
-        references = {}
-        total_chars = 0
-
-        for ref_file in sorted(references_dir.rglob("*.md")):
-            if total_chars >= max_chars:
-                break
-
-            try:
-                content = ref_file.read_text(encoding="utf-8")
-                # Truncate very large files
-                if len(content) > 30000:
-                    content = content[:30000] + "\n\n...(truncated)"
-
-                references[ref_file.name] = content
-                total_chars += len(content)
-
-            except Exception as e:
-                print(f"  ⚠ Could not read {ref_file.name}: {e}")
-
-        return references
+        return read_reference_markdown(references_dir, max_chars=max_chars)
 
     def _enhance_skill_md_via_client(
         self,

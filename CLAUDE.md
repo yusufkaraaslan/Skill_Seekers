@@ -191,6 +191,12 @@ Local codebase analysis features, all opt-out (`--skip-*` flags):
 - **Exceptions BY DESIGN**: `enhance_skill` (LOCAL agent) and `install_skill`'s enhancement step stay subprocess — the agent must be a real child process for the fork-bomb-guard env semantics (`SKILL_SEEKER_ENHANCE_ACTIVE`). Never make these in-process.
 - **Domain logic lives in `skill_seekers.services/`** (marketplace_manager, marketplace_publisher, config_publisher, source_manager, git_repo) — importable by CLI without the `[mcp]` extra; old `skill_seekers.mcp.*` paths are back-compat shims. No `sys.path` hacks anywhere in `mcp/`.
 
+### Seeker HUD (web UI)
+
+FastAPI backend in `src/skill_seekers/web/`, React app in `ui/`; see `docs/guides/WEB_UI.md`.
+
+- HUD routes live in `src/skill_seekers/web/routes/` (one module per screen, `register(app, ctx)`); `app.py` keeps the original routes.
+
 ### Enhancement (AgentClient is the single AI transport)
 
 Every AI call goes through `AgentClient` (`src/skill_seekers/cli/agent_client.py`): central truncation gate, timeout policy, error classification. `API_PROVIDERS` (provider registry) and `AGENT_PRESETS` (local-agent command templates) live ONLY there. Each `API_PROVIDERS` entry declares its wire `protocol` (`anthropic`/`openai`/`google`) and `supports_images` capability — `_call_api` branches on the resolved protocol, NOT the provider name, so an OpenAI/Anthropic-compatible provider needs no new branch. Adaptors declare provider/endpoint/model/prompt and route through `SkillAdaptor._enhance_skill_md_via_client` (atomic save with backup). Multimodal image input goes through `AgentClient.call_with_image()` (used by `video_visual` frame OCR across all image-capable providers); it no longer bypasses AgentClient with a direct SDK call.

@@ -399,21 +399,41 @@ output/skill-name/
 │   │   ├── issues.md
 │   │   └── releases.md
 │   ├── pdf/                     # PDF references (if applicable)
-│   │   └── index.md
+│   │   ├── index.md
+│   │   └── 0_manual/          # One namespace per input document
+│   │       ├── references/     # Readable extracted Markdown
+│   │       └── assets/         # Images used by those references
 │   ├── video/                   # Video transcripts (if applicable)
 │   │   └── index.md
 │   ├── openapi/                 # OpenAPI spec (if applicable)
 │   │   └── index.md
 │   ├── jupyter/                 # Notebook content (if applicable)
 │   │   └── index.md
-│   ├── <source-type>/           # Other source type references
-│   │   └── index.md
+│   ├── <source-type>/           # Other converter-backed sources
+│   │   ├── index.md
+│   │   ├── 0_<source>_data.json # Raw extracted data
+│   │   └── 0_<source>/        # Readable references + assets
 │   ├── api/                     # Merged API reference
 │   │   └── merged_api.md
 │   └── conflicts.md             # Detailed conflict report
 ├── scripts/                     # Empty (for user scripts)
 └── assets/                      # Empty (for user assets)
 ```
+
+Converter-backed sources such as PDF, Word, EPUB, Jupyter, and PowerPoint keep
+each input's generated reference tree in its own indexed namespace. This avoids
+filename collisions when multiple inputs contain files such as `content.md` and
+keeps relative links from the Markdown to adjacent assets intact. Video sources
+use the same layout and preserve adjacent visual-extraction `frames/` as well.
+The namespace is `<scrape index>_<sanitized id>`, so URL or path ids are
+filesystem-safe and two inputs with the same file name stay apart. Links in the
+synthesized SKILL.md are rewritten to these locations.
+
+Every build recreates the directories it owns under `references/`
+(`documentation/`, `github/`, `pdf/`, the converter-backed types, `api/`,
+`codebase_analysis/`, `conflicts.md`), so a source removed from the config
+cannot leave stale content behind. Files you keep under `references/` outside
+those entries are left untouched.
 
 ### SKILL.md Format
 

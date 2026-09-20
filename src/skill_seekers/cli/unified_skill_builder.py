@@ -35,6 +35,39 @@ class UnifiedSkillBuilder:
     by design.
     """
 
+    # Converter-backed source types beyond the three bespoke ones
+    # (documentation / github / pdf). Shared by SKILL.md synthesis and
+    # reference generation so the two cannot disagree about what exists.
+    _EXTRA_SOURCE_TYPES = (
+        "word",
+        "epub",
+        "video",
+        "jupyter",
+        "html",
+        "openapi",
+        "asciidoc",
+        "pptx",
+        "confluence",
+        "notion",
+        "rss",
+        "manpage",
+        "chat",
+    )
+
+    # Entries under references/ that this builder owns and rebuilds from
+    # scratch on every build. A source dropped from the config must not leave
+    # stale content behind for enhancement (#453), but anything else a user
+    # keeps under references/ is theirs and is left alone.
+    _MANAGED_REFERENCE_ENTRIES = (
+        "documentation",
+        "github",
+        "pdf",
+        *_EXTRA_SOURCE_TYPES,
+        "api",
+        "codebase_analysis",
+        "conflicts.md",
+    )
+
     def __init__(
         self,
         config: dict,
@@ -96,6 +129,7 @@ class UnifiedSkillBuilder:
             e.g., {'documentation': '...', 'github': '...', 'pdf': '...'}
         """
         skill_mds = {}
+        namespaces = self._reference_namespaces_by_source_dir()
 
         # Determine base directory for source SKILL.md files
         sources_dir = Path(self.cache_dir) / "sources" if self.cache_dir else Path("output")
@@ -149,7 +183,9 @@ class UnifiedSkillBuilder:
             pdf_skill_path = pdf_dir / "SKILL.md"
             if pdf_skill_path.exists():
                 try:
-                    content = pdf_skill_path.read_text(encoding="utf-8")
+                    content = self._relink_sub_skill_references(
+                        pdf_skill_path.read_text(encoding="utf-8"), pdf_dir, namespaces
+                    )
                     pdf_sources.append(content)
                     logger.debug(f"Loaded PDF SKILL.md from {pdf_dir.name} ({len(content)} chars)")
                 except OSError as e:
@@ -162,28 +198,15 @@ class UnifiedSkillBuilder:
 
         # Load additional source types using generic glob pattern
         # Each source type uses: {name}_{type}_{idx}_*/ or {name}_{type}_*/
-        _extra_types = [
-            "word",
-            "epub",
-            "video",
-            "jupyter",
-            "html",
-            "openapi",
-            "asciidoc",
-            "pptx",
-            "confluence",
-            "notion",
-            "rss",
-            "manpage",
-            "chat",
-        ]
-        for source_type in _extra_types:
+        for source_type in self._EXTRA_SOURCE_TYPES:
             type_sources = []
             for type_dir in sources_dir.glob(f"{self.name}_{source_type}_*"):
                 type_skill_path = type_dir / "SKILL.md"
                 if type_skill_path.exists():
                     try:
-                        content = type_skill_path.read_text(encoding="utf-8")
+                        content = self._relink_sub_skill_references(
+                            type_skill_path.read_text(encoding="utf-8"), type_dir, namespaces
+                        )
                         type_sources.append(content)
                         logger.debug(
                             f"Loaded {source_type} SKILL.md from {type_dir.name} "
@@ -257,6 +280,45 @@ class UnifiedSkillBuilder:
 
         logger.debug(f"Parsed {len(sections)} sections from SKILL.md")
         return sections
+
+    def _reference_namespaces_by_source_dir(self) -> dict[str, tuple[str, str]]:
+        """Map each cached sub-skill directory to its final references namespace.
+
+        Keyed by the normalized sub-skill directory (the parent of ``refs_dir``)
+        and valued by ``(source_type, namespace)``, computed with the same
+        function the reference copier uses so SKILL.md links and the copied
+        tree always agree.
+        """
+        mapping: dict[str, tuple[str, str]] = {}
+        for source_type in ("pdf", *self._EXTRA_SOURCE_TYPES):
+            for position, source_data in enumerate(self.scraped_data.get(source_type, [])):
+                refs_dir = source_data.get("refs_dir")
+                if not refs_dir:
+                    continue
+                _source_id, namespace = self._reference_namespace(
+                    source_type, source_data, position
+                )
+                key = os.path.normpath(os.path.abspath(os.path.dirname(refs_dir)))
+                mapping[key] = (source_type, namespace)
+        return mapping
+
+    @staticmethod
+    def _relink_sub_skill_references(
+        content: str, source_dir: Path | str, namespaces: dict[str, tuple[str, str]]
+    ) -> str:
+        """Rewrite a standalone sub-skill's ``references/...`` links to their unified location.
+
+        A PDF sub-skill's SKILL.md says ``references/manual.md``; once folded into
+        the unified skill that file lives at
+        ``references/pdf/0_manual/references/manual.md``. Without this rewrite the
+        synthesized SKILL.md points at files that do not exist (#453).
+        """
+        key = os.path.normpath(os.path.abspath(str(source_dir)))
+        if key not in namespaces:
+            return content
+        source_type, namespace = namespaces[key]
+        prefix = f"references/{source_type}/{namespace}/references/"
+        return re.sub(r"(?<![\w/.\-])references/", prefix, content)
 
     def _synthesize_docs_github(self, skill_mds: dict[str, str]) -> str:
         """Synthesize documentation + GitHub sources with weighted merge.
@@ -1079,6 +1141,10 @@ This skill combines knowledge from multiple sources:
     def _generate_references(self):
         """Generate reference files organized by source."""
         logger.info("Generating reference files...")
+        references_dir = os.path.join(self.skill_dir, "references")
+        os.makedirs(references_dir, exist_ok=True)
+        for entry in self._MANAGED_REFERENCE_ENTRIES:
+            self._remove_path(os.path.join(references_dir, entry))
 
         # Generate references for each source type (now lists)
         docs_list = self.scraped_data.get("documentation", [])
@@ -1094,22 +1160,7 @@ This skill combines knowledge from multiple sources:
             self._generate_pdf_references(pdf_list)
 
         # Generate references for all additional source types
-        _extra_source_types = [
-            "word",
-            "epub",
-            "video",
-            "jupyter",
-            "html",
-            "openapi",
-            "asciidoc",
-            "pptx",
-            "confluence",
-            "notion",
-            "rss",
-            "manpage",
-            "chat",
-        ]
-        for source_type in _extra_source_types:
+        for source_type in self._EXTRA_SOURCE_TYPES:
             source_list = self.scraped_data.get(source_type, [])
             if source_list:
                 self._generate_generic_references(source_type, source_list)
@@ -1312,7 +1363,7 @@ This skill combines knowledge from multiple sources:
             return
 
         pdf_dir = os.path.join(self.skill_dir, "references", "pdf")
-        os.makedirs(pdf_dir, exist_ok=True)
+        self._fresh_dir(pdf_dir)
 
         # Create index
         index_path = os.path.join(pdf_dir, "index.md")
@@ -1320,7 +1371,114 @@ This skill combines knowledge from multiple sources:
             f.write("# PDF Documentation\n\n")
             f.write(f"Reference from {len(pdf_list)} PDF document(s).\n\n")
 
+            for i, pdf_source in enumerate(pdf_list):
+                source_id, namespace, copied_references = self._copy_source_reference_tree(
+                    pdf_dir, "pdf", pdf_source, i
+                )
+                f.write(f"## {source_id}\n\n")
+                f.write(f"Directory: `{namespace}/`\n\n")
+                if copied_references:
+                    for relative_path in copied_references:
+                        filename = os.path.basename(relative_path)
+                        f.write(f"- [{filename}]({relative_path})\n")
+                else:
+                    f.write("No readable reference files available.\n")
+                f.write("\n")
+
         logger.info(f"Created PDF references ({len(pdf_list)} sources)")
+
+    @staticmethod
+    def _remove_path(path: str) -> None:
+        """Delete a file or directory tree if it exists."""
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path)
+        elif os.path.lexists(path):
+            os.remove(path)
+
+    @classmethod
+    def _fresh_dir(cls, path: str) -> None:
+        """Recreate ``path`` empty so a rebuild cannot keep stale entries."""
+        cls._remove_path(path)
+        os.makedirs(path, exist_ok=True)
+
+    @staticmethod
+    def _reference_source_id(source_type: str, source_data: dict, position: int) -> str:
+        """Return the stable identifier used to label one source's references."""
+        return str(
+            source_data.get("source_id")
+            or source_data.get(f"{source_type}_id")
+            or source_data.get("notebook_id")
+            or source_data.get("spec_id")
+            or source_data.get("feed_id")
+            or source_data.get("man_id")
+            or source_data.get("chat_id")
+            or f"source_{position}"
+        )
+
+    @classmethod
+    def _reference_namespace(
+        cls, source_type: str, source_data: dict, position: int
+    ) -> tuple[str, str]:
+        """Return ``(source_id, namespace)`` for one source.
+
+        The namespace is ``{idx}_{sanitized id}`` — the per-type scrape index
+        keeps two same-named inputs apart, the sanitized id keeps URL/path ids
+        filesystem-safe. Both the copied tree and the SKILL.md relinking use
+        this, so it is the single definition of where a source's files land.
+        """
+        source_id = cls._reference_source_id(source_type, source_data, position)
+        idx = source_data.get("idx")
+        ordinal = idx if isinstance(idx, int) and not isinstance(idx, bool) else position
+        return source_id, f"{ordinal}_{cls._sanitize_source_id(source_id)}"
+
+    def _copy_source_reference_tree(
+        self,
+        type_dir: str,
+        source_type: str,
+        source_data: dict,
+        position: int,
+    ) -> tuple[str, str, list[str]]:
+        """Copy one standalone sub-skill's references and adjacent assets.
+
+        Returns ``(source_id, namespace, copied_markdown_paths)``. ``type_dir``
+        is freshly created by the caller, so nothing needs removing here. A
+        copy failure (unreadable file, dangling symlink) is logged and the
+        build continues with whatever was copied — the pre-#453 builder never
+        touched these trees, so a bad cache entry must not abort the build.
+        """
+        source_id, namespace = self._reference_namespace(source_type, source_data, position)
+        refs_dir = source_data.get("refs_dir")
+        if not refs_dir or not os.path.isdir(refs_dir):
+            logger.warning("No readable %s references found for source %s", source_type, source_id)
+            return source_id, namespace, []
+
+        namespace_dir = os.path.join(type_dir, namespace)
+        destination_refs = os.path.join(namespace_dir, "references")
+        source_skill_dir = os.path.dirname(refs_dir)
+        copies = [(refs_dir, destination_refs)]
+        for resource_dir_name in ("assets", "frames"):
+            source_resources = os.path.join(source_skill_dir, resource_dir_name)
+            if os.path.isdir(source_resources):
+                copies.append((source_resources, os.path.join(namespace_dir, resource_dir_name)))
+
+        for src, dst in copies:
+            try:
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+            except (shutil.Error, OSError) as exc:
+                logger.warning(
+                    "Failed to copy %s references for source %s from %s: %s",
+                    source_type,
+                    source_id,
+                    src,
+                    exc,
+                )
+
+        copied_references = [
+            os.path.relpath(path, type_dir).replace(os.sep, "/")
+            for path in sorted(Path(destination_refs).rglob("*.md"))
+            if os.path.isdir(destination_refs)
+        ]
+        return source_id, namespace, copied_references
 
     def _generate_generic_references(self, source_type: str, source_list: list[dict]):
         """Generate references for any source type using a generic approach.
@@ -1337,7 +1495,7 @@ This skill combines knowledge from multiple sources:
 
         label = self._SOURCE_LABELS.get(source_type, source_type.title())
         type_dir = os.path.join(self.skill_dir, "references", source_type)
-        os.makedirs(type_dir, exist_ok=True)
+        self._fresh_dir(type_dir)
 
         # Create index
         index_path = os.path.join(type_dir, "index.md")
@@ -1347,17 +1505,18 @@ This skill combines knowledge from multiple sources:
 
             for i, source_data in enumerate(source_list):
                 # Try common ID fields
-                source_id = (
-                    source_data.get("source_id")
-                    or source_data.get(f"{source_type}_id")
-                    or source_data.get("notebook_id")
-                    or source_data.get("spec_id")
-                    or source_data.get("feed_id")
-                    or source_data.get("man_id")
-                    or source_data.get("chat_id")
-                    or f"source_{i}"
+                source_id, namespace, copied_references = self._copy_source_reference_tree(
+                    type_dir, source_type, source_data, i
                 )
                 f.write(f"## {source_id}\n\n")
+                f.write(f"Directory: `{namespace}/`\n\n")
+
+                if copied_references:
+                    f.write("**Readable references:**\n\n")
+                    for relative_path in copied_references:
+                        filename = os.path.basename(relative_path)
+                        f.write(f"- [{filename}]({relative_path})\n")
+                    f.write("\n")
 
                 # Write summary of extracted data
                 data = source_data.get("data", {})
@@ -1371,7 +1530,9 @@ This skill combines knowledge from multiple sources:
                 # Copy data file if available
                 data_file = source_data.get("data_file")
                 if data_file and os.path.isfile(data_file):
-                    dest = os.path.join(type_dir, f"{source_id}_data.json")
+                    # Namespaced like the Markdown tree: raw ids may be URLs or
+                    # paths, and two same-named inputs must not overwrite each other.
+                    dest = os.path.join(type_dir, f"{namespace}_data.json")
                     import contextlib
 
                     with contextlib.suppress(OSError):

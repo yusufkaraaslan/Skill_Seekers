@@ -7,6 +7,31 @@ on:
     branches: [ main, development ]
 
 jobs:
+  frontend:
+    name: HUD (lint, build, browser regressions)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: ui/package-lock.json
+    - run: npm ci
+      working-directory: ui
+    - run: npm run lint
+      working-directory: ui
+    - run: npm run build
+      working-directory: ui
+    - run: npx playwright install --with-deps chromium
+      working-directory: ui
+    - run: npm test
+      working-directory: ui
+    - uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: hud-browser-results
+        path: ui/test-results/
   lint:
     name: Code Quality (Ruff & Mypy)
     runs-on: ubuntu-latest
@@ -20,7 +45,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install "ruff==0.15.8" mypy
-        pip install -e .
+        pip install -e ".[ui]"
     - name: Run ruff linter
       run: ruff check src/ tests/ --output-format=github
     - name: Run ruff formatter check
@@ -62,11 +87,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest-xdist pytest-timeout
-        pip install -e .
+        pip install pytest-xdist pytest-timeout psutil
+        pip install -e ".[ui]"
     - name: Run fast tests (xdist parallel)
       run: |
-        python -m pytest tests/ -n auto --dist=loadfile \
+        python scripts/run_tests_safe.py --min-available-mb 1024 -- tests/ -n 2 --dist=loadfile \
           -m "not slow and not integration and not e2e and not network and not serial and not mcp_only" \
           -q --timeout=120 --cov=src/skill_seekers --cov-report=xml --cov-report=term
       timeout-minutes: 15
@@ -94,13 +119,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest-timeout
-        pip install -e .
+        pip install pytest-timeout psutil
+        pip install -e ".[ui]"
     - name: Run serial/integration/E2E tests
       run: |
-        python -m pytest tests/ \
-          --ignore=tests/test_bootstrap_skill_e2e.py \
-          --ignore=tests/test_bootstrap_skill.py \
+        python scripts/run_tests_safe.py --min-available-mb 1024 -- tests/ \
           -m "(integration or e2e or slow or network or serial) and not mcp_only" \
           -v --timeout=300
       timeout-minutes: 25
@@ -121,24 +144,28 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest-timeout
+        pip install pytest-timeout psutil
         pip install -e ".[mcp]"
-        pip install -e .
+        pip install -e ".[ui]"
     - name: Run MCP tests
       run: |
-        python -m pytest tests/ \
+        python scripts/run_tests_safe.py --min-available-mb 1024 -- tests/ \
           -m "mcp_only and not network" \
           -v --timeout=180
       timeout-minutes: 10
 
   tests-complete:
     name: Tests
-    needs: [lint, test-fast, test-serial, test-mcp]
+    needs: [frontend, lint, test-fast, test-serial, test-mcp]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check all results
         run: |
+          if [ "${{ needs.frontend.result }}" != "success" ]; then
+            echo "HUD checks failed"
+            exit 1
+          fi
           if [ "${{ needs.lint.result }}" != "success" ]; then
             echo "❌ Code quality checks failed!"
             exit 1

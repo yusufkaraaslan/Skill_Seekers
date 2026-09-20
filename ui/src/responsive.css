@@ -1,0 +1,24 @@
+/* Shared layout safeguards; preserve the HUD's existing theme. */
+main > div { min-width: 0; }
+main .grid > * { min-width: 0; }
+main button:focus-visible, main a:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  main .hud-panel { max-width: 100%; }
+  [data-slot="sheet-content"] { max-width: 100vw; }
+  [data-slot="dialog-content"], [data-slot="alert-dialog-content"] {
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
