@@ -384,7 +384,50 @@ def test_json_stdout_preserves_threshold_exit_code(minimal_skill_dir, capsys):
     exit_code = main(_quality_args(minimal_skill_dir, json=True, threshold=101.0))
 
     assert exit_code == 1
-    json.loads(capsys.readouterr().out)
+    captured = capsys.readouterr()
+    json.loads(captured.out)
+    # The reason is not dropped, it just stays off stdout.
+    assert "below the threshold" in captured.err
+
+
+def test_json_with_explicit_output_writes_file_and_keeps_stdout_clean(
+    minimal_skill_dir, tmp_path, capsys
+):
+    from skill_seekers.cli.quality_metrics import main
+
+    out_file = tmp_path / "q.json"
+    exit_code = main(_quality_args(minimal_skill_dir, json=True, output=str(out_file)))
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)  # exactly one document, no "Report saved" line
+    assert json.loads(out_file.read_text()) == payload
+    assert "Report saved" in captured.err
+    assert not (minimal_skill_dir / "quality_report.json").exists()
+
+
+def test_json_error_paths_stay_json(tmp_path, capsys, minimal_skill_dir):
+    from skill_seekers.cli.quality_metrics import main
+
+    exit_code = main(_quality_args(tmp_path / "missing", json=True))
+    assert exit_code == 1
+    assert "Directory not found" in json.loads(capsys.readouterr().out)["error"]
+
+    # A failed --output write fails before anything reaches stdout.
+    bad = tmp_path / "no-such-dir" / "q.json"
+    exit_code = main(_quality_args(minimal_skill_dir, json=True, output=str(bad)))
+    assert exit_code == 1
+    assert "Could not write report" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_report_and_json_are_mutually_exclusive():
+    import pytest
+
+    from skill_seekers.cli.parsers.quality_parser import QualityParser
+
+    parser = QualityParser().build_standalone()
+    with pytest.raises(SystemExit):
+        parser.parse_args(["dir", "--report", "--json"])
 
 
 def test_main_report_only_exits_zero(minimal_skill_dir):
