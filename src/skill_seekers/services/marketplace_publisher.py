@@ -8,7 +8,6 @@ import contextlib
 import json
 import logging
 import os
-import re
 import shutil
 from pathlib import Path
 
@@ -221,14 +220,9 @@ class MarketplacePublisher:
         Raises:
             ValueError: If name contains invalid characters
         """
-        if not name or not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$", name):
-            raise ValueError(
-                f"Invalid skill name '{name}'. "
-                "Must start with alphanumeric and contain only alphanumeric, hyphens, underscores, or dots."
-            )
-        if ".." in name or "/" in name or "\\" in name:
-            raise ValueError(f"Invalid skill name '{name}'. Path traversal characters not allowed.")
-        return name
+        from skill_seekers.services.path_safety import validate_path_segment
+
+        return validate_path_segment(name, label="skill name")
 
     def _read_frontmatter(self, skill_md_path: Path) -> dict:
         """Parse YAML frontmatter from SKILL.md."""
