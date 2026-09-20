@@ -9,7 +9,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from skill_seekers.cli.agent_client import AgentClient, provider_supports_images
+from skill_seekers.cli.agent_client import (
+    AgentClient,
+    provider_supports_images,
+    provider_supports_video,
+)
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
@@ -86,6 +90,40 @@ def test_openai_protocol_sends_image_data_url(monkeypatch, tmp_path):
     assert content[0] == {"type": "text", "text": "Extract text"}
     assert content[1]["type"] == "image_url"
     assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+
+
+def test_minimax_m3_sends_video_and_thinking_mode(monkeypatch, tmp_path):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    response = client.client.chat.completions.create.return_value
+    response.choices = [
+        type(
+            "Choice",
+            (),
+            {"finish_reason": "stop", "message": type("Message", (), {"content": "code"})()},
+        )()
+    ]
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"video-data")
+
+    assert provider_supports_video("minimax") is True
+    assert client.call_with_video("Read this clip", video_path, thinking="disabled") == "code"
+
+    request = client.client.chat.completions.create.call_args.kwargs
+    content = request["messages"][-1]["content"]
+    assert content[0] == {"type": "text", "text": "Read this clip"}
+    assert content[1]["type"] == "video_url"
+    assert content[1]["video_url"]["url"].startswith("data:video/mp4;base64,")
+    assert request["extra_body"] == {"thinking": {"type": "disabled"}}
+
+
+def test_minimax_m2_7_rejects_video_before_request(monkeypatch, tmp_path):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    client.model = "MiniMax-M2.7"
+    video_path = tmp_path / "clip.mp4"
+    video_path.write_bytes(b"video-data")
+
+    assert client.call_with_video("Read this clip", video_path) is None
+    client.client.chat.completions.create.assert_not_called()
 
 
 def test_anthropic_protocol_sends_base64_image_block(monkeypatch, tmp_path):
@@ -264,3 +302,97 @@ def test_auto_vision_prefers_anthropic_then_falls_through(monkeypatch):
     assert _auto_vision_provider() == "minimax"
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     assert _auto_vision_provider() == "anthropic"
+
+
+def _ok_response(client, text="code"):
+    response = client.client.chat.completions.create.return_value
+    response.choices = [
+        type(
+            "Choice",
+            (),
+            {"finish_reason": "stop", "message": type("Message", (), {"content": text})()},
+        )()
+    ]
+
+
+def test_thinking_env_var_is_resolved_once_and_sent(monkeypatch):
+    monkeypatch.setenv("MINIMAX_THINKING", "Adaptive")
+    client = _mock_minimax_client(monkeypatch, "openai")
+    assert client.thinking == "adaptive"  # validated + normalised at construction
+    _ok_response(client)
+    monkeypatch.setenv("MINIMAX_THINKING", "disabled")  # must not be re-read per request
+    assert client.call("hi") == "code"
+    request = client.client.chat.completions.create.call_args.kwargs
+    assert request["extra_body"] == {"thinking": {"type": "adaptive"}}
+
+
+def test_invalid_thinking_env_fails_at_construction(monkeypatch):
+    monkeypatch.setenv("MINIMAX_THINKING", "off")
+    with pytest.raises(ValueError, match="thinking mode 'off'"):
+        _mock_minimax_client(monkeypatch, "openai")
+
+
+def test_invalid_thinking_argument_raises_before_any_request(monkeypatch):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    with pytest.raises(ValueError, match="choose one of: adaptive, disabled"):
+        client.call("hi", thinking="none")
+    client.client.chat.completions.create.assert_not_called()
+
+
+def test_thinking_is_dropped_with_warning_under_anthropic_protocol(monkeypatch, caplog):
+    monkeypatch.setenv("MINIMAX_THINKING", "disabled")
+    client = _mock_minimax_client(monkeypatch, "anthropic")
+    response = client.client.messages.create.return_value
+    response.stop_reason = "end_turn"
+    response.content = [type("Block", (), {"text": "ok"})()]
+    with caplog.at_level("WARNING"):
+        assert client.call("hi") == "ok"
+    assert "Thinking mode 'disabled' ignored" in caplog.text
+    assert "extra_body" not in client.client.messages.create.call_args.kwargs
+
+
+def test_video_rejected_under_anthropic_protocol_with_clear_reason(monkeypatch, tmp_path, caplog):
+    client = _mock_minimax_client(monkeypatch, "anthropic")
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"video")
+    with caplog.at_level("WARNING"):
+        assert client.call_with_video("x", clip) is None
+    assert "OpenAI-compatible protocol" in caplog.text
+    client.client.messages.create.assert_not_called()
+
+
+def test_video_size_guard_stops_before_reading_or_sending(monkeypatch, tmp_path, caplog):
+    from skill_seekers.cli import agent_client as ac
+
+    client = _mock_minimax_client(monkeypatch, "openai")
+    monkeypatch.setitem(ac.PROVIDER_META["minimax"], "video_max_bytes", 10)
+    clip = tmp_path / "big.mp4"
+    clip.write_bytes(b"x" * 11)
+    with caplog.at_level("ERROR"):
+        assert client.call_with_video("x", clip) is None
+    assert "accepts at most" in caplog.text
+    client.client.chat.completions.create.assert_not_called()
+
+
+def test_video_model_gate_is_registry_driven_and_case_insensitive(monkeypatch, tmp_path):
+    client = _mock_minimax_client(monkeypatch, "openai")
+    client.model = "minimax-m3"  # the API accepts lowercase ids
+    _ok_response(client)
+    clip = tmp_path / "clip.mov"
+    clip.write_bytes(b"video")
+    assert client.call_with_video("x", clip) == "code"
+    content = client.client.chat.completions.create.call_args.kwargs["messages"][-1]["content"]
+    assert content[1]["video_url"]["url"].startswith("data:video/quicktime;base64,")
+
+
+def test_media_type_fallback_matches_stdlib_values(monkeypatch):
+    from pathlib import Path
+
+    from skill_seekers.cli.agent_client import _media_type
+
+    monkeypatch.setattr(
+        "skill_seekers.cli.agent_client.mimetypes.guess_type", lambda _n: (None, None)
+    )
+    assert _media_type(Path("a.avi"), "video/mp4") == "video/x-msvideo"
+    assert _media_type(Path("a.mkv"), "video/mp4") == "video/x-matroska"
+    assert _media_type(Path("a.unknown"), "video/mp4") == "video/mp4"
