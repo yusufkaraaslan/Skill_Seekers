@@ -1,6 +1,5 @@
 """Tests for the bootstrap skill script."""
 
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -48,29 +47,11 @@ class TestBootstrapSkillScript:
         assert "name: skill-seekers" in content, "Header must have skill name"
         assert "description:" in content, "Header must have description"
 
-    @pytest.mark.slow
-    def test_bootstrap_script_runs(self, project_root):
-        """Test that bootstrap script runs successfully.
-
-        Note: This test is slow as it runs full codebase analysis.
-        Run with: pytest -m slow
-        """
-        script = project_root / "scripts" / "bootstrap_skill.sh"
-
-        # Run script (skip if uv not available)
-        result = subprocess.run(
-            ["bash", str(script)],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minute timeout
-        )
-
-        # Check script completed
+    def test_bootstrap_script_runs(self, bootstrap_artifact):
+        """Run the real analysis against the session's isolated small project."""
+        result, output_dir = bootstrap_artifact
         assert result.returncode == 0, f"Script failed: {result.stderr}"
 
-        # Check outputs exist (directory named 'skill-seekers' for Claude Code)
-        output_dir = project_root / "output" / "skill-seekers"
         assert output_dir.exists(), "Output directory should be created"
 
         skill_md = output_dir / "SKILL.md"
@@ -80,3 +61,71 @@ class TestBootstrapSkillScript:
         content = skill_md.read_text()
         assert "## Prerequisites" in content, "SKILL.md should have header prepended"
         assert "pip install skill-seekers" in content, "SKILL.md should have install instructions"
+
+    def test_analysis_failure_preserves_existing_output(self, project_root, tmp_path):
+        """A failed CLI must propagate its status and leave the previous skill intact."""
+        from tests.subprocess_helpers import run_process_tree
+
+        source = tmp_path / "source"
+        source.mkdir()
+        output = tmp_path / "skill"
+        output.mkdir()
+        (output / "SKILL.md").write_text("existing skill")
+        fake_python = tmp_path / "failing-python"
+        fake_python.write_text("#!/usr/bin/env bash\nexit 3\n")
+        fake_python.chmod(0o755)
+        result = run_process_tree(
+            [
+                "bash",
+                str(project_root / "scripts/bootstrap_skill.sh"),
+                "--source",
+                str(source),
+                "--output",
+                str(output),
+                "--no-sync",
+                "--python",
+                str(fake_python),
+            ],
+            timeout=10,
+        )
+        assert result.returncode == 3
+        assert (output / "SKILL.md").read_text() == "existing skill"
+        assert not list(tmp_path.glob("skill.tmp.*"))
+
+    @pytest.mark.parametrize("extra,expected", [([], "2"), (["--enhance-level", "0"], "0")])
+    def test_enhance_level_defaults_to_two(self, project_root, tmp_path, extra, expected):
+        """The shipped skill is enhanced by default; tests opt out explicitly."""
+        import os
+        from tests.subprocess_helpers import run_process_tree
+
+        source = tmp_path / "source"
+        source.mkdir()
+        argv_file = tmp_path / "argv.txt"
+        fake_python = tmp_path / "recording-python"
+        fake_python.write_text(
+            "#!/usr/bin/env bash\n"
+            'printf \'%s\\n\' "$@" > "$ARGV_FILE"\n'
+            "while (( $# )); do if [[ $1 == --output ]]; then out=$2; fi; shift; done\n"
+            'mkdir -p "$out"\n'
+            "printf -- '---\\nname: x\\ndescription: y\\n---\\n\\n# body\\n' > \"$out/SKILL.md\"\n"
+        )
+        fake_python.chmod(0o755)
+        result = run_process_tree(
+            [
+                "bash",
+                str(project_root / "scripts/bootstrap_skill.sh"),
+                "--source",
+                str(source),
+                "--output",
+                str(tmp_path / "skill"),
+                "--no-sync",
+                "--python",
+                str(fake_python),
+                *extra,
+            ],
+            env={**os.environ, "ARGV_FILE": str(argv_file)},
+            timeout=10,
+        )
+        assert result.returncode == 0, result.stderr
+        argv = argv_file.read_text().splitlines()
+        assert argv[argv.index("--enhance-level") + 1] == expected

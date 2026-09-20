@@ -11,17 +11,51 @@ from pathlib import Path
 
 from skill_seekers.cli.estimate_pages import estimate_pages
 
-pytestmark = [pytest.mark.integration, pytest.mark.network]
+pytestmark = pytest.mark.integration
+
+
+@pytest.fixture
+def local_docs_site():
+    """Serve a finite documentation site without relying on public websites."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from threading import Thread
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_HEAD(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+
+        def do_GET(self):
+            self.do_HEAD()
+            self.wfile.write(b'<html><a href="/one">One</a><a href="/two">Two</a></html>')
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 class TestEstimatePages(unittest.TestCase):
     """Test estimate_pages function"""
 
+    @pytest.fixture(autouse=True)
+    def _local_site(self, local_docs_site):
+        self.base_url = local_docs_site
+
     def test_estimate_pages_with_minimal_config(self):
         """Test estimation with minimal configuration"""
-        config = {"name": "test", "base_url": "https://example.com/", "rate_limit": 0.1}
+        config = {"name": "test", "base_url": self.base_url, "rate_limit": 0.1}
 
-        # This will make real HTTP request to example.com
+        # Exercise real HEAD and GET requests against the local fixture
         # We use low max_discovery to keep test fast
         result = estimate_pages(config, max_discovery=2, timeout=5)
 
@@ -34,7 +68,7 @@ class TestEstimatePages(unittest.TestCase):
 
     def test_estimate_pages_returns_discovered_count(self):
         """Test that result contains discovered page count"""
-        config = {"name": "test", "base_url": "https://example.com/", "rate_limit": 0.1}
+        config = {"name": "test", "base_url": self.base_url, "rate_limit": 0.1}
 
         result = estimate_pages(config, max_discovery=1, timeout=5)
 
@@ -43,7 +77,7 @@ class TestEstimatePages(unittest.TestCase):
 
     def test_estimate_pages_respects_max_discovery(self):
         """Test that estimation respects max_discovery limit"""
-        config = {"name": "test", "base_url": "https://example.com/", "rate_limit": 0.1}
+        config = {"name": "test", "base_url": self.base_url, "rate_limit": 0.1}
 
         result = estimate_pages(config, max_discovery=3, timeout=5)
 
@@ -54,8 +88,8 @@ class TestEstimatePages(unittest.TestCase):
         """Test estimation with custom start_urls"""
         config = {
             "name": "test",
-            "base_url": "https://example.com/",
-            "start_urls": ["https://example.com/"],
+            "base_url": self.base_url,
+            "start_urls": [self.base_url],
             "rate_limit": 0.1,
         }
 
@@ -188,6 +222,10 @@ class TestEstimatePagesCLI(unittest.TestCase):
 class TestEstimatePagesWithRealConfig(unittest.TestCase):
     """Test estimation with real config files (if available)"""
 
+    @pytest.fixture(autouse=True)
+    def _local_site(self, local_docs_site):
+        self.base_url = local_docs_site
+
     def test_estimate_with_real_config_file(self):
         """Test estimation using a real config file (if exists)"""
         config_path = Path("configs/react.json")
@@ -198,6 +236,8 @@ class TestEstimatePagesWithRealConfig(unittest.TestCase):
         with open(config_path) as f:
             config = json.load(f)
 
+        config.update(base_url=self.base_url, start_urls=[self.base_url], rate_limit=0)
+        config["url_patterns"] = {"include": [], "exclude": []}
         # Use very low max_discovery to keep test fast
         result = estimate_pages(config, max_discovery=3, timeout=5)
 

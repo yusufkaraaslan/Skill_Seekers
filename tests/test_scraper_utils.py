@@ -168,3 +168,47 @@ class TestReferenceFilename(unittest.TestCase):
     def test_missing_numbers_fall_back_to_index(self):
         pages = [{}, {}]
         self.assertEqual(reference_filename(pages, 1, 2, "x"), "x_s1-s2.md")
+
+
+class TestReadReferenceMarkdown:
+    """Bounded reader shared by the adaptors and the unified enhancement path."""
+
+    def test_keys_are_relative_posix_paths_and_nested_same_names_do_not_collide(self, tmp_path):
+        from skill_seekers.cli.scraper_utils import read_reference_markdown
+
+        (tmp_path / "pdf" / "0_a" / "references").mkdir(parents=True)
+        (tmp_path / "pdf" / "1_b" / "references").mkdir(parents=True)
+        (tmp_path / "pdf" / "0_a" / "references" / "index.md").write_text("A")
+        (tmp_path / "pdf" / "1_b" / "references" / "index.md").write_text("B")
+        (tmp_path / "top.md").write_text("T")
+
+        refs = read_reference_markdown(tmp_path)
+
+        assert refs == {
+            "pdf/0_a/references/index.md": "A",
+            "pdf/1_b/references/index.md": "B",
+            "top.md": "T",
+        }
+
+    def test_total_and_per_file_caps(self, tmp_path):
+        from skill_seekers.cli.scraper_utils import read_reference_markdown
+
+        (tmp_path / "a.md").write_text("x" * 50)
+        (tmp_path / "b.md").write_text("y" * 50)
+        (tmp_path / "c.md").write_text("z" * 50)
+
+        refs = read_reference_markdown(tmp_path, max_chars=80, max_file_chars=30)
+
+        # a and b are read (a alone is under the cap, b pushes it over), c is skipped
+        assert list(refs) == ["a.md", "b.md"]
+        assert refs["a.md"].startswith("x" * 30) and refs["a.md"].endswith("...(truncated)")
+
+    def test_missing_dir_and_unreadable_file(self, tmp_path):
+        from skill_seekers.cli.scraper_utils import read_reference_markdown
+
+        assert read_reference_markdown(tmp_path / "nope") == {}
+        (tmp_path / "ok.md").write_text("fine")
+        (tmp_path / "bad.md").write_bytes(b"\xff\xfe not utf8")
+        refs = read_reference_markdown(tmp_path)
+        assert refs["ok.md"] == "fine"
+        assert "bad.md" in refs  # decoded with errors="ignore", never aborts the read

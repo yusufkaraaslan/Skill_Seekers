@@ -94,8 +94,12 @@ skill-seekers upload output/my-skill-claude.zip
 # Install complete workflow
 skill-seekers install --config react --target claude
 
+# Preview how a source will be detected (no skill created)
+skill-seekers detect https://docs.djangoproject.com/ --json
+
 # Doctor / diagnostics
 skill-seekers doctor
+skill-seekers doctor --json   # machine-readable, for CI and agents
 ```
 
 ---

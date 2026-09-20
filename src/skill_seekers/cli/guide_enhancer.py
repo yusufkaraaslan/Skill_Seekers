@@ -77,6 +77,8 @@ class GuideEnhancer:
 
         self._agent = AgentClient(mode=mode)
         self.mode = self._agent.mode
+        if self.mode == "none":
+            return
 
         if self._agent.is_available():
             self._agent.log_mode()

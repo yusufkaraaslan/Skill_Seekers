@@ -47,6 +47,13 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "DIR",
         },
     },
+    "index": {
+        "flags": ("--index",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Build an optional SQLite search index for generated reference markdown",
+        },
+    },
     # Enhancement arguments
     "enhance_level": {
         "flags": ("--enhance-level",),

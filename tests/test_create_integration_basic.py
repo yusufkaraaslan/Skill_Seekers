@@ -4,6 +4,8 @@ Tests that the create command properly detects source types
 and routes to the correct scrapers without actually scraping.
 """
 
+import json
+
 import pytest
 
 
@@ -185,6 +187,126 @@ class TestExecutionContextIntegration:
 
         ExecutionContext.reset()
 
+    def test_execution_context_preserves_index_flag(self):
+        """The universal --index setting is available to the centralized flow."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+        import argparse
+
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(index=True))
+
+        assert ctx.output.index is True
+
+        ExecutionContext.reset()
+
+    def test_execution_context_reads_index_and_output_dir_from_simple_web_config(self, tmp_path):
+        """The opt-in key must work for single-source config files too, not only unified ones."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        config_path = tmp_path / "react.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "name": "react",
+                    "base_url": "https://react.dev",
+                    "index": True,
+                    "output_dir": "skills/react",
+                }
+            ),
+            encoding="utf-8",
+        )
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(config_path=str(config_path))
+
+        assert ctx.output.index is True
+        assert ctx.output.output_dir == "skills/react"
+
+        ExecutionContext.reset()
+
+    def test_cli_output_overrides_config_output_dir(self, tmp_path):
+        import argparse
+
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        config_path = tmp_path / "skill.json"
+        config_path.write_text(
+            json.dumps({"name": "example", "output_dir": "skills/example", "sources": []}),
+            encoding="utf-8",
+        )
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(
+            args=argparse.Namespace(output="elsewhere/"), config_path=str(config_path)
+        )
+        assert ctx.output.output_dir == "elsewhere/"
+        ExecutionContext.reset()
+
+    def test_post_steps_resolve_the_scrapers_skill_dir(self, tmp_path):
+        """Enhancement and indexing must target the directory the scraper wrote to."""
+        from skill_seekers.cli.create_command import CreateCommand
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        config_path = tmp_path / "skill.json"
+        config_path.write_text(
+            json.dumps(
+                {"name": "godot", "index": True, "output_dir": "skills/godot/", "sources": []}
+            ),
+            encoding="utf-8",
+        )
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(config_path=str(config_path))
+        command = CreateCommand.__new__(CreateCommand)
+        command.source_info = None
+
+        # config output_dir wins, trailing separator stripped (same rule as the converters)
+        assert str(command._resolve_skill_dir(ctx)) == "skills/godot"
+
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(
+            config_path=str(tmp_path / "nope.json") if False else None,
+            args=argparse_namespace(),
+        )
+        command.source_info = None
+        ctx.output.name = "fallback"
+        assert str(command._resolve_skill_dir(ctx)) == "output/fallback"
+        ExecutionContext.reset()
+
+    def test_build_index_failure_is_logged_not_raised(self, tmp_path, caplog):
+        import logging
+        from unittest.mock import patch
+
+        from skill_seekers.cli.create_command import CreateCommand
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(args=argparse_namespace(output=str(tmp_path), index=True))
+        command = CreateCommand.__new__(CreateCommand)
+        command.source_info = None
+
+        with (
+            patch("skill_seekers.cli.skill_indexer.index_skill", side_effect=OSError("locked")),
+            caplog.at_level(logging.WARNING, logger="skill_seekers.cli.create_command"),
+        ):
+            command._build_index(ctx)  # must not raise: the skill is already complete
+
+        assert "Search index build failed" in caplog.text
+        ExecutionContext.reset()
+
+    def test_execution_context_reads_unified_config_index_flag(self, tmp_path):
+        """A unified config can opt in without changing its default output path."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        config_path = tmp_path / "skill.json"
+        config_path.write_text(
+            json.dumps({"name": "example", "index": True, "sources": []}),
+            encoding="utf-8",
+        )
+        ExecutionContext.reset()
+        ctx = ExecutionContext.initialize(config_path=str(config_path))
+
+        assert ctx.output.index is True
+
+        ExecutionContext.reset()
+
 
 class TestUnifiedCommands:
     """Test that unified commands still work."""
@@ -239,3 +361,9 @@ class TestRemovedCommands:
         # Should fail - command removed
         assert result.returncode == 2
         assert "invalid choice" in result.stderr
+
+
+def argparse_namespace(**kwargs):
+    import argparse
+
+    return argparse.Namespace(**kwargs)
