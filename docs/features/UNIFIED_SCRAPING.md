@@ -411,7 +411,7 @@ output/skill-name/
 │   │   └── index.md
 │   ├── <source-type>/           # Other converter-backed sources
 │   │   ├── index.md
-│   │   ├── <source>_data.json # Raw extracted data
+│   │   ├── 0_<source>_data.json # Raw extracted data
 │   │   └── 0_<source>/        # Readable references + assets
 │   ├── api/                     # Merged API reference
 │   │   └── merged_api.md
@@ -425,6 +425,15 @@ each input's generated reference tree in its own indexed namespace. This avoids
 filename collisions when multiple inputs contain files such as `content.md` and
 keeps relative links from the Markdown to adjacent assets intact. Video sources
 use the same layout and preserve adjacent visual-extraction `frames/` as well.
+The namespace is `<scrape index>_<sanitized id>`, so URL or path ids are
+filesystem-safe and two inputs with the same file name stay apart. Links in the
+synthesized SKILL.md are rewritten to these locations.
+
+Every build recreates the directories it owns under `references/`
+(`documentation/`, `github/`, `pdf/`, the converter-backed types, `api/`,
+`codebase_analysis/`, `conflicts.md`), so a source removed from the config
+cannot leave stale content behind. Files you keep under `references/` outside
+those entries are left untouched.
 
 ### SKILL.md Format
 

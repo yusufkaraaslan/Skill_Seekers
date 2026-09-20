@@ -303,6 +303,10 @@ class TestScrapeGithub:
         entry = scraper.scraped_data["github"][0]
         assert entry["repo"] == "user/myrepo"
         assert entry["data"] == gh_data
+        # Same record shape as the skip_scrape loader (both derive it from _sub_skill_name)
+        assert entry["refs_dir"] == str(
+            Path(scraper.sources_dir) / "test_unified_github_0_user_myrepo" / "references"
+        )
 
     def test_source_counter_incremented(self, tmp_path, monkeypatch):
         scraper = _make_scraper(tmp_path=tmp_path)
