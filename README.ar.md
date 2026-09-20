@@ -28,7 +28,11 @@
 ## 💛 الرعاة
 
 <!-- SPONSORS:START -->
+### Bronze Sponsors
 
+<p align="center">
+  <a href="https://fluxionai.world/register?utm_source=github&utm_medium=sponsor&utm_campaign=skillseekers"><img src="docs/assets/sponsors/fluxion-ai.png" alt="Fluxion AI" width="100"></a><br/><sub><b>Sponsor — Bronze</b></sub>
+</p>
 <!-- SPONSORS:END -->
 
 **[كن راعيًا](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)

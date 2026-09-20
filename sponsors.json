@@ -7,6 +7,13 @@
   "platinum": [],
   "gold": [],
   "silver": [],
-  "bronze": [],
+  "bronze": [
+    {
+      "name": "Fluxion AI",
+      "url": "https://fluxionai.world/register?utm_source=github&utm_medium=sponsor&utm_campaign=skillseekers",
+      "logo": "docs/assets/sponsors/fluxion-ai.png",
+      "since": "September 2026"
+    }
+  ],
   "supporters": []
 }
