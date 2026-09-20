@@ -24,7 +24,11 @@ English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국�
 ## 💛 Sponsors
 
 <!-- SPONSORS:START -->
+### Bronze Sponsors
 
+<p align="center">
+  <a href="https://fluxionai.world/register?utm_source=github&utm_medium=sponsor&utm_campaign=skillseekers"><img src="docs/assets/sponsors/fluxion-ai.png" alt="Fluxion AI" width="100"></a><br/><sub><b>Sponsor — Bronze</b></sub>
+</p>
 <!-- SPONSORS:END -->
 
 **[Become a sponsor](SPONSORSHIP.md)** · [GitHub Sponsors](https://github.com/sponsors/yusufkaraaslan)
