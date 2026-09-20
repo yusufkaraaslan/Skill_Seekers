@@ -301,10 +301,18 @@ class ExecutionContext(BaseModel):
         output = DEFAULTS["output"]
         analysis = DEFAULTS["analysis"]
 
+        # The level a user set with `skill-seekers config` sits between the
+        # shipped default and everything explicit (config file, CLI flag).
+        # It was honoured until the unified `create` command (Feb 2026) and
+        # silently dropped since, while `skill-seekers config` kept showing it.
+        from skill_seekers.cli.config_manager import ConfigManager
+
+        default_level = ConfigManager.read_user_default_enhance_level(enhancement["level"])
+
         return {
             "enhancement": {
                 "enabled": enhancement["enabled"],
-                "level": enhancement["level"],
+                "level": default_level,
                 # Env-var-based mode detection (lowest priority — CLI and config override this)
                 "mode": "api"
                 if any(

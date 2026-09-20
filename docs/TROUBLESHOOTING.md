@@ -445,6 +445,23 @@ curl https://api.anthropic.com/v1/messages \
   -d '{"model":"claude-sonnet-4.5","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}'
 ```
 
+### Issue: `skill-seekers-enhance: error: unrecognized arguments: --enhance-level`
+
+**Symptoms:** `skill-seekers create <url>` finishes with `⚠ Enhancement failed, but skill was still built` and the log shows `skill-seekers-enhance: error: unrecognized arguments: --enhance-level 2`. The skill is generated but `SKILL.md` is not AI-enhanced.
+
+**Cause:** Skill Seekers **3.4.0 and earlier** shelled out from the scrapers to `skill-seekers-enhance` with a flag that command never accepted. Since 3.5.0 enhancement runs inside `create` and this call no longer exists.
+
+**Solution:** upgrade.
+
+```bash
+pip install --upgrade skill-seekers
+skill-seekers doctor   # confirms the installed version
+```
+
+On 3.4.0 or earlier, run the enhancement by hand as a workaround: `skill-seekers-enhance output/<name>/` (without `--enhance-level`).
+
+---
+
 ### Issue: Enhancement Hangs/Timeouts
 
 **Symptoms:**

@@ -390,13 +390,13 @@ skill-seekers create tests/ --enhance-level 3
 skill-seekers create tests/ --enhance-level 0
 ```
 
-**Issue: Want to skip enhancement for specific guides**
+**Issue: Want to generate guides without AI, then enhance later**
 ```bash
 # Generate basic guides first
 skill-seekers-how-to-guides examples.json --ai-mode none
 
-# Then enhance only specific guides manually
-skill-seekers-enhance output/codebase/tutorials/user_management.md
+# Then enhance the skill (enhance works on the skill directory, not on a single guide)
+skill-seekers enhance output/codebase/
 ```
 
 ---

@@ -654,3 +654,61 @@ class TestExecutionContextDefaults:
         # Analysis defaults
         assert ctx.analysis.depth == "surface"
         assert ctx.analysis.skip_patterns is False
+
+
+class TestUserDefaultEnhanceLevel:
+    """`skill-seekers config` default level: honoured, but never above explicit input."""
+
+    def setup_method(self):
+        ExecutionContext.reset()
+
+    def teardown_method(self):
+        ExecutionContext.reset()
+
+    @staticmethod
+    def _user_config(tmp_path, monkeypatch, level):
+        from skill_seekers.cli.config_manager import ConfigManager
+
+        cfg = tmp_path / "config.json"
+        cfg.write_text(json.dumps({"ai_enhancement": {"default_enhance_level": level}}))
+        monkeypatch.setattr(ConfigManager, "CONFIG_FILE", cfg)
+        return cfg
+
+    def test_shipped_default_when_no_user_config(self, tmp_path, monkeypatch):
+        from skill_seekers.cli.config_manager import ConfigManager
+
+        monkeypatch.setattr(ConfigManager, "CONFIG_FILE", tmp_path / "missing.json")
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(enhance_level=None))
+        assert ctx.enhancement.level == 2
+        assert not (tmp_path / "missing.json").exists()  # side-effect free
+
+    def test_user_default_is_honoured(self, tmp_path, monkeypatch):
+        self._user_config(tmp_path, monkeypatch, 1)
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(enhance_level=None))
+        assert ctx.enhancement.level == 1
+
+    def test_explicit_flag_beats_user_default(self, tmp_path, monkeypatch):
+        self._user_config(tmp_path, monkeypatch, 1)
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(enhance_level=3))
+        assert ctx.enhancement.level == 3
+
+    def test_config_file_level_beats_user_default(self, tmp_path, monkeypatch):
+        self._user_config(tmp_path, monkeypatch, 1)
+        skill_cfg = tmp_path / "skill.json"
+        skill_cfg.write_text(json.dumps({"name": "x", "sources": [], "enhancement": {"level": 0}}))
+        ctx = ExecutionContext.initialize(
+            args=argparse.Namespace(enhance_level=None), config_path=str(skill_cfg)
+        )
+        assert ctx.enhancement.level == 0
+
+    @pytest.mark.parametrize("bad", [7, "2", None, -1])
+    def test_invalid_user_value_falls_back(self, tmp_path, monkeypatch, bad):
+        self._user_config(tmp_path, monkeypatch, bad)
+        ctx = ExecutionContext.initialize(args=argparse.Namespace(enhance_level=None))
+        assert ctx.enhancement.level == 2
+
+    def test_create_parser_has_no_hard_coded_level_default(self):
+        """Explicit `--enhance-level 2` must be distinguishable from "not given"."""
+        from skill_seekers.cli.arguments.create import UNIVERSAL_ARGUMENTS
+
+        assert UNIVERSAL_ARGUMENTS["enhance_level"]["kwargs"]["default"] is None

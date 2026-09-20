@@ -32,6 +32,22 @@ def anyio_backend():
 
 
 @pytest.fixture(autouse=True)
+def _isolate_user_config(monkeypatch, tmp_path_factory):
+    """Never let a developer's real ~/.config/skill-seekers/config.json leak into tests.
+
+    ExecutionContext now reads the user's default enhancement level from it,
+    so a machine with `default_enhance_level: 1` persisted would fail every
+    "default is 2" assertion. Tests that need a user config point
+    ConfigManager.CONFIG_FILE at their own file.
+    """
+    from skill_seekers.cli.config_manager import ConfigManager
+
+    monkeypatch.setattr(
+        ConfigManager, "CONFIG_FILE", tmp_path_factory.mktemp("user-config") / "config.json"
+    )
+
+
+@pytest.fixture(autouse=True)
 def _reset_execution_context():
     """Reset the ExecutionContext singleton before and after every test.
 
