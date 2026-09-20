@@ -5,7 +5,8 @@ Tests for benchmarking suite.
 import pytest
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 
 # Skip all tests if psutil is not installed
 pytest.importorskip("psutil")
@@ -366,33 +367,48 @@ class TestBenchmarkRunner:
         assert len(saved_files) == 2
 
     def test_compare_benchmarks(self, tmp_path):
-        """Test comparing benchmarks."""
+        """Test comparing benchmarks.
+
+        Reports are written with fixed durations instead of being produced by
+        timed runs: ``speedup_factor`` is the ratio of the two wall-clock
+        ``total_duration`` values, which on a loaded CI runner (xdist on
+        macOS) made a shorter sleep measure slower than a longer one.
+        """
+        from skill_seekers.benchmark.models import BenchmarkReport, ComparisonReport
+
         runner = BenchmarkRunner(output_dir=tmp_path)
+        started = datetime(2026, 1, 1, 12, 0, 0)
 
-        # Create baseline
-        def baseline_bench(bench):
-            with bench.timer("operation"):
-                time.sleep(0.1)
+        def write_report(name: str, duration: float) -> Path:
+            report = BenchmarkReport(
+                name=name,
+                started_at=started,
+                finished_at=started + timedelta(seconds=duration),
+                total_duration=duration,
+                timings=[
+                    TimingResult(
+                        operation="operation",
+                        duration=duration,
+                        iterations=1,
+                        avg_duration=duration,
+                    )
+                ],
+            )
+            path = tmp_path / f"{name}.json"
+            path.write_text(report.model_dump_json(indent=2))
+            return path
 
-        runner.run("baseline", baseline_bench, save=True)
-        baseline_path = list(tmp_path.glob("baseline_*.json"))[0]
-
-        # Create faster version
-        def improved_bench(bench):
-            with bench.timer("operation"):
-                time.sleep(0.05)
-
-        runner.run("improved", improved_bench, save=True)
-        improved_path = list(tmp_path.glob("improved_*.json"))[0]
+        baseline_path = write_report("baseline", 0.1)
+        improved_path = write_report("improved", 0.05)
 
         # Compare
-        from skill_seekers.benchmark.models import ComparisonReport
-
         comparison = runner.compare(baseline_path, improved_path)
 
         assert isinstance(comparison, ComparisonReport)
-        assert comparison.speedup_factor > 1.0
-        assert len(comparison.improvements) > 0
+        assert comparison.speedup_factor == pytest.approx(2.0)
+        assert len(comparison.improvements) == 1
+        assert "'operation': 100.0% faster" in comparison.improvements[0]
+        assert comparison.regressions == []
 
     def test_list_benchmarks(self, tmp_path):
         """Test listing benchmarks."""
@@ -651,3 +667,36 @@ class TestBenchmarkModels:
 
         assert "100.0% faster" in improvement
         assert "✅" in improvement
+
+
+class TestCpuFreqFallback:
+    """psutil.cpu_freq is absent on some platforms (macOS arm64 with psutil 7.2+)."""
+
+    def test_missing_cpu_freq_attribute(self, monkeypatch):
+        import psutil
+
+        monkeypatch.delattr(psutil, "cpu_freq", raising=False)
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert result.system_info["cpu_freq_mhz"] == 0
+        assert result.system_info["cpu_count"] > 0
+
+    def test_cpu_freq_raises(self, monkeypatch):
+        import psutil
+
+        def boom():
+            raise NotImplementedError("no freq on this platform")
+
+        monkeypatch.setattr(psutil, "cpu_freq", boom, raising=False)
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert result.system_info["cpu_freq_mhz"] == 0
+
+    def test_python_version_is_interpreter_version(self):
+        import sys
+
+        result = BenchmarkResult("test")
+        result.set_system_info()
+        assert (
+            result.system_info["python_version"] == f"{sys.version_info[0]}.{sys.version_info[1]}"
+        )

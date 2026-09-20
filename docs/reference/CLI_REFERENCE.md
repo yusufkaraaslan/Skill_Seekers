@@ -38,6 +38,7 @@
   - [resume](#resume) - Resume interrupted jobs
   - [rss](#rss) - Extract from RSS/Atom feeds
   - [scan](#scan) - AI-detect a project's tech stack and emit per-framework configs
+  - [detect](#detect) - Preview how `create` would classify a source, without creating anything
   - [scrape](#scrape) - Scrape documentation
   - [stream](#stream) - Stream large files
   - [unified](#unified) - Multi-source scraping
@@ -1090,6 +1091,7 @@ skill-seekers quality SKILL_DIRECTORY [options]
 |-------|------|-------------|
 | | `--report` | Generate detailed report |
 | | `--output` | Output path for JSON report |
+| | `--json` | Print the JSON report to stdout (exactly one document; errors as `{"error": ...}`, diagnostics on stderr). No default `quality_report.json` is written; `--output` still saves a copy. Cannot be combined with `--report` |
 | | `--threshold` | Quality gate threshold (0-10). When set, exit non-zero if the skill scores below it; without it the command only reports (exit 0) |
 
 **Examples:**
@@ -1103,6 +1105,9 @@ skill-seekers quality output/react/ --report
 
 # Save report as JSON
 skill-seekers quality output/react/ --output quality.json
+
+# JSON on stdout for pipelines (no file side effect)
+skill-seekers quality output/react/ --json | jq .overall_score.total_score
 
 # Quality gate: fail (non-zero exit) if below threshold
 skill-seekers quality output/react/ --threshold 7.0
@@ -1177,6 +1182,51 @@ skill-seekers create https://blog.example.com/feed.xml --name blog-knowledge
 
 # From local file
 skill-seekers create --feed-path ./feed.rss --name feed-summaries
+```
+
+---
+
+### detect
+
+Preview how `create` would classify and parse a source, without creating anything.
+
+**Purpose:** A read-only pre-flight for scripts, CI and agent workflows. It runs the same resolution stage as `create` — detection **and** validation — so the answer is what the real pipeline would do with that input. Detection needs no network access.
+
+**Usage:**
+
+```bash
+skill-seekers detect <source> [--json]
+```
+
+**Arguments:**
+- `source` (required) - URL, `owner/repo`, local path, or file to inspect
+
+**Options:**
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--json` | off | Machine-readable output on stdout (always JSON, including errors) |
+
+**Output:** the detected `type`, `parsed` fields, `suggested_name`, `raw_input`, plus `valid` and `validation_error`.
+
+**Exit codes:** `0` detected and usable; `2` undetectable **or** detected but unusable (for example a PDF path that does not exist) — the same inputs `create` refuses.
+
+**Examples:**
+
+```bash
+skill-seekers detect facebook/react
+#   Type: github
+#   Suggested name: react
+#   Parsed:
+#     repo: facebook/react
+#   Validation: OK
+
+skill-seekers detect https://docs.djangoproject.com/ --json
+#   {"type": "web", "parsed": {"url": "..."}, "suggested_name": "django", "raw_input": "...", "valid": true, "validation_error": null}
+
+skill-seekers detect ./missing.pdf --json; echo "exit=$?"
+#   {"type": "pdf", ..., "valid": false, "validation_error": "PDF file does not exist: ./missing.pdf"}
+#   exit=2
 ```
 
 ---

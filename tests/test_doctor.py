@@ -18,6 +18,7 @@ from skill_seekers.cli.doctor import (
     check_output_directory,
     check_package_installed,
     check_python_version,
+    main,
     print_report,
     run_all_checks,
 )
@@ -232,3 +233,45 @@ class TestJsonReport:
         payload = json.loads(capsys.readouterr().out)
         assert payload["healthy"] is False
         assert payload["exit_code"] == 1
+
+
+class TestDoctorEntryPoints:
+    """The unified CLI dispatch, the console script and ``python -m`` all reach the same code."""
+
+    _ok = [CheckResult("python", "pass", "3.12")]
+
+    def test_command_class_dispatch_contract(self, capsys):
+        from argparse import Namespace
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok):
+            assert DoctorCommand(Namespace(verbose=True)).execute() == 0
+        assert "python" in capsys.readouterr().out
+
+    def test_main_parses_argv_from_central_parser(self, capsys):
+        with (
+            patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok),
+            patch("skill_seekers.cli.doctor.print_report", return_value=0) as report,
+            patch("sys.argv", ["skill-seekers-doctor", "--verbose"]),
+        ):
+            assert main() == 0
+        assert report.call_args.kwargs["verbose"] is True
+
+    def test_main_accepts_preparsed_namespace(self):
+        from argparse import Namespace
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=self._ok):
+            assert main(Namespace(verbose=False)) == 0
+
+    def test_module_is_runnable(self):
+        """``python -m skill_seekers.cli.doctor`` must run the checks, not silently exit 0."""
+        import subprocess
+        import sys
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "skill_seekers.cli.doctor", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert proc.returncode == 0
+        assert "--verbose" in proc.stdout

@@ -23,7 +23,16 @@ class QualityParser(SubcommandParser):
         # dest must match what quality_metrics.main reads (args.skill_dir);
         # metavar keeps the help display as "skill_directory".
         parser.add_argument("skill_dir", metavar="skill_directory", help="Skill directory path")
-        parser.add_argument("--report", action="store_true", help="Generate detailed report")
+        # --report (human breakdown) and --json (machine-readable stdout) both
+        # own stdout, so they cannot be combined; reject up front rather than
+        # silently dropping one.
+        display = parser.add_mutually_exclusive_group()
+        display.add_argument("--report", action="store_true", help="Generate detailed report")
+        display.add_argument(
+            "--json",
+            action="store_true",
+            help="Print the JSON report to stdout (no default report file; diagnostics on stderr)",
+        )
         # Keep in sync with quality_metrics.main()'s parser — a flag defined there
         # but not here is REJECTED by the unified CLI before main() runs.
         parser.add_argument("--output", help="Output path for JSON report")
