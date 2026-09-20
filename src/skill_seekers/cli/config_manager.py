@@ -5,6 +5,7 @@ Handles multi-profile GitHub tokens, API keys, and application settings.
 Provides secure storage with file permissions and auto-detection capabilities.
 """
 
+import copy
 import json
 import os
 import stat
@@ -49,7 +50,7 @@ class ConfigManager:
         "resume": {"auto_save_interval_seconds": 60, "keep_progress_days": 7},
         "api_keys": {"anthropic": None, "google": None, "openai": None, "moonshot": None},
         "ai_enhancement": {
-            "default_enhance_level": 1,  # Default AI enhancement level (0-3)
+            "default_enhance_level": 2,  # Default AI enhancement level (0-3); matches defaults.json
             "default_agent": None,  # "claude", "gemini", "openai", "kimi", or None (auto-detect)
             "local_batch_size": 20,  # Patterns per CLI agent call (default was 5)
             "local_parallel_workers": 3,  # Concurrent CLI agent calls
@@ -90,7 +91,7 @@ class ConfigManager:
     def _load_config(self) -> dict[str, Any]:
         """Load configuration from file or create default."""
         if not self.config_file.exists():
-            return self.DEFAULT_CONFIG.copy()
+            return copy.deepcopy(self.DEFAULT_CONFIG)
 
         try:
             with open(self.config_file) as f:
@@ -102,13 +103,15 @@ class ConfigManager:
         except (OSError, json.JSONDecodeError) as e:
             print(f"⚠️  Warning: Could not load config file: {e}")
             print("   Using default configuration.")
-            return self.DEFAULT_CONFIG.copy()
+            return copy.deepcopy(self.DEFAULT_CONFIG)
 
     def _merge_with_defaults(self, config: dict[str, Any]) -> dict[str, Any]:
         """Merge loaded config with defaults to ensure all keys exist."""
 
         def deep_merge(default: dict, custom: dict) -> dict:
-            result = default.copy()
+            # deepcopy: nested defaults (github.profiles, api_keys, …) must never
+            # be shared with the class-level DEFAULT_CONFIG or across instances.
+            result = copy.deepcopy(default)
             for key, value in custom.items():
                 if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                     result[key] = deep_merge(result[key], value)
@@ -406,7 +409,24 @@ class ConfigManager:
 
     def get_default_enhance_level(self) -> int:
         """Get default AI enhancement level (0-3)."""
-        return self.config.get("ai_enhancement", {}).get("default_enhance_level", 1)
+        return self.config.get("ai_enhancement", {}).get("default_enhance_level", 2)
+
+    @classmethod
+    def read_user_default_enhance_level(cls, fallback: int) -> int:
+        """Return the user's configured default level without touching the filesystem.
+
+        ``ExecutionContext`` calls this on every ``create`` run, so unlike
+        ``ConfigManager()`` it must not create directories or write a default
+        config file. Anything missing or invalid yields ``fallback``.
+        """
+        try:
+            if not cls.CONFIG_FILE.is_file():
+                return fallback
+            with open(cls.CONFIG_FILE, encoding="utf-8") as f:
+                level = json.load(f).get("ai_enhancement", {}).get("default_enhance_level")
+        except (OSError, ValueError, AttributeError):
+            return fallback
+        return level if isinstance(level, int) and level in (0, 1, 2, 3) else fallback
 
     def set_default_enhance_level(self, level: int):
         """Set default AI enhancement level (0-3)."""

@@ -14,7 +14,11 @@ Single home for small utilities that were copy-pasted across many
   near-identical in the word/pdf/epub/html/pptx/asciidoc/jupyter scrapers).
 """
 
+import logging
 import re
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def reference_filename(
@@ -162,3 +166,44 @@ def extract_table_from_html(table_elem) -> dict | None:
         return None
 
     return {"headers": headers, "rows": rows}
+
+
+def read_reference_markdown(
+    references_dir: Path | str,
+    *,
+    max_chars: int = 200_000,
+    max_file_chars: int = 30_000,
+) -> dict[str, str]:
+    """Read ``*.md`` files under ``references_dir`` into a bounded mapping.
+
+    Single reader shared by the platform adaptors and the unified enhancement
+    path so an enhancement prompt can never grow without limit: each file is
+    capped at ``max_file_chars`` and reading stops once ``max_chars`` have been
+    collected. Unified builds copy whole PDF/EPUB reference trees under
+    ``references/`` (#453), so an unbounded read would exceed any model's
+    context window on a multi-book config.
+
+    Keys are POSIX paths relative to ``references_dir`` so same-name files in
+    different sub-skill namespaces (``pdf/0_a/references/index.md`` vs
+    ``pdf/1_b/references/index.md``) do not overwrite each other. Files are
+    visited in sorted order so truncation is deterministic.
+    """
+    references_dir = Path(references_dir)
+    if not references_dir.exists():
+        return {}
+
+    references: dict[str, str] = {}
+    total_chars = 0
+    for ref_file in sorted(references_dir.rglob("*.md")):
+        if total_chars >= max_chars:
+            break
+        try:
+            content = ref_file.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            logger.warning("Could not read %s: %s", ref_file, exc)
+            continue
+        if len(content) > max_file_chars:
+            content = content[:max_file_chars] + "\n\n...(truncated)"
+        references[ref_file.relative_to(references_dir).as_posix()] = content
+        total_chars += len(content)
+    return references

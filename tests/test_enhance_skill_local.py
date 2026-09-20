@@ -560,45 +560,67 @@ class TestRunOrchestration:
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture
+def background_threads(monkeypatch):
+    """Track and join workers before their test mocks are removed."""
+    import threading
+
+    thread_type = threading.Thread
+    workers = []
+
+    def make_thread(*args, **kwargs):
+        worker = thread_type(*args, **kwargs)
+        workers.append(worker)
+        return worker
+
+    monkeypatch.setattr(threading, "Thread", make_thread)
+    yield workers
+    for worker in workers:
+        worker.join(timeout=3)
+        assert not worker.is_alive(), "background test worker did not finish"
+
+
 class TestRunBackground:
-    def test_background_writes_pending_status(self, tmp_path):
-        """_run_background writes 'pending' status before spawning thread."""
+    def test_background_writes_pending_status(self, tmp_path, background_threads):
+        """Exercise the worker while stubbing the actual agent subprocess boundary."""
+        import subprocess
+
         skill_dir = _make_skill_dir_with_refs(tmp_path)
         enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+        completed = subprocess.CompletedProcess(["claude"], 0, "", "")
+        with patch.object(enhancer, "_run_agent_command", return_value=(completed, None)) as run:
+            assert enhancer._run_background(headless=True, timeout=5)
+            background_threads[0].join(timeout=3)
+            assert not background_threads[0].is_alive()
+            run.assert_called_once()
+            assert enhancer.read_status()["status"] == "completed"
 
-        # Patch _run_headless so the thread finishes quickly without real subprocess
-        with patch.object(enhancer, "_run_headless", return_value=True):
-            enhancer._run_background(headless=True, timeout=5)
+    def test_background_returns_true_immediately(self, tmp_path, background_threads):
+        """The caller returns while the worker is still waiting on the agent."""
+        import subprocess
+        import threading
 
-        # Give background thread a moment
-        import time
-
-        time.sleep(0.1)
-
-        # Status file should exist (written by the worker)
-        data = enhancer.read_status()
-        assert data is not None
-
-    def test_background_returns_true_immediately(self, tmp_path):
-        """_run_background should return True after starting thread, not after completion."""
         skill_dir = _make_skill_dir_with_refs(tmp_path)
         enhancer = LocalSkillEnhancer(skill_dir, agent="claude")
+        entered = threading.Event()
+        release = threading.Event()
 
-        # Delay the headless run to confirm we don't block
-        import time
+        def wait_for_release(*_args, **_kwargs):
+            entered.set()
+            assert release.wait(timeout=3)
+            return subprocess.CompletedProcess(["claude"], 0, "", ""), None
 
-        def _slow_run(*_args, **_kwargs):
-            time.sleep(0.5)
-            return True
-
-        with patch.object(enhancer, "_run_headless", side_effect=_slow_run):
-            start = time.time()
-            result = enhancer._run_background(headless=True, timeout=10)
-            elapsed = time.time() - start
-
-        # Should have returned quickly (not waited for the slow thread)
-        assert result is True
-        assert elapsed < 0.4, f"_run_background took {elapsed:.2f}s - should return immediately"
+        with patch.object(enhancer, "_run_agent_command", side_effect=wait_for_release):
+            try:
+                assert enhancer._run_background(headless=True, timeout=10)
+                assert entered.wait(timeout=2)
+                assert background_threads[0].is_alive()
+                assert enhancer.read_status()["status"] == "running"
+            finally:
+                release.set()
+                for worker in background_threads:
+                    worker.join(timeout=3)
+            assert enhancer.read_status()["status"] == "completed"
 
 
 class TestEnhanceDispatcher:

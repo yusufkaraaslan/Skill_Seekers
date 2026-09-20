@@ -1,8 +1,13 @@
 """Enhance command argument definitions.
 
-This module defines ALL arguments for the enhance command in ONE place.
-Both enhance_command.py (dispatcher), enhance_skill_local.py (standalone),
-and parsers/enhance_parser.py (unified CLI) import and use these definitions.
+This module defines ALL arguments for the ``enhance`` command in ONE place.
+Both enhance_command.py (``skill-seekers-enhance`` / dispatcher) and
+parsers/enhance_parser.py (unified CLI) build their parser from it.
+
+enhance_skill_local.py is NOT built from this table: it is the LOCAL-agent
+worker the MCP server and the install pipeline spawn as a subprocess with a
+deliberately narrower, hand-built parser. Do not assume a flag added here
+reaches it.
 """
 
 import argparse

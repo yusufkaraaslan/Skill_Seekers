@@ -26,9 +26,11 @@ Credits:
 
 import json
 import logging
-import os
 import re
 from pathlib import Path
+from fnmatch import fnmatch
+
+from skill_seekers.cli.file_discovery import walk_project
 from typing import Any
 
 from skill_seekers.cli.api_reference_builder import APIReferenceBuilder
@@ -131,6 +133,7 @@ DEFAULT_EXCLUDED_DIRS = {
     # Python/Node
     "node_modules",
     "venv",
+    ".venv",
     "__pycache__",
     ".git",
     ".svn",
@@ -226,7 +229,7 @@ def should_exclude_dir(dir_name: str, excluded_dirs: set) -> bool:
     Returns:
         True if directory should be excluded
     """
-    return dir_name in excluded_dirs
+    return any(fnmatch(dir_name, pattern) for pattern in excluded_dirs)
 
 
 def walk_directory(
@@ -253,12 +256,7 @@ def walk_directory(
     files = []
     root = Path(root).resolve()
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        current_dir = Path(dirpath)
-
-        # Filter out excluded directories (in-place modification)
-        dirnames[:] = [d for d in dirnames if not should_exclude_dir(d, excluded_dirs)]
-
+    for current_dir, filenames in walk_project(root, excluded_dirs, gitignore_spec):
         for filename in filenames:
             file_path = current_dir / filename
 
@@ -308,12 +306,7 @@ def walk_markdown_files(
     files = []
     root = Path(root).resolve()
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        current_dir = Path(dirpath)
-
-        # Filter out excluded directories (in-place modification)
-        dirnames[:] = [d for d in dirnames if not should_exclude_dir(d, excluded_dirs)]
-
+    for current_dir, filenames in walk_project(root, excluded_dirs, gitignore_spec):
         for filename in filenames:
             file_path = current_dir / filename
 
@@ -1180,7 +1173,11 @@ def analyze_codebase(
         # Detect circular dependencies
         cycles = dep_analyzer.detect_cycles()
         if cycles:
-            logger.warning(f"⚠️  Found {len(cycles)} circular dependencies:")
+            logger.warning(
+                "⚠️  Found %s%d circular dependencies:",
+                "at least " if dep_analyzer.cycles_truncated else "",
+                len(cycles),
+            )
             for i, cycle in enumerate(cycles[:5], 1):  # Show first 5
                 cycle_str = " → ".join(cycle) + f" → {cycle[0]}"
                 logger.warning(f"  {i}. {cycle_str}")

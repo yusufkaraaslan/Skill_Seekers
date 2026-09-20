@@ -404,9 +404,21 @@ pytest tests/ -v
 
 ### Running Tests
 
+Use the development environment (`uv sync`), then install `pytest-timeout` and
+`pytest-xdist` for timed and parallel runs (`uv pip install pytest-timeout pytest-xdist`).
+The guarded runner limits aggregate test-process RSS to 4 GiB and stops its workers
+if available system memory falls below 2 GiB. It cleans up descendant processes
+on exit. These sampled limits are a safety margin, not an operating-system hard cap.
+
 ```bash
-# Run all tests
-python -m pytest tests/ -v
+# Run the complete suite with memory monitoring and per-test timeouts
+python scripts/run_tests_safe.py -- tests/ -v --timeout=120
+
+# Three test phases, defaulting to two workers for the fast phase
+bash scripts/run_tests_fast.sh
+
+# Adjust the process-tree budget when needed
+python scripts/run_tests_safe.py --max-rss-mb 2048 -- tests/ -q --timeout=120
 
 # Run specific test file
 python -m pytest tests/test_mcp_server.py -v
@@ -420,6 +432,10 @@ python -m pytest tests/ --cov=src/skill_seekers --cov-report=term
 - Tests go in the `tests/` directory
 - Test files should start with `test_`
 - Use descriptive test names
+- Run subprocess-based fixtures through `tests.subprocess_helpers.run_process_tree`
+  so timeouts also stop grandchildren. Keep generated artifacts in `tmp_path`.
+- Mock the actual agent/API boundary and join background threads before removing
+  their mocks. Tests must not invoke installed AI CLIs or sync the active environment.
 
 ```python
 def test_config_validation_with_missing_fields():

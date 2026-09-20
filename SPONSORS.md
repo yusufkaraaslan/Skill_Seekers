@@ -7,13 +7,9 @@ Interested? See **[SPONSORSHIP.md](SPONSORSHIP.md)** for tiers and rules, or spo
 > All placements on this page are paid sponsorships and are labelled as such.
 > Sponsorship buys placement, not endorsement - see the rules in SPONSORSHIP.md.
 
-## Launch Partner
+## Bronze Sponsors
 
-- [Atlas Cloud](https://www.atlascloud.ai/) — Launch Partner - predates the tier structure, placement grandfathered outside the standard tiers.
-
-## Silver Sponsors
-
-- [RapidProxy](https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor) — since August 2026
+- [Fluxion AI](https://fluxionai.world/register?utm_source=github&utm_medium=sponsor&utm_campaign=skillseekers) — since September 2026
 
 ## Supporters
 

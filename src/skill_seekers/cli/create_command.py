@@ -7,9 +7,14 @@ to appropriate converter via get_converter().
 import sys
 import logging
 import argparse
+from pathlib import Path
 from typing import Any
 
-from skill_seekers.cli.source_detector import SourceDetector, SourceInfo
+from skill_seekers.cli.source_detector import (
+    SourceDetector,
+    SourceInfo,
+    SourceValidationError,
+)
 from skill_seekers.cli.execution_context import ExecutionContext
 from skill_seekers.cli.skill_converter import get_converter
 from skill_seekers.cli.arguments.create import (
@@ -45,35 +50,21 @@ class CreateCommand:
         Returns:
             Exit code (0 for success, non-zero for error)
         """
-        # 1. Detect source type
+        # 1-2. Detect source type, honour --html-path, validate accessibility.
+        # One shared stage (SourceDetector.resolve) so `skill-seekers detect`
+        # reports exactly what create would do with the same input.
         try:
             detection_input = self._resolve_detection_input()
-            self.source_info = SourceDetector.detect(detection_input)
-            # Honor explicit --html-path: force html mode even if auto-detection
-            # would route to a different scraper (e.g., codebase for a mixed dir).
-            html_path = getattr(self.args, "html_path", None)
-            if html_path and self.source_info.type != "html":
-                logger.info(
-                    "Overriding detected type %r with html (--html-path set)",
-                    self.source_info.type,
-                )
-                import os as _os
-
-                if _os.path.isdir(html_path):
-                    self.source_info = SourceDetector._detect_html_directory(html_path)
-                else:
-                    self.source_info = SourceDetector._detect_html(html_path)
+            self.source_info = SourceDetector.resolve(
+                detection_input, html_path=getattr(self.args, "html_path", None)
+            )
             logger.info(f"Detected source type: {self.source_info.type}")
             logger.debug(f"Parsed info: {self.source_info.parsed}")
+        except SourceValidationError as e:
+            logger.error(f"Source validation failed: {e}")
+            return 1
         except ValueError as e:
             logger.error(str(e))
-            return 1
-
-        # 2. Validate source accessibility
-        try:
-            SourceDetector.validate_source(self.source_info)
-        except ValueError as e:
-            logger.error(f"Source validation failed: {e}")
             return 1
 
         # 3. Initialize ExecutionContext with source info
@@ -114,6 +105,11 @@ class CreateCommand:
 
         # 7. Centralized workflows
         self._run_workflows()
+
+        # 8. Optional structured index. This runs after enhancement and
+        # workflows so indexed sections always reflect the final markdown.
+        if ctx.output.index:
+            self._build_index(ctx)
 
         return 0
 
@@ -494,10 +490,7 @@ class CreateCommand:
         """Run centralized AI enhancement after converter completes."""
         from pathlib import Path
 
-        name = ctx.output.name or (
-            self.source_info.suggested_name if self.source_info else "unnamed"
-        )
-        skill_dir = ctx.output.output_dir or f"output/{name}"
+        skill_dir = str(self._resolve_skill_dir(ctx))
 
         logger.info("\n" + "=" * 60)
         logger.info(f"Enhancing SKILL.md (level {ctx.enhancement.level})")
@@ -563,6 +556,42 @@ class CreateCommand:
             pass
         except Exception as e:
             logger.warning(f"Workflow execution failed: {e}")
+
+    def _resolve_skill_dir(self, ctx: ExecutionContext) -> Path:
+        """Where the converter wrote the skill — shared by every post-step.
+
+        Same rule as ``SkillConverter.resolve_skill_dir`` (config/CLI
+        ``output_dir`` verbatim minus trailing separators, else
+        ``output/<name>``) so enhancement and indexing can never target a
+        different directory than the scraper used.
+        """
+        from skill_seekers.cli.skill_converter import SkillConverter
+
+        name = ctx.output.name or (
+            self.source_info.suggested_name if self.source_info else "unnamed"
+        )
+        return Path(SkillConverter.resolve_skill_dir({"output_dir": ctx.output.output_dir}, name))
+
+    def _build_index(self, ctx: ExecutionContext) -> None:
+        """Build the opt-in, script-queryable index for a completed skill.
+
+        Like enhancement and workflows, a failure here is logged and does not
+        fail ``create``: SKILL.md and references/ are already complete.
+        """
+        from skill_seekers.cli.skill_indexer import index_skill
+
+        skill_dir = self._resolve_skill_dir(ctx)
+        try:
+            result = index_skill(skill_dir)
+        except Exception as e:
+            logger.warning(f"Search index build failed (skill is still complete): {e}")
+            return
+        if result.section_count:
+            logger.info(
+                "Built optional search index with %d sections: %s",
+                result.section_count,
+                result.index_path,
+            )
 
 
 def main() -> int:

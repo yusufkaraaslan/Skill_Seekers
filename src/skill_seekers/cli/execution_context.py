@@ -92,6 +92,10 @@ class OutputSettings(BaseModel):
     output_dir: str | None = Field(default=None, description="Output directory override")
     doc_version: str = Field(default="", description="Documentation version tag")
     dry_run: bool = Field(default=False, description="Preview mode without execution")
+    index: bool = Field(
+        default=False,
+        description="Build an optional SQLite search index for generated reference markdown",
+    )
 
 
 class ScrapingSettings(BaseModel):
@@ -297,10 +301,18 @@ class ExecutionContext(BaseModel):
         output = DEFAULTS["output"]
         analysis = DEFAULTS["analysis"]
 
+        # The level a user set with `skill-seekers config` sits between the
+        # shipped default and everything explicit (config file, CLI flag).
+        # It was honoured until the unified `create` command (Feb 2026) and
+        # silently dropped since, while `skill-seekers config` kept showing it.
+        from skill_seekers.cli.config_manager import ConfigManager
+
+        default_level = ConfigManager.read_user_default_enhance_level(enhancement["level"])
+
         return {
             "enhancement": {
                 "enabled": enhancement["enabled"],
-                "level": enhancement["level"],
+                "level": default_level,
                 # Env-var-based mode detection (lowest priority — CLI and config override this)
                 "mode": "api"
                 if any(
@@ -326,6 +338,7 @@ class ExecutionContext(BaseModel):
                 "output_dir": None,
                 "doc_version": output["doc_version"],
                 "dry_run": output["dry_run"],
+                "index": False,
             },
             "scraping": {
                 "max_pages": scraping["max_pages"],
@@ -382,6 +395,11 @@ class ExecutionContext(BaseModel):
             config["output"] = {
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
+                "index": bool(file_data.get("index", False)),
+                # The scrapers honour a config-file output_dir; the centralized
+                # post-steps (enhancement, index) must target the same directory.
+                # A CLI --output still overrides this in _apply_args.
+                "output_dir": file_data.get("output_dir"),
             }
             config["enhancement"] = {
                 "enabled": enhancement.get("enabled", True),
@@ -399,6 +417,8 @@ class ExecutionContext(BaseModel):
             config["output"] = {
                 "name": file_data.get("name"),
                 "doc_version": file_data.get("version", ""),
+                "index": bool(file_data.get("index", False)),
+                "output_dir": file_data.get("output_dir"),
             }
             # Copy all scraping-tuning keys the file provides — not just
             # max_pages/rate_limit/browser. Otherwise workers/async_mode/browser
@@ -435,6 +455,8 @@ class ExecutionContext(BaseModel):
             config.setdefault("output", {})["doc_version"] = args.doc_version
         if getattr(args, "dry_run", False):
             config.setdefault("output", {})["dry_run"] = True
+        if getattr(args, "index", False):
+            config.setdefault("output", {})["index"] = True
 
         # Enhancement
         if hasattr(args, "enhance_level") and args.enhance_level is not None:

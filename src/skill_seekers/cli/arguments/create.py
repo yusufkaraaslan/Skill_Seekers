@@ -47,16 +47,24 @@ UNIVERSAL_ARGUMENTS: dict[str, dict[str, Any]] = {
             "metavar": "DIR",
         },
     },
+    "index": {
+        "flags": ("--index",),
+        "kwargs": {
+            "action": "store_true",
+            "help": "Build an optional SQLite search index for generated reference markdown",
+        },
+    },
     # Enhancement arguments
     "enhance_level": {
         "flags": ("--enhance-level",),
         "kwargs": {
             "type": int,
             "choices": [0, 1, 2, 3],
-            "default": 2,
+            "default": None,  # None = your configured default (skill-seekers config), else 2
             "help": (
                 "AI enhancement level (auto-detects API vs LOCAL mode): "
-                "0=disabled, 1=SKILL.md only, 2=+architecture/config (default), 3=full enhancement. "
+                "0=disabled, 1=SKILL.md only, 2=+architecture/config, 3=full enhancement. "
+                "Default: the level set with `skill-seekers config` (2 unless changed). "
                 "Mode selection: uses API if API key is set (ANTHROPIC_API_KEY, MOONSHOT_API_KEY, etc.), otherwise LOCAL (AI coding agent)"
             ),
             "metavar": "LEVEL",

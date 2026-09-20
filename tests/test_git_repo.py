@@ -129,6 +129,60 @@ class TestInjectToken:
 class TestCloneOrPull:
     """Test clone and pull operations."""
 
+    @pytest.mark.parametrize(
+        "source_name",
+        [
+            "",
+            "../outside",
+            "nested/source",
+            "nested\\source",  # single backslash (non-raw string)
+            "/absolute",
+            "C:\\cache",
+            ".git",  # would turn the cache root into a git worktree
+            "a\x00b",
+        ],
+    )
+    @patch("skill_seekers.services.git_repo.git.Repo.clone_from")
+    def test_clone_rejects_unsafe_cache_name_before_clone(self, mock_clone, git_repo, source_name):
+        """Cache names must stay within the configured cache directory."""
+        with pytest.raises(ValueError, match="single path segment"):
+            git_repo.clone_or_pull(
+                source_name=source_name,
+                git_url="https://github.com/org/repo.git",
+            )
+
+        mock_clone.assert_not_called()
+
+    @patch("skill_seekers.services.git_repo.git.Repo.clone_from")
+    @patch("skill_seekers.services.git_repo.git.Repo")
+    def test_failed_pull_discards_cache_and_reclones(
+        self, mock_repo_class, mock_clone, git_repo, temp_cache_dir
+    ):
+        """A transient pull failure must not delete the cache and then report an error.
+
+        The old branch did `rmtree(...); raise  # Re-raise to trigger clone below`,
+        which left the outer try — no clone ever happened (#462 attack C).
+        """
+        from git.exc import GitCommandError
+
+        repo_path = temp_cache_dir / "test-source"
+        repo_path.mkdir()
+        (repo_path / ".git").mkdir()
+        (repo_path / "stale.json").write_text("{}")
+
+        mock_repo = MagicMock()
+        mock_repo.remotes.origin.pull.side_effect = GitCommandError("pull", 1)
+        mock_repo_class.return_value = mock_repo
+
+        result = git_repo.clone_or_pull(
+            source_name="test-source", git_url="https://github.com/org/repo.git"
+        )
+
+        assert result == repo_path
+        assert not (repo_path / "stale.json").exists()  # discarded
+        mock_clone.assert_called_once()  # ...and re-cloned in the same call
+        assert mock_clone.call_args.args[1] == repo_path
+
     @patch("skill_seekers.services.git_repo.git.Repo.clone_from")
     def test_clone_new_repo(self, mock_clone, git_repo):
         """Test cloning a new repository."""

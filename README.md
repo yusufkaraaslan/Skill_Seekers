@@ -24,18 +24,10 @@ English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국�
 ## 💛 Sponsors
 
 <!-- SPONSORS:START -->
-### Launch Partner
+### Bronze Sponsors
 
 <p align="center">
-  <a href="https://www.atlascloud.ai/"><img src="docs/assets/sponsors/atlas-cloud.png" alt="Atlas Cloud" width="200"></a><br/><sub><b>Launch Partner</b></sub>
-</p>
-
-[Atlas Cloud](https://www.atlascloud.ai/) — A full-modal, OpenAI-compatible AI inference platform. Skill Seekers supports it as a packaging/enhancement target via `--target atlas` with `ATLAS_API_KEY`.
-
-### Silver Sponsors
-
-<p align="center">
-  <a href="https://www.rapidproxy.io/?utm_source=skillseekers&utm_medium=sponsor"><img src="docs/assets/sponsors/rapidproxy.png" alt="RapidProxy" width="140"></a><br/><sub><b>Sponsor — Silver</b></sub>
+  <a href="https://fluxionai.world/register?utm_source=github&utm_medium=sponsor&utm_campaign=skillseekers"><img src="docs/assets/sponsors/fluxion-ai.png" alt="Fluxion AI" width="100"></a><br/><sub><b>Sponsor — Bronze</b></sub>
 </p>
 <!-- SPONSORS:END -->
 
@@ -51,6 +43,9 @@ pip install skill-seekers
 
 # 2. Create a skill from any source
 skill-seekers create https://docs.djangoproject.com/
+
+# Optional: preview how a source will be detected without creating anything
+skill-seekers detect https://docs.djangoproject.com/ --json
 
 # 3. Package it for your AI platform
 skill-seekers package output/django --target claude
@@ -243,6 +238,14 @@ One config can pull documentation, GitHub, PDFs, videos, and more into a single 
 </details>
 
 <details>
+<summary><b>Search index inside the skill</b> — query before you read (opt-in)</summary>
+
+`skill-seekers create <source> --index` adds a stdlib-only `scripts/search.py` and a SQLite FTS5 index over the generated references, so an agent can find the right `file#anchor` before reading a large Markdown file wholesale. Off by default; the Markdown is untouched.
+
+→ [Skill Search Index](docs/features/SKILL_SEARCH_INDEX.md)
+</details>
+
+<details>
 <summary><b>Video extraction</b> — transcripts, frames, on-screen code</summary>
 
 YouTube, Vimeo, and local files. Three-tier transcript fallback (subtitles → YouTube transcript API → local Whisper), plus optional visual extraction that OCRs on-screen code from sampled frames.
@@ -253,7 +256,7 @@ YouTube, Vimeo, and local files. Three-tier transcript fallback (subtitles → Y
 <details>
 <summary><b>Quality, sync & scale</b></summary>
 
-Quality scoring with a gate (`skill-seekers quality output/react/ --threshold 7`), provisional English readability metrics (informational — they never affect the score), doc-change detection with scheduled re-scrapes and notifications, streaming ingestion for very large doc sets, and incremental updates.
+Quality scoring with a gate (`skill-seekers quality output/react/ --threshold 7`) or JSON stdout (`skill-seekers quality output/react/ --json`), provisional English readability metrics (informational — they never affect the score), doc-change detection with scheduled re-scrapes and notifications, streaming ingestion for very large doc sets, and incremental updates.
 
 → [Large Documentation](docs/reference/LARGE_DOCUMENTATION.md) · [Code Quality](docs/reference/CODE_QUALITY.md)
 </details>
@@ -391,6 +394,7 @@ Full history: **[CHANGELOG.md](CHANGELOG.md)**
 
 ```bash
 skill-seekers doctor          # diagnose installation & environment
+skill-seekers doctor --json   # machine-readable diagnostics for CI and agents
 skill-seekers sync-config     # detect config drift
 ```
 

@@ -13,6 +13,13 @@ from urllib.parse import urlparse
 import git
 from git.exc import GitCommandError, InvalidGitRepositoryError
 
+from skill_seekers.services.path_safety import validate_path_segment
+
+
+# Re-exported so ``from skill_seekers.services.git_repo import validate_path_segment``
+# keeps working; the single definition lives in path_safety.
+__all__ = ["GitConfigRepo", "validate_path_segment"]
+
 
 class GitConfigRepo:
     """Manages git operations for config repositories."""
@@ -68,7 +75,7 @@ class GitConfigRepo:
             raise ValueError(f"Invalid git URL: {git_url}")
 
         # Determine cache path
-        repo_path = self.cache_dir / source_name
+        repo_path = self.cache_dir / validate_path_segment(source_name, label="source name")
 
         # Force refresh: delete existing cache
         if force_refresh and repo_path.exists():
@@ -94,11 +101,12 @@ class GitConfigRepo:
                     origin.pull(branch)
                     return repo_path
                 except (InvalidGitRepositoryError, GitCommandError):
-                    # Corrupted repo - delete and re-clone
-                    shutil.rmtree(repo_path)
-                    raise  # Re-raise to trigger clone below
+                    # Corrupted or unpullable cache: drop it and fall through to a
+                    # fresh clone. (A `raise` here used to leave the outer try, so
+                    # the cache was deleted and *no* clone happened — #462.)
+                    shutil.rmtree(repo_path, ignore_errors=True)
 
-            # Repository doesn't exist - clone
+            # Repository doesn't exist (or was just discarded) - clone
             git.Repo.clone_from(
                 clone_url,
                 repo_path,

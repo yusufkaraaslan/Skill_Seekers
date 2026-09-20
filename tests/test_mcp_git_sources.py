@@ -62,6 +62,116 @@ def mock_git_repo(temp_dirs):
 class TestFetchConfigModes:
     """Test fetch_config tool with different modes."""
 
+    @pytest.mark.parametrize(
+        "config_name",
+        ["../outside", "nested/config", "nested\\config", "/absolute", "C:\\config", ".git"],
+    )
+    @patch("skill_seekers.services.git_repo.GitConfigRepo")
+    async def test_fetch_config_git_url_rejects_unsafe_config_name(
+        self, mock_git_repo_class, config_name
+    ):
+        """Direct Git URL mode rejects unsafe names before constructing a cache path."""
+        from skill_seekers.mcp.server import fetch_config_tool
+
+        result = await fetch_config_tool(
+            {"config_name": config_name, "git_url": "https://github.com/org/configs.git"}
+        )
+
+        assert "Invalid config name" in result[0].text
+        mock_git_repo_class.assert_not_called()
+
+    @pytest.mark.parametrize("config_name", ["../outside", "nested\\config", "C:\\config", ".git"])
+    @patch("skill_seekers.services.git_repo.GitConfigRepo")
+    async def test_legacy_fetch_config_git_url_rejects_unsafe_config_name(
+        self, mock_git_repo_class, config_name
+    ):
+        """The legacy MCP handler rejects unsafe names before any Git operation."""
+        from skill_seekers.mcp.server_legacy import fetch_config_tool
+
+        result = await fetch_config_tool(
+            {"config_name": config_name, "git_url": "https://github.com/org/configs.git"}
+        )
+
+        assert "Invalid config name" in result[0].text
+        mock_git_repo_class.assert_not_called()
+
+    @pytest.mark.parametrize("config_name", ["../escaped", "nested/config", ".git"])
+    @patch("skill_seekers.services.source_manager.SourceManager")
+    @patch("skill_seekers.services.git_repo.GitConfigRepo")
+    async def test_fetch_config_named_source_rejects_unsafe_config_name(
+        self, mock_git_repo_class, mock_sm_class, config_name, temp_dirs
+    ):
+        """MODE 1 writes <destination>/<config_name>.json — the name must be validated too (#462)."""
+        from skill_seekers.mcp.server import fetch_config_tool
+
+        result = await fetch_config_tool(
+            {"source": "team", "config_name": config_name, "destination": str(temp_dirs["dest"])}
+        )
+
+        assert "Invalid config name" in result[0].text
+        mock_git_repo_class.assert_not_called()
+        assert not list(temp_dirs["dest"].parent.rglob("escaped.json"))
+
+    @pytest.mark.parametrize("config_name", ["../escaped", "nested/config", ".git"])
+    async def test_fetch_config_api_mode_rejects_unsafe_config_name(self, config_name, temp_dirs):
+        """MODE 3 writes <destination>/<config_name>.json from the raw name — validated up front."""
+        from skill_seekers.mcp.server import fetch_config_tool
+
+        with patch("skill_seekers.mcp.tools.source_tools.httpx.AsyncClient") as mock_client:
+            result = await fetch_config_tool(
+                {"config_name": config_name, "destination": str(temp_dirs["dest"])}
+            )
+            mock_client.assert_not_called()  # rejected before any network I/O
+
+        assert "Invalid config name" in result[0].text
+        assert not list(temp_dirs["dest"].parent.rglob("escaped.json"))
+
+    @patch("skill_seekers.services.source_manager.SourceManager")
+    async def test_named_source_validation_error_is_not_labelled_git_error(
+        self, mock_sm_class, temp_dirs
+    ):
+        """A ValueError from the clone boundary surfaces as-is, not as '❌ Git error: ...'."""
+        from skill_seekers.mcp.server import fetch_config_tool
+
+        mock_sm = MagicMock()
+        mock_sm.get_source.return_value = {
+            "name": "../bad",
+            "git_url": "https://github.com/o/r.git",
+            "branch": "main",
+            "token": None,
+        }
+        mock_sm_class.return_value = mock_sm
+
+        result = await fetch_config_tool(
+            {"source": "../bad", "config_name": "react", "destination": str(temp_dirs["dest"])}
+        )
+
+        assert "Invalid source name" in result[0].text
+        assert "Git error" not in result[0].text
+
+    @patch("skill_seekers.services.git_repo.GitConfigRepo")
+    async def test_fetch_config_git_url_keeps_normal_config_name(
+        self, mock_git_repo_class, temp_dirs
+    ):
+        """Normal direct-Git config names continue to use their cache entry."""
+        from skill_seekers.mcp.server import fetch_config_tool
+
+        mock_repo = MagicMock()
+        mock_repo.clone_or_pull.return_value = temp_dirs["cache"]
+        mock_repo.get_config.return_value = {"name": "react"}
+        mock_git_repo_class.return_value = mock_repo
+
+        result = await fetch_config_tool(
+            {
+                "config_name": "react",
+                "git_url": "https://github.com/org/configs.git",
+                "destination": str(temp_dirs["dest"]),
+            }
+        )
+
+        assert "✅" in result[0].text
+        assert mock_repo.clone_or_pull.call_args.kwargs["source_name"] == "temp_react"
+
     async def test_fetch_config_api_mode_list(self):
         """Test API mode - listing available configs."""
         from skill_seekers.mcp.server import fetch_config_tool

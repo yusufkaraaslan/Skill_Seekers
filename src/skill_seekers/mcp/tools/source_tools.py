@@ -79,6 +79,7 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
         List of TextContent with fetch results or config list
     """
     from skill_seekers.services.git_repo import GitConfigRepo
+    from skill_seekers.services.path_safety import validate_path_segment
     from skill_seekers.services.source_manager import SourceManager
 
     config_name = args.get("config_name")
@@ -92,6 +93,14 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
     branch = args.get("branch", "main")
     token = args.get("token")
     force_refresh = args.get("refresh", False)
+
+    # config_name becomes a path segment in every mode (cache dir, destination
+    # file), so validate it once here rather than per mode (#462, CWE-22).
+    if config_name:
+        try:
+            validate_path_segment(config_name, label="config name")
+        except ValueError as e:
+            return [TextContent(type="text", text=f"❌ {e}")]
 
     try:
         # MODE 1: Named Source (highest priority)
@@ -129,6 +138,8 @@ async def fetch_config_tool(args: dict) -> list[TextContent]:
                     token=token,
                     force_refresh=force_refresh,
                 )
+            except ValueError as e:
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
             except Exception as e:
                 return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
 
@@ -189,7 +200,7 @@ Next steps:
                     force_refresh=force_refresh,
                 )
             except ValueError as e:
-                return [TextContent(type="text", text=f"❌ Invalid git URL: {str(e)}")]
+                return [TextContent(type="text", text=f"❌ {str(e)}")]
             except Exception as e:
                 return [TextContent(type="text", text=f"❌ Git error: {str(e)}")]
 
