@@ -49,6 +49,12 @@ _Development version: 3.10.0.dev0_
 - Seeker HUD: unmatched `/api/*` paths now 404 for every HTTP method, without widening the SPA catch-all route's accepted methods.
 - Seeker HUD: Doctor check levels are normalised (`pass`/`warn`/`fail` → `ok`/`warning`/`error`) so the status pill reflects real failures, and agent install paths resolve under the HUD's workspace root instead of the server process's working directory.
 
+### Fixed
+- **Unified multi-source builds preserve readable source references** (#453) — converter-backed sources such as PDF and EPUB no longer leave their generated Markdown stranded in the scrape cache while the final skill contains only an index or raw JSON. Each source's `references/` tree and adjacent assets are copied into an indexed namespace, preventing same-name collisions and preserving relative asset links; visual video frames and `skip_scrape` reference locations are preserved too.
+  - Namespaces are `<scrape index>_<sanitized id>` (raw data JSON included), so URL/path ids are filesystem-safe and same-named inputs stay apart. Links in the synthesized SKILL.md are rewritten to the unified locations instead of pointing at the sub-skill's `references/*.md`.
+  - The builder now recreates the `references/` entries it owns on every build (source-type directories, `api/`, `codebase_analysis/`, `conflicts.md`); user files kept elsewhere under `references/` are left alone. A copy failure inside a cached sub-skill is logged and the build continues.
+  - The unified API-mode enhancement prompt reads references through the same bounded reader the platform adaptors use (200k chars total, 30k per file, keyed by relative path). Previously it inlined every reference file unbounded, which the full PDF/EPUB trees would have pushed past any model's context window.
+
 ## [3.9.1] - 2026-08-02
 
 **Theme:** Documentation and project-infrastructure release. No runtime code changed — the package is functionally identical to 3.9.0.
