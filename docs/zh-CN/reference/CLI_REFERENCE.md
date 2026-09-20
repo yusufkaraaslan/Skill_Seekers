@@ -1181,6 +1181,23 @@ skill-seekers create --feed-path ./feed.rss --name feed-summaries
 
 ---
 
+### doctor
+
+检查环境健康状况和依赖项。
+
+**用法：**
+
+```bash
+skill-seekers doctor [--verbose] [--json]
+```
+
+| 标志 | 默认值 | 用途 |
+|---|---|---|
+| `--verbose`, `-v` | 关闭 | 显示每项检查的详细信息（API 密钥检查会包含掩码后的密钥片段，如 `sk-a...TAIL`） |
+| `--json` | 关闭 | 在标准输出上输出机器可读的 JSON：`version`、`checks`、`summary`、`healthy`、`exit_code`。仅输出一个文档；依赖项的导入提示写入标准错误；检查崩溃时输出 `{"error": ...}`。除非同时指定 `--verbose`，否则 `verbose_detail` 为空，密钥片段不会默认进入 CI 日志 |
+
+---
+
 ### scan
 
 AI 检测项目的技术栈，并为每个检测到的框架生成一个配置，外加一个针对项目自身代码的 `<project>-codebase.json`。

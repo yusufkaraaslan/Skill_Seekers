@@ -180,7 +180,7 @@ class TestPrintReport:
 
 
 class TestJsonReport:
-    def test_main_json_suppresses_dependency_stdout(self, capsys):
+    def test_main_json_forwards_dependency_stdout_to_stderr(self, capsys):
         def noisy_checks():
             print("third-party import warning")
             return [CheckResult("Python version", "pass", "3.12.0", critical=True)]
@@ -189,8 +189,55 @@ class TestJsonReport:
             code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
 
         assert code == 0
-        payload = json.loads(capsys.readouterr().out)
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)  # stdout is exactly one document
         assert payload["checks"][0]["name"] == "Python version"
+        assert "third-party import warning" in captured.err  # not silently dropped
+
+    def test_json_hides_verbose_detail_unless_verbose(self, capsys):
+        """verbose_detail carries masked API-key fragments; CI logs must not get them by default."""
+        results = [CheckResult("API keys", "warn", "1 set", verbose_detail="  KEY: sk-a...TAIL")]
+
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            DoctorCommand(Namespace(verbose=False, json=True)).execute()
+            quiet = json.loads(capsys.readouterr().out)
+            DoctorCommand(Namespace(verbose=True, json=True)).execute()
+            loud = json.loads(capsys.readouterr().out)
+
+        assert quiet["checks"][0]["verbose_detail"] == ""
+        assert "TAIL" not in json.dumps(quiet)
+        assert loud["checks"][0]["verbose_detail"] == "  KEY: sk-a...TAIL"
+
+    def test_json_includes_version(self, capsys):
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=[]):
+            DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        payload = json.loads(capsys.readouterr().out)
+        assert isinstance(payload["version"], str) and payload["version"]
+
+    def test_crashing_check_becomes_error_document(self, capsys):
+        with patch(
+            "skill_seekers.cli.doctor.run_all_checks", side_effect=FileNotFoundError("cwd gone")
+        ):
+            code = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        assert code == 1
+        assert "cwd gone" in json.loads(capsys.readouterr().out)["error"]
+
+    def test_json_flag_reaches_command_through_the_real_cli(self, capsys):
+        """Parser-driven: a typo in doctor_parser.py or the dispatch table must fail here."""
+        from skill_seekers.cli.main import main as cli_main
+
+        results = [CheckResult("Python version", "pass", "3.12.0", critical=True)]
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            assert cli_main(["doctor", "--json"]) == 0
+        assert json.loads(capsys.readouterr().out)["healthy"] is True
+
+    def test_human_and_json_agree_on_exit_code(self, capsys):
+        results = [CheckResult("Python version", "fail", "3.9", critical=True)]
+        with patch("skill_seekers.cli.doctor.run_all_checks", return_value=results):
+            human = DoctorCommand(Namespace(verbose=False, json=False)).execute()
+            capsys.readouterr()
+            machine = DoctorCommand(Namespace(verbose=False, json=True)).execute()
+        assert human == machine == json.loads(capsys.readouterr().out)["exit_code"] == 1
 
     def test_main_json_outputs_structured_checks_and_summary(self, capsys):
         results = [

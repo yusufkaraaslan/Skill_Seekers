@@ -7,9 +7,9 @@ similar to `brew doctor` or `flutter doctor`.
 
 from __future__ import annotations
 
-import json
 import contextlib
 import io
+import json
 import os
 import shutil
 import subprocess
@@ -255,18 +255,36 @@ def run_all_checks() -> list[CheckResult]:
 STATUS_ICONS = {"pass": "\u2705", "warn": "\u26a0\ufe0f ", "fail": "\u274c"}
 
 
-def print_report(results: list[CheckResult], verbose: bool = False) -> int:
-    """Print formatted report and return exit code."""
+def _installed_version() -> str:
     try:
         from skill_seekers._version import __version__
 
-        version = __version__
+        return __version__
     except ImportError:
-        version = "unknown"
+        return "unknown"
 
+
+def summarize(results: list[CheckResult]) -> dict[str, int]:
+    """Pass/warn/fail tally shared by the human and JSON reports."""
+    return {
+        "passed": sum(1 for r in results if r.status == "pass"),
+        "warnings": sum(1 for r in results if r.status == "warn"),
+        "failed": sum(1 for r in results if r.status == "fail"),
+    }
+
+
+def _exit_code(summary: dict[str, int]) -> int:
+    """One definition of the doctor exit rule: any failed check fails the run."""
+    from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
+
+    return EXIT_ERROR if summary["failed"] else EXIT_SUCCESS
+
+
+def print_report(results: list[CheckResult], verbose: bool = False) -> int:
+    """Print formatted report and return exit code."""
     print()
     print("=" * 50)
-    print(f"  Skill Seekers Doctor (v{version})")
+    print(f"  Skill Seekers Doctor (v{_installed_version()})")
     print("=" * 50)
     print()
 
@@ -277,16 +295,15 @@ def print_report(results: list[CheckResult], verbose: bool = False) -> int:
             for line in r.verbose_detail.split("\n"):
                 print(f"      {line}")
 
-    passed = sum(1 for r in results if r.status == "pass")
-    warnings = sum(1 for r in results if r.status == "warn")
-    errors = sum(1 for r in results if r.status == "fail")
-
+    summary = summarize(results)
     print()
     print("-" * 50)
-    print(f"  {passed} passed, {warnings} warnings, {errors} errors")
+    print(
+        f"  {summary['passed']} passed, {summary['warnings']} warnings, {summary['failed']} errors"
+    )
 
-    if errors == 0:
-        if warnings > 0:
+    if summary["failed"] == 0:
+        if summary["warnings"] > 0:
             print("  All critical checks passed with some warnings.")
         else:
             print("  All checks passed!")
@@ -294,21 +311,29 @@ def print_report(results: list[CheckResult], verbose: bool = False) -> int:
         print("  Some critical checks failed. Fix errors above.")
 
     print()
-    return 1 if errors > 0 else 0
+    return _exit_code(summary)
 
 
-def print_json_report(results: list[CheckResult]) -> int:
-    """Print a stable JSON report and return the normal doctor exit code."""
-    summary = {
-        "passed": sum(1 for result in results if result.status == "pass"),
-        "warnings": sum(1 for result in results if result.status == "warn"),
-        "failed": sum(1 for result in results if result.status == "fail"),
-    }
+def print_json_report(results: list[CheckResult], verbose: bool = False) -> int:
+    """Print a stable JSON report and return the normal doctor exit code.
+
+    ``verbose_detail`` is only populated under ``--verbose``, exactly like the
+    human report: for the API-keys check it holds masked key fragments
+    (``sk-a...TAIL``), which must not land in a CI log by default.
+    """
+    summary = summarize(results)
+    checks = []
+    for r in results:
+        entry = asdict(r)
+        if not verbose:
+            entry["verbose_detail"] = ""
+        checks.append(entry)
     payload = {
-        "checks": [asdict(result) for result in results],
+        "version": _installed_version(),
+        "checks": checks,
         "summary": summary,
         "healthy": summary["failed"] == 0,
-        "exit_code": 1 if summary["failed"] else 0,
+        "exit_code": _exit_code(summary),
     }
     print(json.dumps(payload, indent=2))
     return payload["exit_code"]
@@ -323,14 +348,27 @@ class DoctorCommand:
         self.args = args
 
     def execute(self) -> int:
-        if getattr(self.args, "json", False):
-            # Some optional dependencies print import-time notices to stdout. Keep
-            # stdout reserved for a single JSON document in machine-readable mode.
-            with contextlib.redirect_stdout(io.StringIO()):
+        verbose = bool(getattr(self.args, "verbose", False))
+        if not getattr(self.args, "json", False):
+            return print_report(run_all_checks(), verbose=verbose)
+
+        # --json: stdout is exactly one JSON document. Anything a dependency
+        # prints at import time is forwarded to stderr rather than dropped, and
+        # a crashing check becomes an error document instead of empty stdout.
+        captured = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(captured):
                 results = run_all_checks()
-            return print_json_report(results)
-        results = run_all_checks()
-        return print_report(results, verbose=getattr(self.args, "verbose", False))
+        except Exception as exc:  # noqa: BLE001 — surface any check failure as JSON
+            from skill_seekers.cli.exit_codes import EXIT_ERROR
+
+            print(json.dumps({"error": f"{type(exc).__name__}: {exc}"}, indent=2))
+            return EXIT_ERROR
+        finally:
+            noise = captured.getvalue()
+            if noise:
+                print(noise, end="", file=sys.stderr)
+        return print_json_report(results, verbose=verbose)
 
 
 def main(args=None) -> int:

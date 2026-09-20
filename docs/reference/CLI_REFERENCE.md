@@ -39,6 +39,7 @@
   - [rss](#rss) - Extract from RSS/Atom feeds
   - [scan](#scan) - AI-detect a project's tech stack and emit per-framework configs
   - [detect](#detect) - Preview how `create` would classify a source, without creating anything
+  - [doctor](#doctor) - Check environment health and dependencies
   - [scrape](#scrape) - Scrape documentation
   - [stream](#stream) - Stream large files
   - [unified](#unified) - Multi-source scraping
@@ -1227,6 +1228,35 @@ skill-seekers detect https://docs.djangoproject.com/ --json
 skill-seekers detect ./missing.pdf --json; echo "exit=$?"
 #   {"type": "pdf", ..., "valid": false, "validation_error": "PDF file does not exist: ./missing.pdf"}
 #   exit=2
+```
+
+---
+
+### doctor
+
+Check environment health and dependencies.
+
+**Purpose:** Eight diagnostic checks — Python version, package install, git, core and optional dependencies, API keys, MCP server, output directory — with pass / warn / fail status. Exit code is non-zero when any check fails.
+
+**Usage:**
+
+```bash
+skill-seekers doctor [--verbose] [--json]
+```
+
+**Options:**
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--verbose`, `-v` | off | Show per-check detail (for the API-keys check this includes masked key fragments such as `sk-a...TAIL`) |
+| `--json` | off | Machine-readable output on stdout: `version`, `checks`, `summary` (`passed`/`warnings`/`failed`), `healthy`, `exit_code`. Exactly one JSON document; import-time noise from dependencies goes to stderr; a crashing check is reported as `{"error": ...}`. `verbose_detail` is empty unless `--verbose` is also given, so key fragments never reach a CI log by default |
+
+**Examples:**
+
+```bash
+skill-seekers doctor
+skill-seekers doctor --verbose
+skill-seekers doctor --json | jq .healthy
 ```
 
 ---
