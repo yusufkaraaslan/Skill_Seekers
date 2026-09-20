@@ -10,6 +10,8 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -205,3 +207,47 @@ class TestPackageStructure(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _console_script_targets() -> list[tuple[str, str, str]]:
+    """Parse ``[project.scripts]`` from pyproject.toml without a TOML library (3.10 has none)."""
+    import re
+
+    text = (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text(encoding="utf-8")
+    section = re.search(r"^\[project\.scripts\]\n(.*?)^\[", text, re.M | re.S)
+    assert section, "[project.scripts] not found in pyproject.toml"
+    targets = []
+    for line in section.group(1).splitlines():
+        m = re.match(r'^([\w-]+)\s*=\s*"([\w.]+):(\w+)"', line)
+        if m:
+            targets.append(m.groups())
+    assert len(targets) > 20, targets
+    return targets
+
+
+class TestConsoleScriptTargets:
+    """Every ``skill-seekers-*`` console script must point at a function that exists.
+
+    ``skill-seekers-doctor`` shipped broken for four releases (v3.7.0-v3.9.1)
+    after the COMMAND_CLASSES migration removed ``doctor.main`` but left the
+    pyproject entry behind (#456). Nothing imported the target, so nothing
+    failed. This does.
+    """
+
+    @pytest.mark.parametrize(
+        "script,module,attr",
+        _console_script_targets(),
+        ids=[t[0] for t in _console_script_targets()],
+    )
+    def test_target_resolves(self, script, module, attr):
+        import importlib
+        import importlib.util
+
+        assert importlib.util.find_spec(module) is not None, f"{script}: module {module} missing"
+        try:
+            mod = importlib.import_module(module)
+        except ModuleNotFoundError as exc:
+            if exc.name and not exc.name.startswith("skill_seekers"):
+                pytest.skip(f"{script}: optional dependency {exc.name} not installed")
+            raise
+        assert callable(getattr(mod, attr, None)), f"{script}: {module} has no callable {attr}()"
