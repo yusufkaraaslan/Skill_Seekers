@@ -416,6 +416,7 @@ class TestCrossPlatformPackageSizes(unittest.TestCase):
             "kimi",
             "qwen",
             "openrouter",
+            "requesty",
             "together",
             "fireworks",
             "ibm-bob",

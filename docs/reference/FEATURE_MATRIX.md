@@ -15,6 +15,7 @@ Complete feature support across all platforms and skill modes.
 | **DeepSeek** | ZIP | ❌ Manual | ❌ None | None |
 | **Qwen** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
+| **Requesty** | ZIP | ❌ Manual | ❌ None | None |
 | **Together AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
 | **IBM Bob** | Directory | ❌ Manual | ❌ None | None |
@@ -361,7 +362,7 @@ A:
 - **Gemini:** Choose if you need long context (1M tokens) or grounding
 - **OpenAI:** Choose if you need vector search and semantic retrieval
 - **MiniMax/Kimi/DeepSeek/Qwen:** Choose for Chinese LLM ecosystem compatibility
-- **OpenRouter/Together/Fireworks:** Choose for multi-model routing or open-source model access
+- **OpenRouter/Requesty/Together/Fireworks:** Choose for multi-model routing or open-source model access
 - **Markdown:** Choose for universal compatibility or offline use
 
 **Q: Can I enhance a skill for different platforms?**

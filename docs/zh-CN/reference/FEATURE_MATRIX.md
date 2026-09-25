@@ -15,6 +15,7 @@
 | **DeepSeek** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Qwen** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **OpenRouter** | ZIP | ❌ 手动 | ❌ 无 | 无 |
+| **Requesty** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Together AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Fireworks AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **IBM Bob** | 目录 | ❌ 手动 | ❌ 无 | 无 |
@@ -361,7 +362,7 @@ A：
 - **Gemini：** 如果你需要长上下文（1M token）或 grounding
 - **OpenAI：** 如果你需要向量搜索和语义检索
 - **MiniMax/Kimi/DeepSeek/Qwen：** 适合中文 LLM 生态系统兼容
-- **OpenRouter/Together/Fireworks：** 适合多模型路由或开源模型访问
+- **OpenRouter/Requesty/Together/Fireworks：** 适合多模型路由或开源模型访问
 - **Markdown：** 如果你需要通用兼容性或离线使用
 
 **Q：我可以为不同平台增强技能吗？**

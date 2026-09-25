@@ -333,7 +333,7 @@ print(sorted(ADAPTORS))
 # ['atlas', 'chroma', 'claude', 'deepseek', 'faiss', 'fireworks', 'gemini',
 #  'haystack', 'ibm-bob', 'kimi', 'langchain', 'llama-index', 'markdown',
 #  'minimax', 'openai', 'opencode', 'openrouter', 'pinecone', 'qdrant',
-#  'qwen', 'together', 'weaviate']
+#  'qwen', 'requesty', 'together', 'weaviate']
 
 adaptor = get_adaptor("claude")
 

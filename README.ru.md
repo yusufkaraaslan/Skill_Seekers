@@ -181,7 +181,7 @@ skill-seekers package output/react --target llama-index # → TextNodes LlamaInd
 skill-seekers package output/react --target ibm-bob     # → каталог навыка IBM Bob
 ```
 
-**LLM-платформы (12):** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `together` · `fireworks` · `markdown`
+**LLM-платформы (13):** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `requesty` · `together` · `fireworks` · `markdown`
 **RAG и векторные БД (8):** `langchain` · `llama-index` · `haystack` · `chroma` · `faiss` · `weaviate` · `qdrant` · `pinecone`
 **Прочее (2):** `atlas` · `ibm-bob`
 
