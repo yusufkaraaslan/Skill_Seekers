@@ -5891,6 +5891,9 @@ rag-upload = [
     { name = "sentence-transformers" },
     { name = "weaviate-client" },
 ]
+requesty = [
+    { name = "openai" },
+]
 rss = [
     { name = "feedparser" },
 ]
@@ -6005,6 +6008,7 @@ requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'openrouter'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'qwen'", specifier = ">=1.0.0" },
+    { name = "openai", marker = "extra == 'requesty'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'together'", specifier = ">=1.0.0" },
     { name = "opencv-python-headless", marker = "extra == 'video-full'", specifier = ">=4.9.0" },
     { name = "pathspec", specifier = ">=0.12.1" },
@@ -6055,7 +6059,7 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'video'", specifier = ">=2024.12.0" },
     { name = "yt-dlp", marker = "extra == 'video-full'", specifier = ">=2024.12.0" },
 ]
-provides-extras = ["mcp", "gemini", "openai", "minimax", "kimi", "deepseek", "qwen", "openrouter", "together", "fireworks", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "browser", "embedding", "ui", "all"]
+provides-extras = ["mcp", "gemini", "openai", "minimax", "kimi", "deepseek", "qwen", "openrouter", "requesty", "together", "fireworks", "all-llms", "s3", "gcs", "azure", "docx", "epub", "video", "video-full", "chroma", "weaviate", "sentence-transformers", "pinecone", "rag-upload", "all-cloud", "jupyter", "asciidoc", "pptx", "confluence", "notion", "rss", "chat", "browser", "embedding", "ui", "all"]
 
 [package.metadata.requires-dev]
 dev = [

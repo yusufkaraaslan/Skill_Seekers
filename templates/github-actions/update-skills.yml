@@ -38,6 +38,7 @@ on:
           - deepseek
           - qwen
           - openrouter
+          - requesty
           - together
           - fireworks
       agent:
