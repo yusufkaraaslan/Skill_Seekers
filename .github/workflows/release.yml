@@ -33,13 +33,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         if [ -f skill_seeker_mcp/requirements.txt ]; then pip install -r skill_seeker_mcp/requirements.txt; fi
-        # Install package in editable mode for tests (required for src/ layout)
-        pip install -e .
+        # Install package in editable mode for tests (required for src/ layout);
+        # the [ui] extra (fastapi) is needed by the Seeker HUD API tests, matching tests.yml
+        pip install -e ".[ui]"
 
     - name: Run tests
       timeout-minutes: 30
       run: |
-        pip install pytest-timeout
+        pip install pytest-timeout psutil
         python -m pytest tests/ -v \
           -m "not slow and not integration and not e2e and not network and not serial and not mcp_only" \
           --timeout=120
