@@ -182,7 +182,9 @@ docs/                        # Documentation (guides, integrations, architecture
 
 **Supported platforms (21):** claude, gemini, openai, minimax, opencode, kimi, deepseek, qwen, openrouter, together, fireworks, markdown, langchain, llama-index, haystack, weaviate, chroma, faiss, qdrant, pinecone.
 
-## Web UI (Seeker HUD)
+## Web UI (Seeker HUD) — beta
+
+**Status: beta** (since 3.10.0). Screens, API routes and `~/.skill-seekers/ui/` state may change between minor releases; the CLI and MCP server are unaffected.
 
 Local web app: React 19 + Vite + Tailwind/shadcn frontend in `ui/`, FastAPI backend in `src/skill_seekers/web/`.
 

@@ -40,7 +40,7 @@ class UiCommand:
         app = create_app(root)
 
         url = f"http://{'[::1]' if self.args.host == '::1' else '127.0.0.1'}:{port}"
-        print(f"Seeker HUD · serving {root}")
+        print(f"Seeker HUD (beta) · serving {root}")
         print(f"→ {url}")
         if not DIST_DIR.is_dir():
             print(

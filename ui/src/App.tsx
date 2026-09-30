@@ -101,10 +101,16 @@ function Hud() {
               <RadarIcon className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <div className="font-mono-hud text-[13px] font-bold tracking-wider text-foreground">
+              <div className="flex items-center gap-1.5 font-mono-hud text-[13px] font-bold tracking-wider text-foreground">
                 SEEKER<span className="text-primary">HUD</span>
+                <span
+                  title="Seeker HUD is in beta — screens and stored UI state may change between releases"
+                  className="rounded-[4px] border border-[hsl(45_93%_55%/0.4)] bg-[hsl(45_93%_55%/0.08)] px-1 py-px font-mono-hud text-[9px] font-semibold uppercase tracking-wider text-[hsl(45_93%_60%)]"
+                >
+                  beta
+                </span>
               </div>
-              <div className="font-mono-hud text-[9px] uppercase tracking-[0.25em] text-muted-foreground">local workspace</div>
+              <div className="font-mono-hud text-[9px] uppercase tracking-[0.25em] text-muted-foreground">local workspace · beta</div>
             </div>
           </div>
 

@@ -1,5 +1,7 @@
 # Seeker HUD
 
+> **Beta.** The HUD ships with 3.10.0 for early feedback. Screens, `/api/*` routes, and the UI state stored under `~/.skill-seekers/ui/` may change between minor releases without a deprecation period. The CLI and MCP server are stable and unaffected; please report HUD issues on GitHub.
+
 The HUD is a local React/FastAPI interface to Skill Seekers. Install the API dependencies and build the frontend before launching from a checkout:
 
 ```bash
