@@ -1297,7 +1297,7 @@ async def push_config(
 async def add_marketplace(
     name: str,
     git_url: str,
-    token_env: str = None,
+    token_env: str | None = None,
     branch: str = "main",
     author_name: str = "",
     author_email: str = "",
@@ -1358,8 +1358,8 @@ async def publish_to_marketplace(
     skill_dir: str,
     marketplace: str,
     category: str = "development",
-    skill_name: str = None,
-    description: str = None,
+    skill_name: str | None = None,
+    description: str | None = None,
     create_branch: bool = False,
     force: bool = False,
 ) -> str:

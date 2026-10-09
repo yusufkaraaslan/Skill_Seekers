@@ -885,6 +885,55 @@ class TestTypeValidation:
             result = await tool_func(**args)
             assert isinstance(result, str), f"{tool_func.__name__} should return string"
 
+    async def test_none_default_params_accept_null(self):
+        """Every param whose schema default is null must also accept an explicit null."""
+        tools = await server_fastmcp.mcp.list_tools()
+        offenders = []
+        for tool in tools:
+            for prop, schema in tool.inputSchema.get("properties", {}).items():
+                if "default" in schema and schema["default"] is None:
+                    types = [s.get("type") for s in schema.get("anyOf", [schema])]
+                    if "null" not in types:
+                        offenders.append(f"{tool.name}.{prop}")
+        assert offenders == [], f"Params default to None but reject null: {offenders}"
+
+    @pytest.mark.parametrize(
+        "tool_name, impl_name, args",
+        [
+            (
+                "add_marketplace",
+                "add_marketplace_impl",
+                {"name": "team", "git_url": "https://github.com/o/p.git", "token_env": None},
+            ),
+            (
+                "publish_to_marketplace",
+                "publish_to_marketplace_impl",
+                {
+                    "skill_dir": "output/x",
+                    "marketplace": "team",
+                    "skill_name": None,
+                    "description": None,
+                },
+            ),
+        ],
+    )
+    async def test_marketplace_tools_accept_explicit_null(self, tool_name, impl_name, args):
+        """Clients that send optional params as explicit null must not get a validation error."""
+        impl = MagicMock()
+
+        async def fake_impl(impl_args):
+            impl(impl_args)
+            return [TextContent(type="text", text="ok")]
+
+        with patch.object(server_fastmcp, impl_name, fake_impl):
+            await server_fastmcp.mcp.call_tool(tool_name, args)
+
+        impl.assert_called_once()
+        passed = impl.call_args.args[0]
+        for key, value in args.items():
+            if value is None:
+                assert passed[key] is None
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
