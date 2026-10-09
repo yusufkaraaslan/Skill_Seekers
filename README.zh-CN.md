@@ -64,7 +64,7 @@ skill-seekers create https://docs.djangoproject.com/ --agent-cmd "my-custom-agen
 
 ### 🛰️ AI 驱动的项目扫描
 
-把 `scan` 指向一个项目，AI agent 会读取它的清单文件、README、Dockerfile/CI 以及抽样的源码 import —— 然后为检测到的每个框架输出一份配置，并额外生成一份对应你自己代码的 `<project>-codebase.json`：
+把 `scan` 指向一个项目，AI agent 会读取它的清单文件、README、Dockerfile/CI，以及抽样源码中的导入语句 —— 然后为检测到的每个框架输出一份配置，并额外生成一份对应你自己代码的 `<project>-codebase.json`：
 
 ```bash
 skill-seekers scan ./my-react-app --out ./configs/scanned/
@@ -205,7 +205,7 @@ skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目�
 <details>
 <summary><b>文档抓取</b> —— SPA 发现、llms.txt、智能分类</summary>
 
-针对 JavaScript SPA 站点的三层发现机制（`sitemap.xml` → `llms.txt` → 无头浏览器渲染）、自动检测 `llms.txt`（存在时速度提升 10 倍）、智能主题分类，以及宽松的 HTML 解析器兜底，让标记破损的页面也能顺利抓取。
+针对 JavaScript SPA 站点的三层发现机制（`sitemap.xml` → `llms.txt` → 无头浏览器渲染）、自动检测 `llms.txt`（存在时速度提升 10 倍）、智能主题分类，以及宽松的 HTML 解析器兜底，让 HTML 标记不规范的页面也能顺利抓取。
 
 → [抓取指南](docs/user-guide/02-scraping.md) · [llms.txt 支持](docs/reference/LLMS_TXT_SUPPORT.md)
 </details>
@@ -235,7 +235,7 @@ skill-seekers create ./my-project --preset comprehensive  # 深度、详尽
 <details>
 <summary><b>统一多源抓取</b> —— 将多个数据源合并为一个技能</summary>
 
-一份配置即可把文档、GitHub、PDF、视频等汇入同一份知识资产，并支持冲突检测与跨数据源的两两综合。
+一份配置即可把文档、GitHub、PDF、视频等汇入同一份知识资产，并支持冲突检测，以及不同数据源之间的两两整合。
 
 → [统一抓取](docs/features/UNIFIED_SCRAPING.md)
 </details>
@@ -251,7 +251,7 @@ skill-seekers create ./my-project --preset comprehensive  # 深度、详尽
 <details>
 <summary><b>质量、同步与规模</b></summary>
 
-带门禁阈值的质量评分（`skill-seekers quality output/react/ --threshold 7`）、文档变更检测配合定时重抓与通知、面向超大文档集的流式摄取，以及增量更新。
+支持质量阈值检查的质量评分（`skill-seekers quality output/react/ --threshold 7`）、文档变更检测配合定时重抓与通知、面向超大文档集的流式摄取，以及增量更新。
 
 → [超大文档处理](docs/reference/LARGE_DOCUMENTATION.md) · [代码质量](docs/reference/CODE_QUALITY.md)
 </details>
