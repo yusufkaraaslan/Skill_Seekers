@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import os
 
-MINIMAX_MODEL_IDS = ("MiniMax-M3", "MiniMax-M2.7")
+# Ordinary text choices; explicit custom/legacy model IDs remain valid overrides.
+MINIMAX_MODEL_IDS = ("MiniMax-M3.1-Flash", "MiniMax-M3")
 MINIMAX_DEFAULT_MODEL = MINIMAX_MODEL_IDS[0]
-MINIMAX_IMAGE_MODEL = MINIMAX_DEFAULT_MODEL
+# Keep the existing media workflows on M3 independently of the text default.
+MINIMAX_IMAGE_MODEL = "MiniMax-M3"
 
 # Video input (OpenAI-compatible ``video_url`` parts) is M3-only; base64 or URL
-# videos are capped at 50 MB by the API. Thinking is on by default; M3 accepts
-# an explicit ``adaptive`` or ``disabled``, M2.x cannot disable it.
+# videos are capped at 50 MB by the API. M3 accepts explicit ``adaptive`` or
+# ``disabled`` thinking; Flash accepts only ``adaptive``.
 MINIMAX_VIDEO_MODELS = ("MiniMax-M3",)
 MINIMAX_VIDEO_MAX_BYTES = 50 * 1024 * 1024
 MINIMAX_THINKING_MODES = ("adaptive", "disabled")
@@ -66,7 +68,7 @@ def resolve_minimax_thinking(thinking: str | None = None) -> str | None:
     """Return a validated MiniMax thinking mode, or None for the API default.
 
     Precedence: explicit argument, then ``MINIMAX_THINKING``, then None (the
-    API's own default, which is thinking enabled).
+    API's own default, which depends on the model and protocol).
     """
     resolved = (thinking or os.environ.get("MINIMAX_THINKING") or "").strip().lower()
     if not resolved:

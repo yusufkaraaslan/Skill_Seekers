@@ -520,7 +520,7 @@ Examples:
         "--model",
         type=str,
         default=None,
-        help="Override the enhancement model (e.g. 'MiniMax-M2.7'). Defaults to the platform default.",
+        help="Override the enhancement model (e.g. 'MiniMax-M3'). Defaults to the platform default.",
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without calling API"

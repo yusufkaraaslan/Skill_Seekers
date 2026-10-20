@@ -3,8 +3,8 @@
 MiniMax AI Adaptor
 
 OpenAI-compatible LLM platform adaptor for MiniMax AI.
-Uses MiniMax's OpenAI-compatible API for AI enhancement with the M3 model
-(M2.7 is still selectable via ``--model``).
+Defaults to MiniMax-M3.1-Flash for AI enhancement; M3 and explicit legacy/custom
+models remain selectable via ``--model``.
 """
 
 from .openai_compatible import OpenAICompatibleAdaptor
@@ -20,6 +20,7 @@ class MiniMaxAdaptor(OpenAICompatibleAdaptor):
 
     PLATFORM = "minimax"
     PLATFORM_NAME = "MiniMax AI"
+    API_PROVIDER = "minimax"
     # Static fallback (global). Actual requests resolve region from
     # MINIMAX_API_REGION via _api_base_url() so China-issued keys reach
     # api.minimaxi.com instead of 401-ing against the global endpoint.
@@ -31,3 +32,7 @@ class MiniMaxAdaptor(OpenAICompatibleAdaptor):
     def _api_base_url(self) -> str:
         """Resolve the OpenAI-compatible endpoint for the configured region."""
         return resolve_minimax_endpoint(protocol="openai")
+
+    def _enhancement_base_url(self) -> str:
+        """Honor both regional and protocol settings for text enhancement."""
+        return resolve_minimax_endpoint()

@@ -160,7 +160,7 @@ pip install -e .[all-llms]
 - SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
 - Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
 - API: OpenAI-compatible chat completions
-- Enhancement: MiniMax-M3 (M2.7 still selectable)
+- Enhancement: MiniMax-M3.1-Flash (MiniMax-M3 selectable; explicit legacy/custom models preserved)
 
 **Generic Markdown:**
 - Format: ZIP archive
@@ -265,7 +265,7 @@ export MINIMAX_API_KEY=your-key
 # 1. Scrape (universal)
 skill-seekers create --config configs/react.json
 
-# 2. Enhance with MiniMax-M3
+# 2. Enhance with MiniMax-M3.1-Flash
 skill-seekers enhance output/react/ --target minimax
 
 # 3. Package for MiniMax
@@ -425,14 +425,13 @@ A: Yes. Each platform has a default enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
-- MiniMax: MiniMax-M3
+- MiniMax: MiniMax-M3.1-Flash
 - Kimi / DeepSeek / Qwen / OpenRouter / Together / Fireworks: each platform's own default
 
-Override the default for any platform with `--model`, e.g. to pin the
-previous-generation MiniMax model:
+Override the default for any platform with `--model`, e.g. to select MiniMax-M3:
 
 ```bash
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3
 ```
 
 **Q: Which platforms can enhance SKILL.md?**

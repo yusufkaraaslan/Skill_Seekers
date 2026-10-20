@@ -6,12 +6,12 @@ Complete guide for using Skill Seekers with MiniMax AI platform.
 
 ## Overview
 
-**MiniMax AI** is a Chinese AI company offering OpenAI-compatible APIs with their flagship M3 model (M2.7 is still selectable). Skill Seekers packages documentation for use with MiniMax's platform.
+**MiniMax AI** provides compatible APIs for text enhancement. Skill Seekers defaults to MiniMax-M3.1-Flash, with MiniMax-M3 as the other ordinary text choice. Explicit legacy/custom model IDs and models saved in existing packages are preserved.
 
 ### Key Features
 
 - **OpenAI-Compatible API**: Uses standard OpenAI client library
-- **MiniMax-M3 Model**: Powerful default LLM for enhancement and chat (M2.7 also supported via `--model`)
+- **MiniMax-M3.1-Flash**: Default text model; select MiniMax-M3 with `--model MiniMax-M3`
 - **Simple ZIP Format**: Easy packaging with system instructions
 - **Knowledge Files**: Reference documentation included in package
 
@@ -43,16 +43,22 @@ pip install skill-seekers[all-llms]
 export MINIMAX_API_KEY=your-api-key
 export MINIMAX_API_REGION=global_en
 export MINIMAX_API_PROTOCOL=openai
-export MINIMAX_THINKING=adaptive   # optional: adaptive | disabled (M3; OpenAI protocol only)
+export MINIMAX_THINKING=adaptive   # optional; Flash requires adaptive, M3 also accepts disabled
 ```
 
 Add to your `~/.bashrc`, `~/.zshrc`, or `.env` file for persistence.
 
-`MINIMAX_THINKING` controls MiniMax-M3's reasoning mode for every request Skill
-Seekers makes (thinking is on by default; `disabled` gives lower-latency direct
-answers). It is validated when the client is created and only carried by the
-OpenAI-compatible protocol; under `MINIMAX_API_PROTOCOL=anthropic` it is ignored
-with a warning. M2.x models cannot disable thinking.
+`MINIMAX_THINKING` controls reasoning for `AgentClient` and text enhancement
+under both compatible protocols. Flash accepts only `adaptive`; an explicit
+`disabled` setting raises before sending a Flash request. M3 accepts `adaptive`
+or `disabled`. If unset, Skill Seekers omits the option: Flash defaults to
+adaptive thinking, while M3 defaults to adaptive over OpenAI and disabled over
+Anthropic. No reasoning-effort override is sent (Flash uses its API default,
+`max`). Package validation uses the OpenAI protocol with the model's API defaults.
+See the [official model guide](https://platform.minimax.io/docs/guides/models-intro.md).
+
+Image OCR and unpinned image/video calls retain MiniMax-M3. Explicit model
+arguments and environment overrides still take precedence.
 
 Video input (`AgentClient.call_with_video()`) is available for MiniMax-M3 over
 the OpenAI-compatible protocol: MP4, AVI, MOV or MKV, up to 50 MB inline.
@@ -81,21 +87,21 @@ skill-seekers create --config configs/react.json
 skill-seekers create https://docs.python.org/3/ --preset quick
 ```
 
-### Step 2: Enhance with MiniMax-M3
+### Step 2: Enhance with MiniMax-M3.1-Flash
 
 ```bash
 # Enhance SKILL.md using MiniMax AI
 skill-seekers enhance output/react/ --target minimax
 
-# With custom model (e.g. pinning the previous-generation M2.7)
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
+# Select the other ordinary text model
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3
 ```
 
 This step:
 - Reads reference documentation
 - Generates enhanced system instructions
 - Creates backup of original SKILL.md
-- Uses MiniMax-M3 for AI enhancement by default
+- Uses MiniMax-M3.1-Flash for AI enhancement by default
 
 ### Step 3: Package for MiniMax
 
@@ -103,8 +109,8 @@ This step:
 # Package as MiniMax-compatible ZIP
 skill-seekers package output/react/ --target minimax
 
-# Pin a specific model in the package metadata (default: MiniMax-M3)
-skill-seekers package output/react/ --target minimax --model MiniMax-M2.7
+# Pin a specific model in the package metadata (default: MiniMax-M3.1-Flash)
+skill-seekers package output/react/ --target minimax --model MiniMax-M3
 ```
 
 **Output structure:**
@@ -160,7 +166,7 @@ client = OpenAI(
 
 # Use with chat completions
 response = client.chat.completions.create(
-    model="MiniMax-M3",
+    model=metadata["model"],
     messages=[
         {"role": "system", "content": system_instructions},
         {"role": "user", "content": "How do I create a React component?"}
@@ -196,7 +202,7 @@ context = "\n\n".join([f"## {kf['name']}\n{kf['content'][:5000]}"
                      for kf in knowledge_files[:5]])
 
 response = client.chat.completions.create(
-    model="MiniMax-M3",
+    model=metadata["model"],
     messages=[
         {"role": "system", "content": system_instructions},
         {"role": "user", "content": f"Context: {context}\n\nQuestion: What are React hooks?"}
@@ -370,7 +376,7 @@ skill-seekers package output/react/ --target minimax
 |---------|---------|--------|--------|--------|
 | **Format** | ZIP | ZIP | tar.gz | ZIP |
 | **Upload** | Validation | Full API | Full API | Full API |
-| **Enhancement** | MiniMax-M3 | Claude Sonnet | Gemini 2.0 | GPT-4o |
+| **Enhancement** | MiniMax-M3.1-Flash | Claude Sonnet | Gemini 2.0 | GPT-4o |
 | **API Type** | OpenAI-compatible | Anthropic | Google | OpenAI |
 | **Key Format** | JWT (eyJ...) | sk-ant... | AIza... | sk-... |
 | **Knowledge Files** | Included in ZIP | Included | Included | Vector Store |

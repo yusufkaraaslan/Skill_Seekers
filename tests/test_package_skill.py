@@ -110,7 +110,7 @@ class TestPackageSkill(unittest.TestCase):
             self.assertTrue(success)
             with zipfile.ZipFile(zip_path, "r") as zf:
                 metadata = json.loads(zf.read("minimax_metadata.json").decode("utf-8"))
-            self.assertEqual(metadata["model"], "MiniMax-M3")
+            self.assertEqual(metadata["model"], "MiniMax-M3.1-Flash")
 
     def test_package_arguments_accept_model_flag(self):
         """The package CLI parser exposes --model."""

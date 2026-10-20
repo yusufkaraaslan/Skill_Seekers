@@ -60,7 +60,7 @@ PACKAGE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "default": None,
             "help": (
                 "Override the model recorded in the package metadata for the "
-                "target platform, e.g. 'MiniMax-M2.7'. Defaults to the "
+                "target platform, e.g. 'MiniMax-M3'. Defaults to the "
                 "platform's default model."
             ),
             "metavar": "MODEL",

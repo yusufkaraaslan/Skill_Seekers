@@ -157,7 +157,7 @@ class TestMiniMaxAdaptor(unittest.TestCase):
                 metadata = json.loads(metadata_content)
                 self.assertEqual(metadata["platform"], "minimax")
                 self.assertEqual(metadata["name"], "test-skill")
-                self.assertEqual(metadata["model"], "MiniMax-M3")
+                self.assertEqual(metadata["model"], "MiniMax-M3.1-Flash")
                 self.assertIn("minimax", metadata["api_base"])
 
     def test_package_output_path_as_file(self):
