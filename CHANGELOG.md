@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.11.0.dev0_
 
+### Fixed
+- **Web scraper dropped code that sits between paragraphs** — `doc_scraper` collected text and code into two separate lists, so reference files showed all text first and only the first four code samples under `**Examples:**`. Pages now carry an ordered `body_blocks` list and `create_reference_file` renders text and code in page order with no cap. `content` and `code_samples` are still filled, and pages without `body_blocks` (markdown sources, older cached pages) render as before. The HTML fallback (`_extract_html_as_markdown`) no longer returns each `<pre><code>` twice.
+
 ## [3.10.0] - 2026-09-30
 
 **Theme:** Seeker HUD (beta) — a local web UI for the whole toolchain — plus a path-traversal security fix, three machine-readable CLI commands, an opt-in SQLite skill search index, MiniMax video input, and PDF vector-figure extraction.
