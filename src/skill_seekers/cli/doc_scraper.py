@@ -513,7 +513,7 @@ class DocToSkillConverter(SkillConverter):
 
         # Extract headings with better structure
         for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-            text = self.clean_text(h.get_text())
+            text = self._heading_text(h)
             if text:
                 page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -757,7 +757,7 @@ class DocToSkillConverter(SkillConverter):
         if main:
             # Extract headings
             for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-                text = self.clean_text(h.get_text())
+                text = self._heading_text(h)
                 if text:
                     page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -917,6 +917,12 @@ class DocToSkillConverter(SkillConverter):
             "text": 20,
         }
         return priorities.get(language.lower(), 50)
+
+    def _heading_text(self, heading: Any) -> str:
+        """Heading text without ``a.headerlink`` anchors"""
+        for anchor in heading.find_all("a", class_="headerlink"):
+            anchor.decompose()
+        return self.clean_text(heading.get_text())
 
     def clean_text(self, text: str) -> str:
         """Clean text content"""

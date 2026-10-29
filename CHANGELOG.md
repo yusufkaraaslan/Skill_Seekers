@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.11.0.dev0_
 
+### Fixed
+- **`¶` in scraped headings** — Heading can contain a headerlink sign `<a class="headerlink">¶</a>`, so the `**Contents:**` list in reference files read "Content Item ¶". `doc_scraper` now drops those anchors before reading heading text, in both `extract_content` and the HTML fallback.
+
 ## [3.10.0] - 2026-09-30
 
 **Theme:** Seeker HUD (beta) — a local web UI for the whole toolchain — plus a path-traversal security fix, three machine-readable CLI commands, an opt-in SQLite skill search index, MiniMax video input, and PDF vector-figure extraction.
