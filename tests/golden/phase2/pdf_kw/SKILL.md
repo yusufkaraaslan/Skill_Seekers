@@ -9,12 +9,11 @@ Use when testing keyword categorization
 
 ## 💡 When to Use This Skill
 
-Use this skill when you need to:
-- Understand golden_pdf_kw concepts and fundamentals
-- Look up API references and technical specifications
-- Find code examples and implementation patterns
-- Review tutorials, guides, and best practices
-- Explore the complete documentation structure
+Use for questions or tasks involving these main topics:
+- Setup
+- Api
+- Deployment
+- Other
 
 ## 📖 Chapter Overview
 
