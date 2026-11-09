@@ -57,7 +57,11 @@ stages:
     uses_history: true
     enabled: true
     prompt: >
-      Review the SKILL.md content generated so far and improve it.
+      Review the skill directory {skill_dir} (SKILL.md at {skill_md_path}).
+      Its raw source material files are:
+      {source_files}
+
+      Improve the SKILL.md with depth over size:
 
       Fix:
       1. Unclear or overly technical descriptions
@@ -65,6 +69,11 @@ stages:
       3. Gaps in the overview section
       4. Redundant or duplicate information
       5. Formatting inconsistencies
+
+      Read the referenced source files above before rewriting. Every claim
+      must carry its source location, decision rules must be in
+      "condition → action → exception" form, and statements outside the
+      source material must be marked as not covered instead of invented.
 
       Output JSON with:
       - "improved_overview": rewritten overview section
