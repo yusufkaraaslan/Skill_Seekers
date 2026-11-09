@@ -382,14 +382,28 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             f.write(f"# {self.name.title()} Documentation Skill\n\n")
             f.write(f"{self.description}\n\n")
 
-            # Enhanced "When to Use" section
+            # When to Use — derived from the document's actual top-level
+            # topics instead of a static bullet list identical for every
+            # document (which carried no per-document information).
+            main_topics: list[str] = []
+            for _cat_key, cat_data in categorized.items():
+                title = str(cat_data.get("title", "")).strip()
+                if title:
+                    main_topics.append(title)
+            if not main_topics:
+                for page in self.extracted_data.get("pages", []):
+                    heading = str(page.get("heading", "")).strip()
+                    if heading and heading not in main_topics:
+                        main_topics.append(heading)
             f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
+            if main_topics:
+                f.write("Use for questions or tasks involving these main topics:\n")
+                for topic in main_topics[:4]:
+                    f.write(f"- {topic}\n")
+                f.write("\n")
+            else:
+                f.write(f"Use for questions about {self.name}; topics are listed "
+                        f"in the Chapter Overview below.\n\n")
 
             # Chapter Overview (PDF structure)
             f.write("## 📖 Chapter Overview\n\n")
@@ -404,9 +418,13 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             # Extract key concepts from headings
             f.write(self._format_key_concepts())
 
-            # Quick Reference with patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
+            # Quick Reference with patterns — only when there are real
+            # patterns; don't emit an empty placeholder header.
+            quick_reference = self._format_patterns_from_content()
+            is_placeholder = quick_reference.strip().startswith("*See reference files")
+            if not is_placeholder:
+                f.write("## ⚡ Quick Reference\n\n")
+                f.write(quick_reference)
 
             # Enhanced code examples section (top 15, grouped by language)
             all_code = []

@@ -551,7 +551,34 @@ class CreateCommand:
             # the fallback for every other source type, where this call is the
             # only executor of config-declared workflows.
             is_unified = bool(self.source_info and self.source_info.type == "config")
-            run_workflows(self.args, use_context_fallback=not is_unified)
+
+            # Give workflow stages access to the produced skill directory and
+            # its source files, so custom stage prompts can actually see what
+            # they are enhancing (previously analysis_results={} and prompts
+            # received no document context at all).
+            workflow_context: dict[str, Any] = {}
+            try:
+                skill_dir = self._resolve_skill_dir(ExecutionContext.get())
+                if skill_dir.exists():
+                    workflow_context = {
+                        "skill_dir": str(skill_dir),
+                        "skill_md_path": str(skill_dir / "SKILL.md"),
+                        "source_name": skill_dir.name,
+                        "source_files": "\n".join(
+                            sorted(
+                                str(p.relative_to(skill_dir))
+                                for p in skill_dir.rglob("*.md")
+                            )
+                        ),
+                    }
+            except Exception as e:
+                logger.debug("Workflow context build skipped: %s", e)
+
+            run_workflows(
+                self.args,
+                use_context_fallback=not is_unified,
+                context=workflow_context,
+            )
         except ImportError:
             pass
         except Exception as e:
