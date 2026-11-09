@@ -23,6 +23,7 @@ Usage:
 """
 
 import json
+import re
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -251,6 +252,27 @@ class WorkflowEngine:
 
         return merged
 
+    def preview(self, context: dict | None = None) -> None:
+        """Dry-run preview: log the stages that would run (no AI calls).
+
+        workflow_runner calls this for --workflow-dry-run; the method was
+        dropped in a refactor, leaving documented dry-run mode broken.
+        """
+        logger.info(f"\n📋 Workflow: {self.workflow.name} — {len(self.workflow.stages)} stage(s)")
+        for i, stage in enumerate(self.workflow.stages, 1):
+            status = "✅ enabled" if stage.enabled else "⏭️  disabled"
+            logger.info(
+                f"   {i}. [{stage.type}] {stage.name} (target={stage.target}, "
+                f"uses_history={stage.uses_history}) — {status}"
+            )
+            if stage.type == "custom" and stage.prompt:
+                first_line = stage.prompt.strip().splitlines()[0]
+                logger.info(f"      prompt: {first_line[:100]}…")
+        prompt_text = "\n".join(f"{k}={v!r}" for k, v in (context or {}).items())
+        if prompt_text:
+            logger.info(f"   context variables: {prompt_text[:300]}")
+        logger.info("   (no AI calls were made — dry run)")
+
     def run(self, analysis_results: dict, context: dict | None = None) -> dict:
         """
         Run workflow stages sequentially.
@@ -386,12 +408,19 @@ class WorkflowEngine:
 
             self.enhancer = AIEnhancer(agent=self.agent)
 
-        # Format prompt with context
-        try:
-            formatted_prompt = stage.prompt.format(**context)
-        except KeyError as e:
-            logger.warning(f"Missing context variable: {e}")
-            formatted_prompt = stage.prompt
+        # Format prompt with context.
+        # Tolerant substitution: only well-formed simple fields ({var}) are
+        # replaced; everything else — including literal JSON braces such as
+        # {"findings": ...} and multi-word placeholders — is left untouched.
+        # Previously str.format() raised on stray braces (ValueError/KeyError)
+        # and silently dropped ALL context substitution.
+        def _substitute(match: "re.Match[str]") -> str:
+            key = match.group(1)
+            if key in context:
+                return str(context[key])
+            return match.group(0)
+
+        formatted_prompt = re.sub(r"\{([a-zA-Z_]\w*)\}", _substitute, stage.prompt)
 
         # Call AI with custom prompt
         logger.info(f"   🤖 Running custom AI prompt...")

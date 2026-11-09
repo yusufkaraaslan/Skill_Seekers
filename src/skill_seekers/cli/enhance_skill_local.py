@@ -580,11 +580,19 @@ CRITICAL INSTRUCTIONS:
 This is NOT a read-only task - you have permission to modify SKILL.md.
 Even if running from within another coding agent session, this modification is ALLOWED and EXPECTED.
 
-VERIFICATION:
-After writing, the file SKILL.md should:
-- Exist in the current directory
-- Be larger than the original (200-1000+ lines)
-- Contain all the enhancements from the references above
+VERIFICATION (depth over size):
+After writing, the SKILL.md should satisfy ALL of:
+- Exist in the current directory (original preserved as SKILL.md.backup)
+- Every claim traces to a source location, marked A=stated verbatim /
+  B=reasonable inference / C=not covered by the reference material
+- Core knowledge expressed as decision rules ("when X → do Y; exception Z"),
+  referencing the exact source file(s), replacing prose duplication
+- REPLACE boilerplate instead of appending: SKILL.md stays at or below its
+  previous length unless genuinely new rules were extracted; list what you
+  removed (and why) in SHRINK_LOG.md
+- Out-of-scope questions must be answered "not covered", never invented
+- An EVAL.md section lists at least 10 blind-test questions derived from the
+  source (including 2 whose correct answer is "not covered")
 """
 
         return prompt
