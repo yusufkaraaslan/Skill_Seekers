@@ -378,6 +378,29 @@ class PDFExtractor:
         # Clamp score to 0-10 range
         return max(0, min(10, score))
 
+    def _is_prose_fragment(self, code_text: str) -> bool:
+        """
+        Detect single-line monospace text that is almost certainly a
+        document fragment, not code: at least 4 alfabetic words and no
+        character that virtually every real one-line statement contains
+        (brackets, braces, assignment, quotes, operators, flags).
+
+        Real-world source:
+        a 112-page exchange rule PDF doomed 43 such fragments as
+        "code" (e.g. "one party report for pass through"), all of them
+        landing in generated SKILL.md "Code Examples".
+        Symbol-carrying lines ("KEY=VALUE", "pip install --upgrade x",
+        "git push --force origin") and shorter commands ("git status",
+        "npm run build") are deliberately kept — they belong to the
+        code-ish signal space.
+        """
+        if "\n" in code_text:
+            return False
+        words = code_text.split()
+        if len(words) < 4:
+            return False
+        return bool(re.fullmatch(r"[A-Za-z]+(?:\s+[A-Za-z]+)+", code_text.strip()))
+
     def detect_code_blocks_by_font(self, page):
         """
         Detect code blocks by analyzing font properties.
@@ -414,22 +437,26 @@ class PDFExtractor:
                         if current_code:
                             code_text = "".join(current_code).strip()
                             if len(code_text) > 10:  # Minimum code length
-                                lang, confidence = self.detect_language_from_code(code_text)
-                                quality = self.score_code_quality(code_text, lang, confidence)
-                                is_valid, issues = self.validate_code_syntax(code_text, lang)
+                                if self._is_prose_fragment(code_text):
+                                    # Document fragment, not code — skip it.
+                                    pass
+                                else:
+                                    lang, confidence = self.detect_language_from_code(code_text)
+                                    quality = self.score_code_quality(code_text, lang, confidence)
+                                    is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                                code_blocks.append(
-                                    {
-                                        "code": code_text,
-                                        "language": lang,
-                                        "confidence": confidence,
-                                        "quality_score": quality,
-                                        "is_valid": is_valid,
-                                        "validation_issues": issues if not is_valid else [],
-                                        "font": current_font,
-                                        "detection_method": "font",
-                                    }
-                                )
+                                    code_blocks.append(
+                                        {
+                                            "code": code_text,
+                                            "language": lang,
+                                            "confidence": confidence,
+                                            "quality_score": quality,
+                                            "is_valid": is_valid,
+                                            "validation_issues": issues if not is_valid else [],
+                                            "font": current_font,
+                                            "detection_method": "font",
+                                        }
+                                    )
                             current_code = []
                             current_font = None
 
@@ -437,22 +464,27 @@ class PDFExtractor:
         if current_code:
             code_text = "".join(current_code).strip()
             if len(code_text) > 10:
-                lang, confidence = self.detect_language_from_code(code_text)
-                quality = self.score_code_quality(code_text, lang, confidence)
-                is_valid, issues = self.validate_code_syntax(code_text, lang)
+                if self._is_prose_fragment(code_text):
+                    # Document fragment, not code — skip it.
+                    current_code = []
+                    current_font = None
+                else:
+                    lang, confidence = self.detect_language_from_code(code_text)
+                    quality = self.score_code_quality(code_text, lang, confidence)
+                    is_valid, issues = self.validate_code_syntax(code_text, lang)
 
-                code_blocks.append(
-                    {
-                        "code": code_text,
-                        "language": lang,
-                        "confidence": confidence,
-                        "quality_score": quality,
-                        "is_valid": is_valid,
-                        "validation_issues": issues if not is_valid else [],
-                        "font": current_font,
-                        "detection_method": "font",
-                    }
-                )
+                    code_blocks.append(
+                        {
+                            "code": code_text,
+                            "language": lang,
+                            "confidence": confidence,
+                            "quality_score": quality,
+                            "is_valid": is_valid,
+                            "validation_issues": issues if not is_valid else [],
+                            "font": current_font,
+                            "detection_method": "font",
+                        }
+                    )
 
         return code_blocks
 
