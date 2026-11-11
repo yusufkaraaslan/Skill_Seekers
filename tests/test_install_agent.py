@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from skill_seekers.cli.install_agent import (
     get_agent_path,
     get_available_agents,
+    get_skill_name,
     install_to_agent,
     install_to_all_agents,
     main,
@@ -563,3 +564,47 @@ class TestInstallAgentCLI:
 if __name__ == "__main__":
     # Run tests with pytest
     pytest.main([__file__, "-v"])
+
+
+class TestFrontmatterNamePreference:
+    """Installed dir must match SKILL.md frontmatter name, not the source
+    directory name — package_skill suffixes local-target dirs with the
+    platform name (e.g. "demo-opencode"), breaking the OpenCode/Claude
+    name==directory requirement."""
+
+    def _make_skill(self, tmp_path, dir_name, frontmatter_name):
+        d = tmp_path / dir_name
+        d.mkdir()
+        fm = (
+            f"---\nname: {frontmatter_name}\ndescription: test skill\n---\n\n"
+            "# Test\n"
+        )
+        (d / "SKILL.md").write_text(fm, encoding="utf-8")
+        return d
+
+    def test_frontmatter_name_wins(self, tmp_path):
+        d = self._make_skill(tmp_path, "demo-opencode", "demo")
+        assert get_skill_name(d) == "demo"
+
+    def test_falls_back_to_dir_name(self, tmp_path):
+        d = tmp_path / "plain-dir"
+        d.mkdir()
+        (d / "SKILL.md").write_text("# no frontmatter\n", encoding="utf-8")
+        assert get_skill_name(d) == "plain-dir"
+
+    def test_install_uses_frontmatter_name(self, tmp_path, monkeypatch):
+        d = self._make_skill(tmp_path, "demo-opencode", "demo")
+        monkeypatch.chdir(tmp_path)  # cursor installs to ./.cursor/skills/
+        success, message = install_to_agent(d, "cursor", force=True)
+        assert success, message
+        installed = tmp_path / ".cursor" / "skills" / "demo"
+        assert (installed / "SKILL.md").exists()
+        assert not (tmp_path / ".cursor" / "skills" / "demo-opencode").exists()
+
+    def test_quoted_frontmatter_name(self, tmp_path):
+        d = tmp_path / "q-dir"
+        d.mkdir()
+        (d / "SKILL.md").write_text(
+            '---\nname: "quoted-name"\ndescription: x\n---\n', encoding="utf-8"
+        )
+        assert get_skill_name(d) == "quoted-name"
