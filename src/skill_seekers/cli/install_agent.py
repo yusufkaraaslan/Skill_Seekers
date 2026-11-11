@@ -23,6 +23,7 @@ Examples:
     skill-seekers install-agent output/react/ --agent cursor --dry-run
 """
 
+import re
 import shutil
 import sys
 from difflib import get_close_matches
@@ -98,6 +99,32 @@ def get_available_agents() -> list:
         List of agent names (lowercase)
     """
     return sorted(AGENT_PATHS.keys())
+
+
+def get_skill_name(skill_dir: Path) -> str:
+    """
+    Prefer the SKILL.md frontmatter name over the directory name.
+
+    package_skill names local-target output directories "<skill>-<target>"
+    (e.g. "szse-bond-guide-opencode"), but OpenCode/Claude require the
+    installed directory name to match the SKILL.md frontmatter name.
+    Fall back to the directory name when frontmatter is absent or empty.
+    """
+    skill_md = skill_dir / "SKILL.md"
+    if skill_md.exists():
+        try:
+            text = skill_md.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return skill_dir.name
+        if text.startswith("---"):
+            end = text.find("\n---", 3)
+            if end != -1:
+                match = re.search(
+                    r"^name:\s*['\"]?([^\n#'\"\s]+)", text[3:end], re.MULTILINE
+                )
+                if match:
+                    return match.group(1).strip().rstrip("'\"")
+    return skill_dir.name
 
 
 def validate_agent_name(agent_name: str) -> tuple[bool, str | None]:
@@ -191,7 +218,7 @@ def install_to_agent(
     """
     # Convert to Path
     skill_dir = Path(skill_dir).resolve()
-    skill_name = skill_dir.name
+    skill_name = get_skill_name(skill_dir)
 
     # Validate skill directory
     is_valid, error_msg = validate_skill_directory(skill_dir)
