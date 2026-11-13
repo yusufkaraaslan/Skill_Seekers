@@ -121,8 +121,20 @@ class DocumentSkillBuilder(SkillConverter):
 
         ``cat_key`` is trailing-and-defaulted for backward compatibility with
         existing callers; only ``category_stem`` overrides consume it.
+
+        Collision-safe: two categories can legitimately share a page range
+        (e.g. two TOC chapters starting on the same page). Filenames are
+        memoized per section number and disambiguated with it on collision,
+        so all call sites agree and nothing is silently overwritten.
         """
-        return reference_filename(
+        memo = getattr(self, "_ref_filename_memo", None)
+        if memo is None:
+            memo = self._ref_filename_memo = {}
+            self._ref_filename_taken = set()
+        if section_num in memo:
+            return memo[section_num]
+
+        base = reference_filename(
             cat_data.get("pages") or [],
             section_num,
             total_sections,
@@ -130,6 +142,12 @@ class DocumentSkillBuilder(SkillConverter):
             number_key=self.NUMBER_KEY,
             prefix=self.NUMBER_PREFIX,
         )
+        if base in self._ref_filename_taken:
+            stem, dot, ext = base.rpartition(".")
+            base = f"{stem}-{section_num}{dot}{ext}" if dot else f"{base}-{section_num}"
+        self._ref_filename_taken.add(base)
+        memo[section_num] = base
+        return base
 
     # ── Categorization ────────────────────────────────────────────────────
 
@@ -210,6 +228,10 @@ class DocumentSkillBuilder(SkillConverter):
     def build_skill(self):
         """Build complete skill structure."""
         print(f"\n🏗️  Building skill: {self.name}")
+
+        # Reset per-build reference-filename memo/collision state.
+        self._ref_filename_memo = {}
+        self._ref_filename_taken = set()
 
         # Create directories
         os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
