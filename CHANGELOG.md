@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.11.0.dev0_
 
+### Fixed
+- **Docs crawl stayed on the start page when `base_url` names a page file** (follow-up to #331). For a `base_url` like `.../manual/index.html` (as in `configs/unity-addressables.json`), `is_valid_url()` checked links against `.../manual/index.html/`, so every sibling page was dropped. Page file names (`.html`, `.htm`, `.xhtml`, `.php`, `.asp`, `.aspx`, `.jsp`, `.jspx`) are now cut off, so the scope is `.../manual/`. A `base_url` without such a file name keeps the old prefix rule.
+
 ## [3.10.0] - 2026-09-30
 
 **Theme:** Seeker HUD (beta) — a local web UI for the whole toolchain — plus a path-traversal security fix, three machine-readable CLI commands, an opt-in SQLite skill search index, MiniMax video input, and PDF vector-figure extraction.

@@ -201,6 +201,9 @@ def infer_description_from_docs(
     )
 
 
+_PAGE_FILE_RE = re.compile(r"/[^/]+\.(?:html?|xhtml|php|aspx?|jspx?)$", re.IGNORECASE)
+
+
 class DocToSkillConverter(SkillConverter):
     SOURCE_TYPE = "web"
 
@@ -357,7 +360,11 @@ class DocToSkillConverter(SkillConverter):
         """
         # Use directory part of base_url for prefix check so sibling pages match.
         # e.g., base_url "https://example.com/docs/index.html" → prefix "https://example.com/docs/"
-        base_dir = self.base_url if self.base_url.endswith("/") else self.base_url + "/"
+        base_dir = self.base_url
+        if _PAGE_FILE_RE.search(urlparse(base_dir).path):
+            base_dir = urljoin(base_dir, ".")
+        elif not base_dir.endswith("/"):
+            base_dir += "/"
         if not url.startswith(base_dir):
             return False
 

@@ -73,6 +73,25 @@ class TestURLValidation(unittest.TestCase):
         self.assertTrue(converter.is_valid_url("https://docs.example.com/anything"))
         self.assertFalse(converter.is_valid_url("https://other.com/anything"))
 
+    def test_base_url_ending_in_page_file_matches_siblings(self):
+        """A base_url that names a page (index.html) scopes to its directory"""
+        config = {
+            "name": "test",
+            "base_url": "https://docs.example.com/manual/index.html",
+            "selectors": {"main_content": "article", "title": "h1", "code_blocks": "pre"},
+        }
+        converter = DocToSkillConverter(config, dry_run=True)
+
+        self.assertTrue(converter.is_valid_url("https://docs.example.com/manual/index.html"))
+        self.assertTrue(converter.is_valid_url("https://docs.example.com/manual/Start.html"))
+        self.assertTrue(converter.is_valid_url("https://docs.example.com/manual/sub/page.html"))
+        self.assertFalse(converter.is_valid_url("https://docs.example.com/manual2/page.html"))
+        self.assertFalse(converter.is_valid_url("https://docs.example.com/other/page.html"))
+
+        converter.base_url = "https://docs.example.com/manual/index.jsp;sid=1?lang=en#top"
+        self.assertTrue(converter.is_valid_url("https://docs.example.com/manual/Start.html"))
+        self.assertFalse(converter.is_valid_url("https://docs.example.com/other/page.html"))
+
 
 class TestLanguageDetection(unittest.TestCase):
     """Test language detection from code blocks"""
