@@ -378,10 +378,69 @@ class PDFExtractor:
         # Clamp score to 0-10 range
         return max(0, min(10, score))
 
+    # Keywords that start a statement — a line beginning with one of
+    # these counts as structured even without operators (``if x:``,
+    # ``return y``, ``import os``).
+    _CODE_KEYWORDS = (
+        "def ", "elif ", "else:", "if ", "for ", "while ", "return ", "import ",
+        "from ", "class ", "print(", "let ", "const ", "var ", "function",
+        "public", "private", "protected", "package ", "func ", "fn ", "using ",
+        "namespace", "echo ", "end;", "select", "insert", "update", "delete",
+        "from", "where", "begin", "end",
+    )
+
+    def _font_candidate_has_code_shape(self, code_text: str, confidence: float) -> bool:
+        """
+        Structural gate for font-path code candidates (Issue #485, item 1).
+
+        Monospace font alone is not evidence of code: table fragments
+        render in monospace too, and vertically adjacent monospace table
+        cells (``D\\n104101\\n410``, ``60\\nTransactTime``) form
+        multi-line runs. A candidate is accepted as code only if it has
+        code *shape*:
+
+        - multi-line runs need at least two statement-like lines — a
+          line carrying an operator/bracket (``= {}()[]<>``), a
+          statement terminator (``: ; , \\``) or starting with a code
+          keyword (``def``/``if``/``return``/``import``/``SELECT``…).
+          Long bare identifiers (table column names) count for nothing;
+        - single lines need a statement terminator (``;`` ``{`` ``}``
+          ``)``) with token spacing — e.g. ``using UnityEngine;``.
+
+        A strong language signature (confidence >= 0.7, e.g. SQL)
+        overrides both.
+
+        Stacked table cells, KEY=VALUE fragments and bare prose lines
+        have neither and are dropped before storage.
+        """
+        lines = [line for line in code_text.split("\n") if line.strip()]
+        if confidence >= 0.7:
+            return True
+        operators = ("=", "{", "}", "(", ")", "[", "]", "<", ">", "->", "=>")
+
+        def statement_like(line: str) -> bool:
+            stripped = line.strip()
+            lowered = stripped.lower()
+            return (
+                any(op in stripped for op in operators)
+                or stripped.endswith((":", ";", "{", "}", "\\", ","))
+                or any(lowered.startswith(kw) for kw in self._CODE_KEYWORDS)
+            )
+
+        if len(lines) >= 2:
+            return sum(1 for line in lines if statement_like(line)) >= 2
+        single = code_text.strip()
+        return single.endswith((";", "{", "}", ")")) and " " in single
+
     def detect_code_blocks_by_font(self, page):
         """
         Detect code blocks by analyzing font properties.
         Monospace fonts typically indicate code.
+
+        Candidates are additionally required to have code shape
+        (see ``_font_candidate_has_code_shape``): monospace font alone
+        also marks table fragments and KEY=VALUE strings in documents
+        that contain no source code at all.
 
         Returns list of detected code blocks with metadata.
         """
@@ -393,11 +452,45 @@ class PDFExtractor:
         current_code = []
         current_font = None
 
+        def flush():
+            nonlocal current_code, current_font
+            code_text = "".join(current_code).strip()
+            if len(code_text) > 10:  # Minimum code length
+                lang, confidence = self.detect_language_from_code(code_text)
+                if self._font_candidate_has_code_shape(code_text, confidence):
+                    quality = self.score_code_quality(code_text, lang, confidence)
+                    is_valid, issues = self.validate_code_syntax(code_text, lang)
+                    code_blocks.append(
+                        {
+                            "code": code_text,
+                            "language": lang,
+                            "confidence": confidence,
+                            "quality_score": quality,
+                            "is_valid": is_valid,
+                            "validation_issues": issues if not is_valid else [],
+                            "font": current_font,
+                            "detection_method": "font",
+                        }
+                    )
+            current_code = []
+            current_font = None
+
         for block in blocks:
             if "lines" not in block:
                 continue
 
+            # Blocks are independent text objects: a monospace run must
+            # not continue across a block boundary (that merged separate
+            # table cells into one fake code block).
+            if current_code:
+                flush()
+
             for line in block["lines"]:
+                # Run continues across a physical line boundary → keep
+                # the line structure (previously joined with no
+                # separator, mangling multi-line code into one line).
+                if current_code:
+                    current_code.append("\n")
                 for span in line["spans"]:
                     font = span["font"].lower()
                     text = span["text"]
@@ -412,47 +505,11 @@ class PDFExtractor:
                     else:
                         # End of code block
                         if current_code:
-                            code_text = "".join(current_code).strip()
-                            if len(code_text) > 10:  # Minimum code length
-                                lang, confidence = self.detect_language_from_code(code_text)
-                                quality = self.score_code_quality(code_text, lang, confidence)
-                                is_valid, issues = self.validate_code_syntax(code_text, lang)
-
-                                code_blocks.append(
-                                    {
-                                        "code": code_text,
-                                        "language": lang,
-                                        "confidence": confidence,
-                                        "quality_score": quality,
-                                        "is_valid": is_valid,
-                                        "validation_issues": issues if not is_valid else [],
-                                        "font": current_font,
-                                        "detection_method": "font",
-                                    }
-                                )
-                            current_code = []
-                            current_font = None
+                            flush()
 
         # Handle final code block
         if current_code:
-            code_text = "".join(current_code).strip()
-            if len(code_text) > 10:
-                lang, confidence = self.detect_language_from_code(code_text)
-                quality = self.score_code_quality(code_text, lang, confidence)
-                is_valid, issues = self.validate_code_syntax(code_text, lang)
-
-                code_blocks.append(
-                    {
-                        "code": code_text,
-                        "language": lang,
-                        "confidence": confidence,
-                        "quality_score": quality,
-                        "is_valid": is_valid,
-                        "validation_issues": issues if not is_valid else [],
-                        "font": current_font,
-                        "detection_method": "font",
-                    }
-                )
+            flush()
 
         return code_blocks
 
