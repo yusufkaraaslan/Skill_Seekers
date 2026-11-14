@@ -375,6 +375,17 @@ class PDFExtractor:
         else:
             score -= len(issues) * 0.5
 
+        # Single-/two-line cap: bonuses above (length, meaningful vars,
+        # syntax validity) let a 30-char document fragment like
+        # "MessageHeaderMsgType=FF1180ApplID" reach 8.0/10. Unverifiable
+        # short samples must not clear the default min_quality bar (5.0)
+        # on bonuses alone — cap them by detection confidence so
+        # fragments die in the min_quality filter while confidently
+        # detected short commands survive.
+        lines_count = len([l for l in code.split("\n") if l.strip()])
+        if lines_count < 3:
+            score = min(score, 4.0 + confidence * 2.0)
+
         # Clamp score to 0-10 range
         return max(0, min(10, score))
 
