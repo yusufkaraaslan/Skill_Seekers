@@ -140,6 +140,93 @@ class PDFToSkillConverter(DocumentSkillBuilder):
     # LOAD_TOTAL_KEY="total_pages" + UNIT_LABEL="pages" reproduce the PDF
     # loader output exactly (with the base's graceful len(pages) fallback).
 
+    def _categories_from_toc(
+        self, min_categories: int = 3, max_categories: int = 60, subdivide_span: int = 25
+    ) -> dict:
+        """
+        Build categories from the PDF outline/bookmarks (get_toc), when
+        available and usable.
+
+        Only level-1 chapters become categories; a chapter spanning >=
+        subdivide_span pages is subdivided by its level-2 children (if it
+        has >= 2), mirroring how a human would split a long interface
+        chapter into per-method reference files.
+
+        Returns {} when the TOC is missing or yields fewer than
+        min_categories usable chapters — callers then keep the
+        conservative single-category behavior.
+        """
+        toc = self.extracted_data.get("toc") or []
+        pages = self.extracted_data.get("pages", [])
+        total_pages = self.extracted_data.get("total_pages") or len(pages)
+        if not toc or not total_pages:
+            return {}
+
+        def _entries(level: int) -> list[tuple[str, int]]:
+            out = []
+            for lvl, title, page in toc:
+                if int(lvl) != level:
+                    continue
+                title = str(title).strip()
+                if title and 1 <= int(page) <= total_pages:
+                    out.append((title, int(page)))
+            return out
+
+        l1 = _entries(1)
+        if len(l1) < min_categories:
+            return {}
+
+        # Unit list from level-1 chapters, end-exclusive by next start.
+        units = []
+        for i, (title, start) in enumerate(l1):
+            end = l1[i + 1][1] - 1 if i + 1 < len(l1) else total_pages
+            units.append({"title": title, "start": start, "end": max(start, end)})
+
+        # Subdivide large chapters by level-2 children.
+        l2 = _entries(2)
+        if l2:
+            expanded = []
+            for unit in units:
+                span = unit["end"] - unit["start"] + 1
+                children = [
+                    (t, p)
+                    for t, p in l2
+                    if unit["start"] <= p <= unit["end"] and t != unit["title"]
+                ]
+                if span >= subdivide_span and len(children) >= 2:
+                    for j, (t, p) in enumerate(children):
+                        cend = (
+                            children[j + 1][1] - 1 if j + 1 < len(children) else unit["end"]
+                        )
+                        expanded.append({"title": t, "start": p, "end": max(p, cend)})
+                else:
+                    expanded.append(unit)
+            units = expanded
+        units = units[:max_categories]
+
+        categorized: dict = {}
+        used_keys: set[str] = set()
+        for unit in units:
+            key = self._sanitize_filename(unit["title"]) or f"section-{unit['start']}"
+            base, n = key, 2
+            while key in used_keys:
+                key = f"{base}-{n}"
+                n += 1
+            used_keys.add(key)
+            in_range = [
+                p
+                for p in pages
+                if unit["start"] <= p.get("page_number", -1) <= unit["end"]
+            ]
+            categorized[key] = {"title": unit["title"], "pages": in_range}
+
+        # Pages before the first chapter (cover, TOC, preface).
+        first_start = units[0]["start"]
+        orphans = [p for p in pages if p.get("page_number", -1) < first_start]
+        if orphans:
+            categorized["front-matter"] = {"title": "Front Matter", "pages": orphans}
+        return categorized
+
     def categorize_content(self):
         """Categorize pages based on chapters or keywords.
 
@@ -151,9 +238,20 @@ class PDFToSkillConverter(DocumentSkillBuilder):
 
         categorized = {}
 
-        # For single PDF source, use single category with all pages
-        # This avoids bad chapter detection splitting content incorrectly
+        # For single PDF source, prefer the document's own table of
+        # contents when it is rich enough (>= 3 level-1 chapters); a
+        # usable TOC is far better structure than one giant category.
+        # Without a usable TOC, keep the single category with all pages
+        # (this avoids bad chapter detection splitting content incorrectly)
         if self.pdf_path:
+            toc_categories = self._categories_from_toc()
+            if len(toc_categories) >= 3:
+                print(
+                    f"✅ Used PDF table of contents: {len(toc_categories)} categories"
+                )
+                for _cat_key, cat_data in toc_categories.items():
+                    print(f"   - {cat_data['title']}: {len(cat_data['pages'])} pages")
+                return toc_categories
             # Get PDF basename for title
             pdf_basename = self.source_stem
             category_key = self._sanitize_filename(pdf_basename)
