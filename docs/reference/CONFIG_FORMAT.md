@@ -100,6 +100,10 @@ For scraping documentation websites.
 | `extract_api` | boolean | No | false | Extract API references |
 | `llms_txt_url` | string | No | auto | Path to llms.txt file |
 
+For discovered links, scraping and page estimation use the same directory scope. A page-file `base_url` such as `https://example.com/manual/index.html` allows siblings and descendants under `/manual/`, subject to `url_patterns`. Recognized suffixes are `.html`, `.htm`, `.xhtml`, `.php`, `.asp`, `.aspx`, `.jsp`, and `.jspx` (case-insensitive); query strings, fragments, and URL parameters on those base URLs do not change the directory scope.
+
+Extensionless URLs keep directory behavior: `/manual` scopes to `/manual/`, excluding `/manual2/`. For an extensionless start page, set `base_url` to its documentation directory and put the page URL in `start_urls`.
+
 ---
 
 ### GitHub Source

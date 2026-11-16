@@ -38,6 +38,7 @@ from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
     MINIMAX_DEFAULT_PROTOCOL,
     MINIMAX_ENDPOINTS,
+    MINIMAX_IMAGE_MODEL,
     MINIMAX_THINKING_MODES,
     MINIMAX_VIDEO_MAX_BYTES,
     MINIMAX_VIDEO_MODELS,
@@ -164,6 +165,10 @@ API_PROVIDERS: tuple[dict[str, Any], ...] = (
         "video_max_bytes": MINIMAX_VIDEO_MAX_BYTES,
         "thinking_modes": MINIMAX_THINKING_MODES,
         "thinking_env": "MINIMAX_THINKING",
+        "thinking_protocols": ("openai", "anthropic"),
+        "model_thinking_modes": {"MiniMax-M3.1-Flash": ("adaptive",)},
+        "media_default_model": MINIMAX_IMAGE_MODEL,
+        "temperature_in_extra_body": True,
     },
 )
 
@@ -661,7 +666,7 @@ class AgentClient:
             )
             return None
         meta = PROVIDER_META.get(self.provider, {})
-        model = self.model or self.get_model(self.provider)
+        model = self.model or self.get_model(self.provider, default=meta.get("media_default_model"))
         video_models = meta.get("video_models")
         if video_models and model.lower() not in {m.lower() for m in video_models}:
             logger.warning(
@@ -789,7 +794,9 @@ class AgentClient:
         if not self.client:
             return None
 
-        model = self.model or self.get_model(self.provider)
+        meta = PROVIDER_META.get(self.provider, {})
+        media_default = meta.get("media_default_model") if image or video else None
+        model = self.model or self.get_model(self.provider, default=media_default)
         # Honor the caller's timeout (default 45m / SKILL_SEEKER_ENHANCE_TIMEOUT)
         # instead of a hardcoded 120s that killed large enhancement prompts.
         request_timeout = timeout if timeout is not None else get_default_timeout()
@@ -797,7 +804,21 @@ class AgentClient:
         # Reasoning mode: validated outside the try below so a bad value is a
         # ValueError to the caller, not a swallowed "API call failed".
         thinking_mode = self._resolve_thinking(thinking) if thinking else self.thinking
-        if thinking_mode is not None and self.api_protocol != "openai":
+        model_modes = next(
+            (
+                modes
+                for name, modes in meta.get("model_thinking_modes", {}).items()
+                if name.lower() == model.lower()
+            ),
+            None,
+        )
+        if thinking_mode is not None and model_modes and thinking_mode not in model_modes:
+            raise ValueError(
+                f"Model {model!r} only supports thinking mode(s): {', '.join(model_modes)}"
+            )
+        if thinking_mode is not None and self.api_protocol not in meta.get(
+            "thinking_protocols", ("openai",)
+        ):
             logger.warning(
                 "Thinking mode %r ignored: the %s protocol does not carry it (set %s=openai)",
                 thinking_mode,
@@ -812,10 +833,17 @@ class AgentClient:
         try:
             if self.api_protocol == "anthropic":
                 kwargs: dict[str, Any] = {}
+                if thinking_mode is not None:
+                    kwargs["extra_body"] = {"thinking": {"type": thinking_mode}}
                 if system is not None:
                     kwargs["system"] = system
                 if temperature is not None:
-                    kwargs["temperature"] = temperature
+                    if meta.get("temperature_in_extra_body"):
+                        # MiniMax accepts this field even when newer Anthropic
+                        # SDKs omit it from their typed Messages.create options.
+                        kwargs.setdefault("extra_body", {})["temperature"] = temperature
+                    else:
+                        kwargs["temperature"] = temperature
                 anthropic_content: str | list[dict[str, Any]] = prompt
                 if image:
                     media_type, image_data = image
@@ -1198,12 +1226,12 @@ class AgentClient:
         return None, None
 
     @staticmethod
-    def get_model(provider: str = "anthropic") -> str:
+    def get_model(provider: str = "anthropic", default: str | None = None) -> str:
         """
         Get the model name for a provider.
 
         Checks SKILL_SEEKER_MODEL env var first, then provider-specific env vars,
-        then falls back to defaults.
+        then the supplied media default or the provider's text default.
         """
         # Global override
         global_model = os.environ.get("SKILL_SEEKER_MODEL", "").strip()
@@ -1224,7 +1252,7 @@ class AgentClient:
             if model:
                 return model
 
-        return DEFAULT_MODELS.get(provider, "claude-sonnet-4-20250514")
+        return default or DEFAULT_MODELS.get(provider, "claude-sonnet-4-20250514")
 
     @staticmethod
     def detect_default_target() -> str:

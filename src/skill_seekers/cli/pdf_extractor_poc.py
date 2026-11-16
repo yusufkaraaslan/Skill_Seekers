@@ -375,16 +375,13 @@ class PDFExtractor:
         else:
             score -= len(issues) * 0.5
 
-        # Single-/two-line cap: bonuses above (length, meaningful vars,
-        # syntax validity) let a 30-char document fragment like
-        # "MessageHeaderMsgType=FF1180ApplID" reach 8.0/10. Unverifiable
-        # short samples must not clear the default min_quality bar (5.0)
-        # on bonuses alone — cap them by detection confidence so
-        # fragments die in the min_quality filter while confidently
-        # detected short commands survive.
-        lines_count = len([l for l in code.split("\n") if l.strip()])
-        if lines_count < 3:
-            score = min(score, 4.0 + confidence * 2.0)
+        # Short samples have limited evidence: generic length/variable/syntax
+        # bonuses should not make an unknown fragment look high-quality. Keep
+        # the cap at or above the converter's default acceptance threshold (5)
+        # so low language confidence alone does not discard real short code.
+        # Users can opt into stricter filtering with a higher min_quality.
+        if len(lines) < 3:
+            score = min(score, 5.0 + confidence * 2.0)
 
         # Clamp score to 0-10 range
         return max(0, min(10, score))
@@ -1568,6 +1565,10 @@ class PDFExtractor:
             "source_file": self.pdf_path,
             "metadata": self.doc.metadata,
             "total_pages": len(self.doc),
+            # PDF outline/bookmarks — enables TOC-based categorization in
+            # pdf_scraper (see Issue #485: 65-entry TOCs were previously
+            # ignored, dumping whole documents into one reference file).
+            "toc": self.doc.get_toc(),
             "total_chars": total_chars,
             "total_code_blocks": total_code_blocks,
             "total_headings": total_headings,
