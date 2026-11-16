@@ -57,19 +57,14 @@ stages:
     uses_history: true
     enabled: true
     prompt: >
-      Review the SKILL.md content generated so far and improve it.
-
-      Fix:
-      1. Unclear or overly technical descriptions
-      2. Missing quick-start examples
-      3. Gaps in the overview section
-      4. Redundant or duplicate information
-      5. Formatting inconsistencies
-
-      Output JSON with:
-      - "improved_overview": rewritten overview section
-      - "quick_start": concise getting-started snippet
-      - "key_concepts": 3-5 essential concepts a developer needs to know
+      Improve the current SKILL.md using the supplied document text and prior stage results.
+      Clarify descriptions, add supported quick-start examples, and remove duplication.
+      Ground factual claims in the references, distinguish inference from source facts,
+      and acknowledge missing information. Preserve useful content and frontmatter.
+      Do not add length for its own sake. Do not read or write files yourself.
+      Return a JSON object with a single "skill_md" string containing the complete
+      replacement Markdown document, not a summary or patch. If no SKILL.md document
+      was supplied, return an empty JSON object instead.
 post_process:
   reorder_sections: []
   add_metadata:
