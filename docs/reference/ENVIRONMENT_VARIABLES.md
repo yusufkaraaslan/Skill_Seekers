@@ -204,6 +204,7 @@ skill-seekers create <source>
 | Provider     | `OPENAI_BASE_URL`                     |
 |--------------|---------------------------------------|
 | OpenRouter   | `https://openrouter.ai/api/v1`        |
+| Requesty     | `https://router.requesty.ai/v1`       |
 | Groq         | `https://api.groq.com/openai/v1`      |
 | Cerebras     | `https://api.cerebras.ai/v1`          |
 | Mistral      | `https://api.mistral.ai/v1`           |

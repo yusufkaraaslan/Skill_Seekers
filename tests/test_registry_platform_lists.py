@@ -44,6 +44,7 @@ class TestGetUploadPlatforms(unittest.TestCase):
             "deepseek",
             "qwen",
             "openrouter",
+            "requesty",
             "together",
             "fireworks",
             "chroma",
