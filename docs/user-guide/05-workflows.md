@@ -409,6 +409,10 @@ skill-seekers create <source> \
 
 Preview what a workflow will do without executing:
 
+With `create`, this preview runs before scraping, enhancement, or output writes.
+Named and inline workflows are both supported. A workflow that cannot be loaded
+makes the preview exit with status 1 instead of reporting success.
+
 ```bash
 skill-seekers create <source> \
   --enhance-workflow security-focus \
@@ -524,6 +528,33 @@ skill-seekers create <source> \
 ---
 
 ## Troubleshooting
+
+### Document context and saved results
+
+Workflows invoked through `create` receive the current `SKILL.md` and Markdown
+files under `references/` as text, in both API and local-agent modes. Source paths
+are labels; the model does not need filesystem access. Input is limited to 64
+documents, 32,000 characters per document, and 100,000 characters total, with
+`SKILL.md` first. Truncation is reported, and external symlink targets are excluded.
+
+Successful workflow results are saved to `workflow_results.json` in the skill
+directory. This report contains the results of the named and inline workflows
+in the current invocation; a later invocation replaces it. Structured advice
+is retained in the report rather than silently discarded.
+
+A workflow can replace `SKILL.md` by returning an explicit `skill_md` string
+containing a complete Markdown document with a heading. The bundled `default`
+workflow does this in its final stage. The application preserves the original
+frontmatter and saves atomically with a `SKILL.md.backup`. Empty responses,
+failed stages, and invalid replacements do not overwrite the skill. A truncated
+`SKILL.md` input cannot be used for a replacement. Other workflow targets remain
+analysis results; they do not create arbitrary files. Chained workflows reread
+the updated document before running.
+
+These checks protect file handling, not the factual accuracy of model output.
+Review generated content against its sources. Enhancement favors useful,
+source-grounded explanations rather than length; claim labels, shrink logs,
+and evaluation files are not mandatory.
 
 ### "Workflow not found"
 

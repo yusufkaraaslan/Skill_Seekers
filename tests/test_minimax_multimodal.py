@@ -18,6 +18,7 @@ from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.minimax_config import (
     MINIMAX_DEFAULT_MODEL,
     MINIMAX_ENDPOINTS,
+    MINIMAX_IMAGE_MODEL,
     resolve_minimax_endpoint,
 )
 from skill_seekers.cli.video_models import FrameType
@@ -157,7 +158,7 @@ def test_vision_dispatch_uses_minimax_when_selected(monkeypatch, tmp_path):
     assert text == "print('ok')"
     assert confidence == 0.95
     assert constructor.call_args.kwargs["provider"] == "minimax"
-    assert constructor.call_args.kwargs["model"] == MINIMAX_DEFAULT_MODEL
+    assert constructor.call_args.kwargs["model"] == MINIMAX_IMAGE_MODEL == "MiniMax-M3"
 
 
 def test_minimax_vision_without_key_returns_empty(monkeypatch):
@@ -339,16 +340,17 @@ def test_invalid_thinking_argument_raises_before_any_request(monkeypatch):
     client.client.chat.completions.create.assert_not_called()
 
 
-def test_thinking_is_dropped_with_warning_under_anthropic_protocol(monkeypatch, caplog):
+def test_m3_thinking_is_carried_under_anthropic_protocol(monkeypatch):
     monkeypatch.setenv("MINIMAX_THINKING", "disabled")
     client = _mock_minimax_client(monkeypatch, "anthropic")
+    client.model = "MiniMax-M3"
     response = client.client.messages.create.return_value
     response.stop_reason = "end_turn"
     response.content = [type("Block", (), {"text": "ok"})()]
-    with caplog.at_level("WARNING"):
-        assert client.call("hi") == "ok"
-    assert "Thinking mode 'disabled' ignored" in caplog.text
-    assert "extra_body" not in client.client.messages.create.call_args.kwargs
+    assert client.call("hi") == "ok"
+    assert client.client.messages.create.call_args.kwargs["extra_body"] == {
+        "thinking": {"type": "disabled"}
+    }
 
 
 def test_video_rejected_under_anthropic_protocol_with_clear_reason(monkeypatch, tmp_path, caplog):
