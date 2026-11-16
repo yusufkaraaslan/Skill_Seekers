@@ -949,6 +949,7 @@ skill-seekers package SKILL_DIRECTORY [options]
 | DeepSeek | ZIP | `--target deepseek` |
 | Qwen | ZIP | `--target qwen` |
 | OpenRouter | ZIP | `--target openrouter` |
+| Requesty | ZIP | `--target requesty` |
 | Together AI | ZIP | `--target together` |
 | Fireworks AI | ZIP | `--target fireworks` |
 | LangChain | Documents | `--target langchain` |
