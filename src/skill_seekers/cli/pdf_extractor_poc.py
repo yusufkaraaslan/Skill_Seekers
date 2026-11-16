@@ -1557,6 +1557,10 @@ class PDFExtractor:
             "source_file": self.pdf_path,
             "metadata": self.doc.metadata,
             "total_pages": len(self.doc),
+            # PDF outline/bookmarks — enables TOC-based categorization in
+            # pdf_scraper (see Issue #485: 65-entry TOCs were previously
+            # ignored, dumping whole documents into one reference file).
+            "toc": self.doc.get_toc(),
             "total_chars": total_chars,
             "total_code_blocks": total_code_blocks,
             "total_headings": total_headings,

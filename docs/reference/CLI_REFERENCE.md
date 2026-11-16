@@ -999,6 +999,10 @@ Extract content from PDF and generate skill.
 
 **Purpose:** Convert PDF manuals, documentation, and papers into skills.
 
+Single-source PDFs use their embedded outline when at least three top-level chapters contain extracted pages. Chapters spanning 25 or more pages can split at their own level-2 subsections; chapter introductions and front matter remain included. Headings on the same page share that page’s content because extraction has page-level boundaries.
+
+Output is limited to 60 categories: excessive subdivisions fall back to top-level chapters, and oversized, missing, thin, or nonmonotonic top-level outlines retain the single-category output. These fallbacks preserve all extracted pages. Reference filenames are disambiguated consistently in the files, index, and skill navigation.
+
 **Syntax:**
 ```bash
 skill-seekers create --pdf [options]
