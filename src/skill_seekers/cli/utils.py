@@ -7,11 +7,13 @@ import bisect
 import logging
 import os
 import platform
+import re
 import subprocess
 import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
+from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -505,6 +507,24 @@ def offset_to_line(newline_offsets: list[int], offset: int) -> int:
 # ---------------------------------------------------------------------------
 # URL sanitisation
 # ---------------------------------------------------------------------------
+
+
+_PAGE_FILE_RE = re.compile(r"/[^/]+\.(?:html?|xhtml|php|aspx?|jspx?)$", re.IGNORECASE)
+
+
+def get_crawl_url_prefix(base_url: str) -> str | None:
+    """Return the shared scraper/estimator directory prefix, or None if malformed.
+
+    Recognized page-file URLs use their containing directory, dropping query,
+    fragment, and URL parameters. Other URLs keep the existing trailing-slash
+    rule: an extensionless /docs remains scoped to /docs/, not the whole host.
+    """
+    try:
+        if _PAGE_FILE_RE.search(urlparse(base_url).path):
+            return urljoin(base_url, ".")
+    except ValueError:
+        return None
+    return base_url if base_url.endswith("/") else base_url + "/"
 
 
 def sanitize_url(url: str) -> str:

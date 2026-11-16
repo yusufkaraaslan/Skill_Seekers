@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -55,7 +56,11 @@ def _build_inline_engine(inline_stages: list, agent=None):
     ``args.enhance_stage`` — config-only stages never appear on argv, so reading
     argv dropped them silently (and raised TypeError on the None default).
     """
-    from skill_seekers.cli.enhancement_workflow import WorkflowEngine
+    from skill_seekers.cli.enhancement_workflow import (
+        EnhancementWorkflow,
+        WorkflowEngine,
+        WorkflowStage,
+    )
 
     stages = []
     for i, spec in enumerate(inline_stages, 1):
@@ -64,20 +69,20 @@ def _build_inline_engine(inline_stages: list, agent=None):
         else:
             name, prompt = f"stage_{i}", spec
         stages.append(
-            {
-                "name": name.strip(),
-                "type": "custom",
-                "prompt": prompt.strip(),
-                "uses_history": True,
-            }
+            WorkflowStage(
+                name=name.strip(),
+                type="custom",
+                target="all",
+                prompt=prompt.strip(),
+                uses_history=True,
+            )
         )
-
-    inline_def = {
-        "name": "inline_workflow",
-        "description": "Custom inline workflow from --enhance-stage arguments",
-        "stages": stages,
-    }
-    return WorkflowEngine(workflow_data=inline_def, agent=agent)
+    return WorkflowEngine(
+        EnhancementWorkflow(
+            name="inline_workflow", description="Custom inline workflow", stages=stages
+        ),
+        agent=agent,
+    )
 
 
 def run_workflows(
@@ -136,9 +141,27 @@ def run_workflows(
     workflow_vars = collect_workflow_vars(args, extra=context)
 
     if workflow_vars:
-        logger.info("   Workflow variables:")
-        for k, v in workflow_vars.items():
-            logger.info(f"     {k} = {v}")
+        logger.info("   Workflow variables: %s", ", ".join(sorted(workflow_vars)))
+
+    # Output location comes from the caller, never from template --var overrides.
+    skill_dir = Path(context["skill_dir"]) if context and context.get("skill_dir") else None
+    records: list[dict] = []
+    failures = 0
+
+    def execute_engine(engine, name):
+        from skill_seekers.cli.workflow_documents import (
+            load_workflow_documents,
+            save_workflow_results,
+        )
+
+        run_context = dict(workflow_vars)
+        if skill_dir is not None:
+            run_context.update(load_workflow_documents(skill_dir))
+        results = engine.run(analysis_results={}, context=run_context)
+        if skill_dir is not None:
+            record = {"workflow": name, "results": results}
+            save_workflow_results(skill_dir, [*records, record], run_context)
+            records.append(record)
 
     executed: list[str] = []
     agent = getattr(args, "agent", None)
@@ -155,6 +178,7 @@ def run_workflows(
         try:
             engine = WorkflowEngine(workflow_name, agent=agent)
         except Exception as exc:
+            failures += 1
             logger.error(f"❌ Failed to load workflow '{workflow_name}': {exc}")
             logger.info("   Skipping this workflow and continuing...")
             continue
@@ -168,10 +192,11 @@ def run_workflows(
             continue  # Preview next workflow too
 
         try:
-            engine.run(analysis_results={}, context=workflow_vars)
+            execute_engine(engine, workflow_name)
             executed.append(workflow_name)
             logger.info(f"\n✅ Workflow '{workflow_name}' completed successfully!")
         except Exception as exc:
+            failures += 1
             logger.error(f"❌ Workflow '{workflow_name}' failed: {exc}")
             import traceback
 
@@ -190,6 +215,7 @@ def run_workflows(
         try:
             engine = _build_inline_engine(inline_stages, agent=agent)
         except Exception as exc:
+            failures += 1
             logger.error(f"❌ Failed to build inline workflow: {exc}")
         else:
             if dry_run:
@@ -197,16 +223,20 @@ def run_workflows(
                 engine.preview(context=workflow_vars)
             else:
                 try:
-                    engine.run(analysis_results={}, context=workflow_vars)
+                    execute_engine(engine, "inline_workflow")
                     executed.append("inline_workflow")
                     logger.info("\n✅ Inline workflow completed successfully!")
                 except Exception as exc:
+                    failures += 1
                     logger.error(f"❌ Inline workflow failed: {exc}")
                     import traceback
 
                     traceback.print_exc()
 
     if dry_run:
+        if failures:
+            logger.error("Dry run failed to load %d workflow(s).", failures)
+            sys.exit(1)
         logger.info("\n✅ Dry run complete! No changes made.")
         logger.info("   Remove --workflow-dry-run to execute.")
         sys.exit(0)

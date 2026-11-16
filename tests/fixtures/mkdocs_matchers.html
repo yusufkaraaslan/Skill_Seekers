@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head><title>Matchers - Mockio</title></head>
+<body>
+<main class="md-main">
+ <div class="md-content">
+  <article class="md-content__inner md-typeset">
+   <h1 id="matchers">Matchers</h1>
+   <h2 id="equal">Equal</h2>
+   <p>The Equal matcher matches any value that is equal to the expected value. Equal uses reflect.DeepEqual to compare values.</p>
+   <p>This test will succeed, because reflect.DeepEqual compares values by their content:</p>
+   <div class="language-go highlight"><pre><span></span><code><span class="nx">mock</span><span class="p">.</span><span class="nx">Foo</span><span class="p">(</span><span class="nx">Equal</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">Bar</span><span class="p">{}))</span>
+</code></pre></div>
+   <h2 id="not-equal">NotEqual</h2>
+   <p>The NotEqual matcher matches any value that is not equal to the expected value.</p>
+   <ul>
+    <li><p>Use it to exclude one concrete value from a stub:</p>
+     <div class="language-go highlight"><pre><span></span><code>WhenSingle(mock.Foo(NotEqual(1))).ThenReturn(2)
+</code></pre></div>
+    </li>
+   </ul>
+   <p>Both matchers can be combined with Any in the same stubbing call.</p>
+   <div class="language-go highlight"><pre><span></span><code>WhenSingle(mock.Foo(Any[int]())).ThenReturn(3)
+</code></pre></div>
+  </article>
+ </div>
+</main>
+</body>
+</html>

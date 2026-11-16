@@ -697,6 +697,10 @@ Install skill to AI agent directories (Cursor, Windsurf, Cline).
 
 **Purpose:** Direct installation to IDE AI assistant context directories.
 
+The installed folder uses the `name` from `SKILL.md` frontmatter. For example, a packaged folder `demo-opencode/` with `name: demo` installs as `demo/`. Missing, malformed, or unsafe names fall back to the source folder name. Frontmatter is copied unchanged.
+
+Existing installations require `--force` to replace. To install a separate copy, change the frontmatter name; renaming the source folder alone does not override it. Symlink destinations and overlapping source/destination folders are refused, including with `--force`.
+
 **Syntax:**
 ```bash
 skill-seekers install-agent SKILL_DIRECTORY --agent AGENT [options]
@@ -953,6 +957,7 @@ skill-seekers package SKILL_DIRECTORY [options]
 | DeepSeek | ZIP | `--target deepseek` |
 | Qwen | ZIP | `--target qwen` |
 | OpenRouter | ZIP | `--target openrouter` |
+| Requesty | ZIP | `--target requesty` |
 | Together AI | ZIP | `--target together` |
 | Fireworks AI | ZIP | `--target fireworks` |
 | LangChain | Documents | `--target langchain` |
@@ -993,6 +998,10 @@ skill-seekers package output/large-docs/ --streaming
 Extract content from PDF and generate skill.
 
 **Purpose:** Convert PDF manuals, documentation, and papers into skills.
+
+Single-source PDFs use their embedded outline when at least three top-level chapters contain extracted pages. Chapters spanning 25 or more pages can split at their own level-2 subsections; chapter introductions and front matter remain included. Headings on the same page share that page’s content because extraction has page-level boundaries.
+
+Output is limited to 60 categories: excessive subdivisions fall back to top-level chapters, and oversized, missing, thin, or nonmonotonic top-level outlines retain the single-category output. These fallbacks preserve all extracted pages. Reference filenames are disambiguated consistently in the files, index, and skill navigation.
 
 **Syntax:**
 ```bash

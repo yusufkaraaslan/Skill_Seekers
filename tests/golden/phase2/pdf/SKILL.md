@@ -9,12 +9,11 @@ Use when testing the pdf golden build
 
 ## 💡 When to Use This Skill
 
-Use this skill when you need to:
-- Understand golden_pdf concepts and fundamentals
-- Look up API references and technical specifications
-- Find code examples and implementation patterns
-- Review tutorials, guides, and best practices
-- Explore the complete documentation structure
+Use for questions or tasks involving these main topics:
+- Getting Started Guide
+- Troubleshooting
+- Installation Steps
+- API Usage
 
 ## 📖 Chapter Overview
 

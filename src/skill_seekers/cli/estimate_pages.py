@@ -24,6 +24,7 @@ from skill_seekers.cli.constants import (
     DISCOVERY_THRESHOLD,
 )
 from skill_seekers.cli.exit_codes import EXIT_ERROR, EXIT_SUCCESS
+from skill_seekers.cli.utils import get_crawl_url_prefix
 
 
 def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
@@ -147,8 +148,9 @@ def estimate_pages(config, max_discovery=DEFAULT_MAX_DISCOVERY, timeout=30):
 
 def is_valid_url(url, base_url, include_patterns, exclude_patterns):
     """Check if URL should be crawled"""
-    # Must be same domain
-    if not url.startswith(base_url.rstrip("/")):
+    # Match the scraper's scope, including page-file bases and directory boundaries.
+    base_dir = get_crawl_url_prefix(base_url)
+    if base_dir is None or not url.startswith(base_dir):
         return False
 
     # Check exclude patterns first
