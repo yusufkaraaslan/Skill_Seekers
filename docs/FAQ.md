@@ -25,7 +25,7 @@ Skill Seekers is a Python tool that converts 18 source types — documentation w
 
 **Supported Platforms (30+):**
 
-*LLM Platforms (12):*
+*LLM Platforms (13):*
 1. **Claude AI** - ZIP format with YAML frontmatter
 2. **Google Gemini** - tar.gz format for Grounded Generation
 3. **OpenAI ChatGPT** - ZIP format for Vector Stores
@@ -35,9 +35,10 @@ Skill Seekers is a Python tool that converts 18 source types — documentation w
 7. **DeepSeek** - ZIP format
 8. **Qwen** - ZIP format
 9. **OpenRouter** - ZIP format for multi-model routing
-10. **Together AI** - ZIP format for open-source models
-11. **Fireworks AI** - ZIP format for fast inference
-12. **Generic Markdown** - ZIP format with markdown files
+10. **Requesty** - ZIP format for multi-model routing
+11. **Together AI** - ZIP format for open-source models
+12. **Fireworks AI** - ZIP format for fast inference
+13. **Generic Markdown** - ZIP format with markdown files
 
 *RAG Frameworks:*
 13. **LangChain** - Document objects for QA chains and agents
@@ -433,7 +434,7 @@ skill-seekers install --config react --target claude
 - Google Gemini: Best for Grounded Generation in Gemini
 - OpenAI ChatGPT: Best for ChatGPT Custom GPTs
 - MiniMax/Kimi/DeepSeek/Qwen: Best for Chinese LLM ecosystem
-- OpenRouter/Together/Fireworks: Best for multi-model routing or open-source model access
+- OpenRouter/Requesty/Together/Fireworks: Best for multi-model routing or open-source model access
 - Markdown: Generic export for other tools
 
 ### Can I use multiple platforms at once?
@@ -442,7 +443,7 @@ Yes! Package and upload to all platforms:
 
 ```bash
 # Package for all platforms
-for platform in claude gemini openai minimax kimi deepseek qwen openrouter together fireworks markdown; do
+for platform in claude gemini openai minimax kimi deepseek qwen openrouter requesty together fireworks markdown; do
   skill-seekers package output/react/ --target $platform
 done
 
