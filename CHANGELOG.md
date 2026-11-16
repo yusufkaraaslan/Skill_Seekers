@@ -13,6 +13,9 @@ _Development version: 3.11.0.dev0_
 - **Opt-in MiniMax-M3.1-Flash** (#477) — M3 remains the text and media default. Select Flash with `--model MiniMax-M3.1-Flash` or a model environment override; Flash requires adaptive thinking. MiniMax enhancement now honors regional/protocol settings and thinking modes through its provider configuration. Enhancement and new packages resolve models in the order `--model`, `SKILL_SEEKER_MODEL`, `MINIMAX_MODEL`, then M3; validating an existing package preserves its saved model. Offline SDK tests cover routing, overrides, thinking validation, and unchanged media defaults.
 - **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
 
+### Fixed
+- **`¶` in scraped headings** — Heading can contain a headerlink sign `<a class="headerlink">¶</a>`, so the `**Contents:**` list in reference files read "Content Item ¶". `doc_scraper` now drops those anchors before reading heading text, in both `extract_content` and the HTML fallback, including configured page titles taken from headings. Literal pilcrows and ordinary links are preserved.
+
 ## [3.10.0] - 2026-09-30
 
 **Theme:** Seeker HUD (beta) — a local web UI for the whole toolchain — plus a path-traversal security fix, three machine-readable CLI commands, an opt-in SQLite skill search index, MiniMax video input, and PDF vector-figure extraction.

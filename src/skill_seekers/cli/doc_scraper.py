@@ -19,6 +19,7 @@ import re
 import sys
 import time
 from collections import defaultdict, deque
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
@@ -488,7 +489,7 @@ class DocToSkillConverter(SkillConverter):
         # Extract title
         title_elem = soup.select_one(selectors.get("title", "title"))
         if title_elem:
-            page["title"] = self.clean_text(title_elem.get_text())
+            page["title"] = self._heading_text(title_elem)
 
         # Extract links from entire page (always, even if main content not found).
         # This allows discovery of navigation links outside the main content area.
@@ -513,7 +514,7 @@ class DocToSkillConverter(SkillConverter):
 
         # Extract headings with better structure
         for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-            text = self.clean_text(h.get_text())
+            text = self._heading_text(h)
             if text:
                 page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -757,7 +758,7 @@ class DocToSkillConverter(SkillConverter):
         if main:
             # Extract headings
             for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-                text = self.clean_text(h.get_text())
+                text = self._heading_text(h)
                 if text:
                     page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -917,6 +918,13 @@ class DocToSkillConverter(SkillConverter):
             "text": 20,
         }
         return priorities.get(language.lower(), 50)
+
+    def _heading_text(self, heading: Any) -> str:
+        """Read title/heading text without permalink anchors or mutating the page."""
+        heading = deepcopy(heading)
+        for anchor in heading.find_all("a", class_="headerlink"):
+            anchor.decompose()
+        return self.clean_text(heading.get_text())
 
     def clean_text(self, text: str) -> str:
         """Clean text content"""
