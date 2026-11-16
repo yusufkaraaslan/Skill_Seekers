@@ -161,7 +161,7 @@ pip install -e .[all-llms]
 - SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
 - Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
 - API: OpenAI-compatible chat completions
-- Enhancement: MiniMax-M3 (M2.7 still selectable)
+- Enhancement: MiniMax-M3 by default (MiniMax-M3.1-Flash is opt-in; explicit legacy/custom models preserved)
 
 **Generic Markdown:**
 - Format: ZIP archive
@@ -429,11 +429,10 @@ A: Yes. Each platform has a default enhancement model:
 - MiniMax: MiniMax-M3
 - Kimi / DeepSeek / Qwen / OpenRouter / Requesty / Together / Fireworks: each platform's own default
 
-Override the default for any platform with `--model`, e.g. to pin the
-previous-generation MiniMax model:
+Override the default for any platform with `--model`, e.g. to opt into MiniMax-M3.1-Flash:
 
 ```bash
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3.1-Flash
 ```
 
 **Q: Which platforms can enhance SKILL.md?**
