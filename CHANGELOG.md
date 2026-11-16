@@ -14,6 +14,7 @@ _Development version: 3.11.0.dev0_
 - **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
 
 ### Fixed
+- **Web scraper dropped code that sits between paragraphs** — `doc_scraper` collected text and code into two separate lists, so reference files showed all text first and only the first four code samples under `**Examples:**`. Pages now carry an ordered `body_blocks` list and `create_reference_file` renders text and code in page order with no cap. `content` and `code_samples` are still filled, and pages without `body_blocks` (markdown sources, older cached pages) render as before. The HTML fallback (`_extract_html_as_markdown`) no longer returns each `<pre><code>` twice.
 - **`¶` in scraped headings** — Heading can contain a headerlink sign `<a class="headerlink">¶</a>`, so the `**Contents:**` list in reference files read "Content Item ¶". `doc_scraper` now drops those anchors before reading heading text, in both `extract_content` and the HTML fallback, including configured page titles taken from headings. Literal pilcrows and ordinary links are preserved.
 
 ## [3.10.0] - 2026-09-30

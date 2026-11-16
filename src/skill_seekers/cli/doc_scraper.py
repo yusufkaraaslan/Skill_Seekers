@@ -479,6 +479,7 @@ class DocToSkillConverter(SkillConverter):
             "title": "",
             "content": "",
             "headings": [],
+            "body_blocks": [],
             "code_samples": [],
             "patterns": [],  # NEW: Extract common patterns
             "links": [],
@@ -518,28 +519,54 @@ class DocToSkillConverter(SkillConverter):
             if text:
                 page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
-        # Extract code with language detection
-        code_selector = selectors.get("code_blocks", "pre code")
-        for code_elem in main.select(code_selector):
-            code = code_elem.get_text()
-            if len(code.strip()) > 10:
-                # Try to detect language
-                lang = self.detect_language(code_elem, code)
-                page["code_samples"].append({"code": code.strip(), "language": lang})
+        # Extract text + code with language detection, in document order
+        self._fill_body(page, main, selectors.get("code_blocks", "pre code"))
 
         # Extract patterns (NEW: common code patterns)
         page["patterns"] = self.extract_patterns(main, page["code_samples"])
 
-        # Extract paragraphs
-        paragraphs = []
-        for p in main.find_all("p"):
-            text = self.clean_text(p.get_text())
-            if text and len(text) > 20:  # Skip very short paragraphs
-                paragraphs.append(text)
-
-        page["content"] = "\n\n".join(paragraphs)
-
         return page
+
+    def _fill_body(self, page: dict[str, Any], main: Any, code_selector: str) -> None:
+        """Fill ``body_blocks``, ``code_samples`` and ``content`` from one ordered walk of ``main``.
+
+        ``body_blocks`` keeps text and code interleaved as on the page; ``content`` and
+        ``code_samples`` stay populated for consumers that read them separately.
+        """
+        blocks: list[dict[str, str]] = []
+        code_ids = {id(elem) for elem in main.select(code_selector)}
+        consumed: set[int] = set()
+        for elem in main.find_all(True):
+            is_code = id(elem) in code_ids
+            if not is_code and elem.name != "p":
+                continue
+            if any(id(parent) in consumed for parent in elem.parents):
+                continue
+            if not is_code:
+                text = self.clean_text(elem.get_text())
+                if len(text) > 20:  # Skip very short paragraphs
+                    blocks.append({"type": "text", "text": text})
+                continue
+            # A configured code selector takes precedence over paragraph handling.
+            # Consume its subtree once, including any nested paragraphs or code tags.
+            consumed.add(id(elem))
+            code = elem.get_text().strip()
+            if len(code) > 10:
+                # Prefer the code child's language class, then its parent pre class.
+                language_elem = (elem.find("code") or elem) if elem.name == "pre" else elem
+                blocks.append(
+                    {
+                        "type": "code",
+                        "language": self.detect_language(language_elem, code),
+                        "code": code,
+                    }
+                )
+
+        page["body_blocks"] = blocks
+        page["code_samples"] = [
+            {"code": b["code"], "language": b["language"]} for b in blocks if b["type"] == "code"
+        ]
+        page["content"] = "\n\n".join(b["text"] for b in blocks if b["type"] == "text")
 
     def _extract_markdown_content(self, content: str, url: str) -> dict[str, Any]:
         """Extract structured content from a Markdown file.
@@ -636,6 +663,7 @@ class DocToSkillConverter(SkillConverter):
             "title": "",
             "content": "",
             "headings": [],
+            "body_blocks": [],
             "code_samples": [],
             "patterns": [],
             "links": [],
@@ -725,6 +753,7 @@ class DocToSkillConverter(SkillConverter):
                 - content: str - Text content from main area
                 - headings: List[Dict] - {'level': 'h2', 'text': str, 'id': str}
                 - code_samples: List[Dict] - {'code': str, 'language': str}
+                - body_blocks: List[Dict] - text ({'type': 'text'}) and code ({'type': 'code'}) in page order
                 - links: List - Empty (HTML links not extracted to avoid client-side routes)
                 - patterns: List - Empty (reserved for future use)
 
@@ -738,6 +767,7 @@ class DocToSkillConverter(SkillConverter):
             "title": "",
             "content": "",
             "headings": [],
+            "body_blocks": [],
             "code_samples": [],
             "patterns": [],
             "links": [],
@@ -762,20 +792,7 @@ class DocToSkillConverter(SkillConverter):
                 if text:
                     page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
-            # Extract code blocks
-            for code_elem in main.select("pre code, pre"):
-                code = code_elem.get_text()
-                if len(code.strip()) > 10:
-                    lang = self.detect_language(code_elem, code)
-                    page["code_samples"].append({"code": code.strip(), "language": lang})
-
-            # Extract paragraphs
-            paragraphs = []
-            for p in main.find_all("p"):
-                text = self.clean_text(p.get_text())
-                if text and len(text) > 20:
-                    paragraphs.append(text)
-            page["content"] = "\n\n".join(paragraphs)
+            self._fill_body(page, main, "pre code, pre")
 
         return page
 
@@ -2055,6 +2072,22 @@ class DocToSkillConverter(SkillConverter):
                     lines.append(f"{indent}- {h['text']}")
                 lines.append("")
 
+            if page.get("body_blocks"):
+                # Text and code in page order
+                for block in page["body_blocks"]:
+                    if block["type"] == "code":
+                        # Examples may themselves contain Markdown code fences.
+                        longest_run = max(
+                            (len(run) for run in re.findall(r"`+", block["code"])), default=0
+                        )
+                        fence = "`" * max(3, longest_run + 1)
+                        lines.append(f"{fence}{block['language']}\n{block['code']}\n{fence}\n")
+                    else:
+                        lines.append(f"{block['text']}\n")
+                lines.append("---\n")
+                continue
+
+            # Pages without body_blocks (markdown sources, older cached pages)
             # Content (NO TRUNCATION)
             if page.get("content"):
                 lines.append(page["content"])
