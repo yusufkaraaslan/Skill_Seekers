@@ -697,6 +697,10 @@ Install skill to AI agent directories (Cursor, Windsurf, Cline).
 
 **Purpose:** Direct installation to IDE AI assistant context directories.
 
+The installed folder uses the `name` from `SKILL.md` frontmatter. For example, a packaged folder `demo-opencode/` with `name: demo` installs as `demo/`. Missing, malformed, or unsafe names fall back to the source folder name. Frontmatter is copied unchanged.
+
+Existing installations require `--force` to replace. To install a separate copy, change the frontmatter name; renaming the source folder alone does not override it. Symlink destinations and overlapping source/destination folders are refused, including with `--force`.
+
 **Syntax:**
 ```bash
 skill-seekers install-agent SKILL_DIRECTORY --agent AGENT [options]
