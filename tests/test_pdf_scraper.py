@@ -233,7 +233,7 @@ class TestSkillBuilding(unittest.TestCase):
 
         # Check content
         content = skill_md.read_text()
-        self.assertIn("test_skill", content)
+        self.assertIn("name: test-skill", content)
         self.assertIn("Test description", content)
 
     def test_build_skill_creates_reference_files(self):
