@@ -114,7 +114,9 @@ LANGUAGE_PATTERNS: dict[str, list[tuple[str, int]]] = {
         (r"\btype\s+\w+\s*=", 4),
         (r":\s*\w+\s*=", 3),  # Type annotation
         (r":\s*\w+\[\]", 3),  # Array type
-        (r"<[\w,\s]+>", 2),  # Generic type
+        (r"<[\w,\s]+>", 1),  # Generic type — weight 1 on purpose: "<Token>"
+        # alone must not clear min-confidence by itself; real TS signals
+        # generics together with other TypeScript patterns.
         (r"\bas\s+\w+", 2),  # Type assertion
         (r"\benum\s+\w+\s*\{", 4),
         (r"\bimplements\s+\w+", 3),
@@ -443,9 +445,14 @@ LANGUAGE_PATTERNS: dict[str, list[tuple[str, int]]] = {
         (r"@each\s+", 5),
     ],
     "sass": [
-        (r"\$[\w-]+\s*:", 5),
-        (r"=[\w-]+", 5),
-        (r"\+[\w-]+", 5),
+        (r"^\s*\$[\w-]+\s*:", 5),
+        # Legacy (indented) sass mixins are identifiers at line start:
+        # "=name" defines, "+name" includes. Unanchored, these also match
+        # any "X=Y" / generic "+token" text (e.g. PDF field strings like
+        # "MsgType=190007190007ApplID"), which caused wholesale
+        # false-positive sass classification of table fragments.
+        (r"^\s*=[\w-]+", 5),
+        (r"^\s*\+[\w-]+", 5),
         (r"@for\s+.+\s+through\s+", 5),
         (r"@mixin\s+[\w-]+", 4),
         (r"@if\s+", 4),
