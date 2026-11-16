@@ -86,6 +86,11 @@ class CreateCommand:
         # 4. Validate and warn about incompatible arguments
         self._validate_arguments()
 
+        # A workflow preview must precede scraping and normal enhancement too.
+        if getattr(self.args, "workflow_dry_run", False):
+            self._run_workflows()
+            return 0
+
         # 5. Route to appropriate converter
         logger.info(f"Routing to {self.source_info.type} converter...")
         result = self._route_to_scraper()
@@ -551,7 +556,14 @@ class CreateCommand:
             # the fallback for every other source type, where this call is the
             # only executor of config-declared workflows.
             is_unified = bool(self.source_info and self.source_info.type == "config")
-            run_workflows(self.args, use_context_fallback=not is_unified)
+
+            skill_dir = self._resolve_skill_dir(ExecutionContext.get()).resolve()
+            run_workflows(
+                self.args,
+                use_context_fallback=not is_unified
+                or bool(getattr(self.args, "workflow_dry_run", False)),
+                context={"skill_dir": str(skill_dir)},
+            )
         except ImportError:
             pass
         except Exception as e:

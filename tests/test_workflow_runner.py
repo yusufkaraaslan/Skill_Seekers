@@ -243,13 +243,12 @@ class TestRunWorkflowsInlineStages:
         mock_engine.run.assert_called_once()
 
         # Verify inline workflow was built correctly
-        call_kwargs = MockEngine.call_args[1]
-        stages = call_kwargs["workflow_data"]["stages"]
+        stages = MockEngine.call_args.args[0].stages
         assert len(stages) == 2
-        assert stages[0]["name"] == "security"
-        assert stages[0]["prompt"] == "Check security"
-        assert stages[1]["name"] == "cleanup"
-        assert stages[1]["prompt"] == "Remove boilerplate"
+        assert stages[0].name == "security"
+        assert stages[0].prompt == "Check security"
+        assert stages[1].name == "cleanup"
+        assert stages[1].prompt == "Remove boilerplate"
 
     def test_inline_stage_without_colon(self):
         """Stage spec without ':' uses the whole string as both name and prompt."""
@@ -264,10 +263,9 @@ class TestRunWorkflowsInlineStages:
         ) as MockEngine:
             run_workflows(args)
 
-        call_kwargs = MockEngine.call_args[1]
-        stage = call_kwargs["workflow_data"]["stages"][0]
-        assert stage["name"] == "stage_1"
-        assert stage["prompt"] == "analyze everything"
+        stage = MockEngine.call_args.args[0].stages[0]
+        assert stage.name == "stage_1"
+        assert stage.prompt == "analyze everything"
 
     def test_inline_stages_from_config_execute(self):
         """Regression for RT-06/I2: inline stages declared in a CONFIG file reach
@@ -300,8 +298,8 @@ class TestRunWorkflowsInlineStages:
         assert "inline_workflow" in names
         mock_engine.run.assert_called_once()
         # Built from the CONFIG stages, not argv.
-        stages = MockEngine.call_args[1]["workflow_data"]["stages"]
-        assert [s["name"] for s in stages] == ["security", "cleanup"]
+        stages = MockEngine.call_args.args[0].stages
+        assert [s.name for s in stages] == ["security", "cleanup"]
 
 
 class TestRunWorkflowsMixed:
