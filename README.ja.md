@@ -183,7 +183,7 @@ skill-seekers package output/react --target llama-index # → LlamaIndex TextNod
 skill-seekers package output/react --target ibm-bob     # → IBM Bob スキルディレクトリ
 ```
 
-**LLM プラットフォーム（12）:** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `together` · `fireworks` · `markdown`
+**LLM プラットフォーム（13）:** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `requesty` · `together` · `fireworks` · `markdown`
 **RAG・ベクトル（8）:** `langchain` · `llama-index` · `haystack` · `chroma` · `faiss` · `weaviate` · `qdrant` · `pinecone`
 **その他（2）:** `atlas` · `ibm-bob`
 

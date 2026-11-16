@@ -183,7 +183,7 @@ skill-seekers package output/react --target llama-index # → LlamaIndex TextNod
 skill-seekers package output/react --target ibm-bob     # → IBM Bob 技能目录
 ```
 
-**LLM 平台（12 个）：** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `together` · `fireworks` · `markdown`
+**LLM 平台（13 个）：** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `requesty` · `together` · `fireworks` · `markdown`
 **RAG 与向量（8 个）：** `langchain` · `llama-index` · `haystack` · `chroma` · `faiss` · `weaviate` · `qdrant` · `pinecone`
 **其他（2 个）：** `atlas` · `ibm-bob`
 

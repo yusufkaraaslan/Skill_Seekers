@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Development version: 3.11.0.dev0_
 
+### Added
+- **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
+
 ## [3.10.0] - 2026-09-30
 
 **Theme:** Seeker HUD (beta) — a local web UI for the whole toolchain — plus a path-traversal security fix, three machine-readable CLI commands, an opt-in SQLite skill search index, MiniMax video input, and PDF vector-figure extraction.
