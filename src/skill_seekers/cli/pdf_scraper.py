@@ -382,14 +382,7 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             f.write(f"# {self.name.title()} Documentation Skill\n\n")
             f.write(f"{self.description}\n\n")
 
-            # Enhanced "When to Use" section
-            f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
+            f.write(self._format_when_to_use(categorized))
 
             # Chapter Overview (PDF structure)
             f.write("## 📖 Chapter Overview\n\n")
@@ -404,9 +397,7 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             # Extract key concepts from headings
             f.write(self._format_key_concepts())
 
-            # Quick Reference with patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
+            f.write(self._format_quick_reference())
 
             # Enhanced code examples section (top 15, grouped by language)
             all_code = []

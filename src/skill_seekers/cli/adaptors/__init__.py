@@ -4,7 +4,7 @@ Multi-LLM Adaptor Registry
 
 Provides factory function to get platform-specific adaptors for skill generation.
 Supports Claude AI, Google Gemini, OpenAI ChatGPT, MiniMax AI, OpenCode,
-Kimi, DeepSeek, Qwen, OpenRouter, Together AI, Fireworks AI,
+Kimi, DeepSeek, Qwen, OpenRouter, Requesty, Together AI, Fireworks AI,
 and generic Markdown export.
 """
 
@@ -102,6 +102,11 @@ except ImportError:
     OpenRouterAdaptor = None
 
 try:
+    from .requesty import RequestyAdaptor
+except ImportError:
+    RequestyAdaptor = None
+
+try:
     from .together import TogetherAdaptor
 except ImportError:
     TogetherAdaptor = None
@@ -162,6 +167,8 @@ if QwenAdaptor:
     ADAPTORS["qwen"] = QwenAdaptor
 if OpenRouterAdaptor:
     ADAPTORS["openrouter"] = OpenRouterAdaptor
+if RequestyAdaptor:
+    ADAPTORS["requesty"] = RequestyAdaptor
 if TogetherAdaptor:
     ADAPTORS["together"] = TogetherAdaptor
 if FireworksAdaptor:
@@ -178,8 +185,8 @@ def get_adaptor(platform: str, config: dict = None) -> SkillAdaptor:
 
     Args:
         platform: Platform identifier (e.g., 'claude', 'gemini', 'openai', 'minimax',
-                  'opencode', 'kimi', 'deepseek', 'qwen', 'openrouter', 'together',
-                  'fireworks', 'markdown')
+                  'opencode', 'kimi', 'deepseek', 'qwen', 'openrouter', 'requesty',
+                  'together', 'fireworks', 'markdown')
         config: Optional platform-specific configuration
 
     Returns:

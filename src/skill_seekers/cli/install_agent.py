@@ -29,6 +29,8 @@ import sys
 from difflib import get_close_matches
 from pathlib import Path
 
+import yaml
+
 # Agent installation paths
 # Global paths (install to home directory): Use ~/.{agent}/skills/
 # Project paths (install to current directory): Use .{agent}/skills/
@@ -102,28 +104,36 @@ def get_available_agents() -> list:
 
 
 def get_skill_name(skill_dir: Path) -> str:
-    """
-    Prefer the SKILL.md frontmatter name over the directory name.
+    """Return a safe frontmatter name, falling back to the source directory name.
 
-    package_skill names local-target output directories "<skill>-<target>"
-    (e.g. "szse-bond-guide-opencode"), but OpenCode/Claude require the
-    installed directory name to match the SKILL.md frontmatter name.
-    Fall back to the directory name when frontmatter is absent or empty.
+    Packaged directories may have a platform suffix absent from the skill name.
+    Parse complete YAML values so quotes, comments, and empty values are handled
+    correctly. Invalid metadata and names containing paths are never used as
+    installation destinations.
     """
-    skill_md = skill_dir / "SKILL.md"
-    if skill_md.exists():
-        try:
-            text = skill_md.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            return skill_dir.name
-        if text.startswith("---"):
-            end = text.find("\n---", 3)
-            if end != -1:
-                match = re.search(
-                    r"^name:\s*['\"]?([^\n#'\"\s]+)", text[3:end], re.MULTILINE
-                )
-                if match:
-                    return match.group(1).strip().rstrip("'\"")
+    try:
+        lines = (skill_dir / "SKILL.md").read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeError):
+        return skill_dir.name
+    if not lines or lines[0].rstrip() != "---":
+        return skill_dir.name
+    end = next((i for i in range(1, len(lines)) if lines[i].rstrip() == "---"), None)
+    if end is None:
+        return skill_dir.name
+    try:
+        metadata = yaml.safe_load("\n".join(lines[1:end]))
+    except yaml.YAMLError:
+        return skill_dir.name
+    name = metadata.get("name") if isinstance(metadata, dict) else None
+    if (
+        isinstance(name, str)
+        and name
+        and name == name.strip()
+        and name not in {".", ".."}
+        and not name.endswith(".")
+        and not re.search(r'[<>:"/\\|?*\x00-\x1f]', name)
+    ):
+        return name
     return skill_dir.name
 
 
@@ -218,8 +228,6 @@ def install_to_agent(
     """
     # Convert to Path
     skill_dir = Path(skill_dir).resolve()
-    skill_name = get_skill_name(skill_dir)
-
     # Validate skill directory
     is_valid, error_msg = validate_skill_directory(skill_dir)
     if not is_valid:
@@ -236,8 +244,20 @@ def install_to_agent(
     except ValueError as e:
         return False, f"❌ {str(e)}"
 
-    # Target path: {agent_base_path}/{skill_name}/
+    # Frontmatter is untrusted input; only a single safe name may select a child.
+    skill_name = get_skill_name(skill_dir)
     target_path = agent_base_path / skill_name
+    if target_path.is_symlink():
+        return False, f"❌ Unsafe installation destination: {target_path}"
+    resolved_target = target_path.resolve()
+    if resolved_target.parent != agent_base_path.resolve():
+        return False, f"❌ Unsafe installation destination: {target_path}"
+    if (
+        resolved_target == skill_dir
+        or resolved_target in skill_dir.parents
+        or skill_dir in resolved_target.parents
+    ):
+        return False, f"❌ Source and destination overlap: {skill_dir} → {target_path}"
 
     # Check if already exists
     if target_path.exists() and not force:
@@ -246,7 +266,10 @@ def install_to_agent(
         error_msg += "Options:\n"
         error_msg += f"  1. Overwrite: skill-seekers install-agent {skill_dir} --agent {agent_name} --force\n"
         error_msg += f"  2. Remove:    rm -rf {target_path}\n"
-        error_msg += f"  3. Rename:    mv {skill_dir} {skill_dir.parent / (skill_name + '-v2')}"
+        error_msg += (
+            "  3. Choose a different name in SKILL.md frontmatter "
+            "(or rename the source directory when no valid name is set)."
+        )
         return False, error_msg
 
     # Dry run mode - just preview
@@ -387,8 +410,8 @@ def main(args=None) -> int:
         args = parser.parse_args()
 
     # Convert skill directory to Path
-    skill_dir = Path(args.skill_directory)
-    skill_name = skill_dir.name
+    skill_dir = Path(args.skill_directory).resolve()
+    skill_name = get_skill_name(skill_dir)
 
     # Handle 'all' agent
     if args.agent.lower() == "all":

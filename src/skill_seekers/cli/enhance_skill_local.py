@@ -582,9 +582,11 @@ Even if running from within another coding agent session, this modification is A
 
 VERIFICATION:
 After writing, the file SKILL.md should:
-- Exist in the current directory
-- Be larger than the original (200-1000+ lines)
-- Contain all the enhancements from the references above
+- Exist in the current directory (original preserved as SKILL.md.backup)
+- Ground factual claims and examples in the supplied references
+- Clearly distinguish inferences and acknowledge missing source information
+- Replace redundant boilerplate with useful explanations; do not add length for its own sake
+- Preserve useful existing information and the frontmatter
 """
 
         return prompt
