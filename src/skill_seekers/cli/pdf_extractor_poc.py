@@ -375,6 +375,14 @@ class PDFExtractor:
         else:
             score -= len(issues) * 0.5
 
+        # Short samples have limited evidence: generic length/variable/syntax
+        # bonuses should not make an unknown fragment look high-quality. Keep
+        # the cap at or above the converter's default acceptance threshold (5)
+        # so low language confidence alone does not discard real short code.
+        # Users can opt into stricter filtering with a higher min_quality.
+        if len(lines) < 3:
+            score = min(score, 5.0 + confidence * 2.0)
+
         # Clamp score to 0-10 range
         return max(0, min(10, score))
 
