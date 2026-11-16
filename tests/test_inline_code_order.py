@@ -65,3 +65,68 @@ def test_page_without_body_blocks_uses_legacy_layout(converter: DocToSkillConver
     converter.create_reference_file("old", [page])
     out = (Path(converter.skill_dir) / "references" / "old.md").read_text(encoding="utf-8")
     assert "**Examples:**" in out
+
+
+@pytest.mark.parametrize("fallback", [False, True])
+def test_nested_code_keeps_explicit_language(converter, fallback):
+    html = '<main><pre><code class="language-ruby">ambiguous sample text</code></pre></main>'
+    if fallback:
+        page = converter._extract_html_as_markdown(html, URL)
+    else:
+        converter.config["selectors"] = {"main_content": "main", "code_blocks": "pre, pre code"}
+        page = converter.extract_content(parse_html(html), URL)
+    assert page["code_samples"] == [{"code": "ambiguous sample text", "language": "ruby"}]
+
+
+def test_custom_code_paragraph_is_not_reclassified_as_prose(converter):
+    converter.config["selectors"] = {"main_content": "main", "code_blocks": "p.code"}
+    page = converter.extract_content(
+        parse_html('<main><p class="code language-python">print("custom example")</p></main>'), URL
+    )
+    assert page["code_samples"] == [{"code": 'print("custom example")', "language": "python"}]
+    assert [block["type"] for block in page["body_blocks"]] == ["code"]
+
+
+def test_paragraph_inside_selected_code_container_is_not_rendered_twice(converter):
+    converter.config["selectors"] = {"main_content": "main", "code_blocks": ".code"}
+    page = converter.extract_content(
+        parse_html('<main><div class="code"><p>unique_code_content_long_enough</p></div></main>'),
+        URL,
+    )
+    converter.create_reference_file("nested", [page])
+    out = (Path(converter.skill_dir) / "references" / "nested.md").read_text()
+    assert out.count("unique_code_content_long_enough") == 1
+
+
+@pytest.mark.parametrize("fallback", [False, True])
+def test_all_examples_render_once_in_order(converter, fallback):
+    html = (
+        "<main>"
+        + "".join(
+            f'<p>Explanation for example number {i}.</p><pre><code class="language-python">'
+            f'print("example number {i}")</code></pre>'
+            for i in range(6)
+        )
+        + "</main>"
+    )
+    if fallback:
+        page = converter._extract_html_as_markdown(html, URL)
+    else:
+        page = converter.extract_content(parse_html(html), URL)
+    converter.create_reference_file("all", [page])
+    out = (Path(converter.skill_dir) / "references" / "all.md").read_text()
+    previous = -1
+    for i in range(6):
+        explanation = f"Explanation for example number {i}."
+        code = f'print("example number {i}")'
+        assert previous < out.index(explanation) < out.index(code)
+        assert out.count(code) == 1
+        previous = out.index(code)
+
+
+def test_embedded_markdown_fences_stay_inside_code_block(converter):
+    html = '<main><pre><code class="language-markdown">```python\nprint("example")\n```</code></pre></main>'
+    page = converter.extract_content(parse_html(html), URL)
+    converter.create_reference_file("fences", [page])
+    out = (Path(converter.skill_dir) / "references" / "fences.md").read_text()
+    assert '````markdown\n```python\nprint("example")\n```\n````' in out

@@ -19,6 +19,7 @@ import re
 import sys
 import time
 from collections import defaultdict, deque
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
@@ -489,7 +490,7 @@ class DocToSkillConverter(SkillConverter):
         # Extract title
         title_elem = soup.select_one(selectors.get("title", "title"))
         if title_elem:
-            page["title"] = self.clean_text(title_elem.get_text())
+            page["title"] = self._heading_text(title_elem)
 
         # Extract links from entire page (always, even if main content not found).
         # This allows discovery of navigation links outside the main content area.
@@ -514,7 +515,7 @@ class DocToSkillConverter(SkillConverter):
 
         # Extract headings with better structure
         for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-            text = self.clean_text(h.get_text())
+            text = self._heading_text(h)
             if text:
                 page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -533,22 +534,32 @@ class DocToSkillConverter(SkillConverter):
         ``code_samples`` stay populated for consumers that read them separately.
         """
         blocks: list[dict[str, str]] = []
-        consumed: set[int] = (
-            set()
-        )  # code elements taken, so nested matches ("pre" + "pre code") don't repeat
-        for elem in main.select(f"p, {code_selector}"):
-            if elem.name == "p":
+        code_ids = {id(elem) for elem in main.select(code_selector)}
+        consumed: set[int] = set()
+        for elem in main.find_all(True):
+            is_code = id(elem) in code_ids
+            if not is_code and elem.name != "p":
+                continue
+            if any(id(parent) in consumed for parent in elem.parents):
+                continue
+            if not is_code:
                 text = self.clean_text(elem.get_text())
                 if len(text) > 20:  # Skip very short paragraphs
                     blocks.append({"type": "text", "text": text})
                 continue
-            if any(id(parent) in consumed for parent in elem.parents):
-                continue
+            # A configured code selector takes precedence over paragraph handling.
+            # Consume its subtree once, including any nested paragraphs or code tags.
+            consumed.add(id(elem))
             code = elem.get_text().strip()
             if len(code) > 10:
-                consumed.add(id(elem))
+                # Prefer the code child's language class, then its parent pre class.
+                language_elem = (elem.find("code") or elem) if elem.name == "pre" else elem
                 blocks.append(
-                    {"type": "code", "language": self.detect_language(elem, code), "code": code}
+                    {
+                        "type": "code",
+                        "language": self.detect_language(language_elem, code),
+                        "code": code,
+                    }
                 )
 
         page["body_blocks"] = blocks
@@ -777,7 +788,7 @@ class DocToSkillConverter(SkillConverter):
         if main:
             # Extract headings
             for h in main.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-                text = self.clean_text(h.get_text())
+                text = self._heading_text(h)
                 if text:
                     page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
@@ -924,6 +935,13 @@ class DocToSkillConverter(SkillConverter):
             "text": 20,
         }
         return priorities.get(language.lower(), 50)
+
+    def _heading_text(self, heading: Any) -> str:
+        """Read title/heading text without permalink anchors or mutating the page."""
+        heading = deepcopy(heading)
+        for anchor in heading.find_all("a", class_="headerlink"):
+            anchor.decompose()
+        return self.clean_text(heading.get_text())
 
     def clean_text(self, text: str) -> str:
         """Clean text content"""
@@ -2058,7 +2076,12 @@ class DocToSkillConverter(SkillConverter):
                 # Text and code in page order
                 for block in page["body_blocks"]:
                     if block["type"] == "code":
-                        lines.append(f"```{block['language']}\n{block['code']}\n```\n")
+                        # Examples may themselves contain Markdown code fences.
+                        longest_run = max(
+                            (len(run) for run in re.findall(r"`+", block["code"])), default=0
+                        )
+                        fence = "`" * max(3, longest_run + 1)
+                        lines.append(f"{fence}{block['language']}\n{block['code']}\n{fence}\n")
                     else:
                         lines.append(f"{block['text']}\n")
                 lines.append("---\n")
