@@ -15,7 +15,7 @@ Complete feature support across all platforms and skill modes.
 | **DeepSeek** | ZIP | ❌ Manual | ❌ None | None |
 | **Qwen** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
-| **Requesty** | ZIP | ❌ Manual | ❌ None | None |
+| **Requesty** | ZIP | ✅ API validation only | ✅ Yes | REQUESTY_API_KEY (validation/enhancement) |
 | **Together AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
 | **IBM Bob** | Directory | ❌ Manual | ❌ None | None |
@@ -28,6 +28,11 @@ Complete feature support across all platforms and skill modes.
 | **FAISS** | Index | ❌ Manual | ❌ None | None |
 | **Qdrant** | Vectors | ❌ Manual | ❌ None | None |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
+
+Requesty packaging is local and does not require an API key. Its `upload` command
+validates the packaged system instructions with a chat request; it does not store
+a hosted skill or upload the reference files. Enhancement sends the skill content
+and reference documentation to Requesty using `REQUESTY_API_KEY`.
 
 ## Skill Mode Support
 

@@ -15,7 +15,7 @@
 | **DeepSeek** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Qwen** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **OpenRouter** | ZIP | ❌ 手动 | ❌ 无 | 无 |
-| **Requesty** | ZIP | ❌ 手动 | ❌ 无 | 无 |
+| **Requesty** | ZIP | ✅ 仅 API 验证 | ✅ 支持 | REQUESTY_API_KEY（验证/增强） |
 | **Together AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Fireworks AI** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **IBM Bob** | 目录 | ❌ 手动 | ❌ 无 | 无 |
@@ -28,6 +28,10 @@
 | **FAISS** | 索引 | ❌ 手动 | ❌ 无 | 无 |
 | **Qdrant** | 向量 | ❌ 手动 | ❌ 无 | 无 |
 | **通用 Markdown** | ZIP | ❌ 手动 | ❌ 无 | 无 |
+
+Requesty 打包在本地完成，无需 API 密钥。`upload` 命令通过聊天请求验证打包后的系统指令，
+不会创建托管技能，也不会上传参考文件。增强功能使用 `REQUESTY_API_KEY` 将技能内容和
+参考文档发送到 Requesty。
 
 ## 技能模式支持
 
