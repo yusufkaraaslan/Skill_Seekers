@@ -406,6 +406,11 @@ class PDFExtractor:
                 continue
 
             for line in block["lines"]:
+                # Preserve physical line boundaries, including across PDF text
+                # blocks. A block boundary need not end a complete code example.
+                # Spans on the same line still concatenate without a separator.
+                if current_code:
+                    current_code.append("\n")
                 for span in line["spans"]:
                     font = span["font"].lower()
                     text = span["text"]

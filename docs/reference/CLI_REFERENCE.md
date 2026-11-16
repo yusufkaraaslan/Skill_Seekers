@@ -999,6 +999,8 @@ Extract content from PDF and generate skill.
 
 **Purpose:** Convert PDF manuals, documentation, and papers into skills.
 
+Font-detected code preserves physical line breaks, including examples spanning multiple PDF text blocks. Inline spans on the same line remain joined. Font-based detection can still include table fragments or prose.
+
 Code samples with fewer than three non-empty lines have a quality-score cap of `5 + 2 × language confidence`. This lowers inflated scores without newly rejecting short examples at the converter’s default minimum of 5. To filter more strictly, set `"extract_options": {"min_quality": 5.5}` in the PDF config. A higher threshold can discard valid imports and shell commands as well as document fragments; language confidence is heuristic, so the default preserves uncertain examples.
 
 Single-source PDFs use their embedded outline when at least three top-level chapters contain extracted pages. Chapters spanning 25 or more pages can split at their own level-2 subsections; chapter introductions and front matter remain included. Headings on the same page share that page’s content because extraction has page-level boundaries.
