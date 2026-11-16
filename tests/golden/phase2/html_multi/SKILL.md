@@ -16,8 +16,10 @@ Use when testing the multi-file html build
 ## 💡 When to Use This Skill
 
 Use for questions or tasks involving these main topics:
-- intro
-- extras
+- Getting Started Guide
+- Troubleshooting
+- Installation Steps
+- API Usage
 
 ## 📖 Section Overview
 

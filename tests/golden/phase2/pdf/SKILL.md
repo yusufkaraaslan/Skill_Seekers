@@ -10,7 +10,10 @@ Use when testing the pdf golden build
 ## 💡 When to Use This Skill
 
 Use for questions or tasks involving these main topics:
-- manual
+- Getting Started Guide
+- Troubleshooting
+- Installation Steps
+- API Usage
 
 ## 📖 Chapter Overview
 

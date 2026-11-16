@@ -2111,6 +2111,7 @@ class UnifiedScraper(SkillConverter):
                     ]
 
                 unified_context = {
+                    "skill_dir": str(Path(self.output_dir).resolve()),
                     "name": self.config.get("name", ""),
                     "description": self.config.get("description", ""),
                 }

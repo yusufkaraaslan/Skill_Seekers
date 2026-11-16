@@ -22,7 +22,10 @@ Use when testing the html golden build
 ## 💡 When to Use This Skill
 
 Use for questions or tasks involving these main topics:
-- page
+- Getting Started Guide
+- Troubleshooting
+- Installation Steps
+- API Usage
 
 ## 📖 Section Overview
 

@@ -45,7 +45,7 @@ ENHANCE_ARGUMENTS: dict[str, dict[str, Any]] = {
             "type": str,
             "help": (
                 "Override the enhancement model for the target platform "
-                "(API mode only), e.g. 'MiniMax-M2.7'. "
+                "(API mode only), e.g. 'MiniMax-M3'. "
                 "Defaults to the platform's default model."
             ),
             "metavar": "MODEL",

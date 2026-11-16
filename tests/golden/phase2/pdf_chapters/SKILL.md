@@ -12,7 +12,6 @@ Use when testing chapter categorization
 Use for questions or tasks involving these main topics:
 - Chapter 1: Basics
 - Chapter 2: Advanced
-- Additional Content
 
 ## 📖 Chapter Overview
 

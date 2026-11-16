@@ -12,8 +12,6 @@ Use when testing keyword categorization
 Use for questions or tasks involving these main topics:
 - Setup
 - Api
-- Deployment
-- Other
 
 ## 📖 Chapter Overview
 

@@ -191,6 +191,21 @@ variables:
 
 ### Using Variables
 
+Templates substitute known fields while leaving literal JSON and unknown
+placeholders intact. Nested fields such as `{previous_results[summary]}`, format
+specifiers such as `{count:04d}`, and conversions such as `{name!r}` are supported.
+Use `{{name}}` to emit the literal text `{name}`. Runtime values override workflow
+defaults; substitutions are applied once, so braces inside a value are not
+interpreted as another template.
+
+Custom stages also receive current analysis results and bounded document text
+automatically. Stages with `uses_history: true` receive previous stage results.
+Document text is input data, not instructions to execute. For a `target: skill_md`
+rewrite, return a JSON object like `{"skill_md": "# Complete skill\n..."}`; the
+application handles saving. Other structured results are retained in
+`workflow_results.json`. A failed stage prevents that workflow's partial results
+from being applied; subsequent named workflows can still run.
+
 ```yaml
 stages:
   - name: customize

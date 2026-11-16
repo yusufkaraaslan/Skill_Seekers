@@ -86,6 +86,11 @@ class CreateCommand:
         # 4. Validate and warn about incompatible arguments
         self._validate_arguments()
 
+        # A workflow preview must precede scraping and normal enhancement too.
+        if getattr(self.args, "workflow_dry_run", False):
+            self._run_workflows()
+            return 0
+
         # 5. Route to appropriate converter
         logger.info(f"Routing to {self.source_info.type} converter...")
         result = self._route_to_scraper()
@@ -552,32 +557,12 @@ class CreateCommand:
             # only executor of config-declared workflows.
             is_unified = bool(self.source_info and self.source_info.type == "config")
 
-            # Give workflow stages access to the produced skill directory and
-            # its source files, so custom stage prompts can actually see what
-            # they are enhancing (previously analysis_results={} and prompts
-            # received no document context at all).
-            workflow_context: dict[str, Any] = {}
-            try:
-                skill_dir = self._resolve_skill_dir(ExecutionContext.get())
-                if skill_dir.exists():
-                    workflow_context = {
-                        "skill_dir": str(skill_dir),
-                        "skill_md_path": str(skill_dir / "SKILL.md"),
-                        "source_name": skill_dir.name,
-                        "source_files": "\n".join(
-                            sorted(
-                                str(p.relative_to(skill_dir))
-                                for p in skill_dir.rglob("*.md")
-                            )
-                        ),
-                    }
-            except Exception as e:
-                logger.debug("Workflow context build skipped: %s", e)
-
+            skill_dir = self._resolve_skill_dir(ExecutionContext.get()).resolve()
             run_workflows(
                 self.args,
-                use_context_fallback=not is_unified,
-                context=workflow_context,
+                use_context_fallback=not is_unified
+                or bool(getattr(self.args, "workflow_dry_run", False)),
+                context={"skill_dir": str(skill_dir)},
             )
         except ImportError:
             pass

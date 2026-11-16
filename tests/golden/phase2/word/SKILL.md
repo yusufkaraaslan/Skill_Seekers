@@ -20,7 +20,10 @@ Use when testing the word golden build
 ## 💡 When to Use This Skill
 
 Use for questions or tasks involving these main topics:
-- manual
+- Getting Started Guide
+- Troubleshooting
+- Installation Steps
+- API Usage
 
 ## 📖 Section Overview
 
