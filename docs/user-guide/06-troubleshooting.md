@@ -74,7 +74,7 @@ skill-seekers enhance output/my-skill/ --agent claude
 skill-seekers package output/my-skill/ --target claude
 # Valid targets: claude, gemini, openai, langchain, llama-index,
 #   haystack, pinecone, chroma, weaviate, qdrant, faiss, markdown,
-#   deepseek, kimi, qwen, openrouter, together, fireworks, ibm-bob
+#   deepseek, kimi, qwen, openrouter, requesty, together, fireworks, ibm-bob
 ```
 
 ### "Upload failed: Invalid API key"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 # Ordinary text choices; explicit custom/legacy model IDs remain valid overrides.
-MINIMAX_MODEL_IDS = ("MiniMax-M3.1-Flash", "MiniMax-M3")
+MINIMAX_MODEL_IDS = ("MiniMax-M3", "MiniMax-M3.1-Flash")
 MINIMAX_DEFAULT_MODEL = MINIMAX_MODEL_IDS[0]
 # Keep the existing media workflows on M3 independently of the text default.
 MINIMAX_IMAGE_MODEL = "MiniMax-M3"

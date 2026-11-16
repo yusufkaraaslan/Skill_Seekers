@@ -11,6 +11,7 @@ Skill Seekers supports multiple LLM platforms through a clean adaptor system. Th
 | **OpenAI ChatGPT** | ✅ Full Support | ZIP + Vector Store | ✅ Automatic | ✅ Yes | OPENAI_API_KEY |
 | **MiniMax AI** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | MINIMAX_API_KEY |
 | **Atlas Cloud** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | ATLAS_API_KEY |
+| **Requesty** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | REQUESTY_API_KEY |
 | **Generic Markdown** | ✅ Export Only | ZIP | ❌ Manual | ❌ No | None |
 
 ## Quick Start
@@ -160,7 +161,7 @@ pip install -e .[all-llms]
 - SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
 - Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
 - API: OpenAI-compatible chat completions
-- Enhancement: MiniMax-M3.1-Flash (MiniMax-M3 selectable; explicit legacy/custom models preserved)
+- Enhancement: MiniMax-M3 by default (MiniMax-M3.1-Flash is opt-in; explicit legacy/custom models preserved)
 
 **Generic Markdown:**
 - Format: ZIP archive
@@ -265,7 +266,7 @@ export MINIMAX_API_KEY=your-key
 # 1. Scrape (universal)
 skill-seekers create --config configs/react.json
 
-# 2. Enhance with MiniMax-M3.1-Flash
+# 2. Enhance with MiniMax-M3
 skill-seekers enhance output/react/ --target minimax
 
 # 3. Package for MiniMax
@@ -425,20 +426,20 @@ A: Yes. Each platform has a default enhancement model:
 - Claude: Claude Sonnet 4
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
-- MiniMax: MiniMax-M3.1-Flash
-- Kimi / DeepSeek / Qwen / OpenRouter / Together / Fireworks: each platform's own default
+- MiniMax: MiniMax-M3
+- Kimi / DeepSeek / Qwen / OpenRouter / Requesty / Together / Fireworks: each platform's own default
 
-Override the default for any platform with `--model`, e.g. to select MiniMax-M3:
+Override the default for any platform with `--model`, e.g. to opt into MiniMax-M3.1-Flash:
 
 ```bash
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M3
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3.1-Flash
 ```
 
 **Q: Which platforms can enhance SKILL.md?**
 
 A: Any platform whose adaptor supports AI enhancement: `claude`, `gemini`,
-`openai`, `minimax`, `kimi`, `deepseek`, `qwen`, `openrouter`, `together`,
-`fireworks`. Pass one with `--target`; the valid list is also shown in
+`openai`, `minimax`, `kimi`, `deepseek`, `qwen`, `openrouter`, `requesty`,
+`together`, `fireworks`. Pass one with `--target`; the valid list is also shown in
 `skill-seekers enhance --help`.
 
 **Q: What if I don't want to upload automatically?**

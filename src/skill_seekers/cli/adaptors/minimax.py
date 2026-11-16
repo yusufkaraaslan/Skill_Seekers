@@ -3,8 +3,8 @@
 MiniMax AI Adaptor
 
 OpenAI-compatible LLM platform adaptor for MiniMax AI.
-Defaults to MiniMax-M3.1-Flash for AI enhancement; M3 and explicit legacy/custom
-models remain selectable via ``--model``.
+Defaults to MiniMax-M3 for AI enhancement; M3.1 Flash and explicit legacy/custom
+models remain selectable via ``--model`` or model environment overrides.
 """
 
 from .openai_compatible import OpenAICompatibleAdaptor
@@ -28,6 +28,12 @@ class MiniMaxAdaptor(OpenAICompatibleAdaptor):
     DEFAULT_MODEL = MINIMAX_DEFAULT_MODEL
     ENV_VAR_NAME = "MINIMAX_API_KEY"
     PLATFORM_URL = "https://platform.minimaxi.com/"
+
+    def _resolve_model(self) -> str:
+        """Resolve explicit model, global/provider environment, then the M3 default."""
+        from skill_seekers.cli.agent_client import AgentClient
+
+        return self.config.get("custom_model") or AgentClient.get_model("minimax")
 
     def _api_base_url(self) -> str:
         """Resolve the OpenAI-compatible endpoint for the configured region."""

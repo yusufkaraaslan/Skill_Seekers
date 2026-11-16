@@ -6,12 +6,12 @@ Complete guide for using Skill Seekers with MiniMax AI platform.
 
 ## Overview
 
-**MiniMax AI** provides compatible APIs for text enhancement. Skill Seekers defaults to MiniMax-M3.1-Flash, with MiniMax-M3 as the other ordinary text choice. Explicit legacy/custom model IDs and models saved in existing packages are preserved.
+**MiniMax AI** provides compatible APIs for text enhancement. Skill Seekers keeps MiniMax-M3 as its default and offers MiniMax-M3.1-Flash as an explicit opt-in. Explicit legacy/custom model IDs and models saved in existing packages are preserved.
 
 ### Key Features
 
 - **OpenAI-Compatible API**: Uses standard OpenAI client library
-- **MiniMax-M3.1-Flash**: Default text model; select MiniMax-M3 with `--model MiniMax-M3`
+- **MiniMax-M3**: Default text model; opt into Flash with `--model MiniMax-M3.1-Flash`
 - **Simple ZIP Format**: Easy packaging with system instructions
 - **Knowledge Files**: Reference documentation included in package
 
@@ -57,6 +57,13 @@ Anthropic. No reasoning-effort override is sent (Flash uses its API default,
 `max`). Package validation uses the OpenAI protocol with the model's API defaults.
 See the [official model guide](https://platform.minimax.io/docs/guides/models-intro.md).
 
+For text enhancement and new packages, model precedence is `--model`, then
+`SKILL_SEEKER_MODEL`, then `MINIMAX_MODEL`, then MiniMax-M3. Existing packages
+retain their saved model when validated. To try Flash, select it explicitly and
+unset `MINIMAX_THINKING` or set it to `adaptive`; Flash cannot disable thinking.
+Its default maximum reasoning effort can affect token use and latency, so assess
+it on your workload before selecting it persistently.
+
 Image OCR and unpinned image/video calls retain MiniMax-M3. Explicit model
 arguments and environment overrides still take precedence.
 
@@ -87,21 +94,21 @@ skill-seekers create --config configs/react.json
 skill-seekers create https://docs.python.org/3/ --preset quick
 ```
 
-### Step 2: Enhance with MiniMax-M3.1-Flash
+### Step 2: Enhance with MiniMax-M3
 
 ```bash
 # Enhance SKILL.md using MiniMax AI
 skill-seekers enhance output/react/ --target minimax
 
-# Select the other ordinary text model
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M3
+# Opt into Flash for this enhancement
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3.1-Flash
 ```
 
 This step:
 - Reads reference documentation
 - Generates enhanced system instructions
 - Creates backup of original SKILL.md
-- Uses MiniMax-M3.1-Flash for AI enhancement by default
+- Uses MiniMax-M3 for AI enhancement by default
 
 ### Step 3: Package for MiniMax
 
@@ -109,8 +116,8 @@ This step:
 # Package as MiniMax-compatible ZIP
 skill-seekers package output/react/ --target minimax
 
-# Pin a specific model in the package metadata (default: MiniMax-M3.1-Flash)
-skill-seekers package output/react/ --target minimax --model MiniMax-M3
+# Opt into Flash in the package metadata (default: MiniMax-M3)
+skill-seekers package output/react/ --target minimax --model MiniMax-M3.1-Flash
 ```
 
 **Output structure:**
@@ -261,7 +268,7 @@ success = adaptor.enhance(skill_dir, api_key)
 | `MINIMAX_API_KEY` | Your MiniMax API key (JWT format) | Yes |
 | `MINIMAX_API_REGION` | API region: `global_en` or `cn_zh` | No; defaults to `global_en` |
 | `MINIMAX_API_PROTOCOL` | API protocol: `openai` or `anthropic` | No; defaults to `openai` |
-| `MINIMAX_MODEL` | Model override for text enhancement | No |
+| `MINIMAX_MODEL` | Model override for text enhancement and new packages; lower priority than `--model` and `SKILL_SEEKER_MODEL` | No |
 | `MINIMAX_VISION_MODEL` | Model override for image OCR | No; defaults to `MiniMax-M3` |
 | `SKILL_SEEKER_VISION_PROVIDER` | Set to `minimax` to use MiniMax for vision OCR | No |
 
@@ -376,7 +383,7 @@ skill-seekers package output/react/ --target minimax
 |---------|---------|--------|--------|--------|
 | **Format** | ZIP | ZIP | tar.gz | ZIP |
 | **Upload** | Validation | Full API | Full API | Full API |
-| **Enhancement** | MiniMax-M3.1-Flash | Claude Sonnet | Gemini 2.0 | GPT-4o |
+| **Enhancement** | MiniMax-M3 (Flash opt-in) | Claude Sonnet | Gemini 2.0 | GPT-4o |
 | **API Type** | OpenAI-compatible | Anthropic | Google | OpenAI |
 | **Key Format** | JWT (eyJ...) | sk-ant... | AIza... | sk-... |
 | **Knowledge Files** | Included in ZIP | Included | Included | Vector Store |

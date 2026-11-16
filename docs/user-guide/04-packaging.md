@@ -32,6 +32,7 @@ output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format
 | **DeepSeek** | ZIP | `.zip` | DeepSeek platform |
 | **Qwen** | ZIP | `.zip` | Qwen platform |
 | **OpenRouter** | ZIP | `.zip` | Multi-model routing |
+| **Requesty** | ZIP | `.zip` | Multi-model routing |
 | **Together AI** | ZIP | `.zip` | Open-source models |
 | **Fireworks AI** | ZIP | `.zip` | Fast inference |
 | **LangChain** | Documents | directory | RAG pipelines |

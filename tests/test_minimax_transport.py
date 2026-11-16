@@ -1,6 +1,8 @@
 """MiniMax defaults and overrides through the real SDK HTTP serialization boundary."""
 
 import json
+import sys
+import zipfile
 from contextlib import ExitStack
 from functools import partial
 from importlib import import_module
@@ -9,7 +11,33 @@ import pytest
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.agent_client import AgentClient
+from skill_seekers.cli.enhance_command import main as enhance_main
 from skill_seekers.cli.minimax_config import MINIMAX_MODEL_IDS
+from skill_seekers.cli.package_skill import package_skill
+
+
+MODEL_SELECTION_CASES = [
+    pytest.param({}, None, "MiniMax-M3", "disabled", id="default-m3"),
+    pytest.param({"MINIMAX_MODEL": "MiniMax-M3"}, None, "MiniMax-M3", "disabled", id="provider-m3"),
+    pytest.param(
+        {"MINIMAX_MODEL": "MiniMax-M2.7"}, None, "MiniMax-M2.7", "adaptive", id="legacy-env"
+    ),
+    pytest.param(
+        {"MINIMAX_MODEL": "MiniMax-M3", "SKILL_SEEKER_MODEL": "MiniMax-M3.1-Flash"},
+        None,
+        "MiniMax-M3.1-Flash",
+        "adaptive",
+        id="global-over-provider",
+    ),
+    pytest.param(
+        {"MINIMAX_MODEL": "MiniMax-M3.1-Flash", "SKILL_SEEKER_MODEL": "custom-model"},
+        "MiniMax-M3",
+        "MiniMax-M3",
+        "disabled",
+        id="explicit-over-environment",
+    ),
+    pytest.param({}, "MiniMax-M3.1-Flash", "MiniMax-M3.1-Flash", "adaptive", id="opt-in-flash"),
+]
 
 
 @pytest.fixture
@@ -99,7 +127,7 @@ def assert_route(url, region, protocol):
 
 
 def assert_default_options(body):
-    # Omission preserves the model's API default (Flash adaptive/max).
+    # Omission preserves the selected model's API defaults.
     assert "thinking" not in body
     assert "reasoning_effort" not in body
     assert "output_config" not in body
@@ -108,7 +136,7 @@ def assert_default_options(body):
 
 
 def test_ordinary_text_catalog():
-    assert MINIMAX_MODEL_IDS == ("MiniMax-M3.1-Flash", "MiniMax-M3")
+    assert MINIMAX_MODEL_IDS == ("MiniMax-M3", "MiniMax-M3.1-Flash")
 
 
 @pytest.mark.parametrize("region", ["global_en", "cn_zh"])
@@ -118,7 +146,7 @@ def test_agent_text_request(requests_sent, monkeypatch, region, protocol, source
     monkeypatch.setenv("MINIMAX_API_REGION", region)
     monkeypatch.setenv("MINIMAX_API_PROTOCOL", protocol)
     model = None
-    expected = "MiniMax-M3.1-Flash"
+    expected = "MiniMax-M3"
     if source == "explicit":
         model = expected = "custom-model"
     elif source == "provider_env":
@@ -142,7 +170,7 @@ def test_agent_text_request(requests_sent, monkeypatch, region, protocol, source
 
 @pytest.mark.parametrize("region", ["global_en", "cn_zh"])
 @pytest.mark.parametrize("protocol", ["openai", "anthropic"])
-@pytest.mark.parametrize("model", [None, "MiniMax-M3", "MiniMax-M2.7", "custom-model"])
+@pytest.mark.parametrize("model", [None, "MiniMax-M3.1-Flash", "MiniMax-M2.7", "custom-model"])
 def test_adaptor_enhancement(requests_sent, monkeypatch, tmp_path, region, protocol, model):
     monkeypatch.setenv("MINIMAX_API_REGION", region)
     monkeypatch.setenv("MINIMAX_API_PROTOCOL", protocol)
@@ -155,28 +183,106 @@ def test_adaptor_enhancement(requests_sent, monkeypatch, tmp_path, region, proto
     assert (tmp_path / "SKILL.md").read_text() == "Enhanced instructions"
     url, body = requests_sent.pop()
     assert_route(url, region, protocol)
-    assert body["model"] == (model or "MiniMax-M3.1-Flash")
+    assert body["model"] == (model or "MiniMax-M3")
     assert body["thinking"] == {"type": "adaptive"}
     assert "Reference" in body["messages"][-1]["content"]
 
 
+@pytest.mark.parametrize("protocol", ["openai", "anthropic"])
+@pytest.mark.parametrize("environment,model,expected,thinking", MODEL_SELECTION_CASES)
+def test_enhance_cli_model_precedence(
+    requests_sent, monkeypatch, tmp_path, protocol, environment, model, expected, thinking
+):
+    """The real CLI must not hide model environment overrides behind adaptor defaults."""
+    for name, value in environment.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("MINIMAX_API_KEY", "unit-test-key")
+    monkeypatch.setenv("MINIMAX_API_PROTOCOL", protocol)
+    monkeypatch.setenv("MINIMAX_THINKING", thinking)
+    (tmp_path / "references").mkdir()
+    (tmp_path / "references" / "guide.md").write_text("# Reference\nUse the API.")
+    (tmp_path / "SKILL.md").write_text("Original instructions")
+    argv = ["enhance", str(tmp_path), "--target", "minimax"]
+    if model:
+        argv.extend(["--model", model])
+    monkeypatch.setattr(sys, "argv", argv)
+
+    assert enhance_main() == 0
+
+    assert len(requests_sent) == 1
+    url, body = requests_sent[0]
+    assert_route(url, "global_en", protocol)
+    assert body["model"] == expected
+    assert body["thinking"] == {"type": thinking}
+    assert (tmp_path / "SKILL.md").read_text() == "Enhanced instructions"
+    assert (tmp_path / "SKILL.md.backup").read_text() == "Original instructions"
+
+
+@pytest.mark.parametrize("protocol", ["openai", "anthropic"])
+def test_enhance_cli_rejects_flash_disabled_without_overwriting(
+    requests_sent, monkeypatch, tmp_path, protocol, capsys
+):
+    """An incompatible explicit Flash setting must fail without HTTP or file changes."""
+    monkeypatch.setenv("MINIMAX_API_KEY", "unit-test-key")
+    monkeypatch.setenv("MINIMAX_API_PROTOCOL", protocol)
+    monkeypatch.setenv("MINIMAX_MODEL", "MiniMax-M3.1-Flash")
+    monkeypatch.setenv("MINIMAX_THINKING", "disabled")
+    (tmp_path / "references").mkdir()
+    (tmp_path / "references" / "guide.md").write_text("# Reference")
+    (tmp_path / "SKILL.md").write_text("Original instructions")
+    monkeypatch.setattr(sys, "argv", ["enhance", str(tmp_path), "--target", "minimax"])
+
+    assert enhance_main() == 1
+
+    assert "only supports thinking mode(s): adaptive" in capsys.readouterr().out
+    assert requests_sent == []
+    assert (tmp_path / "SKILL.md").read_text() == "Original instructions"
+    assert not (tmp_path / "SKILL.md.backup").exists()
+
+
+@pytest.mark.parametrize("environment,model,expected,thinking", MODEL_SELECTION_CASES)
+def test_package_model_precedence(
+    requests_sent, monkeypatch, tmp_path, environment, model, expected, thinking
+):
+    """New package metadata uses the same model precedence without making API calls."""
+    for name, value in environment.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("MINIMAX_THINKING", thinking)
+    (tmp_path / "SKILL.md").write_text("Saved instructions")
+
+    success, package = package_skill(
+        tmp_path,
+        target="minimax",
+        model=model,
+        open_folder_after=False,
+        skip_quality_check=True,
+    )
+
+    assert success
+    with zipfile.ZipFile(package) as archive:
+        assert json.loads(archive.read("minimax_metadata.json"))["model"] == expected
+    assert requests_sent == []
+
+
 @pytest.mark.parametrize("region", ["global_en", "cn_zh"])
-@pytest.mark.parametrize("model", [None, "MiniMax-M2.7", "custom-model"])
+@pytest.mark.parametrize("model", [None, "MiniMax-M3.1-Flash", "MiniMax-M2.7", "custom-model"])
 def test_package_upload_preserves_saved_model(requests_sent, monkeypatch, tmp_path, region, model):
     monkeypatch.setenv("MINIMAX_API_REGION", region)
     (tmp_path / "SKILL.md").write_text("Saved instructions")
     adaptor = get_adaptor("minimax", {"custom_model": model} if model else {})
     package = adaptor.package(tmp_path, tmp_path / "skill.zip")
     # A fresh adaptor must keep the model recorded in the existing package.
+    monkeypatch.setenv("MINIMAX_MODEL", "different-provider-model")
+    monkeypatch.setenv("SKILL_SEEKER_MODEL", "different-global-model")
     assert get_adaptor("minimax").upload(package, "unit-test-key")["success"] is True
     url, body = requests_sent.pop()
     assert_route(url, region, "openai")
-    assert body["model"] == (model or "MiniMax-M3.1-Flash")
+    assert body["model"] == (model or "MiniMax-M3")
     assert_default_options(body)
 
 
 @pytest.mark.parametrize("protocol", ["openai", "anthropic"])
-@pytest.mark.parametrize("model", [None, "minimax-m3.1-flash"])
+@pytest.mark.parametrize("model", ["MiniMax-M3.1-Flash", "minimax-m3.1-flash"])
 def test_flash_disabled_rejected_before_http(requests_sent, monkeypatch, protocol, model):
     monkeypatch.setenv("MINIMAX_API_PROTOCOL", protocol)
     client = AgentClient(mode="api", provider="minimax", api_key="unit-test-key", model=model)
@@ -239,7 +345,7 @@ def test_video_keeps_m3_default(requests_sent, tmp_path):
     }
     # A media call must not mutate subsequent text defaults.
     assert client.call("Explain this") == "Enhanced instructions"
-    assert requests_sent.pop()[1]["model"] == "MiniMax-M3.1-Flash"
+    assert requests_sent.pop()[1]["model"] == "MiniMax-M3"
 
 
 def test_explicit_base_url_is_preserved(requests_sent):
