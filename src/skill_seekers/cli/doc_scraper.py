@@ -19,6 +19,7 @@ import re
 import sys
 import time
 from collections import defaultdict, deque
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
@@ -488,7 +489,7 @@ class DocToSkillConverter(SkillConverter):
         # Extract title
         title_elem = soup.select_one(selectors.get("title", "title"))
         if title_elem:
-            page["title"] = self.clean_text(title_elem.get_text())
+            page["title"] = self._heading_text(title_elem)
 
         # Extract links from entire page (always, even if main content not found).
         # This allows discovery of navigation links outside the main content area.
@@ -919,7 +920,8 @@ class DocToSkillConverter(SkillConverter):
         return priorities.get(language.lower(), 50)
 
     def _heading_text(self, heading: Any) -> str:
-        """Heading text without ``a.headerlink`` anchors"""
+        """Read title/heading text without permalink anchors or mutating the page."""
+        heading = deepcopy(heading)
         for anchor in heading.find_all("a", class_="headerlink"):
             anchor.decompose()
         return self.clean_text(heading.get_text())

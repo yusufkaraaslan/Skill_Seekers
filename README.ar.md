@@ -181,7 +181,7 @@ skill-seekers package output/react --target llama-index # → عُقد TextNodes
 skill-seekers package output/react --target ibm-bob     # → مجلد مهارة IBM Bob
 ```
 
-**منصات نماذج اللغة (12):** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `together` · `fireworks` · `markdown`
+**منصات نماذج اللغة (13):** `claude` · `gemini` · `openai` · `minimax` · `opencode` · `kimi` · `deepseek` · `qwen` · `openrouter` · `requesty` · `together` · `fireworks` · `markdown`
 **RAG والقواعد الشعاعية (8):** `langchain` · `llama-index` · `haystack` · `chroma` · `faiss` · `weaviate` · `qdrant` · `pinecone`
 **أخرى (2):** `atlas` · `ibm-bob`
 
