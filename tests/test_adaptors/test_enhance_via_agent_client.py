@@ -83,7 +83,7 @@ class TestSharedEnhanceFlow:
         cases = [
             (ClaudeAdaptor(), "sk-ant-x", {"provider": "anthropic"}),
             (OpenAIAdaptor(), "sk-x", {"provider": "openai", "model": "gpt-4o"}),
-            (GeminiAdaptor(), "AIza", {"provider": "google", "model": "gemini-2.5-flash"}),
+            (GeminiAdaptor(), "AIza", {"provider": "google", "model": "gemini-3.8-flash"}),
         ]
         for adaptor, key, expected in cases:
             with patch(

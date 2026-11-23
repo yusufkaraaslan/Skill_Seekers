@@ -629,7 +629,7 @@ _VISION_PROVIDERS: dict[str, dict[str, str]] = {
     "google": {
         "key_env": "GOOGLE_API_KEY",
         "model_env": "GOOGLE_MODEL",
-        "default_model": "gemini-2.0-flash",
+        "default_model": "gemini-3.8-flash",
     },
     "minimax": {
         "key_env": "MINIMAX_API_KEY",
