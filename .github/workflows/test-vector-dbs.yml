@@ -42,12 +42,12 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.4.0
       with:
         persist-credentials: false
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.6.0
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
@@ -86,7 +86,7 @@ jobs:
         "
 
     - name: Upload test package
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: test-package-${{ env.ADAPTOR_NAME }}-py${{ env.PYTHON_VERSION }}
         path: test_skill-${{ env.ADAPTOR_NAME }}.json
@@ -97,12 +97,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.4.0
       with:
         persist-credentials: false
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.6.0
       with:
         python-version: '3.12'
 

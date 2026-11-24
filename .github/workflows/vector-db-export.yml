@@ -39,13 +39,13 @@ jobs:
       CONFIG_PATH_INPUT: ${{ github.event.inputs.config_path }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.4.0
       with:
         submodules: recursive
         persist-credentials: false
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.6.0
       with:
         python-version: '3.12'
 
@@ -148,7 +148,7 @@ jobs:
 
     - name: Upload vector database exports
       if: steps.check_config.outputs.exists == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: ${{ env.SKILL_NAME }}-vector-exports
         path: |
@@ -157,7 +157,7 @@ jobs:
 
     - name: Upload quality report
       if: steps.check_config.outputs.exists == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: ${{ env.SKILL_NAME }}-quality-report
         path: quality_report_${{ env.SKILL_NAME }}.txt
