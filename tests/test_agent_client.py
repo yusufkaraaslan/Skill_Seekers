@@ -560,6 +560,32 @@ class TestSkillMdEnhancementBudget:
         assert enhancer.enhance_skill_md(references, None) == "enhanced"
         assert mock_client.call.call_args.kwargs["max_tokens"] == 16384
 
+    def test_enhance_skill_does_not_send_temperature(self, monkeypatch, tmp_path):
+        """anthropic >= 1.0 has no `temperature` on Messages.create (#480).
+
+        SkillEnhancer pinned 0.3, so every API-mode SKILL.md enhancement
+        raised TypeError inside the SDK and surfaced as an empty response.
+        """
+        from skill_seekers.cli import enhance_skill
+
+        mock_client = MagicMock()
+        mock_client.client = MagicMock()
+        mock_client.call.return_value = "enhanced"
+        monkeypatch.setattr(enhance_skill, "AgentClient", MagicMock(return_value=mock_client))
+
+        enhancer = enhance_skill.SkillEnhancer(tmp_path, api_key="sk-ant-x")
+        references = {
+            "api.md": {
+                "source": "web",
+                "path": str(tmp_path / "references" / "api.md"),
+                "confidence": "high",
+                "size": 9,
+                "content": "# API doc",
+            }
+        }
+        assert enhancer.enhance_skill_md(references, None) == "enhanced"
+        assert "temperature" not in mock_client.call.call_args.kwargs
+
     def test_adaptor_enhance_requests_16384(self, monkeypatch, tmp_path):
         from skill_seekers.cli import agent_client as agent_client_module
         from skill_seekers.cli.adaptors.base import SkillAdaptor

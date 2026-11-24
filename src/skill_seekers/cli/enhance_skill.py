@@ -70,7 +70,9 @@ class SkillEnhancer:
         # ANTHROPIC_MODEL/defaults, and classifies API errors with logging.
         # 16384: a rewritten SKILL.md can exceed ~16 KB; 4096 made any such
         # skill permanently un-enhanceable (truncation gate → None every run).
-        enhanced_content = self.client.call(prompt, max_tokens=16384, temperature=0.3)
+        # No temperature: current Claude models reject a non-default value and
+        # the anthropic SDK from 1.0 on does not accept the argument at all.
+        enhanced_content = self.client.call(prompt, max_tokens=16384)
         if not enhanced_content:
             print(
                 "❌ Error: AI enhancement failed or returned truncated/empty "

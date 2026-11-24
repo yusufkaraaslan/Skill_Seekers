@@ -118,3 +118,16 @@ class TestSharedEnhanceFlow:
         # system prompt names the platform
         client = cls.return_value
         assert "FakeAI" in client.call.call_args.kwargs["system"]
+
+    def test_claude_does_not_request_a_temperature(self, skill_dir):
+        """The anthropic SDK dropped `temperature` from Messages.create in 1.0.
+
+        ClaudeAdaptor relied on the shared 0.3 default, so the keyword reached
+        Messages.create() and raised TypeError before any request was sent;
+        `enhance --target claude` reported that as an empty response (#480).
+        """
+        with patch(
+            "skill_seekers.cli.agent_client.AgentClient", return_value=_mock_client("# E")
+        ) as cls:
+            assert ClaudeAdaptor().enhance(skill_dir, "sk-ant-x") is True
+        assert cls.return_value.call.call_args.kwargs["temperature"] is None
