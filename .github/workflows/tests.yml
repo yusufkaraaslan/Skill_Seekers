@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, development ]
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
     name: HUD (lint, build, browser regressions)

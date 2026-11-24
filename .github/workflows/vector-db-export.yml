@@ -20,6 +20,9 @@ on:
     # Run weekly on Sunday at 2 AM UTC for popular frameworks
     - cron: '0 2 * * 0'
 
+permissions:
+  contents: read
+
 jobs:
   export:
     name: Export to Vector Databases

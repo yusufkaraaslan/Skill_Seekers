@@ -16,6 +16,9 @@ on:
         default: 'all'
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   update-skills:
     name: Update ${{ matrix.framework }}

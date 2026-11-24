@@ -21,10 +21,16 @@ on:
       - 'output/**'
       - 'configs/**'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Quality Metrics Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # "Post summary to PR" comments on the pull request
 
     env:
       SKILL_DIR_INPUT: ${{ github.event.inputs.skill_dir }}

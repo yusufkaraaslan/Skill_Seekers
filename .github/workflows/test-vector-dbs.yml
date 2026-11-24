@@ -24,6 +24,9 @@ on:
       - 'tests/test_upload_integration.py'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test-adaptors:
     name: Test ${{ matrix.adaptor }} Adaptor
