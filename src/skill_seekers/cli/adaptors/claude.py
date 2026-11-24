@@ -334,6 +334,11 @@ version: {metadata.version}
             api_key,
             provider="anthropic",
             model=self.config.get("custom_model"),
+            # Current Claude models reject a non-default temperature, and the
+            # anthropic SDK from 1.0 on no longer types Messages.create with
+            # that parameter at all, so keep the provider default instead of
+            # sending 0.3 (which raised TypeError before any request was made).
+            temperature=None,
         )
 
     def _build_enhancement_prompt(
