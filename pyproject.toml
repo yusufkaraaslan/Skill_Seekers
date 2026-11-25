@@ -120,6 +120,11 @@ requesty = [
     "openai>=1.0.0",
 ]
 
+# TeamoRouter support (uses OpenAI-compatible API)
+teamorouter = [
+    "openai>=1.0.0",
+]
+
 # Together AI support (uses OpenAI-compatible API)
 together = [
     "openai>=1.0.0",

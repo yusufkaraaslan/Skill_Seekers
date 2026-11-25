@@ -11,6 +11,7 @@ _Development version: 3.11.0.dev0_
 
 ### Added
 - **Opt-in MiniMax-M3.1-Flash** (#477) — M3 remains the text and media default. Select Flash with `--model MiniMax-M3.1-Flash` or a model environment override; Flash requires adaptive thinking. MiniMax enhancement now honors regional/protocol settings and thinking modes through its provider configuration. Enhancement and new packages resolve models in the order `--model`, `SKILL_SEEKER_MODEL`, `MINIMAX_MODEL`, then M3; validating an existing package preserves its saved model. Offline SDK tests cover routing, overrides, thinking validation, and unchanged media defaults.
+- **TeamoRouter adaptor** (`--target teamorouter`, `TEAMOROUTER_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring Requesty, pointed at `https://api.teamorouter.com/v1` with `deepseek-v4-flash` as the default model.
 - **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
 
 ### Fixed

@@ -32,6 +32,7 @@ output/my-skill/ ──▶ 打包器 ──▶ output/my-skill-{platform}.{forma
 | **Qwen** | ZIP | `.zip` | Qwen 平台 |
 | **OpenRouter** | ZIP | `.zip` | OpenRouter |
 | **Requesty** | ZIP | `.zip` | Requesty |
+| **TeamoRouter** | ZIP | `.zip` | TeamoRouter |
 | **Together AI** | ZIP | `.zip` | Together AI |
 | **Fireworks AI** | ZIP | `.zip` | Fireworks AI |
 | **LangChain** | Documents | directory | RAG 管道 |
