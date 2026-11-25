@@ -950,6 +950,7 @@ skill-seekers package SKILL_DIRECTORY [options]
 | Qwen | ZIP | `--target qwen` |
 | OpenRouter | ZIP | `--target openrouter` |
 | Requesty | ZIP | `--target requesty` |
+| TeamoRouter | ZIP | `--target teamorouter` |
 | Together AI | ZIP | `--target together` |
 | Fireworks AI | ZIP | `--target fireworks` |
 | LangChain | Documents | `--target langchain` |

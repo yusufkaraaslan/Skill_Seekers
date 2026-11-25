@@ -39,6 +39,7 @@ on:
           - qwen
           - openrouter
           - requesty
+          - teamorouter
           - together
           - fireworks
       agent:

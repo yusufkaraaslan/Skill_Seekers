@@ -16,6 +16,7 @@ Complete feature support across all platforms and skill modes.
 | **Qwen** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
 | **Requesty** | ZIP | ✅ API validation only | ✅ Yes | REQUESTY_API_KEY (validation/enhancement) |
+| **TeamoRouter** | ZIP | ✅ API validation only | ✅ Yes | TEAMOROUTER_API_KEY (validation/enhancement) |
 | **Together AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
 | **IBM Bob** | Directory | ❌ Manual | ❌ None | None |
@@ -29,10 +30,10 @@ Complete feature support across all platforms and skill modes.
 | **Qdrant** | Vectors | ❌ Manual | ❌ None | None |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
 
-Requesty packaging is local and does not require an API key. Its `upload` command
+Requesty and TeamoRouter packaging is local and does not require an API key. Their `upload` command
 validates the packaged system instructions with a chat request; it does not store
 a hosted skill or upload the reference files. Enhancement sends the skill content
-and reference documentation to Requesty using `REQUESTY_API_KEY`.
+and reference documentation to the platform using `REQUESTY_API_KEY` or `TEAMOROUTER_API_KEY`.
 
 ## Skill Mode Support
 
@@ -367,7 +368,7 @@ A:
 - **Gemini:** Choose if you need long context (1M tokens) or grounding
 - **OpenAI:** Choose if you need vector search and semantic retrieval
 - **MiniMax/Kimi/DeepSeek/Qwen:** Choose for Chinese LLM ecosystem compatibility
-- **OpenRouter/Requesty/Together/Fireworks:** Choose for multi-model routing or open-source model access
+- **OpenRouter/Requesty/TeamoRouter/Together/Fireworks:** Choose for multi-model routing or open-source model access
 - **Markdown:** Choose for universal compatibility or offline use
 
 **Q: Can I enhance a skill for different platforms?**

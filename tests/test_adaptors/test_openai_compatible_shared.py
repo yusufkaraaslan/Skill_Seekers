@@ -1,7 +1,7 @@
 """Shared parametrized tests for OpenAI-compatible platform adaptors.
 
 Covers all 6 adaptors that previously had stub-only tests:
-deepseek, fireworks, kimi, openrouter, qwen, requesty, together.
+deepseek, fireworks, kimi, openrouter, qwen, requesty, teamorouter, together.
 
 Each adaptor inherits from OpenAICompatibleAdaptor and only overrides
 platform constants (~15 lines each). This shared test validates that
@@ -28,6 +28,7 @@ PLATFORMS = [
     "openrouter",
     "qwen",
     "requesty",
+    "teamorouter",
     "together",
 ]
 
@@ -80,6 +81,13 @@ PLATFORM_EXPECTED = {
         "model_truthy": True,
         "env_var": "REQUESTY_API_KEY",
         "api_base_contains": "requesty",
+    },
+    "teamorouter": {
+        "name": "TeamoRouter",
+        "endpoint_contains": "teamorouter",
+        "model_truthy": True,
+        "env_var": "TEAMOROUTER_API_KEY",
+        "api_base_contains": "teamorouter",
     },
     "together": {
         "name": "Together AI",
