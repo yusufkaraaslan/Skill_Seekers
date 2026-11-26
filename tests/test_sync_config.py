@@ -144,6 +144,25 @@ class TestIsValidUrl(unittest.TestCase):
             _is_valid_url("https://docs.example.com/anything", "https://docs.example.com/", [], [])
         )
 
+    def test_page_file_base_accepts_siblings(self):
+        # Same scope as the scraper: a page-file base covers its directory.
+        base = "https://docs.example.com/manual/index.html"
+        self.assertTrue(_is_valid_url(base, base, [], []))
+        self.assertTrue(_is_valid_url("https://docs.example.com/manual/a.html", base, [], []))
+        self.assertTrue(_is_valid_url("https://docs.example.com/manual/sub/b.html", base, [], []))
+        self.assertFalse(_is_valid_url("https://docs.example.com/manual2/x.html", base, [], []))
+
+    def test_base_without_trailing_slash_is_a_directory(self):
+        base = "https://docs.example.com/docs"
+        self.assertTrue(_is_valid_url(base, base, [], []))
+        self.assertTrue(_is_valid_url("https://docs.example.com/docs/guide", base, [], []))
+        self.assertFalse(_is_valid_url("https://docs.example.com/docs2/guide", base, [], []))
+        self.assertFalse(
+            _is_valid_url(
+                "https://docs.example.com.evil.test/x", "https://docs.example.com", [], []
+            )
+        )
+
 
 # ---------------------------------------------------------------------------
 # _get_doc_source / _set_start_urls
