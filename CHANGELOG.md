@@ -22,6 +22,7 @@ OpenAI uploads now return a vector store ID for Responses API file search. Appli
 
 ### Fixed
 
+- Video setup can create a virtual environment with a uv-managed Python 3.10 installation on POSIX systems.
 - OpenAI upload publishes an indexed Responses API knowledge base. The returned `skill_id` is a vector store ID (`vs_...`). Store metadata contains the model and instructions file ID. Failed uploads roll back known resources and report any cleanup failures. An explicitly requested upload failure now propagates through packaging and MCP workflows.
 - Local Codex enhancement works with current Codex CLI releases. Explicit local agent selection takes precedence over API key detection.
 - Enhancement recognizes standalone PDF references, and package quality checks count language tags on opening code fences.
