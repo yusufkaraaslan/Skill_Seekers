@@ -430,9 +430,9 @@ class DocumentSkillBuilder(SkillConverter):
             for page in pages
             if isinstance(page.get("source_file"), str) and page["source_file"]
         )
-        placeholders = {"content", "other", "uncategorized", "additional content"}
+        placeholders = {"content", "other", "uncategorized", "additional content", "front matter"}
         topics = []
-        seen = set()
+        seen = placeholders | source_titles
 
         def add(value):
             title = clean(value)
@@ -442,7 +442,7 @@ class DocumentSkillBuilder(SkillConverter):
 
         for category in categorized.values():
             title = clean(category.get("title"))
-            if category.get("pages") and title.casefold() not in placeholders | source_titles:
+            if category.get("pages"):
                 add(title)
 
         if not topics:

@@ -11,6 +11,7 @@ Usage:
 
 import argparse
 import os
+import shlex
 import sys
 from pathlib import Path
 
@@ -202,8 +203,15 @@ def package_skill(
         open_folder(package_path.parent)
 
     # Print next-step instructions
-    if adaptor.DEFAULT_API_ENDPOINT:
+    if target == "claude":
         print_upload_instructions(package_path)
+    elif target == "openai":
+        print(
+            "Use assistant_instructions.txt as Responses API instructions and "
+            "vector_store_files/ as the file search knowledge base."
+        )
+    elif adaptor.supports_upload():
+        print(shlex.join(["skill-seekers", "upload", str(package_path), "--target", target]))
     else:
         print()
         print("ℹ️  Local target packaged successfully.")
@@ -283,7 +291,7 @@ Examples:
                 print(f"  2. Set: export {adaptor.get_env_var_name()}=...")
                 print("  3. Run package command with --upload flag")
                 print()
-                print("For now, use manual upload (instructions above) ☝️")
+                print(f"Package saved at {package_path}")
                 print("=" * 60)
                 # Exit successfully - packaging worked!
                 sys.exit(0)
@@ -304,10 +312,10 @@ Examples:
             else:
                 print(f"\n❌ Upload failed: {result['message']}")
                 print()
-                print("💡 Try manual upload instead (instructions above) ☝️")
+                print(f"Package saved at {package_path}")
                 print("=" * 60)
-                # Exit successfully - packaging worked even if upload failed
-                sys.exit(0)
+                # An explicitly requested upload is part of the command.
+                sys.exit(1)
 
         except ImportError as e:
             print(f"\n❌ Error: {e}")

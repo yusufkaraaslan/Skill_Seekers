@@ -441,7 +441,7 @@ skill-seekers create <source> --enhance-level 3
 |----------|--------|-----|
 | **Claude AI** | ZIP + YAML | Claude Code, Claude API |
 | **Gemini** | tar.gz | Google Gemini |
-| **OpenAI** | ZIP + Vector | ChatGPT, Assistants API |
+| **OpenAI** | ZIP + Vector | ChatGPT, Responses API |
 | **LangChain** | Documents | RAG 管道 |
 | **LlamaIndex** | TextNodes | 查询引擎 |
 | **ChromaDB** | Collection | 向量搜索 |

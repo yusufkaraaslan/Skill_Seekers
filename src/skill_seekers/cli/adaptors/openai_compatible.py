@@ -153,7 +153,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             if refs_dir.exists():
                 for ref_file in refs_dir.rglob("*.md"):
                     if ref_file.is_file() and not ref_file.name.startswith("."):
-                        arcname = f"knowledge_files/{ref_file.name}"
+                        arcname = f"knowledge_files/{ref_file.relative_to(refs_dir).as_posix()}"
                         zf.write(ref_file, arcname)
 
             metadata = {

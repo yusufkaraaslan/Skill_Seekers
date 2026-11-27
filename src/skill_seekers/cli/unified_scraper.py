@@ -2012,7 +2012,7 @@ class UnifiedScraper(SkillConverter):
 
         logger.info(f"✅ Unified skill built: {self.output_dir}/")
 
-    def run(self, args=None):
+    def run(self, args=None, *, enhance_skill: bool = True):
         """
         Execute complete unified scraping workflow.
 
@@ -2020,6 +2020,8 @@ class UnifiedScraper(SkillConverter):
             args: Optional parsed CLI arguments for workflow integration.
                   When provided, enhancement workflows (--enhance-workflow,
                   --enhance-stage) are executed after the skill is built.
+            enhance_skill: Run the final SKILL.md enhancement here. The create
+                command handles this step after the converter returns.
         """
         # Store CLI args so _scrape_local() can access --enhance-level override
         self._cli_args = args
@@ -2115,7 +2117,7 @@ class UnifiedScraper(SkillConverter):
                     "name": self.config.get("name", ""),
                     "description": self.config.get("description", ""),
                 }
-                run_workflows(effective_args, context=unified_context)
+                run_workflows(effective_args, context=unified_context, raise_on_failure=True)
 
             # Phase 6: AI Enhancement of SKILL.md
             # Read from ExecutionContext first (has correct priority resolution),
@@ -2145,7 +2147,7 @@ class UnifiedScraper(SkillConverter):
                     enhancement_enabled = cli_enhance_level > 0
                     enhancement_level = cli_enhance_level
 
-            if enhancement_enabled and enhancement_level > 0:
+            if enhance_skill and enhancement_enabled and enhancement_level > 0:
                 logger.info("\n" + "=" * 60)
                 logger.info(
                     f"PHASE 6: Enhancing SKILL.md (level {enhancement_level}, mode {enhancement_mode})"
@@ -2269,7 +2271,7 @@ class UnifiedScraper(SkillConverter):
                         logger.warning(f"⚠️  API enhancement failed: {e}")
             else:
                 logger.info("\n" + "=" * 60)
-                logger.info("PHASE 6: Enhancement (skipped - not enabled in config)")
+                logger.info("PHASE 6: Enhancement skipped in unified converter")
                 logger.info("=" * 60)
 
             logger.info("\n" + "✅ " * 20)

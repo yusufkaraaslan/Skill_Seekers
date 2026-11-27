@@ -270,8 +270,8 @@ skill-seekers upload output/my-skill-openai.zip --target openai
 ```
 
 **Format:**
-- ZIP with vector embeddings
-- Ready for Assistants API
+- ZIP with reference files for indexing
+- Ready for Responses API
 
 ---
 

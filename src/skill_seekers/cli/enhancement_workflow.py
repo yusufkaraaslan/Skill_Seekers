@@ -395,6 +395,17 @@ class WorkflowEngine:
         else:
             return self._run_custom_stage(stage, context)
 
+    def _enhancer_options(self) -> dict:
+        """Keep model credentials in the client, outside prompt variables and reports."""
+        from skill_seekers.cli.execution_context import ExecutionContext
+
+        settings = ExecutionContext.get().enhancement
+        return {
+            "agent": self.agent or settings.agent,
+            "mode": settings.mode,
+            "api_key": settings.api_key,
+        }
+
     def _run_builtin_stage(self, stage: WorkflowStage, context: dict) -> dict:
         """Run built-in enhancement stage."""
         # Use existing enhancement system
@@ -405,7 +416,7 @@ class WorkflowEngine:
         # Determine what to enhance based on target
         if stage.target == "patterns":
             if "patterns" in current:
-                enhancer = PatternEnhancer(agent=self.agent)
+                enhancer = PatternEnhancer(**self._enhancer_options())
                 enhanced_patterns = enhancer.enhance_patterns(current["patterns"])
                 return {"patterns": enhanced_patterns}
             else:
@@ -414,7 +425,7 @@ class WorkflowEngine:
 
         elif stage.target == "examples":
             if "examples" in current:
-                enhancer = TestExampleEnhancer(agent=self.agent)
+                enhancer = TestExampleEnhancer(**self._enhancer_options())
                 enhanced_examples = enhancer.enhance_examples(current["examples"])
                 return {"examples": enhanced_examples}
             else:
@@ -435,7 +446,7 @@ class WorkflowEngine:
         if not self.enhancer:
             from skill_seekers.cli.ai_enhancer import AIEnhancer
 
-            self.enhancer = AIEnhancer(agent=self.agent)
+            self.enhancer = AIEnhancer(**self._enhancer_options())
 
         formatted_prompt = format_workflow_prompt(stage.prompt, context)
         # API models cannot open local paths, and local agents run in a temporary

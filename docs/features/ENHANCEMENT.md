@@ -302,7 +302,7 @@ skill-seekers enhance output/react/ --target openai --mode api
 
 **Model:** GPT-4o
 **Format:** Converts to plain text assistant instructions
-**Output:** Updates `assistant_instructions.txt` for OpenAI Assistants API
+**Output:** Updates `SKILL.md`, packaged as `assistant_instructions.txt` for the OpenAI Responses API
 
 ---
 

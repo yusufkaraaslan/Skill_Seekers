@@ -797,7 +797,7 @@ Agent: ✅ Uploaded to Google Gemini
 **Available platforms:**
 - `claude` (default) - ZIP format, Anthropic Skills API
 - `gemini` - tar.gz format, Google Files API
-- `openai` - ZIP format, OpenAI Assistants API + Vector Store
+- `openai` - ZIP format, OpenAI Responses API + Vector Store
 - `markdown` - ZIP format, generic export (no upload)
 
 ---

@@ -21,7 +21,7 @@ All enhancement modes now support **multiple local coding agents**:
 |-------|--------------|---------|-------|
 | **claude** | Claude Code | ✅ Yes | Your Claude Code Max plan (no API costs) |
 | **kimi** | Kimi Code CLI | No | Uses `kimi --print` with stdin |
-| **codex** | OpenAI Codex CLI | No | Uses `codex exec --full-auto` |
+| **codex** | OpenAI Codex CLI | No | Uses `codex exec --sandbox workspace-write` |
 | **copilot** | GitHub Copilot CLI | No | Uses `gh copilot chat` |
 | **opencode** | OpenCode CLI | No | Uses `opencode` command |
 | **custom** | Custom CLI Agent | No | Use any CLI tool with `--agent-cmd` |

@@ -15,7 +15,11 @@ from pathlib import Path
 
 # Fenced code blocks (``` or ~~~) and inline code spans. Stripped before
 # completeness pattern matching so code examples don't trigger prose heuristics.
-_FENCED_CODE_RE = re.compile(r"(?ms)^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*\r?$")
+_FENCED_CODE_RE = re.compile(
+    r"^ {0,3}(?P<fence>(?P<char>[`~])(?P=char){2,})(?P<info>[^\n]*)\n"
+    r".*?(?:^ {0,3}(?P=fence)(?P=char)*[ \t]*\r?$|\Z)",
+    re.MULTILINE | re.DOTALL,
+)
 _INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
 _FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n.*?\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL)
 _WORD_RE = re.compile(r"\b[\w]+(?:['’-][\w]+)*\b", re.UNICODE)
@@ -358,11 +362,13 @@ class SkillQualityChecker:
                 )
 
         # Check code block language tags
-        code_blocks_without_lang = re.findall(r"```\n[^`]", content)
+        code_blocks_without_lang = sum(
+            1 for block in _FENCED_CODE_RE.finditer(content) if not block["info"].strip()
+        )
         if code_blocks_without_lang:
             self.report.add_warning(
                 "content",
-                f"Found {len(code_blocks_without_lang)} code blocks without language tags",
+                f"Found {code_blocks_without_lang} code blocks without language tags",
                 "SKILL.md",
             )
 

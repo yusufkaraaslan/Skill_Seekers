@@ -2,16 +2,17 @@
 """
 OpenAI ChatGPT Adaptor
 
-Implements platform-specific handling for OpenAI ChatGPT Assistants.
-Uses Assistants API with Vector Store for file search.
+Package instructions and publish searchable references for the OpenAI Responses API.
 """
 
 import json
+from contextlib import ExitStack
 import zipfile
 from pathlib import Path
 from typing import Any
 
 from .base import SkillAdaptor, SkillMetadata
+from skill_seekers.cli.agent_client import AgentClient
 from skill_seekers.cli.arguments.common import DEFAULT_CHUNK_TOKENS, DEFAULT_CHUNK_OVERLAP_TOKENS
 
 
@@ -21,20 +22,20 @@ class OpenAIAdaptor(SkillAdaptor):
 
     Handles:
     - Assistant instructions format (not YAML frontmatter)
-    - ZIP packaging for Assistants API
-    - Upload creates Assistant + Vector Store
+    - ZIP packaging for the Responses API
+    - Upload publishes instructions and an indexed vector store
     - AI enhancement using GPT-4o
     """
 
     PLATFORM = "openai"
     PLATFORM_NAME = "OpenAI ChatGPT"
-    DEFAULT_API_ENDPOINT = "https://api.openai.com/v1/assistants"
+    DEFAULT_API_ENDPOINT = "https://api.openai.com/v1/vector_stores"
 
     def format_skill_md(self, skill_dir: Path, metadata: SkillMetadata) -> str:
         """
         Format SKILL.md as Assistant instructions.
 
-        OpenAI Assistants use instructions rather than markdown docs.
+        The Responses API accepts instructions as text.
 
         Args:
             skill_dir: Path to skill directory
@@ -114,7 +115,7 @@ Always prioritize accuracy by consulting the attached documentation files before
         chunk_overlap_tokens: int = DEFAULT_CHUNK_OVERLAP_TOKENS,
     ) -> Path:
         """
-        Package skill into ZIP file for OpenAI Assistants.
+        Package instructions and reference files for OpenAI.
 
         Creates OpenAI-compatible structure:
         - assistant_instructions.txt (main instructions)
@@ -157,7 +158,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 for ref_file in refs_dir.rglob("*.md"):
                     if ref_file.is_file() and not ref_file.name.startswith("."):
                         # Place all reference files in vector_store_files/
-                        arcname = f"vector_store_files/{ref_file.name}"
+                        arcname = f"vector_store_files/{ref_file.relative_to(refs_dir).as_posix()}"
                         zf.write(ref_file, arcname)
 
             # Create and add metadata file
@@ -166,7 +167,7 @@ Always prioritize accuracy by consulting the attached documentation files before
                 "name": skill_dir.name,
                 "version": "1.0.0",
                 "created_with": "skill-seekers",
-                "model": "gpt-4o",
+                "model": self.config.get("custom_model") or AgentClient.get_model("openai"),
                 "tools": ["file_search"],
             }
 
@@ -175,136 +176,114 @@ Always prioritize accuracy by consulting the attached documentation files before
         return output_path
 
     def upload(self, package_path: Path, api_key: str, **kwargs) -> dict[str, Any]:
+        """Publish a Responses API knowledge base and return its vector store ID.
+
+        Store metadata identifies the instructions file and model. Only reference
+        files are indexed. Each upload owns its resources until indexing succeeds.
         """
-        Upload skill ZIP to OpenAI Assistants API.
-
-        Creates:
-        1. Vector Store with reference files
-        2. Assistant with file_search tool
-
-        Args:
-            package_path: Path to skill ZIP file
-            api_key: OpenAI API key
-            **kwargs: Additional arguments (model, etc.)
-
-        Returns:
-            Dictionary with upload result
-        """
-        # Validate package file FIRST
         package_path = Path(package_path)
-        if not package_path.exists():
-            return {
-                "success": False,
-                "skill_id": None,
-                "url": None,
-                "message": f"File not found: {package_path}",
-            }
-
+        failure = {"success": False, "skill_id": None, "url": None}
+        if not package_path.is_file():
+            return {**failure, "message": f"File not found: {package_path}"}
         if package_path.suffix != ".zip":
-            return {
-                "success": False,
-                "skill_id": None,
-                "url": None,
-                "message": f"Not a ZIP file: {package_path}",
-            }
+            return {**failure, "message": f"Not a ZIP file: {package_path}"}
 
-        # Check for openai library
         try:
-            from openai import OpenAI
+            from openai import NotFoundError, OpenAI
         except ImportError:
             return {
-                "success": False,
-                "skill_id": None,
-                "url": None,
-                "message": "openai library not installed. Run: pip install openai",
+                **failure,
+                "message": "OpenAI SDK not installed or outdated. Install skill-seekers[openai].",
             }
 
-        # Configure OpenAI client
+        cleanup_errors = []
+
+        def delete_resource(delete, resource_id):
+            try:
+                delete(resource_id)
+            except NotFoundError:
+                pass  # The resource is already gone.
+            except Exception as exc:
+                cleanup_errors.append(f"{resource_id} ({exc})")
+
         try:
-            client = OpenAI(api_key=api_key)
-
-            # Extract package to temp directory
-            import tempfile
-
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Extract ZIP
-                with zipfile.ZipFile(package_path, "r") as zf:
-                    zf.extractall(temp_dir)
-
-                temp_path = Path(temp_dir)
-
-                # Read instructions
-                instructions_file = temp_path / "assistant_instructions.txt"
-                if not instructions_file.exists():
-                    return {
-                        "success": False,
-                        "skill_id": None,
-                        "url": None,
-                        "message": "Invalid package: assistant_instructions.txt not found",
-                    }
-
-                instructions = instructions_file.read_text(encoding="utf-8")
-
-                # Read metadata
-                metadata_file = temp_path / "openai_metadata.json"
-                skill_name = package_path.stem
-                model = kwargs.get("model", "gpt-4o")
-
-                if metadata_file.exists():
-                    with open(metadata_file) as f:
-                        metadata = json.load(f)
-                        skill_name = metadata.get("name", skill_name)
-                        model = metadata.get("model", model)
-
-                # Vector Stores were promoted from client.beta.vector_stores to
-                # the top-level client.vector_stores in newer OpenAI SDKs; prefer
-                # the top-level path and fall back to beta on older SDKs.
-                vs_api = getattr(client, "vector_stores", None) or client.beta.vector_stores
-
-                # Create vector store
-                vector_store = vs_api.create(name=f"{skill_name} Documentation")
-
-                # Upload reference files to vector store
-                vector_files_dir = temp_path / "vector_store_files"
-                file_ids = []
-
-                if vector_files_dir.exists():
-                    for ref_file in vector_files_dir.rglob("*.md"):
-                        # Upload file
-                        with open(ref_file, "rb") as f:
-                            uploaded_file = client.files.create(file=f, purpose="assistants")
-                            file_ids.append(uploaded_file.id)
-
-                    # Attach files to vector store (batch attach lives on
-                    # file_batches.create in both old and new SDKs)
-                    if file_ids:
-                        vs_api.file_batches.create(
-                            vector_store_id=vector_store.id, file_ids=file_ids
-                        )
-
-                # Create assistant
-                assistant = client.beta.assistants.create(
-                    name=skill_name,
-                    instructions=instructions,
-                    model=model,
-                    tools=[{"type": "file_search"}],
-                    tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+            with zipfile.ZipFile(package_path) as archive:
+                if "assistant_instructions.txt" not in archive.namelist():
+                    raise ValueError("Invalid package: assistant_instructions.txt not found")
+                instructions = archive.read("assistant_instructions.txt").decode("utf-8")
+                if not instructions.strip():
+                    raise ValueError("Invalid package: assistant_instructions.txt is empty")
+                metadata = {}
+                if "openai_metadata.json" in archive.namelist():
+                    metadata = json.loads(archive.read("openai_metadata.json"))
+                if not isinstance(metadata, dict):
+                    raise ValueError("Invalid package: openai_metadata.json must be an object")
+                model = (
+                    kwargs.get("model")
+                    or self.config.get("custom_model")
+                    or metadata.get("model")
+                    or AgentClient.get_model("openai")
                 )
+                name = metadata.get("name") or package_path.stem
+                references = [
+                    info
+                    for info in archive.infolist()
+                    if info.filename.startswith("vector_store_files/")
+                    and info.filename.endswith(".md")
+                ]
+
+                # A lost response to a create request can leave an unknown resource.
+                # Do not automatically repeat such requests.
+                with OpenAI(api_key=api_key, max_retries=0) as client, ExitStack() as rollback:
+                    stores = client.vector_stores
+                    instructions_file = client.files.create(
+                        file=("assistant_instructions.txt", instructions.encode("utf-8")),
+                        purpose="user_data",
+                    )
+                    rollback.callback(delete_resource, client.files.delete, instructions_file.id)
+                    store = stores.create(
+                        name=f"{name} Documentation",
+                        metadata={"instructions_file_id": instructions_file.id, "model": model},
+                    )
+                    rollback.callback(delete_resource, stores.delete, store.id)
+
+                    # Batch ingestion accepts up to 500 file IDs per request.
+                    for offset in range(0, len(references), 500):
+                        file_ids = []
+                        for info in references[offset : offset + 500]:
+                            with archive.open(info) as ref:
+                                uploaded = client.files.create(
+                                    file=(Path(info.filename).name, ref), purpose="user_data"
+                                )
+                            rollback.callback(delete_resource, client.files.delete, uploaded.id)
+                            file_ids.append(uploaded.id)
+                        batch = stores.file_batches.create_and_poll(
+                            vector_store_id=store.id, file_ids=file_ids
+                        )
+                        if batch.status != "completed" or batch.file_counts.completed != len(
+                            file_ids
+                        ):
+                            raise RuntimeError(
+                                f"Indexing batch {batch.id} ended with status {batch.status}: "
+                                f"{batch.file_counts.completed}/{len(file_ids)} files indexed"
+                            )
+                    rollback.pop_all()
 
             return {
                 "success": True,
-                "skill_id": assistant.id,
-                "url": f"https://platform.openai.com/assistants/{assistant.id}",
-                "message": f"Assistant created with {len(file_ids)} knowledge files",
-            }
-
-        except Exception as e:
-            return {
-                "success": False,
-                "skill_id": None,
+                "skill_id": store.id,
+                "vector_store_id": store.id,
+                "instructions_file_id": instructions_file.id,
+                "model": model,
                 "url": None,
-                "message": f"Upload failed: {str(e)}",
+                "message": f"Responses API vector store {store.id} is ready with {len(references)} reference files. "
+                f"Instructions file: {instructions_file.id}.",
             }
+        except Exception as exc:
+            message = f"Upload failed: {exc}"
+            if cleanup_errors:
+                message += ". Cleanup failed for: " + ", ".join(cleanup_errors)
+            return {**failure, "message": message}
 
     def validate_api_key(self, api_key: str) -> bool:
         """
@@ -328,7 +307,7 @@ Always prioritize accuracy by consulting the attached documentation files before
         return "OPENAI_API_KEY"
 
     def supports_upload(self) -> bool:
-        """OpenAI supports uploading assistants via the OpenAI API."""
+        """OpenAI supports publishing Responses API knowledge bases."""
         return True
 
     def supports_enhancement(self) -> bool:
@@ -346,7 +325,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             skill_dir,
             api_key,
             provider="openai",
-            model=self.config.get("custom_model") or "gpt-4o",
+            model=self.config.get("custom_model") or AgentClient.get_model("openai"),
             system=(
                 "You are an expert technical writer creating Assistant "
                 "instructions for OpenAI ChatGPT."

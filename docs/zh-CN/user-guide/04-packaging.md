@@ -264,7 +264,7 @@ skill-seekers upload output/my-skill-openai.zip --target openai
 
 **格式：**
 - 带向量嵌入的 ZIP
-- 可用于 Assistants API
+- 可用于 Responses API
 
 ---
 

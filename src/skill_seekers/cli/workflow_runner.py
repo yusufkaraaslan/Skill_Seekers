@@ -89,6 +89,8 @@ def run_workflows(
     args: argparse.Namespace,
     context: dict | None = None,
     use_context_fallback: bool = True,
+    *,
+    raise_on_failure: bool = False,
 ) -> tuple[bool, list[str]]:
     """Execute all enhancement workflows requested via CLI arguments.
 
@@ -110,6 +112,8 @@ def run_workflows(
                  the config-file workflows (unified configs run them in
                  UnifiedScraper.run Phase 5) pass False so the same workflows
                  don't run twice.
+
+        raise_on_failure: Raise after processing the chain if any requested workflow failed.
 
     Returns:
         (any_executed, names) where any_executed is True when at least one
@@ -134,6 +138,9 @@ def run_workflows(
             pass
 
     if not named_workflows and not inline_stages:
+        if dry_run:
+            logger.error("Workflow preview requires a configured workflow or --enhance-stage.")
+            sys.exit(1)
         return False, []
 
     from skill_seekers.cli.enhancement_workflow import WorkflowEngine
@@ -246,4 +253,6 @@ def run_workflows(
         logger.info(f"✅ {len(executed)} workflow(s) completed: {', '.join(executed)}")
         logger.info(f"{'=' * 80}")
 
+    if raise_on_failure and failures:
+        raise RuntimeError(f"{failures} of {total} requested workflows failed")
     return len(executed) > 0, executed

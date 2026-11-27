@@ -715,7 +715,7 @@ class TestRunOrchestration:
 
         captured = {}
 
-        def fake_run_workflows(args, context=None):  # noqa: ARG001
+        def fake_run_workflows(args, **_kwargs):
             captured["workflows"] = getattr(args, "enhance_workflow", None)
 
         import contextlib

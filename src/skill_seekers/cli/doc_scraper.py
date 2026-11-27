@@ -519,7 +519,7 @@ class DocToSkillConverter(SkillConverter):
                 page["headings"].append({"level": h.name, "text": text, "id": h.get("id", "")})
 
         # Extract text + code with language detection, in document order
-        self._fill_body(page, main, selectors.get("code_blocks", "pre code"))
+        self._fill_body(page, main, selectors.get("code_blocks", "pre"))
 
         # Extract patterns (NEW: common code patterns)
         page["patterns"] = self.extract_patterns(main, page["code_samples"])

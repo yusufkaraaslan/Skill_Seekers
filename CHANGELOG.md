@@ -7,23 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.11.0.dev0_
+### Fixed
+
+- **Retired default models** — API enhancement without a model override used `claude-sonnet-4-20250514` for Anthropic (retired by Anthropic on 2026-06-15) and `gemini-2.0-flash` for Google (shut down on 2026-06-01), so those calls failed. The Anthropic default is now `claude-sonnet-5-5` and the Google API and vision-OCR defaults are `gemini-3.8-flash`. The Gemini adaptor's enhancement default moves from `gemini-2.5-flash` (shuts down on 2026-12-01) to `gemini-3.8-flash`. The unknown-provider fallback in `AgentClient.get_model` now reads the Anthropic default instead of repeating the old id. `--model`, `SKILL_SEEKER_MODEL` and the per-provider model variables still override every default.
+
+## [3.11.0] - 2026-11-27
+
+OpenAI uploads now return a vector store ID for Responses API file search. Applications that passed the previous assistant ID to a thread or run should use the new ID with the Responses API. Existing OpenAI ZIP packages can be uploaded directly. [Migration example](https://github.com/yusufkaraaslan/Skill_Seekers/blob/v3.11.0/docs/integrations/OPENAI_INTEGRATION.md#step-5-ask-a-question-using-the-responses-api)
 
 ### Added
 - **Opt-in MiniMax-M3.1-Flash** (#477) — M3 remains the text and media default. Select Flash with `--model MiniMax-M3.1-Flash` or a model environment override; Flash requires adaptive thinking. MiniMax enhancement now honors regional/protocol settings and thinking modes through its provider configuration. Enhancement and new packages resolve models in the order `--model`, `SKILL_SEEKER_MODEL`, `MINIMAX_MODEL`, then M3; validating an existing package preserves its saved model. Offline SDK tests cover routing, overrides, thinking validation, and unchanged media defaults.
-- **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
+- **Requesty adaptor** (#492, `--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
+
+### Changed
+
+- The OpenAI extras require SDK 1.76.0 or newer for Responses API file search. Installing from `requirements.txt` now uses the package’s Anthropic SDK minimum of 0.76.0.
+- The Chinese README clarifies terminology for scraping, source merging, and quality checks (#475).
 
 ### Fixed
-- **Retired default models** — API enhancement without a model override used `claude-sonnet-4-20250514` for Anthropic (retired by Anthropic on 2026-06-15) and `gemini-2.0-flash` for Google (shut down on 2026-06-01), so those calls failed. The Anthropic default is now `claude-sonnet-5-5` and the Google API and vision-OCR defaults are `gemini-3.8-flash`. The Gemini adaptor's enhancement default moves from `gemini-2.5-flash` (shuts down on 2026-12-01) to `gemini-3.8-flash`. The unknown-provider fallback in `AgentClient.get_model` now reads the Anthropic default instead of repeating the old id. `--model`, `SKILL_SEEKER_MODEL` and the per-provider model variables still override every default.
+
+- Video setup can create a virtual environment with a uv-managed Python 3.10 installation on POSIX systems.
+- OpenAI upload publishes an indexed Responses API knowledge base. The returned `skill_id` is a vector store ID (`vs_...`). Store metadata contains the model and instructions file ID. Failed uploads roll back known resources and report any cleanup failures. An explicitly requested upload failure now propagates through packaging and MCP workflows.
+- Local Codex enhancement works with current Codex CLI releases. Explicit local agent selection takes precedence over API key detection.
+- Enhancement recognizes standalone PDF references, and package quality checks count language tags on opening code fences.
+- Default web extraction includes highlighted Sphinx `<pre>` examples. OpenAI and OpenAI-compatible packages retain nested reference paths when different sources use the same filename. PDF usage guidance skips front matter when listing topics.
+- Unified `create` now runs the final enhancement once. Workflow stages honor the selected API credentials, the CLI displays workflow previews, and failed workflows or API-mode enhancement return a failure status. OpenAI enhancement and packaging honor model overrides, and packaging shows instructions for the selected target.
 - **PDF code line breaks** (#491) — Font-detected code preserves physical line breaks and continuation across PDF text blocks, preventing multiline examples from being concatenated into a single line or losing short continuation lines. Inline spans still join on the same line. Font-based false positives remain possible.
 - **Short PDF code quality scores** (#490) — One- and two-line samples no longer gain high scores from generic length and syntax bonuses alone. Their confidence-based cap stays at or above the converter’s default quality threshold, preserving previously accepted short examples. Stricter filtering remains opt-in via `extract_options.min_quality`; uncertain fragments may still be retained by default.
 - **PDF outline categorization** (#489) — Single-source PDF skills use populated top-level outline chapters and split long chapters by their own subsections while preserving introductory and front-matter pages. Invalid or oversized outlines fall back without dropping content. Shared document reference naming avoids duplicate ranges, case-insensitive collisions, and overwriting `index.md`; navigation uses the same filenames.
 - **Page-file crawl scope** (#488, fixes #487) — Documentation scraping and page estimation now use the containing directory when `base_url` ends in `.html`, `.htm`, `.xhtml`, `.php`, `.asp`, `.aspx`, `.jsp`, or `.jspx`, including query strings and URL parameters. Sibling pages can be discovered from `index.html` while adjacent directories and other hosts remain excluded. Extensionless base URLs retain directory scope; estimation now uses the same directory boundary as scraping.
 - **Agent installation names** (#486) — `install-agent` uses a safe `SKILL.md` frontmatter name instead of a packaged folder’s platform suffix, with matching CLI output. YAML parsing handles quotes and empty values; invalid names fall back to the source folder. Destination checks prevent path escape, symlink replacement, and deletion or recursive copying of overlapping source folders.
+- PDF fragment language detection reduces false Sass and TypeScript labels on prose and table values (#484).
+- MCP marketplace tools accept explicit nulls for optional token environment, skill name, and description parameters (#476).
 - **Document skill usage guidance** (#483) — PDF, EPUB, Word, and HTML skills list up to four populated topic categories or actual document headings instead of generic usage claims. Empty categories, source filenames, and catch-all labels do not imply topic coverage. Quick Reference is omitted when there are no patterns; real pattern references remain intact.
 - **Workflow document input and output** (#482) — Custom stages receive bounded skill/reference text in API and local modes, successful results are saved, and explicit `skill_md` replacements preserve frontmatter and use atomic saves with backups. Inline workflows now construct a real engine; `create --workflow-dry-run` previews before scraping or enhancement. Prompt substitution preserves JSON, escaped braces, and nested fields, with runtime variables taking precedence over defaults. Local enhancement favors source-grounded usefulness over length without mandatory verification artifacts.
-- **Web scraper dropped code that sits between paragraphs** — `doc_scraper` collected text and code into two separate lists, so reference files showed all text first and only the first four code samples under `**Examples:**`. Pages now carry an ordered `body_blocks` list and `create_reference_file` renders text and code in page order with no cap. `content` and `code_samples` are still filled, and pages without `body_blocks` (markdown sources, older cached pages) render as before. The HTML fallback (`_extract_html_as_markdown`) no longer returns each `<pre><code>` twice.
-- **`¶` in scraped headings** — Heading can contain a headerlink sign `<a class="headerlink">¶</a>`, so the `**Contents:**` list in reference files read "Content Item ¶". `doc_scraper` now drops those anchors before reading heading text, in both `extract_content` and the HTML fallback, including configured page titles taken from headings. Literal pilcrows and ordinary links are preserved.
+- **Web scraper dropped code that sits between paragraphs** (#479) — `doc_scraper` collected text and code into two separate lists, so reference files showed all text first and only the first four code samples under `**Examples:**`. Pages now carry an ordered `body_blocks` list and `create_reference_file` renders text and code in page order with no cap. `content` and `code_samples` are still filled, and pages without `body_blocks` (markdown sources, older cached pages) render as before. The HTML fallback (`_extract_html_as_markdown`) no longer returns each `<pre><code>` twice.
+- **`¶` in scraped headings** (#478) — Heading can contain a headerlink sign `<a class="headerlink">¶</a>`, so the `**Contents:**` list in reference files read "Content Item ¶". `doc_scraper` now drops those anchors before reading heading text, in both `extract_content` and the HTML fallback, including configured page titles taken from headings. Literal pilcrows and ordinary links are preserved.
 
 ## [3.10.0] - 2026-09-30
 
@@ -3412,7 +3431,8 @@ This is the first production-ready release of Skill Seekers with complete featur
 
 ---
 
-[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v3.10.0...v3.11.0
 [1.2.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v0.4.0...v1.0.0

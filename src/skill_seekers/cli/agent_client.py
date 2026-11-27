@@ -62,7 +62,7 @@ AGENT_PRESETS = {
     },
     "codex": {
         "display_name": "OpenAI Codex CLI",
-        "command": ["codex", "exec", "--full-auto", "--skip-git-repo-check", "-"],
+        "command": ["codex", "exec", "--sandbox", "workspace-write", "--skip-git-repo-check", "-"],
         "version_check": ["codex", "--version"],
         "uses_stdin": True,
         "supports_skip_permissions": False,
@@ -564,6 +564,8 @@ class AgentClient:
                 # LOCAL fallback). Raise so the except below routes it correctly.
                 raise ValueError(f"Unknown API provider: {self.provider!r}")
         except ImportError as e:
+            if self._requested_mode == "api":
+                raise RuntimeError(f"{self.provider} SDK is required for API mode: {e}") from e
             logger.info(f"{self.provider} SDK not installed, falling back to LOCAL mode: {e}")
             self.mode = "local"
         except Exception as e:

@@ -203,7 +203,7 @@ Set `"max_pages": 20` in the config file to test with fewer pages.
 **4 Platforms Fully Supported:**
 - **Claude AI** (default) - ZIP format, Skills API, MCP integration
 - **Google Gemini** - tar.gz format, Files API, 1M token context
-- **OpenAI ChatGPT** - ZIP format, Assistants API, Vector Store
+- **OpenAI ChatGPT** - ZIP format, Responses API, Vector Store
 - **Generic Markdown** - ZIP format, universal compatibility
 
 **All skill modes work with all platforms:**
