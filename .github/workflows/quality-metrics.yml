@@ -21,20 +21,28 @@ on:
       - 'output/**'
       - 'configs/**'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Quality Metrics Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # "Post summary to PR" comments on the pull request
 
     env:
       SKILL_DIR_INPUT: ${{ github.event.inputs.skill_dir }}
       FAIL_THRESHOLD_INPUT: ${{ github.event.inputs.fail_threshold }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4.4.0
+      with:
+        persist-credentials: false
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.6.0
       with:
         python-version: '3.12'
 
@@ -141,7 +149,7 @@ jobs:
         fi
 
     - name: Upload quality reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: quality-metrics-reports
         path: quality_*.txt
@@ -150,7 +158,7 @@ jobs:
 
     - name: Post summary to PR
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v7.1.0
       with:
         script: |
           const fs = require('fs');
