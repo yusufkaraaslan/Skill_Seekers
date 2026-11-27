@@ -70,8 +70,9 @@ class StubConverter:
     def __init__(self):
         self.run_called = False
 
-    def run(self):
+    def run(self, **kwargs):
         self.run_called = True
+        self.run_options = kwargs
         return 0
 
 
@@ -171,6 +172,7 @@ class TestSkipScrapePromotedToConverter:
 
         assert result == 0
         assert stub.run_called
+        assert stub.run_options == {"enhance_skill": False}
         assert getattr(stub, "skip_scrape", False) is True
 
 

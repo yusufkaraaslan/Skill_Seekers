@@ -173,6 +173,9 @@ class TestOpenAICompatibleAdaptors:
             (skill_dir / "SKILL.md").write_text("You are an expert assistant")
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Reference")
+            nested = skill_dir / "references" / "guide"
+            nested.mkdir()
+            (nested / "test.md").write_text("# Nested reference")
 
             output_dir = Path(temp_dir) / "output"
             output_dir.mkdir()
@@ -183,6 +186,7 @@ class TestOpenAICompatibleAdaptors:
             assert str(package_path).endswith(".zip")
 
             with zipfile.ZipFile(package_path, "r") as zf:
+                assert zf.read("knowledge_files/guide/test.md") == b"# Nested reference"
                 names = zf.namelist()
                 assert "system_instructions.txt" in names, (
                     f"system_instructions.txt missing for {platform}"

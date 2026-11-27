@@ -70,14 +70,14 @@ skill-seekers create --config configs/react.json
 # Package for OpenAI
 skill-seekers package output/react/ --target openai
 
-# Upload to OpenAI (creates Assistant + Vector Store)
+# Upload to OpenAI (publishes instructions and a vector store)
 skill-seekers upload react-openai.zip --target openai
 
 # Optional: Enhance with GPT-4o
 skill-seekers enhance output/react/ --target openai
 ```
 
-**Output:** OpenAI Assistant created with file search enabled
+**Output:** Indexed vector store ID and instructions file ID
 
 ### Generic Markdown (Universal Export)
 
@@ -153,7 +153,7 @@ pip install -e .[all-llms]
 - Format: ZIP archive
 - SKILL.md → `assistant_instructions.txt` (plain text)
 - Structure: `assistant_instructions.txt`, `vector_store_files/`, `openai_metadata.json`
-- API: Assistants API + Vector Store
+- API: Responses API + Vector Store
 - Enhancement: GPT-4o
 
 **MiniMax AI:**
@@ -250,10 +250,10 @@ skill-seekers enhance output/react/ --target openai
 # 3. Package for OpenAI
 skill-seekers package output/react/ --target openai
 
-# 4. Upload (creates Assistant + Vector Store)
+# 4. Upload (publishes instructions and a vector store)
 skill-seekers upload react-openai.zip --target openai
 
-# Access at: https://platform.openai.com/assistants/
+# Use the returned vector store ID with Responses API file search
 ```
 
 ### Workflow 4: MiniMax AI

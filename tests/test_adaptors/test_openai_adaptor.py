@@ -3,12 +3,16 @@
 Tests for OpenAI adaptor
 """
 
+import json
 import sys
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 from skill_seekers.cli.adaptors import get_adaptor
 from skill_seekers.cli.adaptors.base import SkillMetadata
@@ -109,6 +113,25 @@ class TestOpenAIAdaptor(unittest.TestCase):
             self.assertIn("openai", result["message"])
             self.assertIn("not installed", result["message"])
 
+    def test_package_preserves_nested_reference_paths_and_selected_model(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            skill = root / "manual"
+            for topic in ("cli", "api"):
+                folder = skill / "references" / topic
+                folder.mkdir(parents=True)
+                (folder / "index.md").write_text(topic)
+            (skill / "SKILL.md").write_text("# Manual")
+            adaptor = get_adaptor("openai", {"custom_model": "my-model"})
+            with zipfile.ZipFile(adaptor.package(skill, root)) as archive:
+                for topic in ("cli", "api"):
+                    self.assertEqual(
+                        archive.read(f"vector_store_files/{topic}/index.md"), topic.encode()
+                    )
+                self.assertEqual(
+                    json.loads(archive.read("openai_metadata.json"))["model"], "my-model"
+                )
+
     def test_upload_invalid_file(self):
         """Test upload with invalid file"""
         result = self.adaptor.upload(Path("/nonexistent/file.zip"), "sk-test123")
@@ -124,58 +147,6 @@ class TestOpenAIAdaptor(unittest.TestCase):
             self.assertFalse(result["success"])
             self.assertIn("not a zip", result["message"].lower())
 
-    def test_upload_success(self):
-        """Test successful upload to OpenAI - skipped (needs real API for integration test)"""
-        pass
-
-    def test_upload_attaches_references_via_file_batches(self):
-        """Regression: batch attach must use vector_stores.file_batches.create.
-
-        The old code called vs_api.files.create_batch, which does not exist on
-        the OpenAI SDK (neither client.vector_stores nor client.beta.vector_stores),
-        so every upload with reference files raised AttributeError (swallowed
-        into a failure dict). The spec'd mocks below mirror the real SDK
-        surface, so calling the nonexistent method fails this test.
-        """
-        try:
-            from openai.resources.vector_stores import FileBatches, Files, VectorStores
-        except ImportError:
-            self.skipTest("openai library not installed")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            skill_dir = Path(temp_dir) / "test-skill"
-            skill_dir.mkdir()
-            (skill_dir / "SKILL.md").write_text("You are an expert assistant")
-            refs_dir = skill_dir / "references"
-            refs_dir.mkdir()
-            (refs_dir / "guide.md").write_text("# User Guide")
-            (refs_dir / "api.md").write_text("# API Reference")
-
-            output_dir = Path(temp_dir) / "output"
-            output_dir.mkdir()
-            package_path = self.adaptor.package(skill_dir, output_dir)
-
-            mock_client = MagicMock()
-            mock_client.vector_stores = MagicMock(spec=VectorStores)
-            mock_client.vector_stores.files = MagicMock(spec=Files)
-            mock_client.vector_stores.file_batches = MagicMock(spec=FileBatches)
-            mock_client.vector_stores.create.return_value = MagicMock(id="vs_123")
-            mock_client.files.create.side_effect = [
-                MagicMock(id="file_1"),
-                MagicMock(id="file_2"),
-            ]
-            mock_client.beta.assistants.create.return_value = MagicMock(id="asst_123")
-
-            with patch("openai.OpenAI", return_value=mock_client):
-                result = self.adaptor.upload(package_path, "sk-test123")
-
-            self.assertTrue(result["success"], msg=result["message"])
-            self.assertEqual(result["skill_id"], "asst_123")
-            self.assertEqual(mock_client.files.create.call_count, 2)
-            mock_client.vector_stores.file_batches.create.assert_called_once_with(
-                vector_store_id="vs_123", file_ids=["file_1", "file_2"]
-            )
-
     def test_enhance_success(self):
         """Test successful enhancement - skipped (needs real API for integration test)"""
         pass
@@ -188,8 +159,8 @@ class TestOpenAIAdaptor(unittest.TestCase):
             refs_dir.mkdir()
             (refs_dir / "test.md").write_text("Test")
 
-            # Don't mock the module - it won't be available
-            success = self.adaptor.enhance(skill_dir, "sk-test123")
+            with patch.dict(sys.modules, {"openai": None}):
+                success = self.adaptor.enhance(skill_dir, "sk-test123")
 
             self.assertFalse(success)
 
@@ -231,6 +202,101 @@ class TestOpenAIAdaptor(unittest.TestCase):
                 self.assertEqual(metadata["platform"], "openai")
                 self.assertEqual(metadata["name"], "test-skill")
                 self.assertIn("file_search", metadata["tools"])
+
+
+@pytest.fixture
+def upload_client(monkeypatch):
+    client = MagicMock()
+    sdk = MagicMock()
+    sdk.NotFoundError = FileNotFoundError
+    sdk.OpenAI.return_value.__enter__.return_value = client
+    monkeypatch.setitem(sys.modules, "openai", sdk)
+    client.vector_stores.create.return_value.id = "vs_123"
+    return client
+
+
+def upload_package(tmp_path, ref_count=2):
+    package = tmp_path / "test-openai.zip"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("assistant_instructions.txt", "Use these references.")
+        archive.writestr(
+            "openai_metadata.json", json.dumps({"name": "test", "model": "chosen-model"})
+        )
+        for i in range(ref_count):
+            archive.writestr(f"vector_store_files/{i}/index.md", f"Reference {i}")
+    return package
+
+
+@pytest.mark.parametrize("ref_count", [0, 2, 501])
+def test_publish_responses_knowledge_base(tmp_path, upload_client, ref_count):
+    client = upload_client
+    client.files.create.side_effect = [
+        SimpleNamespace(id=f"file_{i}") for i in range(ref_count + 1)
+    ]
+    batches = client.vector_stores.file_batches.create_and_poll
+    batches.side_effect = lambda file_ids, **_kwargs: SimpleNamespace(
+        status="completed", file_counts=SimpleNamespace(completed=len(file_ids))
+    )
+    result = get_adaptor("openai").upload(upload_package(tmp_path, ref_count), "sk-test")
+    assert result["success"], result["message"]
+    assert result["skill_id"] == result["vector_store_id"] == "vs_123"
+    assert result["model"] == "chosen-model"
+    assert result["instructions_file_id"] == "file_0"
+    client.vector_stores.create.assert_called_once_with(
+        name="test Documentation",
+        metadata={"instructions_file_id": "file_0", "model": "chosen-model"},
+    )
+    assert client.files.create.call_args_list[0] == call(
+        file=("assistant_instructions.txt", b"Use these references."), purpose="user_data"
+    )
+    ids = [f"file_{i + 1}" for i in range(ref_count)]
+    assert batches.call_args_list == [
+        call(vector_store_id="vs_123", file_ids=ids[i : i + 500]) for i in range(0, ref_count, 500)
+    ]
+    client.files.delete.assert_not_called()
+    client.vector_stores.delete.assert_not_called()
+
+
+@pytest.mark.parametrize("status, completed", [("failed", 0), ("cancelled", 0), ("completed", 1)])
+def test_partial_indexing_rolls_back(tmp_path, upload_client, status, completed):
+    client = upload_client
+    client.files.create.side_effect = [
+        SimpleNamespace(id=x) for x in ("instructions", "ref1", "ref2")
+    ]
+    client.vector_stores.file_batches.create_and_poll.return_value = SimpleNamespace(
+        id="batch_123", status=status, file_counts=SimpleNamespace(completed=completed)
+    )
+    result = get_adaptor("openai").upload(upload_package(tmp_path), "sk-test")
+    assert not result["success"] and result["skill_id"] is None
+    assert "batch_123" in result["message"]
+    client.vector_stores.delete.assert_called_once_with("vs_123")
+    assert client.files.delete.call_args_list == [call("ref2"), call("ref1"), call("instructions")]
+
+
+def test_upload_failure_reports_cleanup_ids_and_continues(tmp_path, upload_client):
+    client = upload_client
+    client.files.create.side_effect = [
+        SimpleNamespace(id="instructions"),
+        SimpleNamespace(id="ref1"),
+        RuntimeError("upload rejected"),
+    ]
+    client.files.delete.side_effect = [RuntimeError("permission denied"), None]
+    result = get_adaptor("openai").upload(upload_package(tmp_path), "sk-test")
+    assert not result["success"]
+    assert "upload rejected" in result["message"]
+    assert "ref1 (permission denied)" in result["message"]
+    client.vector_stores.delete.assert_called_once_with("vs_123")
+    assert client.files.delete.call_args_list == [call("ref1"), call("instructions")]
+
+
+def test_invalid_package_creates_no_resources(tmp_path, upload_client):
+    package = tmp_path / "invalid.zip"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("vector_store_files/test.md", "# Example")
+    result = get_adaptor("openai").upload(package, "sk-test")
+    assert not result["success"] and "assistant_instructions.txt" in result["message"]
+    upload_client.files.create.assert_not_called()
+    upload_client.vector_stores.create.assert_not_called()
 
 
 if __name__ == "__main__":

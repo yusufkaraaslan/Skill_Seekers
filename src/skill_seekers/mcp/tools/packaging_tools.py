@@ -111,8 +111,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
                 output += "\n   Your skill is now available in Gemini!"
                 output += "\n   Go to https://aistudio.google.com/ to use it"
             elif target == "openai":
-                output += "\n   Your assistant is now available in OpenAI!"
-                output += "\n   Go to https://platform.openai.com/assistants/ to use it"
+                output += "\n   Use the vector store ID above with Responses API file search."
         elif auto_upload and not has_api_key:
             # User wanted upload but no API key
             output += f"\n\n📝 Skill packaged successfully for {adaptor.PLATFORM_NAME}!"
@@ -135,8 +134,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
                 output += "\n   1. Get API key from https://platform.openai.com/"
                 output += "\n   2. Set: export OPENAI_API_KEY=sk-proj-..."
                 output += "\n\n📤 Manual upload:"
-                output += "\n   1. Use OpenAI Assistants API"
-                output += "\n   2. Upload the .zip file from your output/ folder"
+                output += "\n   Run skill-seekers upload <package.zip> --target openai"
             elif target == "markdown":
                 output += "\n   (No API key needed - markdown is export only)"
                 output += "\n   Package created for manual distribution"
@@ -148,7 +146,7 @@ async def package_skill_tool(args: dict) -> list[TextContent]:
             elif target == "gemini":
                 output += "\n   Upload manually to https://aistudio.google.com/"
             elif target == "openai":
-                output += "\n   Upload manually via OpenAI Assistants API"
+                output += "\n   Run skill-seekers upload <package.zip> --target openai"
             elif target == "markdown":
                 output += "\n   Package ready for manual distribution"
 
@@ -702,6 +700,8 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
 
                         upload_output = upload_result[0].text
                         output_lines.append(upload_output)
+                        if "❌ Error:" in upload_output:
+                            return [TextContent(type="text", text="\n".join(output_lines))]
 
                         workflow_state["phases_completed"].append("upload_skill")
                 else:
@@ -730,8 +730,9 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                         output_lines.append("  2. Set: export OPENAI_API_KEY=sk-proj-...")
                         output_lines.append("")
                         output_lines.append("📤 Manual upload:")
-                        output_lines.append("  1. Use OpenAI Assistants API")
-                        output_lines.append(f"  2. Upload package: {workflow_state['zip_path']}")
+                        output_lines.append(
+                            f"  skill-seekers upload {workflow_state['zip_path']} --target openai"
+                        )
                     elif target == "markdown":
                         output_lines.append("  (No API key needed - markdown is export only)")
                         output_lines.append(f"  Package created: {workflow_state['zip_path']}")
@@ -825,9 +826,8 @@ async def install_skill_tool(args: dict) -> list[TextContent]:
                     output_lines.append("🎉 Your skill is now available in Gemini!")
                     output_lines.append("   Go to https://aistudio.google.com/ to use it")
                 elif target == "openai":
-                    output_lines.append("🎉 Your assistant is now available in OpenAI!")
                     output_lines.append(
-                        "   Go to https://platform.openai.com/assistants/ to use it"
+                        "Use the vector store ID above with Responses API file search."
                     )
             elif auto_upload:
                 output_lines.append("📝 Manual upload required (see instructions above)")

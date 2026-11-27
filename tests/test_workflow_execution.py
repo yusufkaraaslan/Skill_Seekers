@@ -200,6 +200,68 @@ def test_missing_workflow_preview_is_failure(tmp_path):
     assert exited.value.code == 1
 
 
+def test_cli_prints_workflow_preview(tmp_path):
+    import subprocess
+    import sys
+
+    source = tmp_path / "example.html"
+    source.write_text("<main>Example</main>")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "skill_seekers.cli.main",
+            "create",
+            str(source),
+            "--enhance-stage",
+            "inspect:Read the source",
+            "--workflow-dry-run",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+    assert "inspect" in result.stderr
+    assert not (tmp_path / "output").exists()
+
+
+def test_workflow_uses_explicit_api_credentials_without_including_them_in_prompt(
+    skill, monkeypatch
+):
+    enhancer = Mock()
+    enhancer.call.return_value = '{"note": "done"}'
+    factory = Mock(return_value=enhancer)
+    monkeypatch.setattr("skill_seekers.cli.ai_enhancer.AIEnhancer", factory)
+    ExecutionContext.initialize(args=argparse.Namespace(api_key="sk-local-fixture"))
+    assert run_workflows(args(inline=["review:Review"]), context={"skill_dir": str(skill)})[0]
+    assert factory.call_args.kwargs["api_key"] == "sk-local-fixture"
+    assert factory.call_args.kwargs["mode"] == "api"
+    assert "sk-local-fixture" not in enhancer.call.call_args.args[0]
+
+
+def test_create_reports_failed_workflow(tmp_path):
+    from skill_seekers.cli.main import main
+
+    html = tmp_path / "example.html"
+    html.write_text("<main><h1>Example</h1><p>Read this source document.</p></main>")
+    status = main(
+        [
+            "create",
+            str(html),
+            "--output",
+            str(tmp_path / "out"),
+            "--enhance-level",
+            "0",
+            "--enhance-workflow",
+            str(tmp_path / "missing.yaml"),
+        ]
+    )
+    assert status == 1
+    assert (tmp_path / "out" / "SKILL.md").is_file()
+
+
 def test_context_is_bounded_and_excludes_external_symlinks(skill, tmp_path, monkeypatch):
     monkeypatch.setattr("skill_seekers.cli.workflow_documents.MAX_DOCUMENT_CHARS", 32)
     monkeypatch.setattr("skill_seekers.cli.workflow_documents.MAX_CONTEXT_CHARS", 50)

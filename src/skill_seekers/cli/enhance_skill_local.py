@@ -1401,8 +1401,8 @@ Force Mode (LOCAL only, Default ON):
 
     args = parser.parse_args()
 
-    # Auto-detect API mode unless --mode LOCAL is explicitly set
-    if getattr(args, "mode", None) != "LOCAL":
+    # Explicit mode wins, then local agent flags, then environment auto-detection.
+    if args.mode == "API" or (args.mode is None and not (args.agent or args.agent_cmd)):
         api_target = _detect_api_target()
         if api_target is not None:
             from skill_seekers.cli.enhance_command import api_sdk_available

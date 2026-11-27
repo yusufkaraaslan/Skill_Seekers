@@ -58,7 +58,7 @@ class TestMultiAgentSupport:
 
         assert cmd_parts[0] == "codex"
         assert "exec" in cmd_parts
-        assert "--full-auto" in cmd_parts
+        assert cmd_parts[cmd_parts.index("--sandbox") + 1] == "workspace-write"
         assert "--skip-git-repo-check" in cmd_parts
         assert uses_file is False
 
@@ -738,7 +738,9 @@ class TestEnhanceDispatcher:
         monkeypatch.setenv("MOONSHOT_API_KEY", "sk-moonshot-test")
         monkeypatch.setattr("skill_seekers.cli.enhance_command.api_sdk_available", lambda _t: True)
         monkeypatch.setattr(
-            sys, "argv", ["enhance_skill_local.py", "--agent", "kimi", str(skill_dir)]
+            sys,
+            "argv",
+            ["enhance_skill_local.py", "--mode", "API", "--agent", "kimi", str(skill_dir)],
         )
 
         captured = {}
@@ -808,14 +810,15 @@ class TestEnhanceDispatcher:
         assert api_called == [], "_run_api_enhance must not be called when the SDK is missing"
         mock_enhancer.assert_called_once()
 
-    def test_main_uses_local_when_mode_local(self, monkeypatch, tmp_path):
-        """main() stays in LOCAL mode when --mode LOCAL is passed."""
+    @pytest.mark.parametrize("flags", [["--mode", "LOCAL"], ["--agent", "codex"]])
+    def test_main_uses_local_when_requested(self, monkeypatch, tmp_path, flags):
+        """Explicit local selection takes precedence over key detection."""
         import sys
         from skill_seekers.cli.enhance_skill_local import main
 
         skill_dir = _make_skill_dir(tmp_path)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
-        monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir), "--mode", "LOCAL"])
+        monkeypatch.setattr(sys, "argv", ["enhance", str(skill_dir), *flags])
 
         api_called = []
         monkeypatch.setattr(

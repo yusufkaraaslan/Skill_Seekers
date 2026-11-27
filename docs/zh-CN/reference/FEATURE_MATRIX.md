@@ -8,7 +8,7 @@
 |------|----------|------|------|---------------|
 | **Claude AI** | ZIP | ✅ Anthropic API | ✅ Sonnet 4 | ANTHROPIC_API_KEY |
 | **Google Gemini** | tar.gz | ✅ Files API | ✅ Gemini 2.0 | GOOGLE_API_KEY |
-| **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
+| **OpenAI ChatGPT** | ZIP | ✅ Responses API | ✅ GPT-4o | OPENAI_API_KEY |
 | **MiniMax** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **OpenCode** | ZIP | ❌ 手动 | ❌ 无 | 无 |
 | **Kimi** | ZIP | ❌ 手动 | ❌ 无 | 无 |
@@ -131,10 +131,10 @@ Requesty 打包在本地完成，无需 API 密钥。`upload` 命令通过聊天
 ### OpenAI ChatGPT
 - **格式：** Assistant instructions（纯文本）
 - **打包：** ZIP，包含 assistant_instructions.txt、vector_store_files/、metadata
-- **上传：** Assistants API + Vector Store 创建
+- **上传：** Responses API + Vector Store 创建
 - **增强：** GPT-4o
 - **独特功能：** Vector store、file_search 工具、语义搜索
-- **限制：** 需要 Assistants API 结构
+- **限制：** 需要 Responses API 结构
 
 ### 通用 Markdown
 - **格式：** 纯 markdown（通用）

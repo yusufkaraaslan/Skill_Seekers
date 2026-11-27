@@ -8,7 +8,7 @@ Complete feature support across all platforms and skill modes.
 |----------|---------------|--------|-------------|------------------|
 | **Claude AI** | ZIP | ✅ Anthropic API | ✅ Sonnet 4 | ANTHROPIC_API_KEY |
 | **Google Gemini** | tar.gz | ✅ Files API | ✅ Gemini 2.0 | GOOGLE_API_KEY |
-| **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
+| **OpenAI ChatGPT** | ZIP | ✅ Responses API | ✅ GPT-4o | OPENAI_API_KEY |
 | **MiniMax** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenCode** | ZIP | ❌ Manual | ❌ None | None |
 | **Kimi** | ZIP | ❌ Manual | ❌ None | None |
@@ -132,10 +132,10 @@ and reference documentation to Requesty using `REQUESTY_API_KEY`.
 ### OpenAI ChatGPT
 - **Format:** Assistant instructions (plain text)
 - **Package:** ZIP with assistant_instructions.txt, vector_store_files/, metadata
-- **Upload:** Assistants API + Vector Store creation
+- **Upload:** Responses API + Vector Store creation
 - **Enhancement:** GPT-4o
 - **Unique Features:** Vector store, file_search tool, semantic search
-- **Limitations:** Requires Assistants API structure
+- **Limitations:** Use the returned vector store ID in a Responses API request
 
 ### Generic Markdown
 - **Format:** Pure markdown (universal)

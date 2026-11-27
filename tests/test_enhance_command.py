@@ -89,6 +89,13 @@ class TestIsRoot:
 
 
 class TestPickModeExplicitTarget:
+    @pytest.mark.parametrize("selection", [{"agent": "codex"}, {"agent_cmd": "my-agent"}])
+    def test_local_selection_overrides_api_detection(self, monkeypatch, selection):
+        from skill_seekers.cli.enhance_command import _pick_mode
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+        assert _pick_mode(_make_args(**selection)) == ("local", None)
+
     def test_target_gemini_forces_api(self, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
@@ -106,7 +113,7 @@ class TestPickModeExplicitTarget:
 
         from skill_seekers.cli.enhance_command import _pick_mode
 
-        args = _make_args(target="openai")
+        args = _make_args(target="openai", agent="codex")
         mode, target = _pick_mode(args)
         assert mode == "api"
         assert target == "openai"

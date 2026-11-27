@@ -877,7 +877,7 @@ async def package_skill(
 
 
 @safe_tool_decorator(
-    description="Upload skill package to target LLM platform API. Requires platform-specific API key. Supports: claude (Anthropic Skills API), gemini (Google Files API), openai (Assistants API). Does NOT support markdown."
+    description="Upload skill package to target LLM platform API. Requires platform-specific API key. Supports: claude (Anthropic Skills API), gemini (Google Files API), openai (Responses API file search). Does NOT support markdown."
 )
 async def upload_skill(
     skill_zip: str,

@@ -87,6 +87,15 @@ def test_custom_code_paragraph_is_not_reclassified_as_prose(converter):
     assert [block["type"] for block in page["body_blocks"]] == ["code"]
 
 
+def test_default_selector_keeps_sphinx_highlighted_examples(converter):
+    page = converter.extract_content(
+        parse_html("<main><pre><span>for</span> item in items:\n    print(item)</pre></main>"), URL
+    )
+    assert [sample["code"] for sample in page["code_samples"]] == [
+        "for item in items:\n    print(item)"
+    ]
+
+
 def test_paragraph_inside_selected_code_container_is_not_rendered_twice(converter):
     converter.config["selectors"] = {"main_content": "main", "code_blocks": ".code"}
     page = converter.extract_content(

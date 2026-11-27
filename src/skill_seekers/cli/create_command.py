@@ -50,6 +50,13 @@ class CreateCommand:
         Returns:
             Exit code (0 for success, non-zero for error)
         """
+        log_level = logging.INFO
+        if getattr(self.args, "verbose", False):
+            log_level = logging.DEBUG
+        elif getattr(self.args, "quiet", False):
+            log_level = logging.WARNING
+        logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
+
         # 1-2. Detect source type, honour --html-path, validate accessibility.
         # One shared stage (SourceDetector.resolve) so `skill-seekers detect`
         # reports exactly what create would do with the same input.
@@ -88,8 +95,7 @@ class CreateCommand:
 
         # A workflow preview must precede scraping and normal enhancement too.
         if getattr(self.args, "workflow_dry_run", False):
-            self._run_workflows()
-            return 0
+            return 0 if self._run_workflows() else 1
 
         # 5. Route to appropriate converter
         logger.info(f"Routing to {self.source_info.type} converter...")
@@ -106,10 +112,13 @@ class CreateCommand:
             logger.info("Dry run — skipping enhancement and workflows.")
             return 0
         if ctx.enhancement.enabled and ctx.enhancement.level > 0:
-            self._run_enhancement(ctx)
+            enhanced = self._run_enhancement(ctx)
+            if not enhanced and ctx.enhancement.mode == "api":
+                return 1
 
         # 7. Centralized workflows
-        self._run_workflows()
+        if not self._run_workflows():
+            return 1
 
         # 8. Optional structured index. This runs after enhancement and
         # workflows so indexed sections always reflect the final markdown.
@@ -135,7 +144,7 @@ class CreateCommand:
                 continue
 
             # Skip internal arguments
-            if arg_name in ["source", "func", "subcommand"]:
+            if arg_name in ["source", "func", "subcommand", "command"]:
                 continue
 
             # Warn about incompatible argument
@@ -225,7 +234,7 @@ class CreateCommand:
             )
             if ctx.scraping.skip_scrape:
                 converter.skip_scrape = True
-            return converter.run()
+            return converter.run(enhance_skill=False)
 
         config = self._build_config(source_type, ctx)
         converter = get_converter(source_type, config)
@@ -292,7 +301,7 @@ class CreateCommand:
             config_path = getattr(self.args, "config", None)
             if config_path:
                 self._merge_json_config(config, config_path)
-            config.setdefault("selectors", {"title": "title", "code_blocks": "pre code"})
+            config.setdefault("selectors", {"title": "title"})
             config.setdefault("url_patterns", {"include": [], "exclude": []})
 
         elif source_type == "github":
@@ -491,7 +500,7 @@ class CreateCommand:
         except (FileNotFoundError, json.JSONDecodeError) as e:
             logger.warning(f"Could not load config file {config_path}: {e}")
 
-    def _run_enhancement(self, ctx: ExecutionContext) -> None:
+    def _run_enhancement(self, ctx: ExecutionContext) -> bool:
         """Run centralized AI enhancement after converter completes."""
         from pathlib import Path
 
@@ -524,10 +533,13 @@ class CreateCommand:
                             logger.info("API enhancement complete! (%s)", adaptor.PLATFORM_NAME)
                         else:
                             logger.warning("API enhancement did not complete")
+                        return success
                     else:
                         logger.warning("%s does not support AI enhancement", adaptor.PLATFORM_NAME)
                 else:
                     logger.warning("No API key available for enhancement")
+            elif ctx.enhancement.mode == "api":
+                logger.error("API enhancement requires a configured provider key and SDK.")
             else:
                 from skill_seekers.cli.enhance_skill_local import LocalSkillEnhancer
 
@@ -542,10 +554,12 @@ class CreateCommand:
                     logger.info(f"Local enhancement complete! (via {agent_name})")
                 else:
                     logger.warning("Local enhancement did not complete")
+                return success
         except Exception as e:
             logger.warning(f"Enhancement failed: {e}")
+        return False
 
-    def _run_workflows(self) -> None:
+    def _run_workflows(self) -> bool:
         """Run enhancement workflows if configured."""
         try:
             from skill_seekers.cli.workflow_runner import run_workflows
@@ -563,11 +577,12 @@ class CreateCommand:
                 use_context_fallback=not is_unified
                 or bool(getattr(self.args, "workflow_dry_run", False)),
                 context={"skill_dir": str(skill_dir)},
+                raise_on_failure=True,
             )
-        except ImportError:
-            pass
-        except Exception as e:
-            logger.warning(f"Workflow execution failed: {e}")
+        except (ImportError, RuntimeError, ValueError, OSError) as e:
+            logger.error(f"Workflow execution failed: {e}")
+            return False
+        return True
 
     def _resolve_skill_dir(self, ctx: ExecutionContext) -> Path:
         """Where the converter wrote the skill — shared by every post-step.
@@ -725,10 +740,6 @@ Common Workflows:
             add_create_arguments(help_parser, mode=mode)
             help_parser.print_help()
             return 0
-
-    # Setup logging
-    log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
-    logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 
     # Validate source provided (config file can serve as source)
     if not args.source and not args.config:

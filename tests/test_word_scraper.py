@@ -266,7 +266,8 @@ class TestWordSkillBuilding(unittest.TestCase):
         self.assertTrue(skill_md.exists())
 
         content = skill_md.read_text()
-        self.assertIn("test_skill", content)
+        self.assertIn("\nname: test-skill\n", content)
+        self.assertIn("- Section 1\n- Section 2\n", content)
         self.assertIn("Test description for docs", content)
 
     def test_build_skill_creates_reference_files(self):

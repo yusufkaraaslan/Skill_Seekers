@@ -52,6 +52,20 @@ def test_single_file_uses_document_headings_not_filename(converter):
     assert "- manual" not in usage
 
 
+def test_enhancement_recognizes_standalone_pdf_references(tmp_path):
+    from skill_seekers.cli.utils import read_reference_files
+
+    pdf = PDFToSkillConverter(
+        {"name": "manual", "pdf_path": "manual.pdf", "output_dir": str(tmp_path)}
+    )
+    pdf.extracted_data = {"pages": [{"page_number": 1, "text": "Introduction"}], "total_pages": 1}
+    pdf.build_skill()
+
+    references = read_reference_files(pdf.skill_dir, preview_limit=10)
+    assert "index.md" in references and len(references) == 2
+    assert all(ref["source"] == "pdf" for ref in references.values())
+
+
 def test_empty_categories_do_not_claim_coverage(converter):
     _, usage = render(
         converter,
@@ -64,7 +78,9 @@ def test_empty_categories_do_not_claim_coverage(converter):
     assert "Deployment" not in usage
 
 
-@pytest.mark.parametrize("title", ["Content", "Other", "Additional Content", None, ""])
+@pytest.mark.parametrize(
+    "title", ["Content", "Other", "Additional Content", "Front Matter", None, ""]
+)
 def test_fallback_uses_both_document_and_pdf_heading_shapes(converter, title):
     _, usage = render(
         converter, {"content": {"title": title, "pages": converter.extracted_data["pages"]}}
