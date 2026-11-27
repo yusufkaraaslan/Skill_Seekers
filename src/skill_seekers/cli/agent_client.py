@@ -99,9 +99,9 @@ AGENT_PRESETS = {
 
 # Default models per API provider
 DEFAULT_MODELS = {
-    "anthropic": "claude-sonnet-4-20250514",
+    "anthropic": "claude-sonnet-5-5",
     "moonshot": "moonshot-v1-auto",
-    "google": "gemini-2.0-flash",
+    "google": "gemini-3.8-flash",
     "openai": "gpt-4o",
     "minimax": MINIMAX_DEFAULT_MODEL,
 }
@@ -1254,7 +1254,7 @@ class AgentClient:
             if model:
                 return model
 
-        return default or DEFAULT_MODELS.get(provider, "claude-sonnet-4-20250514")
+        return default or DEFAULT_MODELS.get(provider, DEFAULT_MODELS["anthropic"])
 
     @staticmethod
     def detect_default_target() -> str:

@@ -304,7 +304,7 @@ class TestGetModel:
     @patch.dict(os.environ, {}, clear=True)
     def test_unknown_provider_falls_back_to_anthropic_default(self):
         model = AgentClient.get_model("unknown-provider")
-        assert model == "claude-sonnet-4-20250514"
+        assert model == DEFAULT_MODELS["anthropic"]
 
     @patch.dict(os.environ, {"OPENAI_MODEL": "gpt-5"}, clear=True)
     def test_openai_model_env_var(self):

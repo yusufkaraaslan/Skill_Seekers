@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Retired default models** — API enhancement without a model override used `claude-sonnet-4-20250514` for Anthropic (retired by Anthropic on 2026-06-15) and `gemini-2.0-flash` for Google (shut down on 2026-06-01), so those calls failed. The Anthropic default is now `claude-sonnet-5-5` and the Google API and vision-OCR defaults are `gemini-3.8-flash`. The Gemini adaptor's enhancement default moves from `gemini-2.5-flash` (shuts down on 2026-12-01) to `gemini-3.8-flash`. The unknown-provider fallback in `AgentClient.get_model` now reads the Anthropic default instead of repeating the old id. `--model`, `SKILL_SEEKER_MODEL` and the per-provider model variables still override every default.
+
 ## [3.11.0] - 2026-11-27
 
 OpenAI uploads now return a vector store ID for Responses API file search. Applications that passed the previous assistant ID to a thread or run should use the new ID with the Responses API. Existing OpenAI ZIP packages can be uploaded directly. [Migration example](https://github.com/yusufkaraaslan/Skill_Seekers/blob/v3.11.0/docs/integrations/OPENAI_INTEGRATION.md#step-5-ask-a-question-using-the-responses-api)

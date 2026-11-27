@@ -128,7 +128,7 @@ bool success = SteamInventory()->GetAllItems( &resultHandle );
 
 - **Input**: ~50,000-100,000 tokens (reference docs)
 - **Output**: ~4,000 tokens (enhanced SKILL.md)
-- **Model**: claude-sonnet-4-20250514
+- **Model**: claude-sonnet-5-5
 - **Estimated cost**: $0.15-$0.30 per skill
 
 ## Troubleshooting

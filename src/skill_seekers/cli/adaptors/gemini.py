@@ -302,7 +302,7 @@ See the references directory for complete documentation with examples and best p
             skill_dir,
             api_key,
             provider="google",
-            model=self.config.get("custom_model") or "gemini-2.5-flash",
+            model=self.config.get("custom_model") or "gemini-3.8-flash",
             # The previous direct-SDK call used the model's default temperature.
             temperature=None,
         )
