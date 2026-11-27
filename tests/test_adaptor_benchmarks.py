@@ -417,6 +417,7 @@ class TestCrossPlatformPackageSizes(unittest.TestCase):
             "qwen",
             "openrouter",
             "requesty",
+            "straitly",
             "together",
             "fireworks",
             "ibm-bob",

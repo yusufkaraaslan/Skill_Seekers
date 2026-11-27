@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 _Development version: 3.11.0.dev0_
 
 ### Added
+- **Straitly adaptor** (`--target straitly`, `STRAITLY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter and Requesty, pointed at `https://api.straitly.ai/v1` with `deepseek/deepseek-v4-1-flash-1017` as the default model (override with `--model`). Registered for package, upload and enhance, with a `straitly` optional extra and transport/shared OpenAI-compatible adaptor tests.
 - **Opt-in MiniMax-M3.1-Flash** (#477) — M3 remains the text and media default. Select Flash with `--model MiniMax-M3.1-Flash` or a model environment override; Flash requires adaptive thinking. MiniMax enhancement now honors regional/protocol settings and thinking modes through its provider configuration. Enhancement and new packages resolve models in the order `--model`, `SKILL_SEEKER_MODEL`, `MINIMAX_MODEL`, then M3; validating an existing package preserves its saved model. Offline SDK tests cover routing, overrides, thinking validation, and unchanged media defaults.
 - **Requesty adaptor** (`--target requesty`, `REQUESTY_API_KEY`): a thin `OpenAICompatibleAdaptor` subclass mirroring OpenRouter, pointed at `https://router.requesty.ai/v1` with `openai/gpt-4o-mini` as the default model (override with `--model`). Registered for package, upload and enhance, with a `requesty` optional extra and entries in the shared OpenAI-compatible adaptor tests.
 

@@ -45,6 +45,7 @@ class TestGetUploadPlatforms(unittest.TestCase):
             "qwen",
             "openrouter",
             "requesty",
+            "straitly",
             "together",
             "fireworks",
             "chroma",
