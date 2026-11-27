@@ -31,6 +31,7 @@ output/my-skill/ ──▶ 打包器 ──▶ output/my-skill-{platform}.{forma
 | **DeepSeek** | ZIP | `.zip` | DeepSeek 平台 |
 | **Qwen** | ZIP | `.zip` | Qwen 平台 |
 | **OpenRouter** | ZIP | `.zip` | OpenRouter |
+| **Requesty** | ZIP | `.zip` | Requesty |
 | **Together AI** | ZIP | `.zip` | Together AI |
 | **Fireworks AI** | ZIP | `.zip` | Fireworks AI |
 | **LangChain** | Documents | directory | RAG 管道 |
@@ -263,7 +264,7 @@ skill-seekers upload output/my-skill-openai.zip --target openai
 
 **格式：**
 - 带向量嵌入的 ZIP
-- 可用于 Assistants API
+- 可用于 Responses API
 
 ---
 

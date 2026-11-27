@@ -375,6 +375,14 @@ class PDFExtractor:
         else:
             score -= len(issues) * 0.5
 
+        # Short samples have limited evidence: generic length/variable/syntax
+        # bonuses should not make an unknown fragment look high-quality. Keep
+        # the cap at or above the converter's default acceptance threshold (5)
+        # so low language confidence alone does not discard real short code.
+        # Users can opt into stricter filtering with a higher min_quality.
+        if len(lines) < 3:
+            score = min(score, 5.0 + confidence * 2.0)
+
         # Clamp score to 0-10 range
         return max(0, min(10, score))
 
@@ -398,6 +406,11 @@ class PDFExtractor:
                 continue
 
             for line in block["lines"]:
+                # Preserve physical line boundaries, including across PDF text
+                # blocks. A block boundary need not end a complete code example.
+                # Spans on the same line still concatenate without a separator.
+                if current_code:
+                    current_code.append("\n")
                 for span in line["spans"]:
                     font = span["font"].lower()
                     text = span["text"]
@@ -1557,6 +1570,10 @@ class PDFExtractor:
             "source_file": self.pdf_path,
             "metadata": self.doc.metadata,
             "total_pages": len(self.doc),
+            # PDF outline/bookmarks — enables TOC-based categorization in
+            # pdf_scraper (see Issue #485: 65-entry TOCs were previously
+            # ignored, dumping whole documents into one reference file).
+            "toc": self.doc.get_toc(),
             "total_chars": total_chars,
             "total_code_blocks": total_code_blocks,
             "total_headings": total_headings,

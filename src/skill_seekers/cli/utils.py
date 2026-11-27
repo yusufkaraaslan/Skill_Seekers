@@ -7,11 +7,13 @@ import bisect
 import logging
 import os
 import platform
+import re
 import subprocess
 import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
+from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +253,9 @@ def read_reference_files(
         print(f"⚠ No references directory found at {references_dir}")
         return references
 
-    def _determine_source_metadata(relative_path: Path) -> tuple[str, str, str | None]:
+    def _determine_source_metadata(
+        relative_path: Path, content: str
+    ) -> tuple[str, str, str | None]:
         """Determine source type, confidence level, and repo_id from path.
 
         For multi-source support, extracts repo_id from paths like:
@@ -261,7 +265,7 @@ def read_reference_files(
         Returns:
             tuple: (source_type, confidence_level, repo_id)
         """
-        path_str = str(relative_path)
+        path_str = relative_path.as_posix()
         repo_id = None  # Default: no repo identity
 
         # Documentation sources (official docs)
@@ -314,9 +318,20 @@ def read_reference_files(
         elif "conflicts" in path_str:
             return "conflicts", "medium", None
 
-        # Fallback
-        else:
-            return "unknown", "medium", None
+        # Standalone PDF skills write chapters directly under references/.
+        if relative_path.parent == Path("."):
+            if re.match(
+                r"^# [^\n]+\n\n\*\*Pages\*\*: \d+-\d+\n\n---\n\n\*\*📄 Source: PDF Page \d+\*\*",
+                content,
+            ):
+                return "pdf", "high", None
+            if relative_path.name == "index.md" and re.search(
+                r"^## Statistics\n\n- Total pages: \d+\n- Code blocks: \d+\n- Images: \d+$",
+                content,
+                re.MULTILINE,
+            ):
+                return "pdf", "high", None
+        return "unknown", "medium", None
 
     total_chars = 0
     # Search recursively for all .md files (including subdirectories like github/README.md)
@@ -325,16 +340,14 @@ def read_reference_files(
         # (patterns, examples, configuration analysis)
 
         content = ref_file.read_text(encoding="utf-8")
+        relative_path = ref_file.relative_to(references_dir)
+        source_type, confidence, repo_id = _determine_source_metadata(relative_path, content)
 
         # Limit size per file
         truncated = False
         if len(content) > preview_limit:
             content = content[:preview_limit] + "\n\n[Content truncated...]"
             truncated = True
-
-        # Use relative path from references_dir as key for nested files
-        relative_path = ref_file.relative_to(references_dir)
-        source_type, confidence, repo_id = _determine_source_metadata(relative_path)
 
         # Build enriched metadata (with repo_id for multi-source support)
         references[str(relative_path)] = {
@@ -505,6 +518,24 @@ def offset_to_line(newline_offsets: list[int], offset: int) -> int:
 # ---------------------------------------------------------------------------
 # URL sanitisation
 # ---------------------------------------------------------------------------
+
+
+_PAGE_FILE_RE = re.compile(r"/[^/]+\.(?:html?|xhtml|php|aspx?|jspx?)$", re.IGNORECASE)
+
+
+def get_crawl_url_prefix(base_url: str) -> str | None:
+    """Return the shared scraper/estimator directory prefix, or None if malformed.
+
+    Recognized page-file URLs use their containing directory, dropping query,
+    fragment, and URL parameters. Other URLs keep the existing trailing-slash
+    rule: an extensionless /docs remains scoped to /docs/, not the whole host.
+    """
+    try:
+        if _PAGE_FILE_RE.search(urlparse(base_url).path):
+            return urljoin(base_url, ".")
+    except ValueError:
+        return None
+    return base_url if base_url.endswith("/") else base_url + "/"
 
 
 def sanitize_url(url: str) -> str:

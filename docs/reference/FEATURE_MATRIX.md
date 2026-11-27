@@ -8,13 +8,14 @@ Complete feature support across all platforms and skill modes.
 |----------|---------------|--------|-------------|------------------|
 | **Claude AI** | ZIP | ✅ Anthropic API | ✅ Sonnet 4 | ANTHROPIC_API_KEY |
 | **Google Gemini** | tar.gz | ✅ Files API | ✅ Gemini 2.0 | GOOGLE_API_KEY |
-| **OpenAI ChatGPT** | ZIP | ✅ Assistants API | ✅ GPT-4o | OPENAI_API_KEY |
+| **OpenAI ChatGPT** | ZIP | ✅ Responses API | ✅ GPT-4o | OPENAI_API_KEY |
 | **MiniMax** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenCode** | ZIP | ❌ Manual | ❌ None | None |
 | **Kimi** | ZIP | ❌ Manual | ❌ None | None |
 | **DeepSeek** | ZIP | ❌ Manual | ❌ None | None |
 | **Qwen** | ZIP | ❌ Manual | ❌ None | None |
 | **OpenRouter** | ZIP | ❌ Manual | ❌ None | None |
+| **Requesty** | ZIP | ✅ API validation only | ✅ Yes | REQUESTY_API_KEY (validation/enhancement) |
 | **Together AI** | ZIP | ❌ Manual | ❌ None | None |
 | **Fireworks AI** | ZIP | ❌ Manual | ❌ None | None |
 | **IBM Bob** | Directory | ❌ Manual | ❌ None | None |
@@ -27,6 +28,11 @@ Complete feature support across all platforms and skill modes.
 | **FAISS** | Index | ❌ Manual | ❌ None | None |
 | **Qdrant** | Vectors | ❌ Manual | ❌ None | None |
 | **Generic Markdown** | ZIP | ❌ Manual | ❌ None | None |
+
+Requesty packaging is local and does not require an API key. Its `upload` command
+validates the packaged system instructions with a chat request; it does not store
+a hosted skill or upload the reference files. Enhancement sends the skill content
+and reference documentation to Requesty using `REQUESTY_API_KEY`.
 
 ## Skill Mode Support
 
@@ -126,10 +132,10 @@ Complete feature support across all platforms and skill modes.
 ### OpenAI ChatGPT
 - **Format:** Assistant instructions (plain text)
 - **Package:** ZIP with assistant_instructions.txt, vector_store_files/, metadata
-- **Upload:** Assistants API + Vector Store creation
+- **Upload:** Responses API + Vector Store creation
 - **Enhancement:** GPT-4o
 - **Unique Features:** Vector store, file_search tool, semantic search
-- **Limitations:** Requires Assistants API structure
+- **Limitations:** Use the returned vector store ID in a Responses API request
 
 ### Generic Markdown
 - **Format:** Pure markdown (universal)
@@ -361,7 +367,7 @@ A:
 - **Gemini:** Choose if you need long context (1M tokens) or grounding
 - **OpenAI:** Choose if you need vector search and semantic retrieval
 - **MiniMax/Kimi/DeepSeek/Qwen:** Choose for Chinese LLM ecosystem compatibility
-- **OpenRouter/Together/Fireworks:** Choose for multi-model routing or open-source model access
+- **OpenRouter/Requesty/Together/Fireworks:** Choose for multi-model routing or open-source model access
 - **Markdown:** Choose for universal compatibility or offline use
 
 **Q: Can I enhance a skill for different platforms?**

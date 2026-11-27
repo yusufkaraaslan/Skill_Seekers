@@ -5,7 +5,7 @@ Complete guide for creating and deploying skills to OpenAI ChatGPT using Skill S
 ## Overview
 
 Skill Seekers packages documentation into OpenAI-compatible formats optimized for:
-- **Assistants API** for custom AI assistants
+- **Responses API** for answering questions using your skill
 - **Vector Store + File Search** for accurate retrieval
 - **GPT-4o** for enhancement and responses
 
@@ -15,7 +15,7 @@ Skill Seekers packages documentation into OpenAI-compatible formats optimized fo
 
 ```bash
 # Install with OpenAI dependencies
-pip install skill-seekers[openai]
+pip install "skill-seekers[openai]"
 
 # Verify installation
 pip list | grep openai
@@ -35,7 +35,7 @@ pip list | grep openai
 export OPENAI_API_KEY=sk-proj-...
 
 # Or pass directly to commands
-skill-seekers upload --target openai --api-key sk-proj-...
+skill-seekers upload react-openai.zip --target openai --api-key sk-proj-...
 ```
 
 ## Complete Workflow
@@ -76,7 +76,7 @@ skill-seekers enhance output/react/ --target openai --api-key sk-proj-...
 ### Step 3: Package for OpenAI
 
 ```bash
-# Create ZIP package for OpenAI Assistants
+# Create ZIP package for OpenAI file search
 skill-seekers package output/react/ --target openai
 
 # Result: react-openai.zip
@@ -94,264 +94,51 @@ react-openai.zip/
 └── openai_metadata.json       # Platform metadata
 ```
 
-### Step 4: Upload to OpenAI (Creates Assistant)
+### Step 4: Upload the knowledge base
 
 ```bash
-# Upload and create Assistant with Vector Store
 skill-seekers upload react-openai.zip --target openai
-
-# With API key
-skill-seekers upload react-openai.zip --target openai --api-key sk-proj-...
 ```
 
-**What it does:**
-1. Creates Vector Store for documentation
-2. Uploads reference files to Vector Store
-3. Creates Assistant with file_search tool
-4. Links Vector Store to Assistant
+The command uploads the instructions as a file, creates a vector store and waits for each reference to finish indexing. The vector store metadata records the instructions file ID and the model from the package. Keep the printed vector store ID (`vs_...`). Existing Skill Seekers OpenAI ZIPs use the same command.
 
-**Output:**
-```
-✅ Upload successful!
-Assistant ID: asst_abc123xyz
-URL: https://platform.openai.com/assistants/asst_abc123xyz
-Message: Assistant created with 15 knowledge files
-```
-
-### Step 5: Use Your Assistant
-
-Access your assistant in the OpenAI Platform:
-
-1. Go to [OpenAI Platform](https://platform.openai.com/assistants)
-2. Find your assistant in the list
-3. Test in Playground or use via API
-
-## What Makes OpenAI Different?
-
-### Format: Assistant Instructions (Plain Text)
-
-**Claude format:**
-```markdown
----
-name: react
----
-
-# React Documentation
-...
-```
-
-**OpenAI format:**
-```text
-You are an expert assistant for React.
-
-Your Knowledge Base:
-- Getting started guide
-- React hooks reference
-- Component API
-
-When users ask questions about React:
-1. Search the knowledge files
-2. Provide code examples
-...
-```
-
-Plain text instructions optimized for Assistant API.
-
-### Architecture: Assistant + Vector Store
-
-OpenAI uses a two-part system:
-1. **Assistant** - The AI agent with instructions and tools
-2. **Vector Store** - Embedded documentation for semantic search
-
-### Tool: file_search
-
-The Assistant uses the `file_search` tool to:
-- Semantically search documentation
-- Find relevant code examples
-- Provide accurate, source-based answers
-
-## Using Your OpenAI Assistant
-
-### Option 1: OpenAI Playground (Web UI)
-
-1. Go to [OpenAI Platform](https://platform.openai.com/assistants)
-2. Select your assistant
-3. Click "Test in Playground"
-4. Ask questions about your documentation
-
-### Option 2: Assistants API (Python)
+### Step 5: Ask a question using the Responses API
 
 ```python
 from openai import OpenAI
 
-# Initialize client
-client = OpenAI(api_key='sk-proj-...')
+client = OpenAI()
+store = client.vector_stores.retrieve("vs_...")  # ID printed by upload
+instructions = client.files.content(store.metadata["instructions_file_id"]).text
+tools = [{"type": "file_search", "vector_store_ids": [store.id]}] if store.file_counts.completed else []
 
-# Create thread
-thread = client.beta.threads.create()
-
-# Send message
-message = client.beta.threads.messages.create(
-    thread_id=thread.id,
-    role="user",
-    content="How do I use React hooks?"
+response = client.responses.create(
+    model=store.metadata["model"],
+    instructions=instructions,
+    tools=tools,
+    input="Explain a concept from the documentation and cite the source.",
 )
-
-# Run assistant
-run = client.beta.threads.runs.create(
-    thread_id=thread.id,
-    assistant_id='asst_abc123xyz'  # Your assistant ID
-)
-
-# Wait for completion
-while run.status != 'completed':
-    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-
-# Get response
-messages = client.beta.threads.messages.list(thread_id=thread.id)
-print(messages.data[0].content[0].text.value)
+print(response.output_text)
 ```
 
-### Option 3: Streaming Responses
+You can reuse the store from another process in the same OpenAI project. Instructions-only packages also work. In that case, pass an empty tools list as shown above. For streaming, pass `stream=True` to `responses.create` and consume the response events. [OpenAI file search guide](https://developers.openai.com/api/docs/guides/tools-file-search)
+
+### Programmatic upload
 
 ```python
-from openai import OpenAI
-
-client = OpenAI(api_key='sk-proj-...')
-
-# Create thread and message
-thread = client.beta.threads.create()
-client.beta.threads.messages.create(
-    thread_id=thread.id,
-    role="user",
-    content="Explain React hooks"
-)
-
-# Stream response
-with client.beta.threads.runs.stream(
-    thread_id=thread.id,
-    assistant_id='asst_abc123xyz'
-) as stream:
-    for event in stream:
-        if event.event == 'thread.message.delta':
-            print(event.data.delta.content[0].text.value, end='')
-```
-
-## Advanced Usage
-
-### Update Assistant Instructions
-
-```python
-from openai import OpenAI
-
-client = OpenAI(api_key='sk-proj-...')
-
-# Update assistant
-client.beta.assistants.update(
-    assistant_id='asst_abc123xyz',
-    instructions="""
-You are an expert React assistant.
-
-Focus on modern best practices using:
-- React 18+ features
-- Functional components
-- Hooks-based patterns
-
-When answering:
-1. Search knowledge files first
-2. Provide working code examples
-3. Explain the "why" not just the "what"
-"""
-)
-```
-
-### Add More Files to Vector Store
-
-```python
-from openai import OpenAI
-
-client = OpenAI(api_key='sk-proj-...')
-
-# Upload new file
-with open('new_guide.md', 'rb') as f:
-    file = client.files.create(file=f, purpose='assistants')
-
-# Add to vector store
-client.beta.vector_stores.files.create(
-    vector_store_id='vs_abc123',
-    file_id=file.id
-)
-```
-
-### Programmatic Package and Upload
-
-```python
-from skill_seekers.cli.adaptors import get_adaptor
+import os
 from pathlib import Path
+from skill_seekers.cli.adaptors import get_adaptor
 
-# Get adaptor
-openai_adaptor = get_adaptor('openai')
-
-# Package skill
-package_path = openai_adaptor.package(
-    skill_dir=Path('output/react'),
-    output_path=Path('output/react-openai.zip')
-)
-
-# Upload (creates Assistant + Vector Store)
-result = openai_adaptor.upload(
-    package_path=package_path,
-    api_key='sk-proj-...'
-)
-
-if result['success']:
-    print(f"✅ Assistant created!")
-    print(f"ID: {result['skill_id']}")
-    print(f"URL: {result['url']}")
-else:
-    print(f"❌ Upload failed: {result['message']}")
+adaptor = get_adaptor("openai")
+package = adaptor.package(Path("output/react"), Path("react-openai.zip"))
+result = adaptor.upload(package, os.environ["OPENAI_API_KEY"])
+if not result["success"]:
+    raise RuntimeError(result["message"])
+print(result["vector_store_id"], result["instructions_file_id"])
 ```
 
-## OpenAI-Specific Features
-
-### 1. Semantic Search (file_search)
-
-The Assistant uses embeddings to:
-- Find semantically similar content
-- Understand intent vs. keywords
-- Surface relevant examples automatically
-
-### 2. Citations and Sources
-
-Assistants can provide:
-- Source attribution
-- File references
-- Quote extraction
-
-### 3. Function Calling (Optional)
-
-Extend your assistant with custom tools:
-
-```python
-client.beta.assistants.update(
-    assistant_id='asst_abc123xyz',
-    tools=[
-        {"type": "file_search"},
-        {"type": "function", "function": {
-            "name": "run_code_example",
-            "description": "Execute React code examples",
-            "parameters": {...}
-        }}
-    ]
-)
-```
-
-### 4. Multi-Modal Support
-
-Include images in your documentation:
-- Screenshots
-- Diagrams
-- Architecture charts
+The `skill_id` field now contains the same vector store ID as `vector_store_id`. Update consumers that previously passed an `asst_...` ID to a thread or run. Re-upload the original ZIP to publish a new knowledge base. On a successful upload, the store, references and instructions file remain in your project until you delete them. To retire a store, list its file IDs and read its instructions file ID before deleting the store and those files.
 
 ## Troubleshooting
 
@@ -359,7 +146,7 @@ Include images in your documentation:
 
 **Solution:**
 ```bash
-pip install skill-seekers[openai]
+pip install "skill-seekers[openai]"
 ```
 
 ### Issue: `Invalid API key format`
@@ -383,24 +170,9 @@ skill-seekers package output/react/ --target openai
 skill-seekers package output/react/ --target gemini  # Creates .tar.gz
 ```
 
-### Issue: `Assistant creation failed`
+### Issue: Upload or indexing failed
 
-**Possible causes:**
-- API key lacks permissions
-- Rate limit exceeded
-- File too large
-
-**Solution:**
-```bash
-# Verify API key
-python3 -c "from openai import OpenAI; print(OpenAI(api_key='sk-proj-...').models.list())"
-
-# Check rate limits
-# Visit: https://platform.openai.com/account/limits
-
-# Reduce file count
-skill-seekers package output/react/ --target openai
-```
+Check the API error for file size, permissions or rate limits. Skill Seekers attempts to delete every resource ID it received for the failed upload. If cleanup also fails, the error lists the IDs that still need attention. The original ZIP is available for retry.
 
 ### Issue: Enhancement fails
 
@@ -423,7 +195,7 @@ skill-seekers package output/react/ --target openai
 
 **Solution:**
 - Verify Vector Store has files
-- Check Assistant tool configuration
+- Check the `file_search` tool and vector store ID in your Responses request
 - Test with explicit instructions: "Search the knowledge files for information about hooks"
 
 ## Best Practices
@@ -457,9 +229,7 @@ Test with varied questions:
 
 ```python
 # Track tokens in API responses
-run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-print(f"Input tokens: {run.usage.prompt_tokens}")
-print(f"Output tokens: {run.usage.completion_tokens}")
+print(response.usage.input_tokens, response.usage.output_tokens)
 ```
 
 ### 5. Update Regularly
@@ -468,7 +238,7 @@ print(f"Output tokens: {run.usage.completion_tokens}")
 # Re-scrape updated documentation
 skill-seekers create --config configs/react.json
 
-# Re-enhance and upload (creates new Assistant)
+# Re-enhance and upload (creates a new vector store)
 skill-seekers enhance output/react/ --target openai
 skill-seekers package output/react/ --target openai
 skill-seekers upload react-openai.zip --target openai
@@ -495,18 +265,18 @@ skill-seekers upload react-openai.zip --target openai
 
 ## Next Steps
 
-1. ✅ Install OpenAI support: `pip install skill-seekers[openai]`
+1. ✅ Install OpenAI support: `pip install "skill-seekers[openai]"`
 2. ✅ Get API key from OpenAI Platform
 3. ✅ Scrape your documentation
 4. ✅ Enhance with GPT-4o
 5. ✅ Package for OpenAI
-6. ✅ Upload and create Assistant
-7. ✅ Test in Playground
+6. ✅ Upload and save the vector store ID
+7. ✅ Test a Responses API request
 
 ## Resources
 
 - [OpenAI Platform](https://platform.openai.com/)
-- [Assistants API Documentation](https://platform.openai.com/docs/assistants/overview)
+- [Responses API file search](https://developers.openai.com/api/docs/guides/tools-file-search)
 - [OpenAI Pricing](https://openai.com/pricing)
 - [Multi-LLM Support Guide](MULTI_LLM_SUPPORT.md)
 

@@ -31,6 +31,7 @@ class OpenAICompatibleAdaptor(SkillAdaptor):
 
     PLATFORM = "unknown"
     PLATFORM_NAME = "Unknown"
+    API_PROVIDER = "openai"
     DEFAULT_API_ENDPOINT = ""
     DEFAULT_MODEL = ""
     ENV_VAR_NAME = ""
@@ -152,7 +153,7 @@ Always prioritize accuracy by consulting the attached documentation files before
             if refs_dir.exists():
                 for ref_file in refs_dir.rglob("*.md"):
                     if ref_file.is_file() and not ref_file.name.startswith("."):
-                        arcname = f"knowledge_files/{ref_file.name}"
+                        arcname = f"knowledge_files/{ref_file.relative_to(refs_dir).as_posix()}"
                         zf.write(ref_file, arcname)
 
             metadata = {
@@ -296,13 +297,17 @@ Always prioritize accuracy by consulting the attached documentation files before
         """OpenAI-compatible platforms support enhancement."""
         return True
 
+    def _enhancement_base_url(self) -> str:
+        """API base URL used by AgentClient for enhancement."""
+        return self._api_base_url()
+
     def enhance(self, skill_dir: Path, api_key: str) -> bool:
-        """Enhance SKILL.md via the platform's OpenAI-compatible API."""
+        """Enhance SKILL.md via the platform's compatible API."""
         return self._enhance_skill_md_via_client(
             skill_dir,
             api_key,
-            provider="openai",
-            base_url=self._api_base_url(),
+            provider=self.API_PROVIDER,
+            base_url=self._enhancement_base_url(),
             model=self._resolve_model(),
             system=(
                 "You are an expert technical writer creating system "

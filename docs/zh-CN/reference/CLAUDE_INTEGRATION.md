@@ -203,7 +203,7 @@ LOCAL 增强选项（`--enhance-local` 或 `enhance_skill_local.py`）会打开�
 **4 个平台获得完整支持：**
 - **Claude AI**（默认）- ZIP 格式、Skills API、MCP 集成
 - **Google Gemini** - tar.gz 格式、Files API、1M token 上下文
-- **OpenAI ChatGPT** - ZIP 格式、Assistants API、Vector Store
+- **OpenAI ChatGPT** - ZIP 格式、Responses API、Vector Store
 - **通用 Markdown** - ZIP 格式、通用兼容性
 
 **所有技能模式适用于所有平台：**

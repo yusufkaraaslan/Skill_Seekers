@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-seekers"
-version = "3.10.0"
+version = "3.11.0"
 description = "Convert documentation websites, GitHub repositories, and PDFs into Claude AI skills. International support with Chinese (简体中文) documentation."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -87,7 +87,7 @@ gemini = [
 
 # OpenAI ChatGPT support
 openai = [
-    "openai>=1.0.0",
+    "openai>=1.76.0",
 ]
 
 # MiniMax AI support (uses OpenAI-compatible API)
@@ -115,6 +115,11 @@ openrouter = [
     "openai>=1.0.0",
 ]
 
+# Requesty support (uses OpenAI-compatible API)
+requesty = [
+    "openai>=1.0.0",
+]
+
 # Together AI support (uses OpenAI-compatible API)
 together = [
     "openai>=1.0.0",
@@ -128,7 +133,7 @@ fireworks = [
 # All LLM platforms combined
 all-llms = [
     "google-generativeai>=0.8.0",
-    "openai>=1.0.0",
+    "openai>=1.76.0",
 ]
 
 # Cloud storage support
@@ -269,7 +274,7 @@ all = [
     "starlette>=0.48.0",
     "sse-starlette>=3.0.2",
     "google-generativeai>=0.8.0",
-    "openai>=1.0.0",
+    "openai>=1.76.0",
     "boto3>=1.34.0",
     "google-cloud-storage>=2.10.0",
     "azure-storage-blob>=12.19.0",

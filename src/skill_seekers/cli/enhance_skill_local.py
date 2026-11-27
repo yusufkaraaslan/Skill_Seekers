@@ -582,9 +582,11 @@ Even if running from within another coding agent session, this modification is A
 
 VERIFICATION:
 After writing, the file SKILL.md should:
-- Exist in the current directory
-- Be larger than the original (200-1000+ lines)
-- Contain all the enhancements from the references above
+- Exist in the current directory (original preserved as SKILL.md.backup)
+- Ground factual claims and examples in the supplied references
+- Clearly distinguish inferences and acknowledge missing source information
+- Replace redundant boilerplate with useful explanations; do not add length for its own sake
+- Preserve useful existing information and the frontmatter
 """
 
         return prompt
@@ -1399,8 +1401,8 @@ Force Mode (LOCAL only, Default ON):
 
     args = parser.parse_args()
 
-    # Auto-detect API mode unless --mode LOCAL is explicitly set
-    if getattr(args, "mode", None) != "LOCAL":
+    # Explicit mode wins, then local agent flags, then environment auto-detection.
+    if args.mode == "API" or (args.mode is None and not (args.agent or args.agent_cmd)):
         api_target = _detect_api_target()
         if api_target is not None:
             from skill_seekers.cli.enhance_command import api_sdk_available

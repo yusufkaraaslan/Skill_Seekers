@@ -7,12 +7,13 @@ Routes `skill-seekers enhance` to the correct backend:
   API mode  — when an API key is available (Anthropic/Gemini/OpenAI).
               Calls enhance_skill.py which uses platform adaptors.
 
-  LOCAL mode — when no API key is found.
+  LOCAL mode — when a local agent is selected or no API key is found.
               Calls LocalSkillEnhancer from enhance_skill_local.py.
               Supports: Claude Code, OpenAI Codex, GitHub Copilot, OpenCode, Kimi, and other agents.
 
 Decision priority:
   1. Explicit --target flag → API mode with that platform.
+     Otherwise, explicit --agent or --agent-cmd → LOCAL mode.
   2. Config ai_enhancement.default_agent + matching env key → API mode.
   3. Auto-detect from env vars (agent_client.API_PROVIDERS priority order).
      Skipped with a notice if the detected provider's Python SDK isn't
@@ -97,18 +98,18 @@ def _pick_mode(args) -> tuple[str, str | None]:
                          target is the platform name ("claude", "gemini", "openai")
                          or None for local mode.
     """
-    api_keys = _get_api_keys()
-
     # 1. Explicit --target flag always forces API mode.
     target = getattr(args, "target", None)
     if target:
         return "api", target
+    if getattr(args, "agent", None) or getattr(args, "agent_cmd", None):
+        return "local", None
 
     # 2. Config default_agent preference (if a matching key is available).
     from skill_seekers.cli.adaptors import get_enhancement_platforms
 
     config_agent = _get_config_default_agent()
-    if config_agent in get_enhancement_platforms() and api_keys.get(config_agent):
+    if config_agent in get_enhancement_platforms() and _get_api_keys().get(config_agent):
         return "api", config_agent
 
     # 3. Auto-detect from environment variables, in the priority order defined
@@ -225,7 +226,7 @@ def main(args=None) -> int:
 Mode selection (automatic — no flags required):
   API mode  : Set ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.
               Or use --target to force a platform.
-  LOCAL mode: Falls back when no API keys are found. Requires AI coding agent.
+  LOCAL mode: Select with --agent, or use the fallback when no API keys are found.
               Does NOT work as root (Docker/VPS) — use API mode instead.
 
 Examples:
@@ -239,6 +240,7 @@ Examples:
   skill-seekers enhance output/react/ --target claude --api-key sk-ant-...
 
   # LOCAL mode options
+  skill-seekers enhance output/react/ --agent codex
   skill-seekers enhance output/react/ --background
   skill-seekers enhance output/react/ --timeout 1200
 
@@ -297,7 +299,9 @@ Examples:
         print(f"     skill-seekers enhance {args.skill_directory}")
         return 1
 
-    agent_name = os.environ.get("SKILL_SEEKER_AGENT", "claude").strip() or "claude"
+    agent_name = (
+        getattr(args, "agent", None) or os.environ.get("SKILL_SEEKER_AGENT", "").strip() or "claude"
+    )
     print(f"🤖 Enhancement mode: LOCAL ({agent_name})")
     return _run_local_mode(args)
 

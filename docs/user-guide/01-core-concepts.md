@@ -442,7 +442,7 @@ Package skills for different AI systems:
 |----------|--------|-----|
 | **Claude AI** | ZIP + YAML | Claude Code, Claude API |
 | **Gemini** | tar.gz | Google Gemini |
-| **OpenAI** | ZIP + Vector | ChatGPT, Assistants API |
+| **OpenAI** | ZIP + Vector | ChatGPT, Responses API |
 | **LangChain** | Documents | RAG pipelines |
 | **LlamaIndex** | TextNodes | Query engines |
 | **ChromaDB** | Collection | Vector search |

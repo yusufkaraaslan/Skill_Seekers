@@ -11,6 +11,7 @@ Skill Seekers supports multiple LLM platforms through a clean adaptor system. Th
 | **OpenAI ChatGPT** | ✅ Full Support | ZIP + Vector Store | ✅ Automatic | ✅ Yes | OPENAI_API_KEY |
 | **MiniMax AI** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | MINIMAX_API_KEY |
 | **Atlas Cloud** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | ATLAS_API_KEY |
+| **Requesty** | ✅ Full Support | ZIP | ✅ Validation | ✅ Yes | REQUESTY_API_KEY |
 | **Generic Markdown** | ✅ Export Only | ZIP | ❌ Manual | ❌ No | None |
 
 ## Quick Start
@@ -69,14 +70,14 @@ skill-seekers create --config configs/react.json
 # Package for OpenAI
 skill-seekers package output/react/ --target openai
 
-# Upload to OpenAI (creates Assistant + Vector Store)
+# Upload to OpenAI (publishes instructions and a vector store)
 skill-seekers upload react-openai.zip --target openai
 
 # Optional: Enhance with GPT-4o
 skill-seekers enhance output/react/ --target openai
 ```
 
-**Output:** OpenAI Assistant created with file search enabled
+**Output:** Indexed vector store ID and instructions file ID
 
 ### Generic Markdown (Universal Export)
 
@@ -152,7 +153,7 @@ pip install -e .[all-llms]
 - Format: ZIP archive
 - SKILL.md → `assistant_instructions.txt` (plain text)
 - Structure: `assistant_instructions.txt`, `vector_store_files/`, `openai_metadata.json`
-- API: Assistants API + Vector Store
+- API: Responses API + Vector Store
 - Enhancement: GPT-4o
 
 **MiniMax AI:**
@@ -160,7 +161,7 @@ pip install -e .[all-llms]
 - SKILL.md -> `system_instructions.txt` (plain text, no frontmatter)
 - Structure: `system_instructions.txt`, `knowledge_files/`, `minimax_metadata.json`
 - API: OpenAI-compatible chat completions
-- Enhancement: MiniMax-M3 (M2.7 still selectable)
+- Enhancement: MiniMax-M3 by default (MiniMax-M3.1-Flash is opt-in; explicit legacy/custom models preserved)
 
 **Generic Markdown:**
 - Format: ZIP archive
@@ -249,10 +250,10 @@ skill-seekers enhance output/react/ --target openai
 # 3. Package for OpenAI
 skill-seekers package output/react/ --target openai
 
-# 4. Upload (creates Assistant + Vector Store)
+# 4. Upload (publishes instructions and a vector store)
 skill-seekers upload react-openai.zip --target openai
 
-# Access at: https://platform.openai.com/assistants/
+# Use the returned vector store ID with Responses API file search
 ```
 
 ### Workflow 4: MiniMax AI
@@ -426,20 +427,19 @@ A: Yes. Each platform has a default enhancement model:
 - Gemini: Gemini 2.0 Flash
 - OpenAI: GPT-4o
 - MiniMax: MiniMax-M3
-- Kimi / DeepSeek / Qwen / OpenRouter / Together / Fireworks: each platform's own default
+- Kimi / DeepSeek / Qwen / OpenRouter / Requesty / Together / Fireworks: each platform's own default
 
-Override the default for any platform with `--model`, e.g. to pin the
-previous-generation MiniMax model:
+Override the default for any platform with `--model`, e.g. to opt into MiniMax-M3.1-Flash:
 
 ```bash
-skill-seekers enhance output/react/ --target minimax --model MiniMax-M2.7
+skill-seekers enhance output/react/ --target minimax --model MiniMax-M3.1-Flash
 ```
 
 **Q: Which platforms can enhance SKILL.md?**
 
 A: Any platform whose adaptor supports AI enhancement: `claude`, `gemini`,
-`openai`, `minimax`, `kimi`, `deepseek`, `qwen`, `openrouter`, `together`,
-`fireworks`. Pass one with `--target`; the valid list is also shown in
+`openai`, `minimax`, `kimi`, `deepseek`, `qwen`, `openrouter`, `requesty`,
+`together`, `fireworks`. Pass one with `--target`; the valid list is also shown in
 `skill-seekers enhance --help`.
 
 **Q: What if I don't want to upload automatically?**

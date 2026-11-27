@@ -32,6 +32,7 @@ output/my-skill/ ──▶ Packager ──▶ output/my-skill-{platform}.{format
 | **DeepSeek** | ZIP | `.zip` | DeepSeek platform |
 | **Qwen** | ZIP | `.zip` | Qwen platform |
 | **OpenRouter** | ZIP | `.zip` | Multi-model routing |
+| **Requesty** | ZIP | `.zip` | Multi-model routing |
 | **Together AI** | ZIP | `.zip` | Open-source models |
 | **Fireworks AI** | ZIP | `.zip` | Fast inference |
 | **LangChain** | Documents | directory | RAG pipelines |
@@ -269,8 +270,8 @@ skill-seekers upload output/my-skill-openai.zip --target openai
 ```
 
 **Format:**
-- ZIP with vector embeddings
-- Ready for Assistants API
+- ZIP with reference files for indexing
+- Ready for Responses API
 
 ---
 

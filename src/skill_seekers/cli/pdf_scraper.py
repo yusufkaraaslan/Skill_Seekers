@@ -13,6 +13,7 @@ Usage:
 
 import json
 import os
+from itertools import pairwise
 
 # Import the PDF extractor
 from .document_skill_builder import DocumentSkillBuilder
@@ -140,6 +141,120 @@ class PDFToSkillConverter(DocumentSkillBuilder):
     # LOAD_TOTAL_KEY="total_pages" + UNIT_LABEL="pages" reproduce the PDF
     # loader output exactly (with the base's graceful len(pages) fallback).
 
+    def _categories_from_toc(
+        self, min_categories: int = 3, max_categories: int = 60, subdivide_span: int = 25
+    ) -> dict:
+        """Group extracted pages by a usable PDF outline without dropping content.
+
+        Three populated top-level chapters are required by default. Long chapters
+        may split at their own level-2 children, retaining any introductory pages.
+        Over-budget subdivisions revert to top-level chapters; oversized or
+        nonmonotonic top-level outlines return {} for the single-category fallback.
+        Same-page headings deliberately share the full page: extraction does not
+        provide the within-page boundaries needed to separate their content.
+        """
+        toc = self.extracted_data.get("toc")
+        pages = self.extracted_data.get("pages", [])
+        if (
+            not isinstance(toc, list)
+            or not pages
+            or min_categories < 1
+            or max_categories < min_categories
+        ):
+            return {}
+        numbers = [p.get("page_number") for p in pages]
+        if any(type(n) is not int or n < 1 for n in numbers):
+            return {}
+        total_pages = self.extracted_data.get("total_pages")
+        if type(total_pages) is not int:
+            total_pages = 0
+        total_pages = max(total_pages, max(numbers))
+
+        chapters = []
+        parent = None
+        for entry in toc:
+            # Invalid top-level destinations still end the preceding hierarchy.
+            if isinstance(entry, (list, tuple)) and entry and entry[0] == 1:
+                parent = None
+            if not isinstance(entry, (list, tuple)) or len(entry) < 3:
+                continue
+            level, title, start = entry[:3]
+            if (
+                type(level) is not int
+                or type(start) is not int
+                or not isinstance(title, str)
+                or not title.strip()
+                or not 1 <= start <= total_pages
+            ):
+                continue
+            if level == 1:
+                parent = {"title": title.strip(), "start": start, "children": []}
+                chapters.append(parent)
+            elif level == 2 and parent is not None:
+                parent["children"].append({"title": title.strip(), "start": start})
+
+        if len(chapters) < min_categories:
+            return {}
+        if any(a["start"] > b["start"] for a, b in pairwise(chapters)):
+            return {}
+
+        def populated(unit):
+            return any(unit["start"] <= n <= unit["end"] for n in numbers)
+
+        units = []
+        expanded = []
+        for i, chapter in enumerate(chapters):
+            end = chapters[i + 1]["start"] - 1 if i + 1 < len(chapters) else total_pages
+            unit = {
+                "title": chapter["title"],
+                "start": chapter["start"],
+                "end": max(chapter["start"], end),
+            }
+            if not populated(unit):
+                continue
+            units.append(unit)
+            children = [
+                child
+                for child in chapter["children"]
+                if unit["start"] <= child["start"] <= unit["end"]
+            ]
+            ordered = all(a["start"] <= b["start"] for a, b in pairwise(children))
+            if unit["end"] - unit["start"] + 1 < subdivide_span or len(children) < 2 or not ordered:
+                expanded.append(unit)
+                continue
+            if children[0]["start"] > unit["start"]:
+                expanded.append({**unit, "end": children[0]["start"] - 1})
+            for j, child in enumerate(children):
+                end = children[j + 1]["start"] - 1 if j + 1 < len(children) else unit["end"]
+                expanded.append({**child, "end": max(child["start"], end)})
+
+        if len(units) < min_categories:
+            return {}
+        front = {"title": "Front Matter", "start": 1, "end": chapters[0]["start"] - 1}
+        if populated(front):
+            units.insert(0, front)
+            expanded.insert(0, front)
+        expanded = [unit for unit in expanded if populated(unit)]
+        if len(expanded) <= max_categories:
+            units = expanded
+        elif len(units) > max_categories:
+            return {}
+
+        categorized = {}
+        for unit in units:
+            key = self._sanitize_filename(unit["title"]) or f"section-{unit['start']}"
+            base, n = key, 2
+            while key in categorized:
+                key = f"{base}-{n}"
+                n += 1
+            categorized[key] = {
+                "title": unit["title"],
+                "pages": [p for p in pages if unit["start"] <= p["page_number"] <= unit["end"]],
+            }
+        # Never let incomplete or unusual outline metadata discard extracted pages.
+        covered = {p["page_number"] for category in categorized.values() for p in category["pages"]}
+        return categorized if covered == set(numbers) else {}
+
     def categorize_content(self):
         """Categorize pages based on chapters or keywords.
 
@@ -151,9 +266,18 @@ class PDFToSkillConverter(DocumentSkillBuilder):
 
         categorized = {}
 
-        # For single PDF source, use single category with all pages
-        # This avoids bad chapter detection splitting content incorrectly
+        # For single PDF source, prefer the document's own table of
+        # contents when it is rich enough (>= 3 level-1 chapters); a
+        # usable TOC is far better structure than one giant category.
+        # Without a usable TOC, keep the single category with all pages
+        # (this avoids bad chapter detection splitting content incorrectly)
         if self.pdf_path:
+            toc_categories = self._categories_from_toc()
+            if len(toc_categories) >= 3:
+                print(f"✅ Used PDF table of contents: {len(toc_categories)} categories")
+                for _cat_key, cat_data in toc_categories.items():
+                    print(f"   - {cat_data['title']}: {len(cat_data['pages'])} pages")
+                return toc_categories
             # Get PDF basename for title
             pdf_basename = self.source_stem
             category_key = self._sanitize_filename(pdf_basename)
@@ -382,14 +506,7 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             f.write(f"# {self.name.title()} Documentation Skill\n\n")
             f.write(f"{self.description}\n\n")
 
-            # Enhanced "When to Use" section
-            f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
+            f.write(self._format_when_to_use(categorized))
 
             # Chapter Overview (PDF structure)
             f.write("## 📖 Chapter Overview\n\n")
@@ -404,9 +521,7 @@ class PDFToSkillConverter(DocumentSkillBuilder):
             # Extract key concepts from headings
             f.write(self._format_key_concepts())
 
-            # Quick Reference with patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
+            f.write(self._format_quick_reference())
 
             # Enhanced code examples section (top 15, grouped by language)
             all_code = []

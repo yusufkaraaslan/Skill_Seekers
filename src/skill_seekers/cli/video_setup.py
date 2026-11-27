@@ -283,7 +283,8 @@ def create_venv(venv_path: str = ".venv") -> bool:
         logger.info(f"Venv already exists at {path}")
         return True
     try:
-        venv.create(str(path), with_pip=True)
+        # Match python -m venv so relocatable POSIX interpreters find their stdlib.
+        venv.create(str(path), with_pip=True, symlinks=os.name != "nt")
         return True
     except Exception as exc:  # noqa: BLE001
         logger.error(f"Failed to create venv: {exc}")

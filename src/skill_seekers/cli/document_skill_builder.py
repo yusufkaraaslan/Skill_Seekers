@@ -121,8 +121,20 @@ class DocumentSkillBuilder(SkillConverter):
 
         ``cat_key`` is trailing-and-defaulted for backward compatibility with
         existing callers; only ``category_stem`` overrides consume it.
+
+        Collision-safe: two categories can legitimately share a page range
+        (e.g. two TOC chapters starting on the same page). Filenames are
+        memoized per section number and disambiguated with it on collision,
+        so all call sites agree and nothing is silently overwritten.
         """
-        return reference_filename(
+        memo = getattr(self, "_ref_filename_memo", None)
+        if memo is None:
+            memo = self._ref_filename_memo = {}
+            self._ref_filename_taken = {"index.md"}
+        if section_num in memo:
+            return memo[section_num]
+
+        base = reference_filename(
             cat_data.get("pages") or [],
             section_num,
             total_sections,
@@ -130,6 +142,16 @@ class DocumentSkillBuilder(SkillConverter):
             number_key=self.NUMBER_KEY,
             prefix=self.NUMBER_PREFIX,
         )
+        candidate = base
+        suffix = section_num
+        while candidate.casefold() in self._ref_filename_taken:
+            stem, dot, ext = base.rpartition(".")
+            candidate = f"{stem}-{suffix}{dot}{ext}" if dot else f"{base}-{suffix}"
+            suffix += 1
+        base = candidate
+        self._ref_filename_taken.add(base.casefold())
+        memo[section_num] = base
+        return base
 
     # ── Categorization ────────────────────────────────────────────────────
 
@@ -210,6 +232,10 @@ class DocumentSkillBuilder(SkillConverter):
     def build_skill(self):
         """Build complete skill structure."""
         print(f"\n🏗️  Building skill: {self.name}")
+
+        # Reset per-build reference-filename memo/collision state.
+        self._ref_filename_memo = {}
+        self._ref_filename_taken = {"index.md"}
 
         # Create directories
         os.makedirs(f"{self.skill_dir}/references", exist_ok=True)
@@ -391,6 +417,65 @@ class DocumentSkillBuilder(SkillConverter):
             return json.dumps(value)
         return value
 
+    def _format_when_to_use(self, categorized: dict) -> str:
+        """Describe populated topic groups, falling back to actual document headings."""
+
+        def clean(value) -> str:
+            return " ".join(value.split()) if isinstance(value, str) else ""
+
+        pages = self.extracted_data.get("pages", [])
+        source_titles = {self.source_stem.casefold()}
+        source_titles.update(
+            Path(page["source_file"]).stem.casefold()
+            for page in pages
+            if isinstance(page.get("source_file"), str) and page["source_file"]
+        )
+        placeholders = {"content", "other", "uncategorized", "additional content", "front matter"}
+        topics = []
+        seen = placeholders | source_titles
+
+        def add(value):
+            title = clean(value)
+            if title and title.casefold() not in seen:
+                seen.add(title.casefold())
+                topics.append(title)
+
+        for category in categorized.values():
+            title = clean(category.get("title"))
+            if category.get("pages"):
+                add(title)
+
+        if not topics:
+            headings = []
+            for page in pages:
+                headings.append((page.get("heading_level", "h1"), page.get("heading")))
+                headings.extend(
+                    (h.get("level", "h1"), h.get("text")) for h in page.get("headings", [])
+                )
+            # Prefer higher-level headings; preserve document order within a level.
+            levels = {f"h{level}": level for level in range(1, 7)}
+            for _, title in sorted(headings, key=lambda h: levels.get(h[0], 7)):
+                add(title)
+                if len(topics) == 4:
+                    break
+
+        content = "## 💡 When to Use This Skill\n\n"
+        if topics:
+            content += "Use for questions or tasks involving these main topics:\n"
+            content += "".join(f"- {topic}\n" for topic in topics[:4]) + "\n"
+        else:
+            content += (
+                f"Use this skill to consult the extracted source material for {self.name}.\n\n"
+            )
+        return content
+
+    def _format_quick_reference(self) -> str:
+        """Render a Quick Reference section only when the pattern hook supplies content."""
+        patterns = self._format_patterns_from_content()
+        if not patterns.strip() or patterns.strip() == "*See reference files for detailed content*":
+            return ""
+        return "## ⚡ Quick Reference\n\n" + patterns
+
     def _generate_skill_md(self, categorized):
         """Generate main SKILL.md file."""
         filename = f"{self.skill_dir}/SKILL.md"
@@ -414,14 +499,7 @@ class DocumentSkillBuilder(SkillConverter):
                 f.write("## 📋 Document Information\n\n")
                 self._write_skill_md_metadata(f, metadata)
 
-            # When to Use
-            f.write("## 💡 When to Use This Skill\n\n")
-            f.write("Use this skill when you need to:\n")
-            f.write(f"- Understand {self.name} concepts and fundamentals\n")
-            f.write("- Look up API references and technical specifications\n")
-            f.write("- Find code examples and implementation patterns\n")
-            f.write("- Review tutorials, guides, and best practices\n")
-            f.write("- Explore the complete documentation structure\n\n")
+            f.write(self._format_when_to_use(categorized))
 
             # Section Overview
             total_sections = self.extracted_data.get("total_sections", 0)
@@ -436,9 +514,7 @@ class DocumentSkillBuilder(SkillConverter):
             # Key Concepts from headings
             f.write(self._format_key_concepts())
 
-            # Quick Reference patterns
-            f.write("## ⚡ Quick Reference\n\n")
-            f.write(self._format_patterns_from_content())
+            f.write(self._format_quick_reference())
 
             # Code examples (top 15, grouped by language)
             all_code = []

@@ -160,8 +160,9 @@ def main(args=None):
     else:
         print(f"\n❌ Upload failed: {message}")
         print()
-        print("📝 Manual upload instructions:")
-        print_upload_instructions(args.package_file)
+        if args.target == "claude":
+            print("📝 Manual upload instructions:")
+            print_upload_instructions(args.package_file)
         sys.exit(EXIT_ERROR)
 
 

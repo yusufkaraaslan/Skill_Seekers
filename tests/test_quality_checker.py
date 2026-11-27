@@ -168,6 +168,7 @@ See the references directory for more:
 
             # Should have no errors
             self.assertFalse(report.has_errors)
+            self.assertFalse(any("language tags" in issue.message for issue in report.warnings))
 
             # Quality score should be high
             self.assertGreaterEqual(report.quality_score, 80.0)

@@ -1,7 +1,7 @@
 """Shared parametrized tests for OpenAI-compatible platform adaptors.
 
 Covers all 6 adaptors that previously had stub-only tests:
-deepseek, fireworks, kimi, openrouter, qwen, together.
+deepseek, fireworks, kimi, openrouter, qwen, requesty, together.
 
 Each adaptor inherits from OpenAICompatibleAdaptor and only overrides
 platform constants (~15 lines each). This shared test validates that
@@ -27,6 +27,7 @@ PLATFORMS = [
     "kimi",
     "openrouter",
     "qwen",
+    "requesty",
     "together",
 ]
 
@@ -72,6 +73,13 @@ PLATFORM_EXPECTED = {
         "model_truthy": True,
         "env_var": "DASHSCOPE_API_KEY",
         "api_base_contains": "dashscope",
+    },
+    "requesty": {
+        "name": "Requesty",
+        "endpoint_contains": "requesty",
+        "model_truthy": True,
+        "env_var": "REQUESTY_API_KEY",
+        "api_base_contains": "requesty",
     },
     "together": {
         "name": "Together AI",
@@ -165,6 +173,9 @@ class TestOpenAICompatibleAdaptors:
             (skill_dir / "SKILL.md").write_text("You are an expert assistant")
             (skill_dir / "references").mkdir()
             (skill_dir / "references" / "test.md").write_text("# Reference")
+            nested = skill_dir / "references" / "guide"
+            nested.mkdir()
+            (nested / "test.md").write_text("# Nested reference")
 
             output_dir = Path(temp_dir) / "output"
             output_dir.mkdir()
@@ -175,6 +186,7 @@ class TestOpenAICompatibleAdaptors:
             assert str(package_path).endswith(".zip")
 
             with zipfile.ZipFile(package_path, "r") as zf:
+                assert zf.read("knowledge_files/guide/test.md") == b"# Nested reference"
                 names = zf.namelist()
                 assert "system_instructions.txt" in names, (
                     f"system_instructions.txt missing for {platform}"

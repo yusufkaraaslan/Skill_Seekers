@@ -8,7 +8,7 @@ Skill Seekers supports automatic upload to **10 LLM platforms** — Claude AI, G
 |----------|----------|---------------|------------------|
 | **Claude AI** | General use, MCP integration | API or Manual | ANTHROPIC_API_KEY |
 | **Google Gemini** | Long context (1M tokens) | API | GOOGLE_API_KEY |
-| **OpenAI ChatGPT** | Vector search, Assistants API | API | OPENAI_API_KEY |
+| **OpenAI ChatGPT** | Responses API file search | API | OPENAI_API_KEY |
 | **Generic Markdown** | Universal compatibility, offline | Manual distribution | None |
 
 ---
@@ -146,21 +146,12 @@ skill-seekers package output/react/ --target openai
 skill-seekers upload output/react-openai.zip --target openai
 ```
 
-**What happens:**
-- Creates OpenAI Assistant via Assistants API
-- Creates Vector Store for semantic search
-- Uploads reference files to vector store
-- Enables `file_search` tool automatically
-
-**Access your assistant:**
-- Go to https://platform.openai.com/assistants/
-- Your assistant is listed with name based on skill
-- Includes file search enabled
+The uploader saves the instructions, indexes the reference files and prints a vector store ID. Use that ID with the Responses API. The store metadata holds the instructions file ID and the package model. [Python example](../integrations/OPENAI_INTEGRATION.md#step-5-ask-a-question-using-the-responses-api)
 
 **What's inside the ZIP:**
 ```
 react-openai.zip
-├── assistant_instructions.txt  ← Main skill file (plain text, no YAML)
+├── assistant_instructions.txt  ← Main skill file
 ├── vector_store_files/         ← Files for vector store
 │   ├── index.md
 │   ├── api.md
@@ -169,15 +160,15 @@ react-openai.zip
 ```
 
 **Format differences:**
-- No YAML frontmatter (OpenAI uses plain text)
+- Instructions preserve the contents of your SKILL.md
 - `SKILL.md` → `assistant_instructions.txt`
 - Reference files packaged separately for Vector Store
-- Includes `openai_metadata.json` for assistant configuration
+- Includes `openai_metadata.json` for the skill name and model
 
 **Unique features:**
 - ✅ Semantic search across documentation
 - ✅ Vector Store for efficient retrieval
-- ✅ File search tool enabled by default
+- ✅ Indexed references for the file_search tool
 
 ---
 
@@ -350,7 +341,7 @@ pip install skill-seekers[openai]
 If API upload fails, you can always use manual upload:
 - **Claude:** https://claude.ai/skills
 - **Gemini:** https://aistudio.google.com/
-- **OpenAI:** https://platform.openai.com/assistants/
+- **OpenAI:** [Responses API upload guide](../integrations/OPENAI_INTEGRATION.md)
 
 ### Wrong file format
 
@@ -381,7 +372,7 @@ Make sure to use `--target` parameter when packaging.
 | **API Upload** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ Manual only |
 | **Manual Upload** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes (distribute) |
 | **MCP Support** | ✅ Full | ✅ Full | ✅ Full | ✅ Package only |
-| **Web Interface** | claude.ai/skills | aistudio.google.com | platform.openai.com/assistants | N/A |
+| **Web Interface** | claude.ai/skills | aistudio.google.com | Responses API | N/A |
 
 ### Enhancement Comparison
 
