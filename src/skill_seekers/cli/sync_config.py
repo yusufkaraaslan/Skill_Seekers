@@ -21,7 +21,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from skill_seekers.cli.defaults import DEFAULTS
-from skill_seekers.cli.utils import sanitize_url, setup_logging
+from skill_seekers.cli.utils import get_crawl_url_prefix, sanitize_url, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,10 @@ def _is_valid_url(
     exclude_patterns: list[str],
 ) -> bool:
     """Return True if *url* passes include/exclude pattern filters."""
-    if not url.startswith(base_url):
+    # Same scope as DocToSkillConverter.is_valid_url. The base URL itself is
+    # the default seed, and the scraper always starts there.
+    base_dir = get_crawl_url_prefix(base_url)
+    if url != base_url and (base_dir is None or not url.startswith(base_dir)):
         return False
     if include_patterns and not any(p in url for p in include_patterns):
         return False
