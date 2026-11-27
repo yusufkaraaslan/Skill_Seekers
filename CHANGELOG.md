@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Development version: 3.11.0.dev0_
+## [3.11.0] - 2026-11-27
+
+OpenAI uploads now return a vector store ID for Responses API file search. Applications that passed the previous assistant ID to a thread or run should use the new ID with the Responses API. Existing OpenAI ZIP packages can be uploaded directly. [Migration example](https://github.com/yusufkaraaslan/Skill_Seekers/blob/v3.11.0/docs/integrations/OPENAI_INTEGRATION.md#step-5-ask-a-question-using-the-responses-api)
 
 ### Added
 - **Opt-in MiniMax-M3.1-Flash** (#477) — M3 remains the text and media default. Select Flash with `--model MiniMax-M3.1-Flash` or a model environment override; Flash requires adaptive thinking. MiniMax enhancement now honors regional/protocol settings and thinking modes through its provider configuration. Enhancement and new packages resolve models in the order `--model`, `SKILL_SEEKER_MODEL`, `MINIMAX_MODEL`, then M3; validating an existing package preserves its saved model. Offline SDK tests cover routing, overrides, thinking validation, and unchanged media defaults.
@@ -3424,7 +3426,8 @@ This is the first production-ready release of Skill Seekers with complete featur
 
 ---
 
-[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v3.10.0...v3.11.0
 [1.2.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/yusufkaraaslan/Skill_Seekers/compare/v0.4.0...v1.0.0
