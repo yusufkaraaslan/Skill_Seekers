@@ -231,18 +231,39 @@ class TestRAGChunker:
         assert loaded[0]["chunk_id"] == "test_0"
 
     def test_min_chunk_size(self):
-        """Test that very small chunks are filtered out."""
+        """Chunks below min_chunk_size are not dropped: they are merged into the
+        previous chunk when that still fits chunk_size, and kept on their own otherwise."""
         chunker = RAGChunker(chunk_size=50, min_chunk_size=100)
 
         text = "Short.\n\n" + "A" * 500  # Short chunk + long chunk
 
         chunks = chunker.chunk_document(text, {"source": "test"})
 
-        # Very short chunks should be filtered
-        # (Implementation detail: depends on boundaries)
-        for chunk in chunks:
-            # Each chunk should meet minimum size (approximately)
-            assert len(chunk["page_content"]) >= 50  # Relaxed for test
+        # "Short." plus the 500-char block would exceed chunk_size (200 chars), so both stay
+        assert [c["page_content"] for c in chunks] == ["Short.", "A" * 500]
+
+    def test_short_chunks_are_merged_when_the_result_fits(self):
+        chunker = RAGChunker(chunk_size=25, chunk_overlap=0, min_chunk_size=10)  # 100 / 40 chars
+
+        text = "Title\n\nIntro\n\n" + "word " * 19
+
+        chunks = chunker.chunk_document(text, {"source": "test"})
+
+        assert [c["page_content"] for c in chunks] == ["Title\n\nIntro", ("word " * 19).strip()]
+
+    def test_short_last_chunk_is_not_dropped(self):
+        """Text after the last full chunk must stay in the output."""
+        chunker = RAGChunker()  # defaults: 512 tokens, 50 overlap, 100 minimum
+
+        paragraph = "word " * 60  # 300 chars
+        text = "\n\n".join([paragraph] * 7) + "\n\nLast step: restart the server."
+
+        chunks = chunker.chunk_document(text, {"source": "test"})
+
+        assert "restart the server" in chunks[-1]["page_content"]
+        # Merging the leftover would exceed chunk_size, so it stays a chunk of its own
+        max_chars = chunker.chunk_size * chunker.chars_per_token
+        assert all(len(c["page_content"]) <= max_chars for c in chunks)
 
     def test_extract_code_blocks(self):
         """Test code block extraction."""

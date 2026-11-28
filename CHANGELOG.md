@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- RAG chunking no longer drops text in chunks shorter than `min_chunk_size`. A short chunk is merged into the previous chunk when the result still fits `chunk_size`, and kept as its own chunk otherwise, so the end of a document (and, with small chunk sizes, its start) reaches the output.
+
 ## [3.11.0] - 2026-11-27
 
 OpenAI uploads now return a vector store ID for Responses API file search. Applications that passed the previous assistant ID to a thread or run should use the new ID with the Responses API. Existing OpenAI ZIP packages can be uploaded directly. [Migration example](https://github.com/yusufkaraaslan/Skill_Seekers/blob/v3.11.0/docs/integrations/OPENAI_INTEGRATION.md#step-5-ask-a-question-using-the-responses-api)
