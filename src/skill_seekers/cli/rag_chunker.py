@@ -310,6 +310,7 @@ class RAGChunker:
             return []
 
         i = 0
+        last_start = 0  # where the most recent chunk starts
         while i < len(boundaries) - 1:
             start_pos = boundaries[i]
 
@@ -335,12 +336,20 @@ class RAGChunker:
             end_pos = boundaries[min(j, len(boundaries) - 1)]
             chunk_text = text[start_pos:end_pos]
 
-            # Add chunk if it meets minimum size requirement
-            # (unless the entire text is smaller than target size)
-            if chunk_text.strip() and (
-                len(text) <= target_size_chars or len(chunk_text) >= min_size_chars
-            ):
-                chunks.append(chunk_text)
+            # A chunk below the minimum size is merged with the previous chunk
+            # if the result still fits chunk_size; otherwise it stays a chunk
+            # of its own. Its text is never dropped.
+            if chunk_text.strip():
+                merged = text[last_start:end_pos]
+                if (
+                    chunks
+                    and min(len(chunk_text), len(chunks[-1])) < min_size_chars
+                    and len(merged) <= target_size_chars
+                ):
+                    chunks[-1] = merged
+                else:
+                    chunks.append(chunk_text)
+                    last_start = start_pos
 
             # Move to next chunk with overlap
             if j < len(boundaries) - 1:
